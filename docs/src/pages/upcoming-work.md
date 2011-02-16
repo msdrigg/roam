@@ -11,11 +11,16 @@ hide_table_of_contents: true
 
 # Upcoming Roam Updates
 
-## General ToDo
+## General Improvements
 
+- Think about nav sidebar (+ tab bar) for ipad/visionOS
+- Improve bottom getting started button
+    - Convert to Tip that only shows if there aren't any devices
+    - Show with a gradient background + large text + subtitle (go to settings)
 - Test more keyboard hacks
     - GCKeyboard for one
     - FocusEnvironment for 2
+    - Ensure that whatever solution gets used for iOS doesn't break text entry in messages/keyboard entry
 - AppIntents
     - Add control center app intents
         - Use toggle for mute/unmute and power on/off
@@ -25,27 +30,28 @@ hide_table_of_contents: true
         - Make work with action hint
     - Let siri/spotlight better see the things in my app somehow?
         - Add universal links to the devices so siri can link to them?
+        - Ensure that semantic search works
         - Implement transferrable via string/codeable for my app entities
             - ProxyRepresentation
             - CodableRepresentation
-
-- Figure out if the loop of calls to `nextPacket` make sense.
-    - Instead of looping every 10ms and hoping the timing is correct, should I instead be looping over received packets and trying to schedule them at host time `10ms * globalSequenceNumber + startHostTime` and sampleTime to `sequenceNumber * Int64(lastSampleTime.sampleRate) / packetsPerSec + startSampleTime`
-    - Then I can switch from a `for await` loop over the clock to a `while !Task.isCancelled` loop with a `Task.sleep` in it.
-- Get keyboard shortcuts working on iPad even when Full Keyboard Access is turned on...
-    - Ensure that whatever solution gets used for iOS doesn't break text entry in messages/keyboard entry
-- Figure out what causes race condition when quickly clicking headphones mode keyboard shortcut 
-    - Figure out what causes data leak in case of long-running private listening after TV shuts off...
-    - Fix weird headphones mode not disabling bug
-    - ensure rtcp/rtp listeners are cancelled...
-    - if they aren't work backwards up to why and fix
-    - if they are, why aren't they stopping...
 - Provide an optional Minimalist view on iOS that replicates siri remote's view closely
     - https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
     - Support visionos gestures as well...
     - Need to build the textedit api first
 - Add some event tracking on what actions users are actually doing on their devices (connect to firebase analytics maybe?)
     - Track who is using minimalist view, what actions they are doing, etc...
+
+## Bug Fixes
+
+- Figure out if the loop of calls to `nextPacket` make sense.
+    - Instead of looping every 10ms and hoping the timing is correct, should I instead be looping over received packets and trying to schedule them at host time `10ms * globalSequenceNumber + startHostTime` and sampleTime to `sequenceNumber * Int64(lastSampleTime.sampleRate) / packetsPerSec + startSampleTime`
+    - Then I can switch from a `for await` loop over the clock to a `while !Task.isCancelled` loop with a `Task.sleep` in it.
+- Figure out what causes race condition when quickly clicking headphones mode keyboard shortcut 
+    - Figure out what causes data leak in case of long-running private listening after TV shuts off...
+    - Fix weird headphones mode not disabling bug
+    - ensure rtcp/rtp listeners are cancelled...
+    - if they aren't work backwards up to why and fix
+    - if they are, why aren't they stopping...
 
 ## TipKit
 
@@ -77,7 +83,11 @@ hide_table_of_contents: true
 
 -   AppClip
     -   Add a "getAShareableLinkToThisDevice" button on settings -> device
-    -   Autogenerate app clip codes with that shareable link
+        -   Pre-generate all 1.1M app clip codes and encode ring locations (0.5GB)
+        -   Make a button to "Get a shareable link to the device!" with an image preview to the app clip code (roam color)
+        -   Download the code + link and convert to PNG on device when a device location is changed
+        -   Have the code open up the device as a shared link to an image (with preview!)
+    -   Also make the actual device link sharable
 
 ## Improve user messaging around info/status management
 

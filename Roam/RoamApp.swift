@@ -1,6 +1,7 @@
 import OSLog
 import SwiftData
 import SwiftUI
+import TipKit
 #if os(macOS)
     import AppKit
 #endif
@@ -22,6 +23,11 @@ struct RoamApp: App {
     var sharedModelContainer: ModelContainer
     init() {
         sharedModelContainer = getSharedModelContainer()
+
+        try? Tips.configure([
+            .displayFrequency(.immediate),
+            .datastoreLocation(.groupContainer(identifier: "group.com.msdrigg.roam.tips"))
+        ])
     }
 
     var body: some Scene {
@@ -82,11 +88,11 @@ struct RoamApp: App {
             .defaultSize(width: 450, height: 200)
         #else
             WindowGroup {
-                RemoteView()
+                    RemoteView()
 #if os(visionOS)
-                    .frame(minWidth: 400, minHeight: 950)
+                        .frame(minWidth: 400, minHeight: 950)
 #endif
-                    .environment(\.uuidUpdater, uuidUpdater)
+                        .environment(\.uuidUpdater, uuidUpdater)
             }
             #if os(visionOS)
             .windowResizability(.contentMinSize)

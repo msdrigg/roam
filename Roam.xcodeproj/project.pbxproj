@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -502,6 +502,10 @@
 		AFFED2502AD75EAF00357FA4 /* BinaryHeap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryHeap.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		AFA922F52C20A2DA008F49B4 /* Tips */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Tips; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
 		AF15C2432AE8672700B79FD9 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -712,6 +716,7 @@
 				AF24805C2BDB475A00EF47AE /* DebugImages.xcassets */,
 				AF0C82872AEB44BF00CBE7F8 /* AccentColor.xcassets */,
 				AF5ED8D42AE984E9007DB2B8 /* WidgetColor.xcassets */,
+				AFA922F52C20A2DA008F49B4 /* Tips */,
 				AF56E3BA2AD9863100F5E6E0 /* Views */,
 				AFF6077E2ADFAC4F00A7D657 /* Backend */,
 				AFF6078C2AE005E400A7D657 /* Intents */,

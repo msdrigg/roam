@@ -12,6 +12,12 @@ struct RoamWatch: App {
     var sharedModelContainer: ModelContainer
     init() {
         sharedModelContainer = getSharedModelContainer()
+
+        try? Tips.configure([
+            .displayFrequency(.immediate),
+            .datastoreLocation(.groupContainer(identifier: "group.com.msdrigg.roam.tips"))
+        ])
+
         Self.logger.info("Getting WatchConnectivity \(String(describing: WatchConnectivity.shared))")
     }
 
@@ -136,13 +142,6 @@ struct WatchAppView: View {
                 scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
                     // Ignoring
                 })
-            }
-            .task {
-                // Configure and load your tips at app launch.
-                try? Tips.configure([
-                    .displayFrequency(.immediate),
-                    .datastoreLocation(.groupContainer(identifier: "group.com.msdrigg.roam.tips"))
-                ])
             }
         }
     }
