@@ -4,8 +4,8 @@ import os.log
 #if os(iOS) || os(tvOS) || os(visionOS)
     import AVFoundation
 
-    class LatencyListener {
-        private static let logger = Logger(
+    actor LatencyListener {
+        private nonisolated static let logger = Logger(
             subsystem: Bundle.main.bundleIdentifier!,
             category: String(describing: LatencyListener.self)
         )
@@ -13,8 +13,12 @@ import os.log
         var latencyChangeHandler: ((Double) -> Void)?
         let audioSession = AVAudioSession.sharedInstance()
 
-        @objc func handleRouteChange(notification _: Notification) {
-            latencyChangeHandler?(audioSession.outputLatency)
+        @objc nonisolated func handleRouteChangeNonisolated(notification _: Notification) async {
+            await handleRouteChange(audioSession.outputLatency)
+        }
+
+        func handleRouteChange(_ latency: Double) async {
+            latencyChangeHandler?(latency)
         }
 
         func startListening() throws {
@@ -22,7 +26,7 @@ import os.log
             // Get the default notification center instance.
             NotificationCenter.default.addObserver(
                 self,
-                selector: #selector(handleRouteChange),
+                selector: #selector(handleRouteChangeNonisolated),
                 name: AVAudioSession.routeChangeNotification,
                 object: nil
             )
@@ -41,7 +45,9 @@ import os.log
                         continuation.yield(newValue)
                     }
                     continuation.onTermination = { @Sendable _ in
-                        self.stopListening()
+                        Task {
+                            await self.stopListening()
+                        }
                     }
                 } catch {}
             }
@@ -52,8 +58,8 @@ import os.log
 #if os(macOS)
     import CoreAudio
 
-    class LatencyListener {
-        private static let logger = Logger(
+    actor LatencyListener {
+        private nonisolated static let logger = Logger(
             subsystem: Bundle.main.bundleIdentifier!,
             category: String(describing: LatencyListener.self)
         )
@@ -102,30 +108,30 @@ import os.log
             return Double(latency) / sampleRate
         }
 
+        func latencyChangeHandlerIsolated(_ val: Double) {
+            self.latencyChangeHandler?(val)
+        }
+
         func startListening() {
             Self.logger.info("Starting Latency observations")
 
             var defaultDeviceAddress = defaultDeviceAddress
 
             audioDeviceChangeListener = { _, _ in
-                DispatchQueue.main.async {
-                    var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+                var size = UInt32(MemoryLayout<AudioDeviceID>.size)
 
-                    // Listener for latency changes on the default output device
-                    var listeningDeviceId: AudioDeviceID = 0
-                    AudioObjectGetPropertyData(
-                        AudioObjectID(kAudioObjectSystemObject),
-                        &defaultDeviceAddress,
-                        0,
-                        nil,
-                        &size,
-                        &listeningDeviceId
-                    )
+                // Listener for latency changes on the default output device
+                var listeningDeviceId: AudioDeviceID = 0
+                AudioObjectGetPropertyData(
+                    AudioObjectID(kAudioObjectSystemObject),
+                    &defaultDeviceAddress,
+                    0,
+                    nil,
+                    &size,
+                    &listeningDeviceId
+                )
 
-                    DispatchQueue.main.async {
-                        self.latencyChangeHandler?(self.getDeviceLatency(deviceID: listeningDeviceId) ?? 0)
-                    }
-                }
+                self.latencyChangeHandlerIsolated(self.getDeviceLatency(deviceID: listeningDeviceId) ?? 0)
             }
 
             let err = AudioObjectAddPropertyListenerBlock(
@@ -145,15 +151,13 @@ import os.log
 
             var defaultDeviceAddress = defaultDeviceAddress
 
-            DispatchQueue.main.async {
-                if let listener = self.audioDeviceChangeListener {
-                    AudioObjectRemovePropertyListenerBlock(
-                        AudioObjectID(kAudioObjectSystemObject),
-                        &defaultDeviceAddress,
-                        nil,
-                        listener
-                    )
-                }
+            if let listener = self.audioDeviceChangeListener {
+                AudioObjectRemovePropertyListenerBlock(
+                    AudioObjectID(kAudioObjectSystemObject),
+                    &defaultDeviceAddress,
+                    nil,
+                    listener
+                )
             }
         }
 
@@ -164,7 +168,9 @@ import os.log
                     continuation.yield(newValue)
                 }
                 continuation.onTermination = { @Sendable _ in
-                    self.stopListening()
+                    Task {
+                        await self.stopListening()
+                    }
                 }
             }
         }

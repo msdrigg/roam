@@ -26,14 +26,18 @@ struct RoamApp: App {
         #if os(macOS)
             Window("Roam", id: "main") {
                 RemoteView()
+                    .translucentBackground()
+                    .removeToolbarTitle()
+                    .removeToolbarBackground()
             }
+            .enableBackgroundDragging()
             .defaultSize(width: 400, height: 1000)
-            .defaultPosition(.trailing)
+            .trailingPosition()
             .windowToolbarStyle(.unifiedCompact(showsTitle: false))
             .commands {
                 CommandGroup(replacing: CommandGroupPlacement.appInfo) {
                     Button(action: {
-                        appDelegate.showAboutPanel()
+                        openWindow(id: "about")
                     }, label: {
                         Text("About Roam", comment: "Button to open the about page of the Roam app")
                     })
@@ -63,12 +67,23 @@ struct RoamApp: App {
             }
             .modelContainer(sharedModelContainer)
             .environment(\.createDataHandler, dataHandlerCreator())
+
+            Window("About Roam", id: "about") {
+                ExternalAboutView()
+                    .removeToolbarTitle()
+                    .removeToolbarBackground()
+                    .translucentBackground()
+                    .disableWindowMinimize()
+            }
+            .disableRestoration()
+            .defaultSize(width: 450, height: 200)
         #else
             WindowGroup {
                 RemoteView()
 #if os(visionOS)
                     .frame(minWidth: 400, minHeight: 950)
 #endif
+                    .translucentBackground()
             }
             #if os(visionOS)
             .windowResizability(.contentMinSize)
@@ -79,16 +94,18 @@ struct RoamApp: App {
         #endif
 
         #if os(macOS)
-            Window(String(localized: "Messages", comment: "Window header for the messages window"), id: "messages") {
+            Window(String(localized: "Roam Messages", comment: "Window header for the messages window"), id: "messages") {
                 MessageView()
                     .frame(width: 400)
+                    .translucentBackground()
             }
             .windowResizability(.contentSize)
             .modelContainer(sharedModelContainer)
             .environment(\.createDataHandler, dataHandlerCreator())
 
-            Window("Keyboard Shortcuts", id: "keyboard-shortcuts") {
+            Window("Roam Keyboard Shortcuts", id: "keyboard-shortcuts") {
                 KeyboardShortcutPanel()
+                    .translucentBackground()
             }
             .windowResizability(.contentSize)
             .modelContainer(sharedModelContainer)
@@ -98,10 +115,14 @@ struct RoamApp: App {
         #if os(macOS)
             Settings {
                 MacSettings()
+                    .translucentBackground()
+                    .enableResize()
             }
             .modelContainer(sharedModelContainer)
             .environment(\.createDataHandler, dataHandlerCreator())
-            .windowToolbarStyle(.unified(showsTitle: true))
+            .windowToolbarStyle(.unifiedCompact(showsTitle: false))
+            .defaultSize(width: 500, height: 600)
+            .windowResizability(.contentSize)
         #endif
     }
 }

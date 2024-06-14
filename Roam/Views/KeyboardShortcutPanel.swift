@@ -4,7 +4,6 @@ import OSLog
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "KeyboardShortcut")
 
-
 struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
     let title: CustomKeyboardShortcut.Key
     let key: KeyEquivalent?
@@ -12,13 +11,13 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
     var id: String {
         title.rawValue
     }
-    
+
     init(title: CustomKeyboardShortcut.Key, key: KeyEquivalent?, modifiers: EventModifiers) {
         self.title = title
         self.key = key
         self.modifiers = modifiers
     }
-    
+
     #if !os(tvOS)
     init(title: CustomKeyboardShortcut.Key, shortcut: KeyboardShortcut) {
         self.title = title
@@ -26,8 +25,8 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
         self.modifiers = shortcut.modifiers
     }
     #endif
-    
-    init(from decoder: Decoder) throws {
+
+    init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         title = try container.decode(CustomKeyboardShortcut.Key.self, forKey: .title)
         key = try? container.decode(KeyEquivalent.self, forKey: .key)
@@ -35,17 +34,14 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
         modifiers = EventModifiers(rawValue: modifiersRawValue)
     }
 
-
     var keys: String {
         var keyBuilder: String = ""
         if key == nil {
             return ""
         }
-        for pair in [(EventModifiers.command, "⌘"), (EventModifiers.shift, "⇧"), (EventModifiers.control, "^"), (EventModifiers.option, "⌥")] {
-            if modifiers.contains(pair.0) {
-                keyBuilder.append(pair.1)
-                keyBuilder.append(" ")
-            }
+        for pair in [(EventModifiers.command, "⌘"), (EventModifiers.shift, "⇧"), (EventModifiers.control, "^"), (EventModifiers.option, "⌥")] where modifiers.contains(pair.0) {
+            keyBuilder.append(pair.1)
+            keyBuilder.append(" ")
         }
         if let key {
             keyBuilder.append(key.printableRepresentation)
@@ -54,45 +50,81 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
     }
 
     #if !os(tvOS)
+    @MainActor
     static var defaults: [Key: KeyboardShortcut]  {
-        var items: [Key: KeyboardShortcut] = [
+        var items: [Key: KeyboardShortcut] = [:]
+        #if !os(macOS)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            items = [
+                .back: KeyboardShortcut(.leftArrow, modifiers: .command),
+                .power: KeyboardShortcut(.return, modifiers: .command),
+                .volumeDown: KeyboardShortcut(.downArrow, modifiers: .command),
+                .volumeUp: KeyboardShortcut(.upArrow, modifiers: .command),
+                .mute: KeyboardShortcut(KeyEquivalent("m"), modifiers: .command),
+                .home: KeyboardShortcut(KeyEquivalent("h"), modifiers: [.command, .shift]),
+                .playPause: KeyboardShortcut(KeyEquivalent("p"), modifiers: .command),
+                .ok: KeyboardShortcut(.return, modifiers: .command),
+                .left: KeyboardShortcut(.leftArrow, modifiers: .command),
+                .right: KeyboardShortcut(.rightArrow, modifiers: .command),
+                .up: KeyboardShortcut(.upArrow, modifiers: .command),
+                .down: KeyboardShortcut(.downArrow, modifiers: .command),
+                .keyboardShortcuts: KeyboardShortcut(KeyEquivalent("k"), modifiers: .command),
+                .chatWithDeveloper: KeyboardShortcut(KeyEquivalent("j"), modifiers: .command)
+            ]
+        } else {
+            items = [
+                .back: KeyboardShortcut(.leftArrow, modifiers: .command),
+                .power: KeyboardShortcut(.return, modifiers: .command),
+                .volumeDown: KeyboardShortcut(.downArrow, modifiers: .command),
+                .volumeUp: KeyboardShortcut(.upArrow, modifiers: .command),
+                .mute: KeyboardShortcut(KeyEquivalent("m"), modifiers: .command),
+                .home: KeyboardShortcut(KeyEquivalent("h"), modifiers: [.command, .shift]),
+                .playPause: KeyboardShortcut(KeyEquivalent("p"), modifiers: .command),
+                .ok: KeyboardShortcut(.return, modifiers: .shift),
+                .left: KeyboardShortcut(.leftArrow, modifiers: []),
+                .right: KeyboardShortcut(.rightArrow, modifiers: []),
+                .up: KeyboardShortcut(.upArrow, modifiers: []),
+                .down: KeyboardShortcut(.downArrow, modifiers: []),
+                .keyboardShortcuts: KeyboardShortcut(KeyEquivalent("k"), modifiers: .command),
+                .chatWithDeveloper: KeyboardShortcut(KeyEquivalent("j"), modifiers: .command)
+            ]
+        }
+        #else
+        items = [
             .back: KeyboardShortcut(.leftArrow, modifiers: .command),
             .power: KeyboardShortcut(.return, modifiers: .command),
             .volumeDown: KeyboardShortcut(.downArrow, modifiers: .command),
             .volumeUp: KeyboardShortcut(.upArrow, modifiers: .command),
             .mute: KeyboardShortcut(KeyEquivalent("m"), modifiers: .command),
-            .home: KeyboardShortcut(KeyEquivalent("h"), modifiers: [.command, .shift]),
+            .home: KeyboardShortcut(KeyEquivalent("h"), modifiers: [.command]),
             .playPause: KeyboardShortcut(KeyEquivalent("p"), modifiers: .command),
-            .ok: KeyboardShortcut(.return, modifiers: .shift),
-            .left: KeyboardShortcut(.leftArrow, modifiers: []),
-            .right: KeyboardShortcut(.rightArrow, modifiers: []),
-            .up: KeyboardShortcut(.upArrow, modifiers: []),
-            .down: KeyboardShortcut(.downArrow, modifiers: []),
+            .ok: KeyboardShortcut(.return, modifiers: .command),
+            .left: KeyboardShortcut(.leftArrow, modifiers: .command),
+            .right: KeyboardShortcut(.rightArrow, modifiers: .command),
+            .up: KeyboardShortcut(.upArrow, modifiers: .command),
+            .down: KeyboardShortcut(.downArrow, modifiers: .command),
             .keyboardShortcuts: KeyboardShortcut(KeyEquivalent("k"), modifiers: .command),
             .chatWithDeveloper: KeyboardShortcut(KeyEquivalent("j"), modifiers: .command)
         ]
-        
-        #if os(macOS)
-        items.updateValue(KeyboardShortcut(KeyEquivalent("h"), modifiers: .command), forKey: .home)
         #endif
-        
+
         return items
     }
     #endif
-    
+
     enum CodingKeys: String, CodingKey {
         case title
         case key
         case modifiers
     }
 
-    func encode(to encoder: Encoder) throws {
+    func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(title, forKey: .title)
         try container.encode(key, forKey: .key)
         try container.encode(modifiers.rawValue, forKey: .modifiers)
     }
-    
+
     func persist() {
         logger.info("Saving shortcut with title \(self.title.rawValue) key \(keys)")
         do {
@@ -102,12 +134,13 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
             logger.error("Error encoding keyboard shortcut to string \(error)")
         }
     }
-    
+
     func reset() {
         UserDefaults.standard.removeObject(forKey: "keyboard-shortcut-\(title)")
     }
-    
+
     #if !os(tvOS)
+    @MainActor
     init(title: Key) {
         if let data = UserDefaults.standard.data(forKey: "keyboard-shortcut-\(title)"),
            let shortcut = try? PropertyListDecoder().decode(Self.self, from: data) {
@@ -146,8 +179,8 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
         var defaultsKey: String {
             return "keyboard-shortcut-\(rawValue)"
         }
-        
-        public static var caseDisplayRepresentations: [Self: String] = [
+
+        public static let caseDisplayRepresentations: [Self: String] = [
             .back: String(localized: "Back", comment: "Keyboard shortcut to go back"),
             .power: String(localized: "Power", comment: "Keyboard shortcut to power on/off the TV"),
             .home: String(localized: "Home", comment: "Keyboard shortcut to go to the home screen"),
@@ -172,7 +205,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
         public var description: String {
             return Key.caseDisplayRepresentations[self] ?? rawValue
         }
-        
+
         public init?(remoteButton: RemoteButton) {
             switch remoteButton {
             case .back:
@@ -213,7 +246,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
                 return nil
             }
         }
-        
+
         public var matchingRemoteButton: RemoteButton? {
             switch self {
             case .back:
@@ -298,7 +331,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
             return nil
         }
 
-        var command = UIKeyCommand(input: input, modifierFlags: self.modifiers.uiKeyModifierFlagsRepresentation, action: action)
+        let command = UIKeyCommand(input: input, modifierFlags: self.modifiers.uiKeyModifierFlagsRepresentation, action: action)
         command.discoverabilityTitle = title.rawValue
         command.title = title.rawValue
         command.wantsPriorityOverSystemBehavior = true
@@ -308,9 +341,8 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
 #endif
 }
 
-
 extension KeyEquivalent: Codable {
-    public init(from decoder: Decoder) throws {
+    public init(from decoder: any Decoder) throws {
         let container = try decoder.singleValueContainer()
         let value = try container.decode(String.self)
         guard let character = value.first else {
@@ -319,7 +351,7 @@ extension KeyEquivalent: Codable {
         self = KeyEquivalent(character)
     }
 
-    public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encode(String(self.character))
     }
@@ -338,9 +370,31 @@ extension KeyEquivalent {
             .leftArrow, .rightArrow, .upArrow, .downArrow,
             .home, .end, .pageUp, .pageDown
         ]
-        
+
         return !unprintableCharacters.contains(self)
     }
+
+    @MainActor
+    var isNavigationCharacter: Bool {
+        #if os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            let navChars: Set<KeyEquivalent> = [
+                .escape, .tab, .leftArrow, .rightArrow, .upArrow, .downArrow,
+            ]
+
+            return navChars.contains(self)
+        } else {
+            let navChars: Set<KeyEquivalent> = [
+                .escape
+            ]
+
+            return navChars.contains(self)
+        }
+        #else
+        return false
+        #endif
+    }
+
     var printableRepresentation: String {
         switch self {
         case " ", .space:
@@ -370,19 +424,24 @@ extension KeyEquivalent {
         case .pageDown:
             return "⇟"
         default:
+            break
+        }
+
+        if self.character.isLetter {
             return String(self.character).uppercased()
         }
+        return String(self.character).lowercased()
     }
 }
 
 extension EventModifiers: Codable {
-    public init(from decoder: Decoder) throws {
+    public init(from decoder: any Decoder) throws {
         let container = try decoder.singleValueContainer()
         let rawValue = try container.decode(Int.self)
         self = EventModifiers(rawValue: rawValue)
     }
 
-    public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encode(self.rawValue)
     }
@@ -403,9 +462,9 @@ struct CustomKeyboardShortcutModifier: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        if let key = shortcut?.key, let modifiers = shortcut?.modifiers {
+        if let key = shortcut?.key?.character.lowercased().first, let modifiers = shortcut?.modifiers {
             #if os(macOS)
-            return AnyView(content.keyboardShortcut(KeyboardShortcut(key, modifiers: modifiers)))
+            return AnyView(content.keyboardShortcut(KeyboardShortcut(KeyEquivalent(key), modifiers: modifiers)))
             #else
             return AnyView(content)
             #endif
@@ -416,6 +475,7 @@ struct CustomKeyboardShortcutModifier: ViewModifier {
 }
 
 @propertyWrapper
+@MainActor
 struct KeyboardShortcutStorage: DynamicProperty {
     private let title: CustomKeyboardShortcut.Key
     @AppStorage var data: Data?
@@ -558,12 +618,16 @@ struct ShortcutDisplay: View {
     @KeyboardShortcutStorage var shortcut: CustomKeyboardShortcut?
     let title: CustomKeyboardShortcut.Key
 
-    
+    #if os(iOS)
+    @MainActor
+    private var idiom: UIUserInterfaceIdiom { UIDevice.current.userInterfaceIdiom }
+    #endif
+
     init(_ title: CustomKeyboardShortcut.Key) {
         self.title = title
         self._shortcut = KeyboardShortcutStorage(title)
     }
-    
+
     @ViewBuilder
     var body: some View {
         VStack(spacing: 10) {
@@ -576,9 +640,26 @@ struct ShortcutDisplay: View {
                         .font(.subheadline)
                 }
             }
-            
+
+#if os(iOS)
+            if shortcut?.key?.isNavigationCharacter == true && shortcut?.modifiers.contains(.command) == false && idiom == .pad {
+                if idiom == .pad {
+                    // swiftlint:disable:next line_length
+                    Text("Using this key as a keyboard shortcut without a command modifier (⌘) may not work on iPad if Full Keyboard Access is enabled. To disable Full Keyboard Access to into your iPad settings and navigate to Accessiblity -> Keyboard -> Full Keyboard Access", comment: "Warning indicator underneath a section")
+                        .font(.caption)
+                        .foregroundStyle(.yellow.opacity(0.6))
+                } else {
+                    // swiftlint:disable:next line_length
+                    Text("Using this key as a keyboard shortcut without a command modifier (⌘) may not work because the operating system captures it first for in-app navigation", comment: "Warning indicator underneath a section")
+                        .font(.caption)
+                        .foregroundStyle(.yellow.opacity(0.6))
+
+                }
+            }
+#endif
 #if os(macOS)
             if shortcut?.key?.isPrintableCharacter == true && shortcut?.modifiers.contains(.command) == false {
+                // swiftlint:disable:next line_length
                 Text("Having letters, numbers, or punctuation as keyboard shortcuts without a command modifier (⌘) can interfere with keyboard text entry on the roku TV", comment: "Warning indicator underneath a section")
                     .font(.caption)
                     .foregroundStyle(.yellow.opacity(0.6))
@@ -594,14 +675,14 @@ struct KeyboardShortcutPanel: View {
             CustomKeyboardShortcut(title: $0)
         }
     }
-    
+
     @State private var focusedShortcut: CustomKeyboardShortcut.Key?
 
     @ViewBuilder
     var body: some View {
         Form {
             #if os(macOS)
-            Text("Select a row below to change the shortcut, or right click it to reset the shortcut back to its original state", comment: "Caption on a keyboard shortcut panel")
+            Text("Click on a row below to change the shortcut, or right click it to reset", comment: "Caption on a keyboard shortcut panel")
                 .foregroundStyle(.secondary)
                 .swipeActions(edge: .trailing) {
                     Button(role: .cancel, action: {
@@ -615,7 +696,7 @@ struct KeyboardShortcutPanel: View {
                         for shortcut in shortcuts {
                             let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
                             scClone.persist()
-                            
+
                         }
                     }, label: {
                         Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
@@ -634,7 +715,7 @@ struct KeyboardShortcutPanel: View {
                         for shortcut in shortcuts {
                             let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
                             scClone.persist()
-                            
+
                         }
                     }, label: {
                         Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
@@ -642,7 +723,7 @@ struct KeyboardShortcutPanel: View {
 
                 }
             #else
-            Text("Select a row below to change the shortcut, or swipe to reset", comment: "Caption on a keyboard shortcut panel")
+            Text("Tap a row below to change the shortcut, or swipe to reset", comment: "Caption on a keyboard shortcut panel")
                 .foregroundStyle(.secondary)
             #if !os(tvOS)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -657,7 +738,7 @@ struct KeyboardShortcutPanel: View {
                         for shortcut in shortcuts {
                             let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
                             scClone.persist()
-                            
+
                         }
                     }, label: {
                         Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
@@ -677,7 +758,7 @@ struct KeyboardShortcutPanel: View {
                         for shortcut in shortcuts {
                             let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
                             scClone.persist()
-                            
+
                         }
                     }, label: {
                         Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
@@ -739,12 +820,12 @@ struct KeyboardShortcutPanel: View {
                 CustomKeyboardShortcut(title: focusedShortcut, shortcut: KeyboardShortcut(key.key, modifiers: key.modifiers)).persist()
             }
         }, captureShortcuts: true)
-//        #elseif !os(tvOS)
-//        .onKeyDown({ key in
-//            if let focusedShortcut {
-//                CustomKeyboardShortcut(title: focusedShortcut, shortcut: KeyboardShortcut(key.key, modifiers: key.modifiers)).persist()
-//            }
-//        })
+        #elseif !os(tvOS)
+        .onKeyDown({ key in
+            if let focusedShortcut {
+                CustomKeyboardShortcut(title: focusedShortcut, shortcut: KeyboardShortcut(key.key, modifiers: key.modifiers)).persist()
+            }
+        })
         #endif
         .formStyle(.grouped)
         .navigationTitle("Keyboard Shortcuts")

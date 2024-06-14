@@ -16,7 +16,7 @@ struct NotificationBanner: View {
 
     var body: some View {
         if onClick != nil {
-            Button(action: { onClick?() }) {
+            Button(action: { onClick?() }, label: {
                 Text(message)
                     .font(.subheadline)
                     .foregroundStyle(
@@ -27,7 +27,7 @@ struct NotificationBanner: View {
                     .background(backgroundColor)
                     .cornerRadius(3.0)
                     .cornerRadius(5)
-            }
+            })
             .buttonStyle(.plain)
             #if !os(tvOS)
                 .controlSize(.small)
@@ -64,17 +64,17 @@ struct NotificationBanner: View {
 
 #if DEBUG
 #Preview("Clickable") {
-    NotificationBanner(message: "\("Message (clickable)")", onClick: {})
+    NotificationBanner(message: "Message (clickable)", onClick: {})
         .padding()
 }
 
 #Preview("Not clickable") {
-    NotificationBanner(message: LocalizedStringResource("\("Message (not clickable)")"))
+    NotificationBanner(message: "Message (not clickable)")
         .padding()
 }
 
 #Preview("Info") {
-    NotificationBanner(message: "\("Message (not clickable)")", level: .info)
+    NotificationBanner(message: "Message (not clickable)", level: .info)
         .padding()
 }
 #endif

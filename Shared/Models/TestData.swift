@@ -43,9 +43,7 @@
 
             Task { @MainActor in
                 let context = container.mainContext
-                try context.delete(model: Device.self)
-                try context.delete(model: AppLink.self)
-                try context.delete(model: Message.self)
+                container.deleteAllData()
 
                 let (models, appLinks) = getLoadTestingData()
                 for model in models {
@@ -118,6 +116,7 @@
             Message(id: "0002", message: "BYE BRO", author: .support, fetchedBackend: false),
             Message(
                 id: "0003",
+                // swiftlint:disable:next line_length
                 message: "BYE BRO (part two but this time with a lot more text. Does it wrap? Does it work? IDK???BYE BRO (part two but this time with a lot more text. Does it wrap? Does it work? IDK???",
                 author: .support, fetchedBackend: false
             ),

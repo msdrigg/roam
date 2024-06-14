@@ -40,9 +40,9 @@ public enum RemoteButton: String, CaseIterable, Sendable, Encodable, Hashable {
     case inputAV1 = "InputAV1"
     case headphonesMode = "Headphones Mode"
 
-    public static var typeDisplayName: String = "Button"
+    public static let typeDisplayName: String = "Button"
 
-    public static var caseDisplayRepresentations: [RemoteButton: String] = [
+    public static let caseDisplayRepresentations: [RemoteButton: String] = [
         .up: String(localized: "Up", comment: "Remote button to move up"),
         .left: String(localized: "Left", comment: "Remote button to move left"),
         .right: String(localized: "Right", comment: "Remote button to move right"),
@@ -76,7 +76,7 @@ public enum RemoteButton: String, CaseIterable, Sendable, Encodable, Hashable {
         .headphonesMode: String(localized: "Headphones Mode", comment: "Remote button for headphones mode")
     ]
 
-    public static var systemIcons: [RemoteButton: String?] = [
+    public static let systemIcons: [RemoteButton: String?] = [
         .up: "chevron.up",
         .left: "chevron.left",
         .right: "chevron.right",
@@ -110,7 +110,7 @@ public enum RemoteButton: String, CaseIterable, Sendable, Encodable, Hashable {
         .inputAV1: nil,
     ]
 
-    public static var buttonApiDescription: [RemoteButton: String] = [
+    public static let buttonApiDescription: [RemoteButton: String] = [
         .up: "Up",
         .left: "Left",
         .right: "Right",

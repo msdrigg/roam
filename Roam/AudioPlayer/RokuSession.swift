@@ -1,10 +1,10 @@
 import AsyncAlgorithms
-import AVFoundation
+@preconcurrency import AVFoundation
 import Foundation
 import Network
 import os.log
 
-typealias WebSocketStream = AsyncThrowingStream<URLSessionWebSocketTask.Message, Error>
+typealias WebSocketStream = AsyncThrowingStream<URLSessionWebSocketTask.Message, any Error>
 
 private let logger = Logger(
     subsystem: Bundle.main.bundleIdentifier!,
@@ -21,7 +21,7 @@ let globalHugeFixedVDLYMS: UInt32 = 1200
 
 enum HeadphonesModeError: Error, LocalizedError {
     case badURL
-    case AudioStreamingTimeout
+    case audioStreamingTimeout
 }
 
 func listenContinually(ecpSession: ECPSession, location: String, rtcpPort: UInt16?) async throws {
@@ -81,7 +81,7 @@ func listenContinually(ecpSession: ECPSession, location: String, rtcpPort: UInt1
 }
 
 actor RTPSession {
-    private static let logger = Logger(
+    private nonisolated static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier!,
         category: String(describing: RTPSession.self)
     )
@@ -101,7 +101,7 @@ actor RTPSession {
     let remoteRtcpConnection: NWConnection
 
     enum RTPError: Error, LocalizedError {
-        case BadRTCPPacket
+        case badRTCPPacket
     }
 
     init(localRTPPort: UInt16, localRTCPPort: UInt16, remoteRTCPPort: UInt16, remoteRTCPAddress: String) throws {
@@ -132,8 +132,8 @@ actor RTPSession {
 
         remoteRtcpConnection.start(queue: .global())
 
-        rtpStream = AsyncThrowingBufferedChannel<RtpPacket, Error>()
-        rtcpStream = AsyncThrowingBufferedChannel<RtcpPacket, Error>()
+        rtpStream = AsyncThrowingBufferedChannel<RtpPacket, any Error>()
+        rtcpStream = AsyncThrowingBufferedChannel<RtcpPacket, any Error>()
         Task {
             await startRtcpStream()
             await startRtpStream()
@@ -365,7 +365,7 @@ actor RTPSession {
 
         for try await packet in rtcpStream {
             switch packet {
-            case .appSpecific(.ncli(_)):
+            case .appSpecific(.ncli):
                 Self.logger.info("Got ncli packet from rtcp as expected")
                 return
             default:
@@ -503,19 +503,21 @@ actor RTPSession {
 //                    
 //                    if let lastTimer, -lastTimer.timeIntervalSinceNow > 8 {
 //                        Self.logger.warning("Stopping audio because last packet received \(lastTimer) seconds ago")
-//                        throw HeadphonesModeError.AudioStreamingTimeout
+//                        throw HeadphonesModeError.audioStreamingTimeout
 //                    }
 //                }
                 for await _ in AsyncTimerSequence.repeating(every: .milliseconds(10), tolerance: .microseconds(10)) {
                     Task {
                         if let lrt = await rtpAudioPlayer.lastRender() {
-                            if let (pcmBuffer, audioTime) = await decoder.nextPacket(atTime: lrt) {
+                            if let returns = await decoder.nextPacket(atTime: consume lrt) {
+                                nonisolated(unsafe) let pcmBuffer = returns.0
+                                nonisolated(unsafe) let audioTime = returns.1
+
                                 await rtpAudioPlayer.scheduleAudioBytes(buffer: pcmBuffer, atTime: audioTime)
                             }
                         }
                     }
                 }
-
             }
 
             taskGroup.addTask {
@@ -532,7 +534,7 @@ actor RTPSession {
                     }
                 }
 
-                if let stream = LatencyListener().events {
+                if let stream = await LatencyListener().events {
                     for await latency in stream {
                         Self.logger.error("New latency event \(latency)")
                         for await _ in AsyncTimerSequence.repeating(every: .milliseconds(200)) {

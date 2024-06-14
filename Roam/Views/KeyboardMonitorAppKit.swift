@@ -85,14 +85,14 @@
                             return
                         }
                     }
-                    
+
                     onKeyPress(ke)
                     return
                 }
-                
+
                 super.keyDown(with: event)
             }
-            
+
             override func performKeyEquivalent(with event: NSEvent) -> Bool {
                 if !captureShortcuts {
                     return false
@@ -101,7 +101,7 @@
                     onKeyPress(ke)
                     return true
                 }
-                
+
                 return false
             }
 
@@ -125,8 +125,10 @@
             }
 
             deinit {
-                for token in observerTokens {
-                    NotificationCenter.default.removeObserver(token)
+                DispatchQueue.main.async{
+                    for token in self.observerTokens {
+                        NotificationCenter.default.removeObserver(token)
+                    }
                 }
             }
 
@@ -140,7 +142,9 @@
                     object: window,
                     queue: .main
                 ) { [weak self] _ in
-                    self?.windowDidBecomeMain()
+                    MainActor.assumeIsolated {
+                        self?.windowDidBecomeMain()
+                    }
                 }
                 observerTokens.append(token)
             }
@@ -155,7 +159,7 @@
         }
 
         let characters: String
-        if let regularCharacters = event.characters {
+        if let regularCharacters = event.characters(byApplyingModifiers: []) {
             characters = regularCharacters
         } else if let keyEquivalent = specialKeyMapping(forKeyCode: event.keyCode) {
             return KeyboardShortcut(keyEquivalent, modifiers: mapModifierFlags(event.modifierFlags))
@@ -166,7 +170,7 @@
         guard let firstCharacter = characters.first else { return nil }
 
         let ke = KeyEquivalent(firstCharacter)
-        
+
         return KeyboardShortcut(ke, modifiers: mapModifierFlags(event.modifierFlags))
     }
 
@@ -208,12 +212,7 @@
         if flags.contains(.capsLock) {
             modifiers.insert(.capsLock)
         }
-        if flags.contains(.function) {
-            modifiers.insert(.function)
-        }
 
         return modifiers
     }
-
-
 #endif

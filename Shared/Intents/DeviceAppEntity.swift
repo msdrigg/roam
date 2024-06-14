@@ -4,7 +4,7 @@ import SwiftData
 
 @available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
 public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Encodable {
-    public static var typeDisplayRepresentation = TypeDisplayRepresentation(name: LocalizedStringResource("Device", comment: "TV Device Selection Option"))
+    public static let typeDisplayRepresentation = TypeDisplayRepresentation(name: LocalizedStringResource("Device", comment: "TV Device Selection Option"))
 
     public struct DeviceAppEntityQuery: EntityQuery {
         public init() {}
@@ -26,7 +26,7 @@ public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Enc
         }
     }
 
-    public static var defaultQuery = DeviceAppEntityQuery()
+    public static let defaultQuery = DeviceAppEntityQuery()
 
     public var name: String
     public var location: String
@@ -78,7 +78,7 @@ public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Enc
         deletedAt = device.deletedAt
     }
 
-    public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(udn, forKey: .udn)
         try container.encode(name, forKey: .name)

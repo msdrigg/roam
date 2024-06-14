@@ -55,7 +55,7 @@ public final class AsyncSemaphore: @unchecked Sendable {
             case pending
 
             /// Waiting for a signal, with support for cancellation.
-            case suspendedUnlessCancelled(UnsafeContinuation<Void, Swift.Error>)
+            case suspendedUnlessCancelled(UnsafeContinuation<Void, any Error>)
 
             /// Waiting for a signal, with no support for cancellation.
             case suspended(UnsafeContinuation<Void, Never>)

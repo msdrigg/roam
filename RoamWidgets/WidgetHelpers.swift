@@ -15,12 +15,6 @@ struct SimpleRemoteControlProvider: AppIntentTimelineProvider {
     typealias Intent = DeviceChoiceIntent
     typealias Entry = DeviceChoiceTimelineEntity
 
-    private let modelContainer: ModelContainer
-
-    init() {
-        modelContainer = getSharedModelContainer()
-    }
-
     func recommendations() -> [AppIntentRecommendation<DeviceChoiceIntent>] {
         [
             AppIntentRecommendation(intent: DeviceChoiceIntent(), description: Text("Control your Roku!", comment: "Siri spotlight recommendation")),
@@ -35,7 +29,7 @@ struct SimpleRemoteControlProvider: AppIntentTimelineProvider {
         if targetDevice == nil {
             targetDevice = await dataHandler.fetchSelectedDeviceAppEntity()
         }
-        
+
         let apps: [AppLinkAppEntity] = if let udn = targetDevice?.udn {
             (try? await dataHandler.appEntities(deviceUid: udn)) ?? []
         } else {
@@ -75,12 +69,6 @@ struct AppChoiceRemoteControlProvider: AppIntentTimelineProvider {
     typealias Intent = DeviceAndAppChoiceIntent
     typealias Entry = DeviceChoiceTimelineEntity
 
-    private let modelContainer: ModelContainer
-
-    init() {
-        modelContainer = getSharedModelContainer()
-    }
-
     func recommendations() -> [AppIntentRecommendation<DeviceAndAppChoiceIntent>] {
         [
             AppIntentRecommendation(intent: DeviceAndAppChoiceIntent(), description: Text("Control your Roku!", comment: "Siri spotlight recommendation")),
@@ -95,7 +83,7 @@ struct AppChoiceRemoteControlProvider: AppIntentTimelineProvider {
         if targetDevice == nil {
             targetDevice = await dataHandler.fetchSelectedDeviceAppEntity()
         }
-        
+
         var apps: [AppLinkAppEntity] = []
         if let udn = targetDevice?.udn {
             var loadedApps = (try? await dataHandler.appEntities(deviceUid: udn)) ?? []

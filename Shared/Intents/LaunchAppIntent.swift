@@ -9,8 +9,8 @@ import Intents
     {
         public static let intentClassName = "LaunchAppIntent"
 
-        public static var title: LocalizedStringResource = "Launch App"
-        static var description = IntentDescription(LocalizedStringResource("Launch app on the device", comment: "Description on a siri shortcut"))
+        public static let title: LocalizedStringResource = "Launch App"
+        static let description = IntentDescription(LocalizedStringResource("Launch app on the device", comment: "Description on a siri shortcut"))
 
         @Parameter(title: LocalizedStringResource("Device", comment: "Description on a configuration field"))
         public var device: DeviceAppEntity?

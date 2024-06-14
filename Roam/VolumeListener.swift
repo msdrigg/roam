@@ -14,7 +14,7 @@
     }
 
     actor VolumeListener {
-        private static let logger = Logger(
+        private nonisolated static let logger = Logger(
             subsystem: Bundle.main.bundleIdentifier!,
             category: String(describing: VolumeListener.self)
         )

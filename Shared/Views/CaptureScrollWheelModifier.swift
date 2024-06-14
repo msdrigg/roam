@@ -33,7 +33,7 @@
                     super.scrollWheel(with: event)
                     return
                 }
-                
+
                 if let cgEvent = event.cgEvent?.copy() {
                     cgEvent.setDoubleValueField(.scrollWheelEventDeltaAxis2, value: Double(event.scrollingDeltaY / 10))
                     cgEvent.setDoubleValueField(.scrollWheelEventDeltaAxis1, value: Double(0))

@@ -167,5 +167,9 @@
     "CFBundleName": "Roam",
     "NSHumanReadableCopyright": "Bản quyền 2024 Scott Driggers",
     "NSLocalNetworkUsageDescription": "Roam sử dụng mạng cục bộ để khám phá và điều khiển Roku TV của bạn",
-    "NSUserNotificationUsageDescription": "Roam có thể thông báo cho bạn khi nhà phát triển trả lời tin nhắn của bạn"
+    "NSUserNotificationUsageDescription": "Roam có thể thông báo cho bạn khi nhà phát triển trả lời tin nhắn của bạn",
+    "Send the message": "Gửi tin nhắn",
+    "Refresh devices": "Làm mới thiết bị",
+    "Click on a row below to change the shortcut, or right click it to reset": "Nhấp vào một hàng bên dưới để thay đổi phím tắt, hoặc nhấp chuột phải để đặt lại",
+    "Tap a row below to change the shortcut, or swipe to reset": "Nhấn vào một hàng bên dưới để thay đổi phím tắt, hoặc vuốt để đặt lại"
 }

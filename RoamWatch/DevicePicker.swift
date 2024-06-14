@@ -10,12 +10,11 @@ import os
 import SwiftUI
 
 struct DevicePicker: View {
-    private static let logger = Logger(
+    private nonisolated static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier!,
         category: String(describing: DevicePicker.self)
     )
 
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.createDataHandler) private var createDataHandler
 
     let devices: [Device]
@@ -42,27 +41,27 @@ struct DevicePicker: View {
                                     dev.id == listItemDevice.id
                                 }) {
                                     Self.logger.debug("Setting last selected at")
-                                    chosenDevice.lastSelectedAt = Date.now
-                                }
-                                do {
-                                    try modelContext.save()
-                                } catch {
-                                    Self.logger.error("Error saving device selection: \(error)")
+                                    let createDataHandler = createDataHandler
+                                    let id = chosenDevice.persistentModelID
+                                    Task.detached {
+                                        await createDataHandler()?.setSelectedDevice(id)
+                                    }
                                 }
                                 showingPicker = false
-                            }) {
+                            }, label: {
                                 if listItemDevice.id == device?.id {
                                     Label(listItemDevice.name, systemImage: "checkmark.circle.fill")
                                         .tag(listItemDevice as Device?)
                                 } else {
                                     Label(listItemDevice.name, systemImage: "").tag(listItemDevice as Device?)
                                 }
-                            }
+                            })
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
+                                    let pid = listItemDevice.persistentModelID
                                     Task.detached {
                                         do {
-                                            try await createDataHandler()?.delete(listItemDevice.persistentModelID)
+                                            try await createDataHandler()?.delete(pid)
                                         } catch {
                                             Self.logger.error("Error deleting device \(error)")
                                         }
@@ -77,15 +76,16 @@ struct DevicePicker: View {
                             )
                         }
                         .onDelete { indexSet in
-                            Task.detached {
-                                do {
-                                    for index in indexSet {
-                                        if let model = devices[safe: index] {
-                                            try await createDataHandler()?.delete(model.persistentModelID)
+                            for index in indexSet {
+                                if let model = devices[safe: index] {
+                                    let pid = model.persistentModelID
+                                    Task.detached {
+                                        do {
+                                            try await createDataHandler()?.delete(pid)
+                                        } catch {
+                                            Self.logger.error("Error deleting device \(error)")
                                         }
                                     }
-                                } catch {
-                                    Self.logger.error("Error deleting device \(error)")
                                 }
                             }
                         }

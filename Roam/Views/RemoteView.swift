@@ -8,6 +8,10 @@ import SwiftData
 import SwiftUI
 import Foundation
 
+#if os(iOS) && !APPCLIP
+import WatchConnectivity
+#endif
+
 #if os(macOS) || os(visionOS)
     let globalButtonWidth: CGFloat = 44
     let globalButtonHeight: CGFloat = 36
@@ -51,13 +55,17 @@ private let messageFetchDescriptor: FetchDescriptor<Message> = {
     return fd
 }()
 
+enum KeyboardFocus {
+    case entry
+    case monitor
+}
+
 struct RemoteView: View {
-    private static let logger = Logger(
+    private nonisolated static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier!,
         category: String(describing: RemoteView.self)
     )
 
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) var scenePhase
     #if !os(tvOS)
     @Environment(\.openWindow) var openWindow
@@ -80,13 +88,19 @@ struct RemoteView: View {
     @State private var errorTrigger: Int = 0
     @State private var ecpSession: ECPSession?
     @StateObject private var networkMonitor = NetworkMonitor()
+    @AllCustomKeyboardShortcuts private var allKeyboardShortcuts: [CustomKeyboardShortcut]
+
     var headphonesModeDisabled: Bool {
         !(selectedDevice?.supportsDatagram ?? true)
     }
 
     var hideUIForKeyboardEntry: Bool {
         #if os(iOS)
+        if UIDevice.current.userInterfaceIdiom  == .pad {
+            return false
+        } else {
             return showKeyboardEntry
+        }
         #else
             return false
         #endif
@@ -96,6 +110,8 @@ struct RemoteView: View {
     @AppStorage(UserDefaultKeys.shouldControlVolumeWithHWButtons) private var controlVolumeWithHWButtons: Bool = true
 
     @Environment(\.verticalSizeClass) var verticalSizeClass
+
+    @FocusState var focusKeyboardMonitor: KeyboardFocus?
 
     private var appLinkRows: Int {
         #if os(macOS) || os(tvOS)
@@ -114,7 +130,7 @@ struct RemoteView: View {
     #endif
 
     private var selectedDevice: Device? {
-        if (manuallySelectedDevice != nil && manuallySelectedDevice?.deletedAt == nil) {
+        if manuallySelectedDevice != nil && manuallySelectedDevice?.deletedAt == nil {
             manuallySelectedDevice
         } else {
             devices.filter{
@@ -136,24 +152,20 @@ struct RemoteView: View {
     @State var lastVolumeChangeFromTv: Bool = false
 
     private struct IsHorizontalKey: PreferenceKey {
-        static var defaultValue: Bool = false
+        static let defaultValue: Bool = false
         static func reduce(value: inout Bool, nextValue: () -> Bool) {
             value = nextValue()
         }
     }
 
     private struct IsSmallWidth: PreferenceKey {
-        static var defaultValue: Bool = false
+        static let  defaultValue: Bool = false
         static func reduce(value: inout Bool, nextValue: () -> Bool) {
             value = nextValue()
         }
     }
 
     @Namespace var animation
-
-    var dataHandler: DataHandler {
-        DataHandler(modelContainer: modelContext.container)
-    }
 
     var deviceStatusColor: Color {
         selectedDevice?.isOnline() ?? false ? Color.green : Color.secondary
@@ -215,36 +227,53 @@ struct RemoteView: View {
         } else {
             SettingsNavigationWrapper(path: $appDelegate.navigationPath) {
                 remotePage
+                    .task {
+                        // Hack to make sure we don't get ina badk focus state :/
+                        focusKeyboardMonitor = .monitor
+                        while !Task.isCancelled {
+                            try? await Task.sleep(duration: 1)
+
+                            if !showKeyboardEntry {
+                                focusKeyboardMonitor = .monitor
+                            }
+                        }
+                    }
+                    .defaultFocus($focusKeyboardMonitor, .monitor, priority: .userInitiated)
+                    .onChange(of: focusKeyboardMonitor) {
+                        if focusKeyboardMonitor == nil && !showKeyboardEntry {
+                            print("Setting focus early")
+                            focusKeyboardMonitor = .monitor
+                        }
+                        if !showKeyboardEntry {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                                if !showKeyboardEntry {
+                                    focusKeyboardMonitor = .monitor
+                                }
+                            }
+                        }
+                    }
+                    .onChange(of: showKeyboardEntry) {
+                        if !showKeyboardEntry {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                                if !showKeyboardEntry {
+                                    focusKeyboardMonitor = .monitor
+                                }
+                            }
+                        }
+                    }
             }
             .task {
                 while true {
                     if Task.isCancelled {
                         return
                     }
-                    Self.logger.info("Refreshing messages")
-                    var descriptor = FetchDescriptor<Message>(
-                        predicate: #Predicate {
-                            $0.fetchedBackend == true
-                        },
-                        sortBy: [SortDescriptor(\.id, order: .reverse)]
-                    )
-                    descriptor.fetchLimit = 1
 
-                    let lastMessage = try? modelContext.fetch(descriptor).last
-                    let lastMessageId = lastMessage?.id
-                    Self.logger.info("Refreshing messages with last message \(String(describing: lastMessage?.id))")
-                    if lastMessage != nil {
-                        let createDataHandler = createDataHandler
-                        Task.detached {
-                            if let results = await createDataHandler()?.refreshMessages(
-                                latestMessageId: lastMessageId,
-                                viewed: false
-                            ) {
-                                Self.logger.info("Sleeping for an hour after getting \(results) messages")
-                            }
+                    let createDataHandler = createDataHandler
+                    Task.detached {
+                        guard let ownedDataHandler = await createDataHandler() else {
+                            return
                         }
-                    } else {
-                        Self.logger.info("Not refreshing messages because no lastMessageId")
+                        await ownedDataHandler.refreshMessagesIfExpectingNewMessages()
                     }
                     try? await Task.sleep(nanoseconds: 1000 * 1000 * 1000 * 3600)
                 }
@@ -253,10 +282,10 @@ struct RemoteView: View {
             #if os(iOS) && !APPCLIP
             .task(id: devices.count, priority: .background) {
                     // Send devices to connected watch
-                    WatchConnectivity.shared.transferDevices(devices: devices.map { $0.toAppEntity() })
+                    WatchConnectivity.shared.transferDevices(WCSession.default, devices: devices.map { $0.toAppEntity() })
 
                     for await _ in AsyncTimerSequence.repeating(every: .seconds(60 * 10)) {
-                        WatchConnectivity.shared.transferDevices(devices: devices.map { $0.toAppEntity() })
+                        WatchConnectivity.shared.transferDevices(WCSession.default, devices: devices.map { $0.toAppEntity() })
                     }
                 }
             #endif
@@ -323,7 +352,7 @@ struct RemoteView: View {
                                 )
                             }
                             defer {
-                                if (!task.isCancelled) {
+                                if !task.isCancelled {
                                     task.cancel()
                                 }
                             }
@@ -375,6 +404,11 @@ struct RemoteView: View {
                                     keyboardLeaving = showKeyboardEntry
                                     withAnimation {
                                         showKeyboardEntry = !showKeyboardEntry
+                                        if showKeyboardEntry {
+                                            focusKeyboardMonitor = .entry
+                                        } else {
+                                            focusKeyboardMonitor = .monitor
+                                        }
                                     }
                                 }, label: {
                                     Label("Keyboard", systemImage: "keyboard")
@@ -399,26 +433,40 @@ struct RemoteView: View {
                             }
                             .focusSection()
                         }
-
                     #endif
 
-                    if verticalSizeClass == .compact, !hideUIForKeyboardEntry {
-                        if unreadMessages.count > 0 {
-                            NotificationBanner(message: LocalizedStringResource("The developer chatted you back", comment: "Notification indicator that there was is message response waiting to be read"), onClick: {
-                                #if os(macOS)
-                                    openWindow(id: "messages")
-                                #else
-                                    appDelegate.navigationPath.append(NavigationDestination.messageDestination)
-                                #endif
-                            }, level: .info)
-                                .offset(y: -20)
-                                .padding(.bottom, -16)
-                        }
-                        networkConnectivityBanner
-                            .offset(y: -20)
-                            .padding(.bottom, -16)
+                    #if os(macOS) || os(visionOS)
+                    HStack(alignment: .center) {
+                        Spacer()
+                            .layoutPriority(1)
+                        DevicePicker(
+                            devices: devices,
+                            device: Binding(get: {
+                                selectedDevice
+                            }, set: {
+                                manuallySelectedDevice = $0
+                            })
+                        )
+                        .font(.body)
+                        .frame(idealWidth: 100, maxWidth: 350)
+                        .buttonStyle(.borderless)
+                        .menuStyle(.button)
+                        #if os(macOS)
+                        .hoverHighlight()
+                        #endif
+                        Spacer()
+                            .layoutPriority(1)
                     }
-                    
+                    #endif
+
+                    if isHorizontal {
+                        horizontalBody()
+                            .disabled(selectedDevice == nil)
+                    } else {
+                        verticalBody()
+                            .disabled(selectedDevice == nil)
+                    }
+
 #if !APPCLIP
                     if selectedDevice == nil {
                             #if os(macOS)
@@ -429,7 +477,6 @@ struct RemoteView: View {
                                 }
                                 .buttonStyle(.borderedProminent)
                                 .labelStyle(.titleAndIcon)
-                                .padding(.vertical, 8)
 
                             #else
                                 NavigationLink(value: NavigationDestination.settingsDestination(.global)) {
@@ -438,45 +485,32 @@ struct RemoteView: View {
                                 }
                                 .buttonStyle(.borderedProminent)
                                 .labelStyle(.titleAndIcon)
-                                .padding(.vertical, 8)
-                                .padding(.top, isHorizontal ? 30 : 0)
                             #endif
                     }
 #endif
 
-
-                    if isHorizontal {
-                        horizontalBody()
-                            .disabled(selectedDevice == nil)
-                    } else {
-                        verticalBody()
-                            .disabled(selectedDevice == nil)
-                    }
-
                     if hideUIForKeyboardEntry {
                         Spacer()
+                        Spacer()
+                        Spacer()
+                        Spacer()
                     } else {
-                        if verticalSizeClass != .compact {
-                            if unreadMessages.count > 0 {
-                                NotificationBanner(message: LocalizedStringResource("The developer chatted you back", comment: "Notification indicator that there was is message response waiting to be read"), onClick: {
+                        if unreadMessages.count > 0 {
+                            // swiftlint:disable:next line_length
+                            NotificationBanner(message: LocalizedStringResource("The developer chatted you back", comment: "Notification indicator that there was is message response waiting to be read"), onClick: {
 #if os(macOS)
-                                    openWindow(id: "messages")
+                                openWindow(id: "messages")
 #else
-                                    appDelegate.navigationPath.append(NavigationDestination.messageDestination)
+                                appDelegate.navigationPath.append(NavigationDestination.messageDestination)
 #endif
-                                }, level: .info)
-                            }
-                            networkConnectivityBanner
-                            Spacer().frame(maxHeight: 10)
+                            }, level: .info)
                         }
-#if APPCLIP
-                        if selectedDevice == nil {
-                            NotificationBanner(message: LocalizedStringResource("Scanning for devices...", comment: "Notification indicator that devices are getting scanned for"), level: .info)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 8)
-                                .padding(.bottom, 10)
-                        }
-#endif
+                        networkConnectivityBanner
+                        Spacer().frame(maxHeight: 10)
+                    }
+                    if selectedDevice == nil {
+                        NotificationBanner(message: LocalizedStringResource("Scanning for devices...", comment: "Notification indicator that devices are getting scanned for"), level: .info)
+                            .frame(maxWidth: .infinity)
                     }
                 }
                 Spacer()
@@ -511,7 +545,6 @@ struct RemoteView: View {
                                     withAnimation {
                                         showKeyboardEntry = false
                                     }
-
                                 }, label: {
                                     ZStack {
                                         Rectangle().foregroundColor(.clear)
@@ -525,12 +558,17 @@ struct RemoteView: View {
 
                                 KeyboardEntry(
                                     str: $keyboardEntryText,
-                                    showing: $showKeyboardEntry,
+                                    showing: Binding<Bool>(get: {
+                                        showKeyboardEntry
+                                    }, set: { newVal in
+                                        showKeyboardEntry = newVal
+                                    }),
                                     onKeyPress: { char in
                                         pressKey(char)
                                     },
                                     leaving: keyboardLeaving
                                 )
+                                .focused($focusKeyboardMonitor, equals: .entry)
                                 .padding(.bottom, 10)
                                 .padding(.horizontal, 10)
                                 .zIndex(1)
@@ -545,66 +583,104 @@ struct RemoteView: View {
             }
             #endif
             .padding(.horizontal, 20)
+#if os(macOS) || os(visionOS)
+            .applyBuilder {
+                if #available(macOS 15.0, *) {
+                    $0
+                        .padding(.top, 10)
+                } else {
+                    $0
+                        .padding(.top, 20)
+                }
+            }
+#else
             .padding(.top, 20)
+            #endif
             .padding(.bottom, 10)
             #if !os(tvOS)
-                .toolbar {
-                    #if !os(macOS)
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            Button(action: {
-                                keyboardLeaving = showKeyboardEntry
-                                withAnimation {
-                                    showKeyboardEntry = !showKeyboardEntry
-                                }
-                            }) {
-                                Label(String(localized: "Keyboard", comment: "Label on a button to open the keyboard"), systemImage: "keyboard")
-                                    .controlSize(.large)
+            .toolbar(id: "remote") {
+                #if !os(macOS) && !os(visionOS)
+                    ToolbarItem(id: "keyboard", placement: .navigationBarLeading) {
+                        Button(action: {
+                            keyboardLeaving = showKeyboardEntry
+                            withAnimation {
+                                showKeyboardEntry = !showKeyboardEntry
                             }
-                            .labelStyle(.iconOnly)
-                            .buttonStyle(.borderless)
-                            .disabled(selectedDevice == nil)
-                            .font(.headline)
+                        }, label: {
+                            Label(String(localized: "Keyboard", comment: "Label on a button to open the keyboard"), systemImage: "keyboard")
+                        })
+                        .focusable(true, interactions: [.activate, .edit])
+                        .focused($focusKeyboardMonitor, equals: .monitor)
+                        .onKeyPress { ke in
+                            for shortcut in allKeyboardShortcuts {
+                                if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
+                                    let title = shortcut.title
+                                    Self.logger.info("Not handling key press because found shortcut with title \(title)")
+                                    if let rb = title.matchingRemoteButton {
+                                        pressButton(rb)
+                                        return .handled
+                                    }
+
+                                    if title == .chatWithDeveloper{
+                                        appDelegate.navigationPath.append(.messageDestination)
+                                    } else if title == .keyboardShortcuts {
+                                        appDelegate.navigationPath.append(.keyboardShortcutDestinaion)
+                                    } else {
+                                        Self.logger.warning("Unknown function for keyboard shortcut \(title)")
+                                    }
+
+                                    return .handled
+                                }
+                            }
+
+                            pressKey(ke.key)
+                            return .handled
                         }
-                    #endif
-                    #if os(macOS)
-                        ToolbarItem(placement: .navigation) {
-                            DevicePicker(
-                                devices: devices,
-                                device: Binding(get: {
-                                    selectedDevice
-                                }, set: {
-                                    manuallySelectedDevice = $0
-                                })
-                            )
-                            .font(.body)
-                        }
-                    #else
-                        ToolbarItem(placement: .topBarTrailing) {
-                            DevicePicker(
-                                devices: devices,
-                                device: Binding(get: {
-                                    selectedDevice
-                                }, set: {
-                                    manuallySelectedDevice = $0
-                                })
-                            )
-                            .font(.body)
-                        }
-                    #endif
+                        .controlSize(.large)
+                        .font(.headline)
+                        .labelStyle(.iconOnly)
+                        .buttonStyle(.borderless)
+                        .disabled(selectedDevice == nil)
+                        .font(.headline)
+                    }
+                    ToolbarItem(id: "device-picker", placement: .topBarTrailing) {
+                        DevicePicker(
+                            devices: devices,
+                            device: Binding(get: {
+                                selectedDevice
+                            }, set: {
+                                manuallySelectedDevice = $0
+                            })
+                        )
+                        .font(.body)
+                    }
+                #else
+                ToolbarItem(id: "device-picker", placement: .navigation) {
+                    if #available(macOS 15.0, *) {
+                        EmptyView()
+                    } else {
+                        DevicePicker(
+                            devices: devices,
+                            device: Binding(get: {
+                                selectedDevice
+                            }, set: {
+                                manuallySelectedDevice = $0
+                            })
+                        )
+                        .font(.body)
+                    }
                 }
+                #endif
+            }
             #endif
                 .onAppear {
-                    modelContext.processPendingChanges()
-                }
-                .onAppear {
-                    let modelContainer = modelContext.container
-                    scanningActor = DeviceDiscoveryActor(modelContainer: modelContainer)
+                    scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer())
                 }
             #if !os(visionOS)
                 .sensoryFeedback(.error, trigger: errorTrigger)
             #endif
                 .onChange(of: scenePhase) { _, newPhase in
-                    inBackground = newPhase != .active
+                    inBackground = newPhase != ScenePhase.active
                 }
             #if os(macOS)
                 .onChange(of: appDelegate.messagingWindowOpenTrigger) { _, new in
@@ -616,22 +692,6 @@ struct RemoteView: View {
         }
         #if os(macOS)
         .onKeyDown({ key in pressKey(key.key) }, enabled: !showKeyboardEntry)
-//        #elseif !os(tvOS)
-//        .onKeyDown({ key in pressKey(key.key) }, onKeyboardShortcut: { keyboardShortcut in
-//            if let rb = keyboardShortcut.matchingRemoteButton {
-//                pressButton(rb)
-//                return
-//            }
-//            
-//            if keyboardShortcut == .chatWithDeveloper {
-//                appDelegate.navigationPath.append(.messageDestination)
-//            } else if keyboardShortcut == .keyboardShortcuts {
-//                appDelegate.navigationPath.append(.keyboardShortcutDestinaion)
-//            } else {
-//                Self.logger.warning("Unknown function for keyboard shortcut \(keyboardShortcut)")
-//            }
-//        }, enabled: !showKeyboardEntry)
-//        .focusable()
         #endif
         .font(.title2)
         .fontDesign(.rounded)
@@ -685,6 +745,7 @@ struct RemoteView: View {
                 return
             }
 
+            let createDataHandler = createDataHandler
             Task.detached {
                 let udn = queryParams?.first(where: { $0.name == "udn" })?.value ?? "roam:newdevice-\(UUID().uuidString)"
                 await createDataHandler()?.addOrReplaceDevice(location: location, friendlyDeviceName: name, udn: udn)
@@ -737,7 +798,7 @@ struct RemoteView: View {
                 Spacer()
 
                 VStack(alignment: .center) {
-                    
+
                     // Row with Back and Home buttons
                     TopBar(pressCounter: buttonPressCount, action: pressButton)
                         .matchedGeometryEffect(id: "topBar", in: animation)
@@ -772,7 +833,7 @@ struct RemoteView: View {
             #endif
             .frame(maxWidth: 600)
 
-            if !showKeyboardEntry {
+            if !showKeyboardEntry && selectedDevice != nil {
                 Spacer()
                 AppLinksView(deviceId: selectedDevice?.udn, rows: appLinkRows, handleOpenApp: launchApp)
                     .matchedGeometryEffect(id: "appLinksBar", in: animation)
@@ -873,7 +934,7 @@ struct RemoteView: View {
                 .matchedGeometryEffect(id: "buttonGrid", in: animation)
             }
 
-            if !showKeyboardEntry {
+            if !showKeyboardEntry && selectedDevice != nil {
                 Spacer()
                 AppLinksView(deviceId: selectedDevice?.udn, rows: appLinkRows, handleOpenApp: launchApp)
                     .matchedGeometryEffect(id: "appLinksBar", in: animation)
@@ -901,7 +962,7 @@ struct RemoteView: View {
             }
         }
         Task.detached {
-            await DataHandler(modelContainer: self.modelContext.container).setSelectedApp(app.modelId)
+            await createDataHandler()?.setSelectedApp(app.modelId)
         }
     }
 

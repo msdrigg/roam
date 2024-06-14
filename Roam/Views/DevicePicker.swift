@@ -7,16 +7,15 @@ import SwiftUI
     let circleIconSize: CGFloat = 16
 #else
     let globalBaselineOffset: CGFloat = 2
-    let circleIconSize: CGFloat = 8
+    let circleIconSize: CGFloat = 10
 #endif
 
 struct DevicePicker: View {
-    private static let logger = Logger(
+    private nonisolated static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier!,
         category: String(describing: DevicePicker.self)
     )
 
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.openURL) private var openURL
     @Environment(\.createDataHandler) private var createDataHandler
 
@@ -77,9 +76,11 @@ struct DevicePicker: View {
                     Text(Image(systemName: "circle.fill")).font(.system(size: circleIconSize))
                         .foregroundColor(deviceStatusColor)
                         .baselineOffset(globalBaselineOffset) +
-                    Text(" ", comment: "Empty space").font(.body) +
-                        Text(device.name).font(.body)
+                    Text("  ", comment: "Empty space") +
+                    Text(device.name) +
+                    Text("  ", comment: "Empty space")
                 }.multilineTextAlignment(.center)
+                    .font(.body)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: 180)

@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 
+// swiftlint:disable:next identifier_name
 func DataImage(from data: Data?, fallback: String) -> Image {
     if let data {
         #if os(macOS)

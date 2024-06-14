@@ -40,4 +40,3 @@ if __name__ == "__main__":
         seed_file_path = sys.argv[1]
         output_file_path = sys.argv[2]
         export_incomplete_translations(seed_file_path, output_file_path)
-

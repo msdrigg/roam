@@ -166,5 +166,9 @@
     "CFBundleName": "Roam",
     "NSHumanReadableCopyright": "Copyright 2024 Scott Driggers",
     "NSLocalNetworkUsageDescription": "Gumagamit ang Roam ng lokal na network upang matuklasan at kontrolin ang iyong Roku TV",
-    "NSUserNotificationUsageDescription": "Maaaring abisuhan ka ng Roam kapag tumugon ang developer sa iyong mensahe"
+    "NSUserNotificationUsageDescription": "Maaaring abisuhan ka ng Roam kapag tumugon ang developer sa iyong mensahe",
+    "Send the message": "Ipadala ang mensahe",
+    "Refresh devices": "I-refresh ang mga aparato",
+    "Click on a row below to change the shortcut, or right click it to reset": "I-click ang isang hilera sa ibaba upang baguhin ang shortcut, o i-right click ito upang i-reset",
+    "Tap a row below to change the shortcut, or swipe to reset": "Tapikin ang isang hilera sa ibaba upang baguhin ang shortcut, o mag-swipe upang i-reset"
 }

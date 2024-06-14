@@ -1,25 +1,23 @@
 #if os(iOS)
     import os.log
     import SwiftData
-    import WatchConnectivity
+    @preconcurrency import WatchConnectivity
 
-    class WatchConnectivity: NSObject, WCSessionDelegate {
-        private static let logger = Logger(
+    final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
+        private nonisolated static let logger = Logger(
             subsystem: Bundle.main.bundleIdentifier!,
             category: String(describing: WatchConnectivity.self)
         )
 
         static let shared = WatchConnectivity()
-        var session: WCSession?
-
         override init() {
             super.init()
 
             if WCSession.isSupported() {
                 WatchConnectivity.logger.info("Activating iOS WC Sender")
-                session = WCSession.default
-                session?.delegate = self
-                session?.activate()
+                let session = WCSession.default
+                session.delegate = self
+                session.activate()
             } else {
                 WatchConnectivity.logger.info("Cannot activate WC receiver because not supported")
             }
@@ -27,14 +25,12 @@
 
         func sessionReachabilityDidChange(_ session: WCSession) {
             WatchConnectivity.logger.info("WCSession reachability changed to \(session.isReachable)")
-            if self.session?.isReachable ?? false {
+            if session.isReachable {
                 Task {
                     do {
                         let container = getSharedModelContainer()
                         let devices = try await DataHandler(modelContainer: container).allDeviceEntities()
-                        DispatchQueue.main.async {
-                            self.transferDevices(devices: devices)
-                        }
+                        self.transferDevices(session, devices: devices)
                     } catch {
                         WatchConnectivity.logger.error("Error refreshing devices on session active: \(error)")
                     }
@@ -42,14 +38,14 @@
             }
         }
 
-        func session(_: WCSession, didReceiveMessage message: [String: Any]) {
+        func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
             WatchConnectivity.logger.info("WCSession got message from watch to \(message). Sending devices")
-            Task {
+            Task.detached {
                 do {
                     let container = getSharedModelContainer()
                     let devices = try await DataHandler(modelContainer: container).allDeviceEntities()
                     DispatchQueue.main.async {
-                        self.transferDevices(devices: devices)
+                        self.transferDevices(session, devices: devices)
                     }
                 } catch {
                     WatchConnectivity.logger.error("Error refreshing devices on session active: \(error)")
@@ -57,15 +53,9 @@
             }
         }
 
-        func transferDevices(devices: [DeviceAppEntity]) {
+        func transferDevices(_ session: WCSession, devices: [DeviceAppEntity]) {
             WatchConnectivity.logger
-                .info(
-                    "WCSession with activationState \(String(describing: self.session?.activationState.rawValue)) trying to send devices \(devices)"
-                )
-            guard let session else {
-                WatchConnectivity.logger.info("Not transfering devices because WCSession not initialized")
-                return
-            }
+                .info("WCSession with activationState \(session.activationState.rawValue) trying to send devices \(devices)")
             if session.activationState == .activated {
                 if devices.count == 0 {
                     WatchConnectivity.logger.info("Not transfering devices because devices is empty")
@@ -87,7 +77,7 @@
                 WatchConnectivity.logger.info("Transfering devices \(deviceMap)")
                 if session.outstandingUserInfoTransfers.count > 0 {
                     WatchConnectivity.logger.info("Cancelling ongoing transfer because we are creating a new one")
-                    self.session?.outstandingUserInfoTransfers.last?.cancel()
+                    session.outstandingUserInfoTransfers.last?.cancel()
                 }
                 do {
                     try session.updateApplicationContext(deviceMap)
@@ -110,13 +100,11 @@
                 session.transferUserInfo(deviceMap)
             } else {
                 WatchConnectivity.logger
-                    .info(
-                        "Not transfering devices activation state not activated: \(String(describing: self.session?.activationState.rawValue))"
-                    )
+                    .info("Not transfering devices activation state not activated: \(session.activationState.rawValue)")
             }
         }
 
-        func session(_: WCSession, activationDidCompleteWith _: WCSessionActivationState, error: Error?) {
+        func session(_ session: WCSession, activationDidCompleteWith _: WCSessionActivationState, error: (any Error)?) {
             if let error {
                 WatchConnectivity.logger.error("WCSession activated with error: \(error)")
                 Task {
@@ -130,7 +118,7 @@
                         let devices = try await DataHandler(modelContainer: container).allDeviceEntities()
 
                         DispatchQueue.main.async {
-                            self.transferDevices(devices: devices)
+                            self.transferDevices(session, devices: devices)
                         }
                     } catch {
                         WatchConnectivity.logger.error("Error refreshing devices on session active: \(error)")

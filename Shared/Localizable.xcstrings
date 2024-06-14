@@ -84,6 +84,9 @@
         }
       }
     },
+    "  " : {
+      "comment" : "Empty space"
+    },
     "%@" : {
       "comment" : "Translate directly as \"%@\"",
       "localizations" : {
@@ -334,7 +337,7 @@
       }
     },
     "About Roam" : {
-      "comment" : "Button to open the about page of the Roam app\nWindow title on the about page of the Roam app",
+      "comment" : "Button to open the about page of the Roam app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -581,6 +584,9 @@
           }
         }
       }
+    },
+    "App ${app} on ${device}" : {
+
     },
     "App 1" : {
       "comment" : "Configuration field title for selecting the first app",
@@ -915,7 +921,7 @@
       }
     },
     "App Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1247,7 +1253,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2325,6 +2331,9 @@
         }
       }
     },
+    "Click Ok on ${device}" : {
+
+    },
     "Click Ok on the device" : {
       "comment" : "Description for Ok intent",
       "localizations" : {
@@ -2404,6 +2413,89 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在设备上点击确定"
+          }
+        }
+      }
+    },
+    "Click on a row below to change the shortcut, or right click it to reset" : {
+      "comment" : "Caption on a keyboard shortcut panel",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "انقر على صف أدناه لتغيير الاختصار، أو انقر بزر الماوس الأيمن لإعادة التعيين"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klicken Sie auf eine Zeile unten, um die Verknüpfung zu ändern, oder klicken Sie mit der rechten Maustaste darauf, um sie zurückzusetzen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haga clic en una fila a continuación para cambiar el atajo, o haga clic derecho para restablecerlo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haga clic en una fila a continuación para cambiar el atajo, o haga clic derecho para restablecerlo"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I-click ang isang hilera sa ibaba upang baguhin ang shortcut, o i-right click ito upang i-reset"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cliquez sur une ligne ci-dessous pour changer le raccourci, ou faites un clic droit pour réinitialiser"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cliquez sur une ligne ci-dessous pour changer le raccourci, ou faites un clic droit pour réinitialiser"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fare clic su una riga in basso per cambiare il collegamento, o fare clic destro per reimpostarlo"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਸ਼ਾਰਟਕੱਟ ਬਦਲਣ ਲਈ ਹੇਠਾਂ ਇੱਕ ਕਤਾਰ 'ਤੇ ਕਲਿੱਕ ਕਰੋ, ਜਾਂ ਰੀਸੈਟ ਕਰਨ ਲਈ ਸੱਜੇ ਕਲਿੱਕ ਕਰੋ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clique em uma linha abaixo para alterar o atalho, ou clique com o botão direito para redefinir"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clique em uma linha abaixo para alterar o atalho, ou clique com o botão direito para redefinir"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nhấp vào một hàng bên dưới để thay đổi phím tắt, hoặc nhấp chuột phải để đặt lại"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击下面的行更改快捷方式，或右键单击以重置"
           }
         }
       }
@@ -2741,7 +2833,7 @@
       }
     },
     "Delete" : {
-      "comment" : "Label on a button to delete a device",
+      "comment" : "Label on a button to delete a device\nText on a button to delete the device",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4233,6 +4325,9 @@
           }
         }
       }
+    },
+    "Increase the volume on ${device}" : {
+
     },
     "Increase the volume on the device" : {
       "comment" : "Description for volume up intent",
@@ -6148,6 +6243,9 @@
           }
         }
       }
+    },
+    "Lower the volume on ${device}" : {
+
     },
     "Lower the volume on the device" : {
       "comment" : "Description for volume down intent",
@@ -8971,6 +9069,9 @@
         }
       }
     },
+    "Power on or off ${device}" : {
+
+    },
     "Power on or off the device" : {
       "comment" : "Description for power intent",
       "localizations" : {
@@ -9475,6 +9576,9 @@
         }
       }
     },
+    "Press ${button} on ${device}" : {
+
+    },
     "Press a button" : {
       "comment" : "Configuration title for a button press action",
       "localizations" : {
@@ -9886,6 +9990,92 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在 %@ 上按播放"
+          }
+        }
+      }
+    },
+    "Press play on ${device}" : {
+
+    },
+    "Refresh devices" : {
+      "comment" : "Button text to refresh the device list",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تحديث الأجهزة"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geräte aktualisieren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar dispositivos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar dispositivos"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I-refresh ang mga aparato"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiser les appareils"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiser les appareils"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiorna dispositivi"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਜੰਤਰਾਂ ਨੂੰ ਰੀਫ੍ਰੈਸ਼ ਕਰੋ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualizar dispositivos"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualizar dispositivos"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Làm mới thiết bị"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新设备"
           }
         }
       }
@@ -10471,6 +10661,12 @@
         }
       }
     },
+    "Roam Keyboard Shortcuts" : {
+
+    },
+    "Roam Messages" : {
+      "comment" : "Window header for the messages window"
+    },
     "roam-support@msd3.io" : {
       "comment" : "Support email (not localizable)",
       "localizations" : {
@@ -10887,7 +11083,7 @@
       }
     },
     "Scanning for devices..." : {
-      "comment" : "Indicator on a button showing devices are being scanned for on the network\nNotification indicator that devices are getting scanned for",
+      "comment" : "Notification indicator that devices are getting scanned for",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -11135,172 +11331,6 @@
         }
       }
     },
-    "Select a row below to change the shortcut, or right click it to reset the shortcut back to its original state" : {
-      "comment" : "Caption on a keyboard shortcut panel",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "حدد صفًا أدناه لتغيير الاختصار، أو انقر بزر الماوس الأيمن لإعادة تعيين الاختصار إلى حالته الأصلية"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wählen Sie eine Zeile unten aus, um die Verknüpfung zu ändern, oder klicken Sie mit der rechten Maustaste darauf, um die Verknüpfung in ihren ursprünglichen Zustand zurückzusetzen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecciona una fila a continuación para cambiar el atajo o haz clic derecho para restablecer el atajo a su estado original"
-          }
-        },
-        "es-419" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seleccione una fila a continuación para cambiar el atajo o haga clic derecho para restablecer el atajo a su estado original"
-          }
-        },
-        "fil" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pumili ng isang hilera sa ibaba upang baguhin ang shortcut, o i-right click ito upang i-reset ang shortcut pabalik sa orihinal na estado"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sélectionnez une ligne ci-dessous pour changer le raccourci, ou faites un clic droit pour le réinitialiser à son état d'origine"
-          }
-        },
-        "fr-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sélectionnez une ligne ci-dessous pour modifier le raccourci, ou cliquez dessus avec le bouton droit pour réinitialiser le raccourci à son état d'origine"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seleziona una riga qui sotto per cambiare la scorciatoia o fai clic con il pulsante destro del mouse per ripristinare la scorciatoia allo stato originale"
-          }
-        },
-        "pa" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ਸ਼ਾਰਟਕੱਟ ਨੂੰ ਬਦਲਣ ਲਈ ਹੇਠਾਂ ਦੀ ਲਾਈਨ ਚੁਣੋ, ਜਾਂ ਇਸਨੂੰ ਮੁੜ ਮੂਲ ਸਥਿਤੀ ਵਿੱਚ ਰੀਸੈਟ ਕਰਨ ਲਈ ਸੱਜੇ ਕਲਿੱਕ ਕਰੋ"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecione uma linha abaixo para alterar o atalho, ou clique com o botão direito para redefinir o atalho ao seu estado original"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecione uma linha abaixo para alterar o atalho, ou clique com o botão direito para redefinir o atalho para o estado original"
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chọn một hàng bên dưới để thay đổi phím tắt hoặc nhấp chuột phải để đặt lại phím tắt về trạng thái ban đầu"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择下面的行来更改快捷键，或右键单击它以将快捷键重置回原始状态"
-          }
-        }
-      }
-    },
-    "Select a row below to change the shortcut, or swipe to reset" : {
-      "comment" : "Caption on a keyboard shortcut panel",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "حدد صفًا أدناه لتغيير الاختصار، أو اسحب لإعادة تعيينه"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wählen Sie eine Zeile unten aus, um die Verknüpfung zu ändern, oder wischen Sie zum Zurücksetzen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecciona una fila a continuación para cambiar el atajo o desliza para restablecer"
-          }
-        },
-        "es-419" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seleccione una fila a continuación para cambiar el atajo o deslice para restablecer"
-          }
-        },
-        "fil" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pumili ng isang hilera sa ibaba upang baguhin ang shortcut, o i-swipe upang i-reset"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sélectionnez une ligne ci-dessous pour changer le raccourci, ou glissez pour réinitialiser"
-          }
-        },
-        "fr-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sélectionnez une ligne ci-dessous pour modifier le raccourci, ou faites glisser pour réinitialiser"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seleziona una riga qui sotto per cambiare la scorciatoia o scorri per ripristinare"
-          }
-        },
-        "pa" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ਸ਼ਾਰਟਕੱਟ ਨੂੰ ਬਦਲਣ ਲਈ ਹੇਠਾਂ ਦੀ ਲਾਈਨ ਚੁਣੋ, ਜਾਂ ਰੀਸੈਟ ਕਰਨ ਲਈ ਸਵਾਈਪ ਕਰੋ"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecione uma linha abaixo para alterar o atalho, ou deslize para redefinir"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecione uma linha abaixo para alterar o atalho, ou deslize para redefinir"
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chọn một hàng bên dưới để thay đổi phím tắt hoặc vuốt để đặt lại"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择下面的行来更改快捷键，或滑动重置"
-          }
-        }
-      }
-    },
     "Send" : {
       "comment" : "Label on a button to send a message",
       "localizations" : {
@@ -11380,6 +11410,89 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "发送"
+          }
+        }
+      }
+    },
+    "Send the message" : {
+      "comment" : "Help text on a button to send a chat message",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إرسال الرسالة"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nachricht senden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar el mensaje"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar el mensaje"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ipadala ang mensahe"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer le message"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer le message"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia il messaggio"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਸੁਨੇਹਾ ਭੇਜੋ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar a mensagem"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar a mensagem"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gửi tin nhắn"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送消息"
           }
         }
       }
@@ -12131,8 +12244,92 @@
         }
       }
     },
+    "Tap a row below to change the shortcut, or swipe to reset" : {
+      "comment" : "Caption on a keyboard shortcut panel",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "انقر على صف أدناه لتغيير الاختصار، أو اسحب لإعادة التعيين"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippen Sie auf eine Zeile unten, um die Verknüpfung zu ändern, oder wischen Sie, um sie zurückzusetzen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque una fila a continuación para cambiar el atajo, o deslice para restablecer"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque una fila a continuación para cambiar el atajo, o deslice para restablecer"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tapikin ang isang hilera sa ibaba upang baguhin ang shortcut, o mag-swipe upang i-reset"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tapez sur une ligne ci-dessous pour changer le raccourci, ou balayez pour réinitialiser"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tapez sur une ligne ci-dessous pour changer le raccourci, ou balayez pour réinitialiser"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca una riga in basso per cambiare il collegamento, o scorri per reimpostare"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਸ਼ਾਰਟਕੱਟ ਬਦਲਣ ਲਈ ਹੇਠਾਂ ਇੱਕ ਕਤਾਰ 'ਤੇ ਟੈਪ ਕਰੋ, ਜਾਂ ਰੀਸੈਟ ਕਰਨ ਲਈ ਸਵਾਈਪ ਕਰੋ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em uma linha abaixo para alterar o atalho, ou deslize para redefinir"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em uma linha abaixo para alterar o atalho, ou deslize para redefinir"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nhấn vào một hàng bên dưới để thay đổi phím tắt, hoặc vuốt để đặt lại"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点击下面的行更改快捷方式，或滑动以重置"
+          }
+        }
+      }
+    },
     "Test Badge!" : {
       "comment" : "Label for a badge",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -12629,6 +12826,9 @@
         }
       }
     },
+    "Toggle volume mute on ${device}" : {
+
+    },
     "TV App" : {
       "comment" : "TV App Selection option",
       "localizations" : {
@@ -13043,6 +13243,12 @@
           }
         }
       }
+    },
+    "Using this key as a keyboard shortcut without a command modifier (⌘) may not work because the operating system captures it first for in-app navigation" : {
+      "comment" : "Warning indicator underneath a section"
+    },
+    "Using this key as a keyboard shortcut without a command modifier (⌘) may not work on iPad if Full Keyboard Access is enabled. To disable Full Keyboard Access to into your iPad settings and navigate to Accessiblity -> Keyboard -> Full Keyboard Access" : {
+      "comment" : "Warning indicator underneath a section"
     },
     "Volume Down" : {
       "comment" : "Keyboard shortcut to turn the volume down\nRemote button to decrease volume\nSiri shortcut to turn the volume down",

@@ -110,7 +110,6 @@ async function checkAlerts(env: Env) {
 
 	console.log(`Found ${threads.length} active threads since ${latestMessageId}. Last Message Ids: ${threads.map(thread => thread.lastMessageId)}`);
 
-
 	let apnsKey: APNSAuthKey = {
 		keyId: env.APNS_KEY_ID,
 		teamId: env.APNS_TEAM_ID,
@@ -232,7 +231,6 @@ export class InternalDurableObject extends DurableObject {
 	}
 }
 
-
 export default {
 	async fetch(request, env, _ctx): Promise<Response> {
 		let pathSegments = new URL(request.url).pathname.split("/").filter(Boolean);
@@ -285,7 +283,6 @@ export default {
 
 			await sendMessage({ title, content }, { apnsToken, userId, installationInfo }, env, discordClient);
 
-
 			return new Response("OK", { status: 200 });
 		}
 
@@ -307,7 +304,6 @@ export default {
 					contentType: "application/json"
 				}
 			}, { apnsToken: null, userId }, env, discordClient);
-
 
 			return new Response("OK", { status: 200 });
 		}
@@ -331,4 +327,3 @@ const allowedMessages = new Set([0, 19, 20, 21]);
 function isHidden(message: DiscordMessage): boolean {
 	return !message.content || message.content.startsWith("!HiddenMessage") || message.content.startsWith(":ninja:") || !allowedMessages.has(message.type)
 }
-

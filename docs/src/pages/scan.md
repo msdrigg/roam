@@ -13,7 +13,6 @@ Don't want to download the app from the app store?
 
 -   Download the app clip here by opening this link on an iPhone or iPad in Safari and clicking the banner at the top of your screen
 
-
 ## Don't see the "Open App Clip" banner?
 
 -   **You must open this link in Safari for it to work**

@@ -2,12 +2,13 @@ import Network
 import OSLog
 import SwiftUI
 
+@MainActor
 class NetworkMonitor: ObservableObject {
     @Published var networkConnection: NetworkType = .local
     private let monitor: NWPathMonitor
     private let queue = DispatchQueue(label: "NetworkMonitor")
 
-    private static let logger = Logger(
+    private nonisolated static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier!,
         category: String(describing: NetworkMonitor.self)
     )
@@ -15,7 +16,7 @@ class NetworkMonitor: ObservableObject {
     init() {
         monitor = NWPathMonitor()
         monitor.pathUpdateHandler = { [weak self] path in
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
                 if path.status == .satisfied {
                     if path.usesInterfaceType(.wifi), !path.isExpensive {
                         self?.networkConnection = .local

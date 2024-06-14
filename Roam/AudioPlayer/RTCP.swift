@@ -113,7 +113,7 @@ enum RtcpPacket {
         }
 
         // First byte: Version, Padding and Subtype
-        let vPSt : UInt8 = (2 << 6) | (0 << 5) | subtypeData
+        let vPSt: UInt8 = (2 << 6) | (0 << 5) | subtypeData
         packet.append(vPSt)
 
         // Second byte: Packet Type

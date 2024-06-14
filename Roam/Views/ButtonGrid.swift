@@ -27,8 +27,12 @@ struct ButtonGrid: View {
                             Label(button.0, systemImage: button.1)
                                 .frame(width: globalButtonWidth, height: globalButtonHeight)
                         })
+                        #if os(macOS)
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color.secondary)
+                        #endif
                         .disabled(disabled.contains(button.2))
-                        .symbolEffect(.pulse, isActive: enabled.contains(button.2))
+                        .breatheEffect(enabled.contains(button.2))
                         .symbolEffect(.bounce, value: pressCounter(button.2))
                         #if !os(visionOS)
                             .sensoryFeedback(.impact, trigger: pressCounter(button.2))

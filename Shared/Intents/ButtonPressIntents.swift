@@ -7,8 +7,8 @@ import SwiftData
     public struct PlayIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigratedAppIntent, PredictableIntent {
         public static let intentClassName = "PlayIntent"
 
-        public static var title: LocalizedStringResource = LocalizedStringResource("Press play", comment: "Title for play intent")
-        public static var description = IntentDescription(LocalizedStringResource("Play or pause the media on the connected device", comment: "Description for play intent"))
+        public static let title: LocalizedStringResource = LocalizedStringResource("Press play", comment: "Title for play intent")
+        public static let description = IntentDescription(LocalizedStringResource("Play or pause the media on the connected device", comment: "Description for play intent"))
 
         public init() {}
 
@@ -37,8 +37,8 @@ import SwiftData
     public struct OkIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigratedAppIntent, PredictableIntent {
         public static let intentClassName = "OkIntent"
 
-        public static var title: LocalizedStringResource = LocalizedStringResource("Click Ok", comment: "Title for Ok intent")
-        public static var description = IntentDescription(LocalizedStringResource("Click Ok on the device", comment: "Description for Ok intent"))
+        public static let title: LocalizedStringResource = LocalizedStringResource("Click Ok", comment: "Title for Ok intent")
+        public static let description = IntentDescription(LocalizedStringResource("Click Ok on the device", comment: "Description for Ok intent"))
         public init() {}
 
         @Parameter(title: "Device")
@@ -68,8 +68,8 @@ import SwiftData
 
         public static let intentClassName = "MuteIntent"
 
-        public static var title: LocalizedStringResource = LocalizedStringResource("Toggle Mute", comment: "Title for mute intent")
-        public static var description = IntentDescription(LocalizedStringResource("Mute or unmute the device", comment: "Description for mute intent"))
+        public static let title: LocalizedStringResource = LocalizedStringResource("Toggle Mute", comment: "Title for mute intent")
+        public static let description = IntentDescription(LocalizedStringResource("Mute or unmute the device", comment: "Description for mute intent"))
         public init() {}
 
         @Parameter(title: "Device")
@@ -99,8 +99,8 @@ import SwiftData
     {
         public static let intentClassName = "VolumeUpIntent"
 
-        public static var title: LocalizedStringResource = LocalizedStringResource("Increase volume", comment: "Title for volume up intent")
-        public static var description = IntentDescription(LocalizedStringResource("Increase the volume on the device", comment: "Description for volume up intent"))
+        public static let title: LocalizedStringResource = LocalizedStringResource("Increase volume", comment: "Title for volume up intent")
+        public static let description = IntentDescription(LocalizedStringResource("Increase the volume on the device", comment: "Description for volume up intent"))
         public init() {}
 
         @Parameter(title: "Device")
@@ -130,8 +130,8 @@ import SwiftData
     {
         public static let intentClassName = "VolumeDownIntent"
 
-        public static var title: LocalizedStringResource = LocalizedStringResource("Lower volume", comment: "Title for volume down intent")
-        public static var description = IntentDescription(LocalizedStringResource("Lower the volume on the device", comment: "Description for volume down intent"))
+        public static let title: LocalizedStringResource = LocalizedStringResource("Lower volume", comment: "Title for volume down intent")
+        public static let description = IntentDescription(LocalizedStringResource("Lower the volume on the device", comment: "Description for volume down intent"))
         public init() {}
 
         @Parameter(title: "Device")
@@ -159,9 +159,9 @@ import SwiftData
     public struct PowerIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigratedAppIntent, PredictableIntent {
         public static let intentClassName = "PowerIntent"
 
-        public static var title: LocalizedStringResource = LocalizedStringResource("Toggle Power", comment: "Title for power intent")
-        public static var description = IntentDescription(LocalizedStringResource("Power on or off the device", comment: "Description for power intent"))
-        
+        public static let title: LocalizedStringResource = LocalizedStringResource("Toggle Power", comment: "Title for power intent")
+        public static let description = IntentDescription(LocalizedStringResource("Power on or off the device", comment: "Description for power intent"))
+
         public init() {}
 
         @Parameter(title: "Device")

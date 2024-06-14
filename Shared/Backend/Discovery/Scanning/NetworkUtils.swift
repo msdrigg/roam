@@ -85,7 +85,7 @@ struct Addressed4NetworkInterface: Encodable {
     }
 
     // Custom encoding
-    func encode(to encoder: Encoder) throws {
+    func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(name, forKey: .name)
         try container.encode(family, forKey: .family)
@@ -165,15 +165,15 @@ private func listInterfacesDarwin() -> [Addressed4NetworkInterface] {
             let family = addr.ifa_addr?.pointee.sa_family ?? 0
 
             var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-            if let ifa_addr = addr.ifa_addr {
-                getnameinfo(ifa_addr, socklen_t(ifa_addr.pointee.sa_len),
+            if let ifaAddr = addr.ifa_addr {
+                getnameinfo(ifaAddr, socklen_t(ifaAddr.pointee.sa_len),
                             &host, socklen_t(host.count),
                             nil, socklen_t(0), NI_NUMERICHOST)
             }
 
             var netmask = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-            if let ifa_netmask = addr.ifa_netmask {
-                getnameinfo(ifa_netmask, socklen_t(ifa_netmask.pointee.sa_len),
+            if let ifaNetmask = addr.ifa_netmask {
+                getnameinfo(ifaNetmask, socklen_t(ifaNetmask.pointee.sa_len),
                             &netmask, socklen_t(netmask.count),
                             nil, socklen_t(0), NI_NUMERICHOST)
             }

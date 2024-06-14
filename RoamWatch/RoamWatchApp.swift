@@ -4,7 +4,7 @@ import SwiftUI
 
 @main
 struct RoamWatch: App {
-    private static let logger = Logger(
+    private nonisolated static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier!,
         category: String(describing: RoamWatch.self)
     )
@@ -60,7 +60,7 @@ private let deviceFetchDescriptor: FetchDescriptor<Device> = {
 }()
 
 struct WatchAppView: View {
-    static let logger = Logger(
+    nonisolated static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier!,
         category: String(describing: WatchAppView.self)
     )
@@ -70,8 +70,6 @@ struct WatchAppView: View {
     @Query(deviceFetchDescriptor) private var devices: [Device]
     @State private var manuallySelectedDevice: Device?
     @State private var showDeviceList: Bool = false
-
-    @Environment(\.modelContext) private var modelContext
 
     @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanIpAutomatically: Bool = true
 
@@ -99,14 +97,14 @@ struct WatchAppView: View {
                             Label(String(localized: "Setup a device to get started :)", comment: "Label on a button to open the device setup page"), systemImage: "gear")
                                 .frame(maxWidth: .infinity)
                         })
-                        
+
                         Spacer()
                     }
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.roundedRectangle)
                     .labelStyle(.titleAndIcon)
                 }
-                
+
                 ButtonGridView(device: selectedDevice?.toAppEntity(), controls: DPAD)
                     .disabled(selectedDevice == nil)
 
@@ -118,11 +116,15 @@ struct WatchAppView: View {
                 }
             }
             .navigationTitle(selectedDevice?.name ?? "No device")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+            .toolbar(id: "watch") {
+                ToolbarItem(id: "device-picker", placement: .topBarLeading) {
                     DevicePicker(
                         devices: devices,
-                        device: $manuallySelectedDevice.withDefault(selectedDevice),
+                        device: Binding(get: {
+                            manuallySelectedDevice ?? selectedDevice
+                        }, set: { device in
+                            manuallySelectedDevice = device
+                        }),
                         showingPicker: $showDeviceList
                     )
                     .font(.body)
@@ -130,9 +132,7 @@ struct WatchAppView: View {
             }
             .tabViewStyle(.verticalPage)
             .onAppear {
-                let modelContainer = modelContext.container
-                scanningActor = DeviceDiscoveryActor(modelContainer: modelContainer)
-                modelContext.processPendingChanges()
+                scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer())
             }
         }
     }
@@ -154,7 +154,6 @@ struct WatchAppView: View {
 struct AppListViewWrapper: View {
     private let device: DeviceAppEntity
     @Query private var apps: [AppLink]
-    @Environment(\.modelContext) private var modelContext
     @State var cachedAppLinks: [AppLink]
 
     var appIdsIconsHashed: Int {
@@ -185,7 +184,6 @@ struct AppListViewWrapper: View {
     var body: some View {
         AppListView(device: device, apps: cachedAppLinks, onClick: {
             $0.lastSelected = Date.now
-            try? modelContext.save()
         })
         .onAppear {
             cachedAppLinks = apps

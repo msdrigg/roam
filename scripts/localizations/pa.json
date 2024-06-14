@@ -167,5 +167,9 @@
     "CFBundleName": "ਰੋਮ",
     "NSHumanReadableCopyright": "ਕਾਪੀਰਾਈਟ 2024 ਸਕਾਟ ਡ੍ਰਿਗਰਸ",
     "NSLocalNetworkUsageDescription": "ਰੋਮ ਤੁਹਾਡੇ ਰੋਕੂ ਟੀਵੀ ਨੂੰ ਖੋਜਣ ਅਤੇ ਕੰਟਰੋਲ ਕਰਨ ਲਈ ਸਥਾਨਕ ਨੈੱਟਵਰਕ ਦੀ ਵਰਤੋਂ ਕਰਦਾ ਹੈ",
-    "NSUserNotificationUsageDescription": "ਜਦੋਂ ਡਿਵੈਲਪਰ ਤੁਹਾਡੇ ਸੁਨੇਹੇ ਦਾ ਜਵਾਬ ਦੇਂਦਾ ਹੈ ਤਾਂ ਰੋਮ ਤੁਹਾਨੂੰ ਸੂਚਿਤ ਕਰ ਸਕਦਾ ਹੈ"
+    "NSUserNotificationUsageDescription": "ਜਦੋਂ ਡਿਵੈਲਪਰ ਤੁਹਾਡੇ ਸੁਨੇਹੇ ਦਾ ਜਵਾਬ ਦੇਂਦਾ ਹੈ ਤਾਂ ਰੋਮ ਤੁਹਾਨੂੰ ਸੂਚਿਤ ਕਰ ਸਕਦਾ ਹੈ",
+    "Send the message": "ਸੁਨੇਹਾ ਭੇਜੋ",
+    "Refresh devices": "ਜੰਤਰਾਂ ਨੂੰ ਰੀਫ੍ਰੈਸ਼ ਕਰੋ",
+    "Click on a row below to change the shortcut, or right click it to reset": "ਸ਼ਾਰਟਕੱਟ ਬਦਲਣ ਲਈ ਹੇਠਾਂ ਇੱਕ ਕਤਾਰ 'ਤੇ ਕਲਿੱਕ ਕਰੋ, ਜਾਂ ਰੀਸੈਟ ਕਰਨ ਲਈ ਸੱਜੇ ਕਲਿੱਕ ਕਰੋ",
+    "Tap a row below to change the shortcut, or swipe to reset": "ਸ਼ਾਰਟਕੱਟ ਬਦਲਣ ਲਈ ਹੇਠਾਂ ਇੱਕ ਕਤਾਰ 'ਤੇ ਟੈਪ ਕਰੋ, ਜਾਂ ਰੀਸੈਟ ਕਰਨ ਲਈ ਸਵਾਈਪ ਕਰੋ"
 }

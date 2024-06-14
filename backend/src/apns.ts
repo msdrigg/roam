@@ -53,8 +53,6 @@ function encodeBase64(data: ArrayBuffer | string): string {
     return base64;
 }
 
-
-
 async function createJwt(key: APNSAuthKey, algorithm = { name: "ECDSA", namedCurve: "P-256", hash: "SHA-256" }) {
     // Prepare the signing key from the provided P8 private key
     let privateKeyText = new TextDecoder().decode(decodeBase64(key.privateKey));
@@ -158,4 +156,3 @@ export async function sendBackgroundPushNotification(key: APNSAuthKey, deviceTok
 
     console.log('Background push notification sent successfully!');
 }
-

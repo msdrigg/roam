@@ -18,7 +18,7 @@ public struct AppLinkAppEntity: Identifiable, Equatable, Hashable, Encodable, Se
         self.icon = icon
     }
 
-    public func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(type, forKey: .type)
@@ -32,8 +32,8 @@ public struct AppLinkAppEntity: Identifiable, Equatable, Hashable, Encodable, Se
 
 #if !os(tvOS)
     extension AppLinkAppEntity: AppEntity {
-        public static var typeDisplayRepresentation = TypeDisplayRepresentation(name: LocalizedStringResource("TV App", comment: "TV App Selection option"))
-        public static var defaultQuery = AppLinkAppEntityQuery()
+        public static let typeDisplayRepresentation = TypeDisplayRepresentation(name: LocalizedStringResource("TV App", comment: "TV App Selection option"))
+        public static let defaultQuery = AppLinkAppEntityQuery()
 
         public struct AppLinkAppEntityQuery: EntityQuery {
             @IntentParameterDependency<LaunchAppIntent>(\.$device) var launchAppIntent

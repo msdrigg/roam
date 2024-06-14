@@ -167,5 +167,9 @@
     "CFBundleName": "Roam",
     "NSHumanReadableCopyright": "حقوق الطبع والنشر 2024 سكوت دريغرز",
     "NSLocalNetworkUsageDescription": "يستخدم روام الشبكة المحلية لاكتشاف والتحكم في تلفزيون Roku الخاص بك",
-    "NSUserNotificationUsageDescription": "يمكن أن يخطر روامك عندما يستجيب المطور لرسالتك"
+    "NSUserNotificationUsageDescription": "يمكن أن يخطر روامك عندما يستجيب المطور لرسالتك",
+    "Send the message": "إرسال الرسالة",
+    "Refresh devices": "تحديث الأجهزة",
+    "Click on a row below to change the shortcut, or right click it to reset": "انقر على صف أدناه لتغيير الاختصار، أو انقر بزر الماوس الأيمن لإعادة التعيين",
+    "Tap a row below to change the shortcut, or swipe to reset": "انقر على صف أدناه لتغيير الاختصار، أو اسحب لإعادة التعيين"
 }

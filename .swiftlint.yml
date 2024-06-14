@@ -1,12 +1,15 @@
 disabled_rules:
     - trailing_comma
     - opening_brace
+    - large_tuple
+    - function_body_length
+    - type_body_length
+    - file_length
+    - cyclomatic_complexity
+    - nesting
 line_length:
     warning: 200
     ignores_comments: true
-    ignores_interpolated_strings: false
+    ignores_interpolated_strings: true
 identifier_name:
     min_length: 1
-cyclomatic_complexity:
-  ignores_case_statements: true
-    

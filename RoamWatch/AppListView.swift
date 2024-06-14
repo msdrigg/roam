@@ -3,7 +3,7 @@ import os.log
 import SwiftUI
 
 struct AppListView: View {
-    static let logger = Logger(
+    private nonisolated static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier!,
         category: String(describing: AppListView.self)
     )

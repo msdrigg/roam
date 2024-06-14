@@ -14,6 +14,10 @@ struct TopBar: View {
             #if !os(tvOS) && !os(watchOS)
             .customKeyboardShortcut(.back)
             #endif
+            #if os(macOS)
+            .buttonStyle(.borderedProminent)
+            .tint(Color.secondary)
+            #endif
             #if !os(visionOS)
             .sensoryFeedback(.impact, trigger: pressCounter(.back))
             #endif
@@ -35,6 +39,10 @@ struct TopBar: View {
                 Label("Home", systemImage: "house")
                     .frame(width: globalButtonWidth, height: globalButtonHeight)
             })
+            #if os(macOS)
+            .buttonStyle(.borderedProminent)
+            .tint(Color.secondary)
+            #endif
             #if !os(tvOS) && !os(watchOS)
             .customKeyboardShortcut(.home)
             #endif

@@ -57,11 +57,11 @@
                 customVolumeSlider.volume = sender.value
             }
 
-            @objc func touchStarted(_: UISlider) {
+            @MainActor @objc func touchStarted(_: UISlider) {
                 customVolumeSlider.isTouched = true
             }
 
-            @objc func touchEnded(_: UISlider) {
+            @MainActor @objc func touchEnded(_: UISlider) {
                 customVolumeSlider.isTouched = false
             }
         }

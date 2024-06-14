@@ -167,5 +167,9 @@
     "CFBundleName": "Roam",
     "NSHumanReadableCopyright": "Direitos autorais 2024 Scott Driggers",
     "NSLocalNetworkUsageDescription": "Roam usa a rede local para descobrir e controlar sua TV Roku",
-    "NSUserNotificationUsageDescription": "O Roam pode notificá-lo quando o desenvolvedor responder à sua mensagem"
+    "NSUserNotificationUsageDescription": "O Roam pode notificá-lo quando o desenvolvedor responder à sua mensagem",
+    "Send the message": "Enviar a mensagem",
+    "Refresh devices": "Atualizar dispositivos",
+    "Click on a row below to change the shortcut, or right click it to reset": "Clique em uma linha abaixo para alterar o atalho, ou clique com o botão direito para redefinir",
+    "Tap a row below to change the shortcut, or swipe to reset": "Toque em uma linha abaixo para alterar o atalho, ou deslize para redefinir"
 }

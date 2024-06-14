@@ -22,20 +22,7 @@
                 return AnyView(content)
             }
 
-            return AnyView(KeyPressableContainer(content: content, onKeyPress: onKeyPress, onKeyboardShortcut: onKeyboardShortcut, keyboardShortcuts: allKeyboardShortcuts)
-                .focusable()
-                .focused($isFocused)
-//                .onAppear {
-//                    isFocused = true
-//                }
-//                .onChange(of: isFocused) { _, nv in
-//                    if nv == false {
-//                        isFocused = true
-//                    }
-//                }
-                .onChange(of: allKeyboardShortcuts) {oldValue, newValue in
-                    logger.info("KS Changing from \(oldValue) to \(newValue)")
-                })
+            return AnyView(KeyPressableContainer(content: content, onKeyPress: onKeyPress, onKeyboardShortcut: onKeyboardShortcut, keyboardShortcuts: allKeyboardShortcuts))
         }
     }
 
@@ -108,10 +95,6 @@
             }
             return commands
         }
-        
-        override var canBecomeFirstResponder: Bool {
-            return true
-        }
 
         override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
             print("Getting PBPB")
@@ -130,12 +113,12 @@
                     handled = true
                 }
             }
-            
+
             if !handled {
                 super.pressesBegan(presses, with: event)
             }
         }
-        
+
         override func pressesEnded(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
             print("Getting PEPE")
         }
@@ -151,29 +134,14 @@
             super.didMove(toParent: parent)
             becomeFirstResponder()
         }
-        
+
         override func resignFirstResponder() -> Bool {
             return false
         }
-        
+
         override func viewDidAppear(_ animated: Bool) {
-            print("Becoming first responder pleaseeee")
             super.viewDidAppear(animated)
             becomeFirstResponder()
-            print("FR \(self.isFirstResponder)")
-            print("FOCUSABLE \(UIFocusDebugger.checkFocusability(for:view))")
-            
-            Task {
-                while true {
-                    try? await Task.sleep(nanoseconds: 5 * 1000 * 1000 * 1000)
-                    print("Checking focus chain")
-                    
-                    let focusView = view.findFocused()
-                    
-                    print("Focused view \(String(describing: focusView))")
-                }
-            }
-
         }
     }
 

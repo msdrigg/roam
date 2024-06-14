@@ -2,21 +2,22 @@
 
 import Foundation
 
-private let HeaderRegex = try! NSRegularExpression(pattern: "^([^\r\n:]+): (.*)$", options: [.anchorsMatchLines])
+// swiftlint:disable:next force_try
+private let headerRegex = try! NSRegularExpression(pattern: "^([^\r\n:]+): (.*)$", options: [.anchorsMatchLines])
 
-public class SSDPService {
+public struct SSDPService: Sendable {
     /// The host of service
-    public internal(set) var host: String
+    public let host: String
     /// The headers of the original response
-    public internal(set) var responseHeaders: [String: String]?
+    public let responseHeaders: [String: String]?
     /// The value of `LOCATION` header
-    public internal(set) var location: String?
+    public let location: String?
     /// The value of `SERVER` header
-    public internal(set) var server: String?
+    public let server: String?
     /// The value of `ST` header
-    public internal(set) var searchTarget: String?
+    public let searchTarget: String?
     /// The value of `USN` header
-    public internal(set) var uniqueServiceName: String?
+    public let uniqueServiceName: String?
 
     // MARK: Initialisation
 
@@ -30,7 +31,7 @@ public class SSDPService {
     init(host: String, response: String) {
         self.host = host
 
-        let headers = parse(response)
+        let headers = Self.parse(response)
         responseHeaders = headers
 
         location = headers["LOCATION"]
@@ -47,10 +48,10 @@ public class SSDPService {
         - Parameters:
             - response: The discovery response.
      */
-    private func parse(_ response: String) -> [String: String] {
+    private static func parse(_ response: String) -> [String: String] {
         var result = [String: String]()
 
-        let matches = HeaderRegex.matches(in: response, range: NSRange(location: 0, length: response.count))
+        let matches = headerRegex.matches(in: response, range: NSRange(location: 0, length: response.count))
         for match in matches {
             let keyCaptureGroupIndex = match.range(at: 1)
             let key = (response as NSString).substring(with: keyCaptureGroupIndex)

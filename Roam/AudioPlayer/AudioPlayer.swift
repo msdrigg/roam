@@ -1,4 +1,4 @@
-import AVFoundation
+@preconcurrency import AVFoundation
 import CoreAudio
 import Opus
 import os
@@ -10,7 +10,7 @@ struct AudioFrame {
 }
 
 actor OpusDecoderWithJitterBuffer {
-    private static let logger = Logger(
+    private nonisolated static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier!,
         category: String(describing: OpusDecoderWithJitterBuffer.self)
     )
@@ -89,7 +89,7 @@ actor OpusDecoderWithJitterBuffer {
         }
     }
 
-    func nextPacket(atTime _: AVAudioTime) -> (AVAudioPCMBuffer, AVAudioTime)? {
+    func nextPacket(atTime _: sending AVAudioTime) -> (AVAudioPCMBuffer, AVAudioTime)? {
         guard let lastSampleTime else {
             Self.logger.info("Not returning packet because not synced yet")
             return nil
@@ -145,7 +145,11 @@ actor OpusDecoderWithJitterBuffer {
             return nil
         }
 
-        return (nextPcm, sampleTime)
+        return (nextPcm, AVAudioTime(
+            hostTime: secondsToMachTime(Double(globalPacketSizeMS) / 1000) + lastSampleTime.hostTime,
+            sampleTime: lastSampleTime.sampleTime + Int64(lastSampleTime.sampleRate) / packetsPerSec,
+            atRate: lastSampleTime.sampleRate
+        ))
     }
 }
 
@@ -154,7 +158,7 @@ enum AudioPlayerError: Error, LocalizedError {
 }
 
 actor AudioPlayer {
-    private static let logger = Logger(
+    private nonisolated static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier!,
         category: String(describing: AudioPlayer.self)
     )
@@ -191,7 +195,9 @@ actor AudioPlayer {
         }
     #endif
 
-    public func scheduleAudioBytes(buffer: AVAudioPCMBuffer, atTime: AVAudioTime) async {
+    public func sab(atTime: consuming AVAudioTime) async {
+    }
+    public func scheduleAudioBytes(buffer: AVAudioPCMBuffer, atTime: sending AVAudioTime) async {
         let outputBuffer = AVAudioPCMBuffer(
             pcmFormat: convertor.outputFormat,
             frameCapacity: AVAudioFrameCount(convertor.outputFormat.sampleRate) * buffer

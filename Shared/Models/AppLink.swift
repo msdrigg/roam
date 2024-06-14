@@ -5,7 +5,7 @@ import SwiftData
 typealias AppLink = SchemaV1.AppLink
 
 extension AppLink: Decodable {
-    public convenience init(from decoder: Decoder) throws {
+    public convenience init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let id = try container.decode(String.self, forKey: .id)
         let type = try container.decode(String.self, forKey: .type)

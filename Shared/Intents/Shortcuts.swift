@@ -126,6 +126,6 @@ import AppIntents
             )
         }
 
-        static var shortcutTileColor: ShortcutTileColor = .purple
+        static let shortcutTileColor: ShortcutTileColor = .purple
     }
 #endif

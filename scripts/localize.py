@@ -2,7 +2,6 @@ import os
 import json
 import sys
 
-
 def merge_localizations(directory_path, seed_file_path, output_file_path):
     # Load the seed file
     with open(seed_file_path, "r", encoding="utf-8") as seed_file:
@@ -33,7 +32,6 @@ def merge_localizations(directory_path, seed_file_path, output_file_path):
     # Write the merged data to the output file
     with open(output_file_path, "w", encoding="utf-8") as output_file:
         json.dump(merged_data, output_file, ensure_ascii=False, indent=4)
-
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:

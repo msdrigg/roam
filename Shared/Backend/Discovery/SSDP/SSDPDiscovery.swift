@@ -9,8 +9,8 @@ private let logger = Logger(
 )
 
 enum SSDPError: Swift.Error, LocalizedError {
-    case SocketCreationFailed
-    case ConnectionGroupFailed
+    case socketCreationFailed
+    case connectionGroupFailed
 }
 
 func htons(_ value: CUnsignedShort) -> CUnsignedShort {
@@ -20,7 +20,7 @@ func htons(_ value: CUnsignedShort) -> CUnsignedShort {
 /// SSDP discovery for UPnP devices on the LAN.
 /// Created using BSD sockets do to this bug: https://developer.apple.com/forums/thread/716339?page=1#769355022
 /// Code using Network framework shown below
-func scanDevicesContinually() throws -> AsyncThrowingStream<SSDPService, Swift.Error> {
+func scanDevicesContinually() throws -> AsyncThrowingStream<SSDPService, any Error> {
     AsyncThrowingStream { continuation in
         let sockfd: Int32 = socket(AF_INET, SOCK_DGRAM, 0)
 
@@ -28,15 +28,15 @@ func scanDevicesContinually() throws -> AsyncThrowingStream<SSDPService, Swift.E
             let errorString = String(cString: strerror(errno))
             logger.error("Error creating socket with message: \(errorString)")
 
-            continuation.finish(throwing: SSDPError.SocketCreationFailed)
+            continuation.finish(throwing: SSDPError.socketCreationFailed)
             return
         }
 
-        let group_addr = inet_addr("239.255.255.250")
-        if group_addr == INADDR_NONE {
+        let groupAddr = inet_addr("239.255.255.250")
+        if groupAddr == INADDR_NONE {
             let errorString = String(cString: strerror(errno))
             logger.error("Error group address with message: \(errorString)")
-            continuation.finish(throwing: SSDPError.SocketCreationFailed)
+            continuation.finish(throwing: SSDPError.socketCreationFailed)
 
             close(sockfd)
             return
@@ -49,7 +49,7 @@ func scanDevicesContinually() throws -> AsyncThrowingStream<SSDPService, Swift.E
             var group = sockaddr_in()
             group.sin_family = sa_family_t(AF_INET)
             group.sin_port = htons(1900)
-            group.sin_addr.s_addr = group_addr
+            group.sin_addr.s_addr = groupAddr
 
             for await _ in exponentialBackoff(min: 2, max: 30) {
                 if Task.isCancelled {
@@ -121,7 +121,7 @@ func scanDevicesContinuallyNetwork() throws -> AsyncThrowingStream<SSDPService, 
             switch newState {
             case let .failed(error):
                 logger.error("ConnectionGroup failed with error: \(error)")
-                continuation.finish(throwing: SSDPError.ConnectionGroupFailed)
+                continuation.finish(throwing: SSDPError.connectionGroupFailed)
             default:
                 logger.info("ConnectionGroup entered state: \(String(describing: newState))")
             }

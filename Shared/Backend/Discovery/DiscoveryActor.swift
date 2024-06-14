@@ -6,7 +6,7 @@ import SwiftUI
 import XMLCoder
 
 actor DeviceDiscoveryActor {
-    private static let logger = Logger(
+    private nonisolated static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier!,
         category: String(describing: DeviceDiscoveryActor.self)
     )
@@ -66,13 +66,13 @@ actor DeviceDiscoveryActor {
             if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
                 return
             }
-            
+
             Self.logger.info("Starting to scan ipv4 range")
 
-            let MAX_CONCURRENT_SCANNED = 37
+            let maxConcurrentScanned = 37
 
             let scannableInterfaces = await allAddressedInterfaces().filter { $0.isIPV4 && $0.isEthernetLike }
-            let sem = AsyncSemaphore(value: MAX_CONCURRENT_SCANNED)
+            let sem = AsyncSemaphore(value: maxConcurrentScanned)
 
             await withDiscardingTaskGroup { taskGroup in
                 for iface in scannableInterfaces {
@@ -111,7 +111,7 @@ actor DeviceDiscoveryActor {
 
                             await self.addDevice(location: location)
                         }
-                        
+
                         if idx > 1024 {
                             break
                         }

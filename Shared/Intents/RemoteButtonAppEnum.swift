@@ -1,7 +1,7 @@
 import AppIntents
 
 enum RemoteButtonAppEnum: String, AppEnum {
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = TypeDisplayRepresentation(name: LocalizedStringResource("Remote Button", comment: "A type of button that can perform an action"))
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = TypeDisplayRepresentation(name: LocalizedStringResource("Remote Button", comment: "A type of button that can perform an action"))
 
     case up = "Up"
     case left = "Left"
@@ -41,9 +41,9 @@ enum RemoteButtonAppEnum: String, AppEnum {
     case inputAV1 = "InputAV1"
     case headphonesMode = "HeadphonesMode"
 
-    public static var typeDisplayName: String = "Button"
+    public static let typeDisplayName: String = "Button"
 
-    public static var caseDisplayRepresentations: [RemoteButtonAppEnum: DisplayRepresentation] = [
+    public static let caseDisplayRepresentations: [RemoteButtonAppEnum: DisplayRepresentation] = [
         .up: "Up",
         .left: "Left",
         .right: "Right",
@@ -143,71 +143,73 @@ enum RemoteButtonAppEnum: String, AppEnum {
             .headphonesMode
         }
     }
+}
 
-    init(_ button: RemoteButton) {
-        switch button {
+extension RemoteButton {
+    var buttonAppEnum: RemoteButtonAppEnum {
+        switch self {
         case .up:
-            self = .up
+            .up
         case .left:
-            self = .left
+            .left
         case .right:
-            self = .right
+            .right
         case .down:
-            self = .down
+            .down
         case .select:
-            self = .select
+            .select
         case .home:
-            self = .home
+            .home
         case .back:
-            self = .back
+            .back
         case .power:
-            self = .power
+            .power
         case .powerOn:
-            self = .powerOn
+            .powerOn
         case .powerOff:
-            self = .powerOff
+            .powerOff
         case .mute:
-            self = .mute
+            .mute
         case .volumeUp:
-            self = .volumeUp
+            .volumeUp
         case .volumeDown:
-            self = .volumeDown
+            .volumeDown
         case .options:
-            self = .options
+            .options
         case .instantReplay:
-            self = .instantReplay
+            .instantReplay
         case .rewind:
-            self = .rewind
+            .rewind
         case .fastForward:
-            self = .fastForward
+            .fastForward
         case .playPause:
-            self = .playPause
+            .playPause
         case .findRemote:
-            self = .findRemote
+            .findRemote
         case .backspace:
-            self = .backspace
+            .backspace
         case .search:
-            self = .search
+            .search
         case .enter:
-            self = .enter
+            .enter
         case .channelUp:
-            self = .channelUp
+            .channelUp
         case .channelDown:
-            self = .channelDown
+            .channelDown
         case .inputTuner:
-            self = .inputTuner
+            .inputTuner
         case .inputHDMI1:
-            self = .inputHDMI1
+            .inputHDMI1
         case .inputHDMI2:
-            self = .inputHDMI2
+            .inputHDMI2
         case .inputHDMI3:
-            self = .inputHDMI3
+            .inputHDMI3
         case .inputHDMI4:
-            self = .inputHDMI4
+            .inputHDMI4
         case .inputAV1:
-            self = .inputAV1
+            .inputAV1
         case .headphonesMode:
-            self = .headphonesMode
+            .headphonesMode
         }
     }
 }

@@ -26,7 +26,6 @@ type ApiError = {
     message: string;
 }
 
-
 class DiscordClient {
     private baseUrl: string = 'https://discord.com/api/v10';
 
@@ -126,9 +125,6 @@ class DiscordClient {
         }
     }
 
-
-
-
     async getActiveThreadsUpdatedSince(latestMessageId: string | null): Promise<Thread[]> {
         const url = `${this.baseUrl}/guilds/${this.guildId}/threads/active`;
         try {
@@ -161,7 +157,6 @@ class DiscordClient {
             throw error;
         }
     }
-
 
     async createThread(title: string, message: string, autoArchiveDuration: number = 10080): Promise<string> {
         const url = `${this.baseUrl}/channels/${this.channelId}/threads`;

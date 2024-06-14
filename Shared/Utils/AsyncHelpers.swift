@@ -2,7 +2,7 @@ import Foundation
 
 public extension Task where Success == Never, Failure == Never {
     /// Blueprint for a task that should be run, but not yet.
-    struct Blueprint<Output> {
+    struct Blueprint<Output: Sendable>: Sendable {
         public var priority: TaskPriority
         public var operation: @Sendable () async throws -> Output
 
@@ -20,7 +20,7 @@ public extension Task where Success == Never, Failure == Never {
     /// Race for the first result by any of the provided tasks.
     ///
     /// This will return the first valid result or throw the first thrown error by any task.
-    static func race<Output>(firstResolved tasks: [Blueprint<Output>]) async throws -> Output {
+    static func race<Output: Sendable>(firstResolved tasks: [Blueprint<Output>]) async throws -> Output {
         assert(!tasks.isEmpty, "You must race at least 1 task.")
         return try await withThrowingTaskGroup(of: Output.self) { group -> Output in
             for task in tasks {
@@ -43,7 +43,7 @@ public extension Task where Success == Never, Failure == Never {
     ///
     /// Ignores errors that may be thrown and waits for the first result.
     /// If all tasks fail, returns `nil`.
-    static func race<Output>(firstValue tasks: [Blueprint<Output>]) async -> Output? {
+    static func race<Output: Sendable>(firstValue tasks: [Blueprint<Output>]) async -> Output? {
         await withThrowingTaskGroup(of: Output.self) { group -> Output? in
             for task in tasks {
                 group.addTask(priority: task.priority) {
@@ -91,7 +91,7 @@ public struct TimeoutError: Swift.Error, LocalizedError {
 /// You should ensure that the task run here responds to a cancellation event as soon as possible.
 /// - returns: The value if the operation did not timeout.
 /// - throws: `TimeoutError` if the operation timed out.
-public func withTimeout<T>(
+public func withTimeout<T: Sendable>(
     delay: TimeInterval,
     priority: TaskPriority = .medium,
     run task: @Sendable @escaping () async throws -> T

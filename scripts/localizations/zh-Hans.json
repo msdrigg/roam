@@ -167,5 +167,9 @@
   "CFBundleName": "Roam",
   "NSHumanReadableCopyright": "版权所有 2024 Scott Driggers",
   "NSLocalNetworkUsageDescription": "Roam 使用本地网络来发现和控制您的 Roku 电视",
-  "NSUserNotificationUsageDescription": "当开发者回复您的消息时，Roam 可以通知您"
+  "NSUserNotificationUsageDescription": "当开发者回复您的消息时，Roam 可以通知您",
+  "Send the message": "发送消息",
+  "Refresh devices": "刷新设备",
+  "Click on a row below to change the shortcut, or right click it to reset": "点击下面的行更改快捷方式，或右键单击以重置",
+  "Tap a row below to change the shortcut, or swipe to reset": "点击下面的行更改快捷方式，或滑动以重置"
 }

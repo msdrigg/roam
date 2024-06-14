@@ -18,6 +18,7 @@
             }, onDone: {
                 withAnimation {
                     keyboardFocused = false
+
                     showing = false
                 }
             })
@@ -33,7 +34,7 @@
             #if !os(tvOS)
                 .task {
                     let listener = KeyboardListener()
-                    if let events = listener.events {
+                    if let events = await listener.events {
                         for await _ in events {
                             DispatchQueue.main.async {
                                 withAnimation {
@@ -45,7 +46,7 @@
                     }
                 }
             #endif
-                .onChange(of: str) {
+                .onChange(of: str) { _, str in
                     if str.count > strSent.count {
                         if let char = str.unicodeScalars.last {
                             onKeyPress(KeyEquivalent(Character(char)))
@@ -54,12 +55,15 @@
 
                     strSent = str
                 }
-                .onChange(of: leaving) {
+                .onChange(of: leaving) { _, leaving in
                     if leaving {
                         withAnimation {
                             keyboardFocused = false
+
                             showing = false
                         }
+                    } else {
+                        keyboardFocused = true
                     }
                 }
                 .onAppear {
@@ -178,16 +182,27 @@
     }
 
     #if !os(tvOS)
-        class KeyboardListener {
-            private static let logger = Logger(
+        actor KeyboardListener {
+            private nonisolated static let logger = Logger(
                 subsystem: Bundle.main.bundleIdentifier!,
                 category: String(describing: KeyboardListener.self)
             )
 
             var keyboardHideNotifier: (() -> Void)?
+            var keyboardShowNotifier: (() -> Void)?
 
-            @objc func handleHideKeyboard(notification _: Notification) {
+            @objc nonisolated func handleHideKeyboardNonisolated(notification _: Notification) async {
+                await handleHideKeyboard()
+            }
+            @objc nonisolated func handleShowKeyboardNonisolated(notification _: Notification) async {
+                await handleShowKeyboard()
+            }
+
+            func handleHideKeyboard() {
                 keyboardHideNotifier?()
+            }
+            func handleShowKeyboard() {
+                keyboardShowNotifier?()
             }
 
             func startListening() throws {
@@ -195,17 +210,30 @@
                 // Get the default notification center instance.
                 NotificationCenter.default.addObserver(
                     self,
-                    selector: #selector(handleHideKeyboard),
+                    selector: #selector(handleHideKeyboardNonisolated),
                     name: UIResponder.keyboardWillHideNotification,
+                    object: nil
+                )
+                NotificationCenter.default.addObserver(
+                    self,
+                    selector: #selector(handleShowKeyboardNonisolated),
+                    name: UIResponder.keyboardWillShowNotification,
                     object: nil
                 )
             }
 
             func stopListening() {
                 Self.logger.info("Stoping keyboard observations")
+                self.keyboardShowNotifier = nil
+                self.keyboardHideNotifier = nil
                 NotificationCenter.default.removeObserver(
                     self,
                     name: UIResponder.keyboardWillHideNotification,
+                    object: nil
+                )
+                NotificationCenter.default.removeObserver(
+                    self,
+                    name: UIResponder.keyboardWillShowNotification,
                     object: nil
                 )
             }
@@ -213,12 +241,17 @@
             var events: AsyncStream<Bool>? {
                 AsyncStream { continuation in
                     do {
-                        try startListening()
-                        self.keyboardHideNotifier = {
-                            continuation.yield(true)
+                        self.keyboardShowNotifier = {
+                            self.keyboardHideNotifier = {
+                                continuation.yield(true)
+                            }
                         }
+
+                        try startListening()
                         continuation.onTermination = { @Sendable _ in
-                            self.stopListening()
+                            Task {
+                                await self.stopListening()
+                            }
                         }
                     } catch {}
                 }

@@ -2,7 +2,6 @@
 hide_table_of_contents: true
 ---
 
-
 # Most recent roam work
 
 - Localizations in many languages
@@ -11,28 +10,80 @@ hide_table_of_contents: true
 
 # Upcoming Roam Updates
 
+## Learnings to do
+- Watch tipkit talk
+- Watch talk "What’s new in Wallet and Apple Pay" to see if it has anything to do with app clip codes
+- Watch "What’s new in device management" for business purposes
+- Figure out how to let siri use my app more smoothly? 
+
+- WatchOS
+    - Make sure my app supports interactive widgets
+- Offer shortcuts to get the last selected app/search an app /get the last selected device/search a device
+- Improve windows
+    - Consider tailoring window placement in visionOS/macOS
+- Test more keyboard hacks
+    - GCKeyboard for one
+    - FocusEnvironment for 2
+- Use preview traits to inject sample data into previews
+    - How to do this with iOS 17 still being a factor?
+- SwiftData
+    - Add indices to swiftdata models?
+    - Use new #Unique macro for swiftdata?
+- AppIntents
+    - Add control center app intents
+        - Use toggle for mute/unmute and power on/off
+        - Use buttons for everything else
+        - Use tint correct purple
+        - Make configurable just like widgets
+        - Make work with action hint
+    - Let siri/spotlight better see the things in my app somehow?
+        - Add universal links to the devices so siri can link to them
+        - Move to IndexedEntity to show in siri
+        - Implement transferrable via string/codeable for my app entities
+            - ProxyRepresentation
+            - CodableRepresentation
+- Migrate to swift 6 data concurrency
+
+
 ## Bug Fixes
 
+- Consider SFSymbols 6 Updates
+    - repeat continuous with the breathe transition for the headphones mode
+    - use repeat transition for refreshing?
+    - Use wiggle for disabled buttons?
+- Ensure toolbar has identifier for remoteie
 - Figure out if the loop of calls to `nextPacket` make sense.
     - Instead of looping every 10ms and hoping the timing is correct, should I instead be looping over received packets and trying to schedule them at host time `10ms * globalSequenceNumber + startHostTime` and sampleTime to `sequenceNumber * Int64(lastSampleTime.sampleRate) / packetsPerSec + startSampleTime`
     - Then I can switch from a `for await` loop over the clock to a `while !Task.isCancelled` loop with a `Task.sleep` in it.
 - Figure out what causes data leak in case of long-running private listening after TV shuts off...
 - Get keyboard shortcuts working on iPad even when Full Keyboard Access is turned on...
-    - Figure out if we can make this work with a combination of .focusable(false), .focus(focusKey) and .onKeyPress...
     - Ensure that whatever solution gets used for iOS doesn't break text entry in messages/keyboard entry
 - Figure out what causes race condition when quickly clicking headphones mode keyboard shortcut 
     - ensure rtcp/rtp listeners are cancelled...
     - if they aren't work backwards up to why and fix
     - if they are, why aren't they stopping...
+- Provide an optional Minimalist view that replicates siri remote's view closely
+    - https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
+    - Support visionos gestures as well...
+    - Need to build the textedit api first
+- Add some Home Screen quick actions
+- Add some event tracking on what actions users are actually doing on their devices (connect to firebase analytics maybe?)
+    - Track who is using minimalist view, what actions they are doing, etc...
+-  Support dynamic type with scaled buttons/text in my app
+-  Switch to a custom pulse animation on my pulse button
 
 ## TipKit
 
+- Add help text to some views for macos, visionOS
 - Add tips for private listening
 - Add tips for keyboard shortcuts
 - Add tips for messaging the dev?
 - Add tips for features that don't work when there is no API key (message developer, share diagnostics)
 - Add tip for setting up global keyboard shortcuts via macos app
 - https://fatbobman.com/en/posts/mastering-tipkit-advance/
+- Use TipGroup for tips https://www.youtube.com/watch?v=raHy6XT3Rlc&list=WL&index=4
+- Switch the initial "Connect a device to get started" into a tip
+- Ensure tips are synced with icloud
 
 ## Improve Testing
 

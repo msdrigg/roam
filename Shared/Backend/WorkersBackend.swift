@@ -72,7 +72,7 @@ struct MessageModelResponse: Decodable {
         self.author = author
     }
 
-    init(from decoder: Decoder) throws {
+    init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         message = try container.decode(String.self, forKey: .message)

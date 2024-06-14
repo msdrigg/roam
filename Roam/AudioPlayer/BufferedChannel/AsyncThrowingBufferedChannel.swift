@@ -27,7 +27,7 @@ public final class AsyncThrowingBufferedChannel<Element, Failure: Error>: AsyncS
 
     struct Awaiting: Hashable {
         let id: Int
-        let continuation: UnsafeContinuation<Element?, Error>?
+        let continuation: UnsafeContinuation<Element?, any Error>?
 
         static func placeHolder(id: Int) -> Awaiting {
             Awaiting(id: id, continuation: nil)
@@ -45,13 +45,13 @@ public final class AsyncThrowingBufferedChannel<Element, Failure: Error>: AsyncS
     enum SendDecision {
         case resume(Awaiting, Element)
         case finish([Awaiting])
-        case fail([Awaiting], Error)
+        case fail([Awaiting], any Error)
         case nothing
     }
 
     enum AwaitingDecision {
         case resume(Element?)
-        case fail(Error)
+        case fail(any Error)
         case suspend
     }
 
@@ -149,7 +149,7 @@ public final class AsyncThrowingBufferedChannel<Element, Failure: Error>: AsyncS
         send(.element(element))
     }
 
-    public func fail(_ error: Failure) where Failure == Error {
+    public func fail(_ error: Failure) where Failure == any Error {
         send(.termination(.failure(error)))
     }
 

@@ -1,23 +1,22 @@
 import os.log
 import WatchConnectivity
 
-class WatchConnectivity: NSObject, WCSessionDelegate {
-    private static let logger = Logger(
+final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
+    private nonisolated static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier!,
         category: String(describing: WatchConnectivity.self)
     )
 
     static let shared = WatchConnectivity()
-    var session: WCSession?
 
     override init() {
         super.init()
 
         if WCSession.isSupported() {
             WatchConnectivity.logger.info("Activating watchOS WC Receiver")
-            session = WCSession.default
-            session?.delegate = self
-            session?.activate()
+            let session = WCSession.default
+            session.delegate = self
+            session.activate()
         } else {
             WatchConnectivity.logger.info("Cannot activate WC receiver because not supported")
         }
@@ -66,7 +65,7 @@ class WatchConnectivity: NSObject, WCSessionDelegate {
                             .info("Device aleady exists, only updating name, location \(device.key)")
                         if let location = device.value["location"] {
                             let name = device.value["name"] ?? existingDevice.name
-                            try await dataHandler.updateDevice(
+                            await dataHandler.updateDevice(
                                 existingDevice.modelId,
                                 name: name,
                                 location: location,
@@ -94,7 +93,7 @@ class WatchConnectivity: NSObject, WCSessionDelegate {
         }
     }
 
-    func session(_ session: WCSession, activationDidCompleteWith _: WCSessionActivationState, error: Error?) {
+    func session(_ session: WCSession, activationDidCompleteWith _: WCSessionActivationState, error: (any Error)?) {
         if let error {
             WatchConnectivity.logger.info("WCSession activated from watchOS with error \(error)")
         } else {

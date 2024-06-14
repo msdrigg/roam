@@ -3,11 +3,13 @@ import OSLog
 import SwiftData
 
 public enum SchemaV1: VersionedSchema {
-    public static var versionIdentifier = Schema.Version(1, 0, 1)
+    public static var versionIdentifier: Schema.Version {
+        Schema.Version(1, 0, 1)
+    }
 
     @Model
     public final class Device: Hashable {
-        public static let logger = Logger(
+        private nonisolated static let logger = Logger(
             subsystem: Bundle.main.bundleIdentifier!, category: String(describing: Device.self)
         )
 

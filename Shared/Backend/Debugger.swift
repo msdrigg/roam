@@ -43,7 +43,7 @@ struct LogEntry: Encodable {
             level = nil
         }
 
-        if let payloadEntry = entry as? OSLogEntryWithPayload {
+        if let payloadEntry = entry as? any OSLogEntryWithPayload {
             category = payloadEntry.category
             subsystem = payloadEntry.subsystem
         } else {
@@ -65,7 +65,7 @@ struct DeviceDebugInfo: Encodable {
     let errorResponse: String?
 }
 
-public struct InstallationInfo: Encodable {
+public struct InstallationInfo: Encodable, Sendable {
     let userId: String
     let buildVersion: String?
     let osPlatform: String?
@@ -96,7 +96,7 @@ public struct InstallationInfo: Encodable {
     }
 }
 
-public struct DebugInfo: Encodable {
+public struct DebugInfo: Encodable, Sendable {
     let installationInfo: InstallationInfo
     let devices: [DeviceDebugInfo]
     let appLinks: [AppLinkAppEntity]

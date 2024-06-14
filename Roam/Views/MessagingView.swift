@@ -52,7 +52,6 @@ struct MessageView: View {
     @AppStorage("lastApnsRequestTime") private var lastApnsRequestTime: Double = -1
     @Environment(\.colorScheme) var colorScheme
 
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.createDataHandler) private var createDataHandler
 
     var messages: [Message] {
@@ -148,6 +147,7 @@ struct MessageView: View {
                         .buttonBorderShape(.circle)
                         .buttonStyle(.borderedProminent)
                         .labelStyle(.iconOnly)
+                        .help(String(localized: "Send the message", comment: "Help text on a button to send a chat message"))
 
                     #endif
                 }
@@ -163,10 +163,10 @@ struct MessageView: View {
             #endif
         }
         .task(id: hasSentFirstMessage) {
-            if (!hasSentFirstMessage) {
+            if !hasSentFirstMessage {
                 return
             }
-            if (lastApnsRequestTime < Date.now.timeIntervalSince1970 - 3600 * 24) {
+            if lastApnsRequestTime < Date.now.timeIntervalSince1970 - 3600 * 24 {
                 lastApnsRequestTime = Date.now.timeIntervalSince1970
                 requestNotificationPermission()
             }
@@ -196,7 +196,7 @@ struct MessageView: View {
             let latestMessageId = messages.last { $0.fetchedBackend == true }?.id
 
             if latestMessageId != nil {
-                let createDataHandler = self.createDataHandler;
+                let createDataHandler = self.createDataHandler
                 let result = await Task.detached {
                     return await createDataHandler()?.refreshMessages(
                         latestMessageId: latestMessageId,
@@ -223,21 +223,21 @@ struct MessageView: View {
     func sendTypedMessage() {
         logger.info("Sending message \"\(messageText)\"")
         let messageCopy = messageText
-        let createDataHandler = self.createDataHandler;
-        let latestMessageId = messages.last { $0.fetchedBackend == true }?.id;
+        let createDataHandler = self.createDataHandler
+        let latestMessageId = messages.last { $0.fetchedBackend == true }?.id
         Task {
             do {
                 try await Task.detached {
                     try await sendMessage(message: messageCopy, apnsToken: nil)
                 }.value
-                
+
                 let result = await Task.detached {
                     return await createDataHandler()?.refreshMessages(
                         latestMessageId: latestMessageId,
                         viewed: true
                     ) ?? 0
                 }.value
-                
+
                 if result > 0 {
                     refreshResetId = UUID()
                 }
