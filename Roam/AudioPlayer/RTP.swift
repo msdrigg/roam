@@ -1,6 +1,6 @@
 import Foundation
 import Opus
-@preconcurrency import RTP
+import RTP
 
 struct RtpPacket: Comparable, Sendable {
     static func < (lhs: RtpPacket, rhs: RtpPacket) -> Bool {

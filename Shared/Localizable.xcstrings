@@ -921,7 +921,7 @@
       }
     },
     "App Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1253,7 +1253,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2668,6 +2668,7 @@
     },
     "Control your Roku!" : {
       "comment" : "Siri spotlight recommendation",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8073,6 +8074,12 @@
         }
       }
     },
+    "Open" : {
+      "comment" : "Siri shortcut to open a device"
+    },
+    "Open a device" : {
+      "comment" : "Configuration title for a settings page"
+    },
     "Open Email Template" : {
       "comment" : "Label on a button to open an email",
       "localizations" : {
@@ -9828,6 +9835,9 @@
         }
       }
     },
+    "Press Me" : {
+
+    },
     "Press play" : {
       "comment" : "Title for play intent",
       "localizations" : {
@@ -10749,6 +10759,12 @@
           }
         }
       }
+    },
+    "Roku Apps" : {
+      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation"
+    },
+    "Roku Controls" : {
+      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation"
     },
     "RTCP Port" : {
       "comment" : "Settings label for the device's RTCP port",

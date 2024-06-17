@@ -17,7 +17,7 @@ struct SimpleRemoteControlProvider: AppIntentTimelineProvider {
 
     func recommendations() -> [AppIntentRecommendation<DeviceChoiceIntent>] {
         [
-            AppIntentRecommendation(intent: DeviceChoiceIntent(), description: Text("Control your Roku!", comment: "Siri spotlight recommendation")),
+            AppIntentRecommendation(intent: DeviceChoiceIntent(), description: Text("Roku Controls", comment: "Siri spotlight recommendation")),
         ]
     }
 
@@ -40,7 +40,7 @@ struct SimpleRemoteControlProvider: AppIntentTimelineProvider {
         return entry
     }
 
-    func timeline(for configuration: DeviceChoiceIntent, in _: Context) async -> Timeline<DeviceChoiceTimelineEntity> {
+    func timeline(for configuration: DeviceChoiceIntent, in ctx: Context) async -> Timeline<DeviceChoiceTimelineEntity> {
         let modelContainer = getSharedModelContainer()
         let dataHandler = DataHandler(modelContainer: modelContainer)
 
@@ -71,7 +71,7 @@ struct AppChoiceRemoteControlProvider: AppIntentTimelineProvider {
 
     func recommendations() -> [AppIntentRecommendation<DeviceAndAppChoiceIntent>] {
         [
-            AppIntentRecommendation(intent: DeviceAndAppChoiceIntent(), description: Text("Control your Roku!", comment: "Siri spotlight recommendation")),
+            AppIntentRecommendation(intent: DeviceAndAppChoiceIntent(), description: Text("Roku Apps", comment: "Siri spotlight recommendation")),
         ]
     }
 
@@ -97,9 +97,11 @@ struct AppChoiceRemoteControlProvider: AppIntentTimelineProvider {
                 if let app3 = configuration.app3 {
                     loadedApps.insert(app3, at: 2)
                 }
+                #if !os(watchOS)
                 if let app4 = configuration.app4 {
                     loadedApps.insert(app4, at: 3)
                 }
+                #endif
             }
             apps = loadedApps
         }
@@ -132,9 +134,11 @@ struct AppChoiceRemoteControlProvider: AppIntentTimelineProvider {
                 if let app3 = configuration.app3 {
                     loadedApps.insert(app3, at: 2)
                 }
+#if !os(watchOS)
                 if let app4 = configuration.app4 {
                     loadedApps.insert(app4, at: 3)
                 }
+#endif
             }
             apps = loadedApps
         }

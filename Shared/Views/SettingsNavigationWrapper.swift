@@ -1,24 +1,11 @@
 import SwiftUI
-import SwiftData
-
-enum NavigationDestination: Hashable {
-    case settingsDestination(SettingsDestination)
-    case aboutDestination
-    case deviceSettingsDestination(PersistentIdentifier)
-    case keyboardShortcutDestinaion
-    case messageDestination
-}
-
-enum SettingsDestination {
-    case global
-    case debugging
-}
 
 struct SettingsNavigationWrapper<Content>: View where Content: View {
     @Binding var path: [NavigationDestination]
     @ViewBuilder let content: () -> Content
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.uuidUpdater) private var updater
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -39,6 +26,8 @@ struct SettingsNavigationWrapper<Content>: View where Content: View {
                                 if path.count > 0 {
                                     path.removeLast()
                                 }
+                                print("Updating here!! \(updater != nil)")
+                                updater?.update()
                             }
                         #endif
                     case .keyboardShortcutDestinaion:

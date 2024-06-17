@@ -5,6 +5,16 @@ import AppIntents
     struct RoamAppShortcutsProvider: AppShortcutsProvider {
         static var appShortcuts: [AppShortcut] {
             AppShortcut(
+                intent: OpenDeviceIntent(),
+                phrases: [
+                    "Open \(\.$target) with \(.applicationName)",
+                    "Show \(\.$target) on \(.applicationName)",
+                    "Open \(.applicationName)",
+                ],
+                shortTitle: LocalizedStringResource("Open", comment: "Siri shortcut to open a device"),
+                systemImageName: "tv"
+            )
+            AppShortcut(
                 intent: PlayIntent(),
                 phrases: [
                     "Press play with \(.applicationName)",

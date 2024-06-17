@@ -4,37 +4,43 @@ import os.log
 #if os(iOS) || os(tvOS) || os(visionOS)
     import AVFoundation
 
-    actor LatencyListener {
+    @MainActor
+    class LatencyListener {
         private nonisolated static let logger = Logger(
             subsystem: Bundle.main.bundleIdentifier!,
             category: String(describing: LatencyListener.self)
         )
 
         var latencyChangeHandler: ((Double) -> Void)?
+        var observerTokens: [Any] = []
         let audioSession = AVAudioSession.sharedInstance()
-
-        @objc nonisolated func handleRouteChangeNonisolated(notification _: Notification) async {
-            await handleRouteChange(audioSession.outputLatency)
-        }
-
-        func handleRouteChange(_ latency: Double) async {
-            latencyChangeHandler?(latency)
-        }
 
         func startListening() throws {
             Self.logger.info("Starting Latency observations")
             // Get the default notification center instance.
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(handleRouteChangeNonisolated),
-                name: AVAudioSession.routeChangeNotification,
-                object: nil
-            )
+            let token = NotificationCenter.default.addObserver(
+                forName: AVAudioSession.routeChangeNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    if let self {
+                        self.latencyChangeHandler?(self.audioSession.outputLatency)
+                    }
+                }
+            }
+
+            self.observerTokens.append(token)
         }
 
         func stopListening() {
             Self.logger.info("Stoping Latency observations")
-            NotificationCenter.default.removeObserver(self, name: AVAudioSession.routeChangeNotification, object: nil)
+
+            let ot = self.observerTokens
+            self.observerTokens = []
+            for token in ot {
+                NotificationCenter.default.removeObserver(token)
+            }
         }
 
         var events: AsyncStream<Double>? {

@@ -58,8 +58,8 @@ struct SettingsView: View {
     @State private var scanningActor: DeviceDiscoveryActor!
     @State private var isScanning: Bool = false
 
-    @State private var tabSelection = 0
     @State private var showWatchOSNote = false
+    @Environment(\.uuidUpdater) private var updater
 
     @Environment(\.createDataHandler) private var createDataHandler
 
@@ -100,6 +100,15 @@ struct SettingsView: View {
         }
     }
 
+    nonisolated func triggerUpdate() {
+        DispatchQueue.main.async {
+            self._devices.update()
+            Self.logger.info("Getting new update for value \(String(describing: self.updater?.uuid))")
+            self.updater?.update()
+            Self.logger.info("Getting new update 2 for value \(String(describing: self.updater?.uuid))")
+        }
+    }
+
     var body: some View {
         Form {
             Section {
@@ -121,12 +130,11 @@ struct SettingsView: View {
                                                 .info(
                                                     "Deleted device with id \(String(describing: pid))"
                                                 )
-
+                                            self.triggerUpdate()
                                         } catch {
                                             Self.logger.error("Error deleting device \(error)")
                                         }
                                     }
-
                                 } label: {
                                     Label(String(localized: "Delete", comment: "Label on a button to delete a device"), systemImage: "trash")
                                 }
@@ -142,6 +150,7 @@ struct SettingsView: View {
                                     Task.detached {
                                         do {
                                             try await createDataHandler()?.delete(pid)
+                                            self.triggerUpdate()
                                         } catch {
                                             Self.logger.error("Error deleting device \(error)")
                                         }
@@ -160,6 +169,7 @@ struct SettingsView: View {
                                 Task.detached {
                                     do {
                                         try await createDataHandler()?.delete(pid)
+                                        self.triggerUpdate()
                                     } catch {
                                         Self.logger.error("Error deleting device \(error)")
                                     }
@@ -217,7 +227,7 @@ struct SettingsView: View {
                 Text("Devices", comment: "Header in device selection menu")
 #endif
             } footer: {
-#if !os(watchOS)
+#if !os(watchOS) && !os(macOS)
                 if isScanning {
                     Label("Scanning for devices...", systemImage: "rays")
                         .symbolEffect(.variableColor, isActive: isScanning)
@@ -406,6 +416,7 @@ struct SettingsView: View {
                 NavigationLink(String(localized: "About", comment: "Text on a navigation link to the about page"), value: NavigationDestination.aboutDestination)
             }
         }
+        .id(updater?.uuid.uuidString ?? "--")
         .onAppear {
             if destination == .debugging {
                 reportDebugLogs()
@@ -431,7 +442,9 @@ struct SettingsView: View {
 #endif
         .formStyle(.grouped)
         .onAppear {
-            scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer())
+            scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                updater?.update()
+            })
         }
 #if !os(watchOS)
         .task(priority: .background) {
@@ -541,6 +554,7 @@ struct DeviceDetailView: View {
     @State var showHeadphonesModeDescription: Bool = false
 
     @Query private var selectedDevices: [Device]
+    @Environment(\.uuidUpdater) private var updater
 
     init(deviceId: PersistentIdentifier, dismiss: @escaping () -> Void) {
         self.dismiss = dismiss
@@ -608,7 +622,27 @@ struct DeviceDetailView: View {
                 }
 #if os(tvOS)
                 Button(String(localized: "Save", comment: "Text on a button to save the device settings"), systemImage: "checkmark", action: {
-                    dismiss()
+                    if let device = device {
+                        let pid = device.persistentModelID
+                        let udn = device.udn
+                        Task.detached {
+                            DispatchQueue.main.async {
+                                dismiss()
+                            }
+                            await saveDevice(
+                                existingDeviceId: pid,
+                                existingUDN: udn,
+                                newIP: deviceIP,
+                                newDeviceName: deviceName,
+                                dataHandler: DataHandler(
+                                    modelContainer: getSharedModelContainer()
+                                )
+                            )
+                            DispatchQueue.main.async {
+                                updater?.update()
+                            }
+                        }
+                    }
                 })
                     .disabled(nameValidation != nil || addressValidation != nil)
 
@@ -618,14 +652,17 @@ struct DeviceDetailView: View {
                     Task.detached {
                         do {
                             try await createDataHandler()?.delete(deviceId)
+                            self.triggerUpdate()
+
                             Self.logger
                                 .info("Deleted device with id \(String(describing: deviceId))")
                         } catch {
                             Self.logger.error("Error deleting device \(error)")
                         }
+                        DispatchQueue.main.async {
+                            dismiss()
+                        }
                     }
-
-                    dismiss()
                 })
                 .foregroundStyle(Color.red)
 #endif
@@ -755,27 +792,33 @@ struct DeviceDetailView: View {
             if addressValidation != nil || nameValidation != nil {
                 return
             }
-            if let device = device {
-                let pid = device.persistentModelID
-                let udn = device.udn
-                Task.detached {
-                    await saveDevice(
-                        existingDeviceId: pid,
-                        existingUDN: udn,
-                        newIP: deviceIP,
-                        newDeviceName: deviceName,
-                        dataHandler: DataHandler(
-                            modelContainer: getSharedModelContainer()
-                        )
-                    )
-                }
-            }
         }
 #if !os(tvOS)
         .toolbar(id: "settings-detail") {
             ToolbarItem(id: "save-device", placement: .primaryAction) {
                 Button(String(localized: "Save", comment: "Text on a button to save the device settings"), systemImage: "checkmark", action: {
-                    dismiss()
+                    if let device = device {
+                        let pid = device.persistentModelID
+                        let udn = device.udn
+                        Task.detached {
+                            DispatchQueue.main.async {
+                                dismiss()
+                            }
+                            await saveDevice(
+                                existingDeviceId: pid,
+                                existingUDN: udn,
+                                newIP: deviceIP,
+                                newDeviceName: deviceName,
+                                dataHandler: DataHandler(
+                                    modelContainer: getSharedModelContainer()
+                                )
+                            )
+
+                            DispatchQueue.main.async {
+                                updater?.update()
+                            }
+                        }
+                    }
                 })
             }
 
@@ -785,22 +828,29 @@ struct DeviceDetailView: View {
                     Self.logger.info("Deleting device")
                     let deviceId = deviceId
                     Task.detached {
+                        DispatchQueue.main.async {
+                            dismiss()
+                        }
                         do {
                             try await createDataHandler()?.delete(deviceId)
+
                             Self.logger.info("Deleted device with id \(String(describing: deviceId))")
                         } catch {
                             Self.logger.error("Error deleting device \(error)")
                         }
+                        DispatchQueue.main.async {
+                            updater?.update()
+                        }
                     }
-
-                    dismiss()
                 })
                 .foregroundStyle(Color.red)
             }
         }
 #endif
         .onAppear {
-            scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer())
+            scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                updater?.update()
+            })
         }
 
 #if os(macOS)

@@ -1,6 +1,7 @@
 import os.log
 import SwiftData
 import SwiftUI
+import TipKit
 
 @main
 struct RoamWatch: App {
@@ -83,11 +84,11 @@ struct WatchAppView: View {
         }
     }
 
-    @State var navPath: [NavigationDestination] = []
+    @State var navPath: NavigationManager = NavigationManager()
 
     @MainActor
     var mainBody: some View {
-        SettingsNavigationWrapper(path: $navPath) {
+        SettingsNavigationWrapper(path: $navPath.navigationPath) {
             TabView {
                 if selectedDevice == nil {
                     VStack {
@@ -132,7 +133,16 @@ struct WatchAppView: View {
             }
             .tabViewStyle(.verticalPage)
             .onAppear {
-                scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer())
+                scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                    // Ignoring
+                })
+            }
+            .task {
+                // Configure and load your tips at app launch.
+                try? Tips.configure([
+                    .displayFrequency(.immediate),
+                    .datastoreLocation(.groupContainer(identifier: "group.com.msdrigg.roam.tips"))
+                ])
             }
         }
     }

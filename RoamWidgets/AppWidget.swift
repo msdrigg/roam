@@ -45,8 +45,13 @@ import WidgetKit
                 intent: DeviceAndAppChoiceIntent.self,
                 provider: AppChoiceRemoteControlProvider()
             ) { entry in
+                #if !os(watchOS)
                 SmallAppView(device: entry.device, apps: Array(entry.apps.prefix(2)), rows: 1)
                     .containerBackground(Color("WidgetBackground"), for: .widget)
+                #else
+                SmallAppView(device: entry.device, apps: Array(entry.apps.prefix(3)), rows: 1)
+                    .containerBackground(Color("WidgetBackground"), for: .widget)
+                #endif
             }
             .supportedFamilies([.accessoryRectangular])
         }

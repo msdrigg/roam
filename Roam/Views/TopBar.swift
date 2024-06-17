@@ -5,11 +5,15 @@ struct TopBar: View {
     let pressCounter: (RemoteButton) -> Int
     let action: (RemoteButton) -> Void
 
+    @ScaledMetric var buttonWidth = globalButtonWidth
+    @ScaledMetric var buttonHeight = globalButtonHeight
+    @ScaledMetric var buttonSpacing = globalButtonSpacing
+
     var body: some View {
-        HStack(spacing: globalButtonSpacing * 2) {
+        HStack(spacing: buttonSpacing * 2) {
             Button(action: { action(.back) }, label: {
                 Label("Back", systemImage: "arrow.left")
-                    .frame(width: globalButtonWidth, height: globalButtonHeight)
+                    .frame(width: buttonWidth, height: buttonHeight)
             })
             #if !os(tvOS) && !os(watchOS)
             .customKeyboardShortcut(.back)
@@ -37,7 +41,7 @@ struct TopBar: View {
 
             Button(action: { action(.home) }, label: {
                 Label("Home", systemImage: "house")
-                    .frame(width: globalButtonWidth, height: globalButtonHeight)
+                    .frame(width: buttonWidth, height: buttonHeight)
             })
             #if os(macOS)
             .buttonStyle(.borderedProminent)

@@ -35,6 +35,15 @@
 		AF11D36F2AD35D2800527AF6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF11D36E2AD35D2800527AF6 /* SettingsView.swift */; };
 		AF15C2492AE8672700B79FD9 /* RoamWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF15C2482AE8672700B79FD9 /* RoamWatchApp.swift */; };
 		AF15C2532AE8672800B79FD9 /* Roam.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = AF15C2462AE8672700B79FD9 /* Roam.app */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AF1899F22C1CB204001EDA78 /* NavigationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1899F12C1CB200001EDA78 /* NavigationManager.swift */; };
+		AF1899F32C1CB204001EDA78 /* NavigationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1899F12C1CB200001EDA78 /* NavigationManager.swift */; };
+		AF1899F42C1CB204001EDA78 /* NavigationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1899F12C1CB200001EDA78 /* NavigationManager.swift */; };
+		AF1899F52C1CB204001EDA78 /* NavigationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1899F12C1CB200001EDA78 /* NavigationManager.swift */; };
+		AF1899F62C1CDF83001EDA78 /* NavigationDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF8EF51C2BB60EAF002A4D6D /* NavigationDestination.swift */; };
+		AF1899F92C1CDFC2001EDA78 /* SettingsNavigationWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1899F82C1CDFBC001EDA78 /* SettingsNavigationWrapper.swift */; };
+		AF1899FA2C1CDFC2001EDA78 /* SettingsNavigationWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1899F82C1CDFBC001EDA78 /* SettingsNavigationWrapper.swift */; };
+		AF1899FB2C1CDFC2001EDA78 /* SettingsNavigationWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1899F82C1CDFBC001EDA78 /* SettingsNavigationWrapper.swift */; };
+		AF1899FD2C1CE2E5001EDA78 /* AccessoryGroupRemoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1899FC2C1CE2E5001EDA78 /* AccessoryGroupRemoteView.swift */; };
 		AF19CA142AE4471200A42DFF /* AsyncHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA132AE4471200A42DFF /* AsyncHelpers.swift */; };
 		AF19CA152AE4471200A42DFF /* AsyncHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA132AE4471200A42DFF /* AsyncHelpers.swift */; };
 		AF19CA1B2AE4510900A42DFF /* RTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA1A2AE4510900A42DFF /* RTP.swift */; };
@@ -107,6 +116,9 @@
 		AF5ED8E52AE99D95007DB2B8 /* ButtonGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5ED8D92AE98607007DB2B8 /* ButtonGridView.swift */; };
 		AF65A88A2BB5ABF9005ECF7F /* RoamAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF65A8892BB5ABF9005ECF7F /* RoamAppDelegate.swift */; };
 		AF65A88C2BB5AD02005ECF7F /* ExternalAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF65A88B2BB5AD02005ECF7F /* ExternalAboutView.swift */; };
+		AF67C8F42C1D1A9200A6D077 /* UUIDUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF67C8F32C1D1A9000A6D077 /* UUIDUpdater.swift */; };
+		AF67C8F52C1D1A9200A6D077 /* UUIDUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF67C8F32C1D1A9000A6D077 /* UUIDUpdater.swift */; };
+		AF67C8F62C1D1A9200A6D077 /* UUIDUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF67C8F32C1D1A9000A6D077 /* UUIDUpdater.swift */; };
 		AF6E294A2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6E29492C1A2ACB0062DFB3 /* ViewHelpers.swift */; };
 		AF6E294B2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6E29492C1A2ACB0062DFB3 /* ViewHelpers.swift */; };
 		AF6E294C2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6E29492C1A2ACB0062DFB3 /* ViewHelpers.swift */; };
@@ -179,9 +191,9 @@
 		AF8EF5192BB60D54002A4D6D /* VolumeListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED42492AEE8F3B0023D684 /* VolumeListener.swift */; };
 		AF8EF51A2BB60E43002A4D6D /* KeyboardShortcutPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */; };
 		AF8EF51B2BB60E62002A4D6D /* DevicePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3AD55C2AE299BD00E2D780 /* DevicePicker.swift */; };
-		AF8EF51D2BB60EAF002A4D6D /* SettingsNavigationWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF8EF51C2BB60EAF002A4D6D /* SettingsNavigationWrapper.swift */; };
-		AF8EF51E2BB60EAF002A4D6D /* SettingsNavigationWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF8EF51C2BB60EAF002A4D6D /* SettingsNavigationWrapper.swift */; };
-		AF8EF51F2BB60EAF002A4D6D /* SettingsNavigationWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF8EF51C2BB60EAF002A4D6D /* SettingsNavigationWrapper.swift */; };
+		AF8EF51D2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF8EF51C2BB60EAF002A4D6D /* NavigationDestination.swift */; };
+		AF8EF51E2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF8EF51C2BB60EAF002A4D6D /* NavigationDestination.swift */; };
+		AF8EF51F2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF8EF51C2BB60EAF002A4D6D /* NavigationDestination.swift */; };
 		AF8EF5202BB61AD6002A4D6D /* DiscoveryActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF95B7532ADF4435005FC338 /* DiscoveryActor.swift */; };
 		AF8EF5212BB61ADC002A4D6D /* SSDPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA272AE54ABC00A42DFF /* SSDPService.swift */; };
 		AF8EF5222BB61ADF002A4D6D /* SSDPDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA2A2AE54AD100A42DFF /* SSDPDiscovery.swift */; };
@@ -377,6 +389,9 @@
 		AF11D36E2AD35D2800527AF6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		AF15C2462AE8672700B79FD9 /* Roam.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Roam.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF15C2482AE8672700B79FD9 /* RoamWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamWatchApp.swift; sourceTree = "<group>"; };
+		AF1899F12C1CB200001EDA78 /* NavigationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationManager.swift; sourceTree = "<group>"; };
+		AF1899F82C1CDFBC001EDA78 /* SettingsNavigationWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsNavigationWrapper.swift; sourceTree = "<group>"; };
+		AF1899FC2C1CE2E5001EDA78 /* AccessoryGroupRemoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessoryGroupRemoteView.swift; sourceTree = "<group>"; };
 		AF19CA132AE4471200A42DFF /* AsyncHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncHelpers.swift; sourceTree = "<group>"; };
 		AF19CA1A2AE4510900A42DFF /* RTP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTP.swift; sourceTree = "<group>"; };
 		AF19CA1D2AE4517600A42DFF /* RTCP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTCP.swift; sourceTree = "<group>"; };
@@ -424,6 +439,7 @@
 		AF6520872BCE55E200B69BE8 /* Vars.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Vars.xcconfig; sourceTree = "<group>"; };
 		AF65A8892BB5ABF9005ECF7F /* RoamAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamAppDelegate.swift; sourceTree = "<group>"; };
 		AF65A88B2BB5AD02005ECF7F /* ExternalAboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalAboutView.swift; sourceTree = "<group>"; };
+		AF67C8F32C1D1A9000A6D077 /* UUIDUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UUIDUpdater.swift; sourceTree = "<group>"; };
 		AF6E29492C1A2ACB0062DFB3 /* ViewHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewHelpers.swift; sourceTree = "<group>"; };
 		AF70BB062BA7C4D2009A06EC /* HoveredView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoveredView.swift; sourceTree = "<group>"; };
 		AF70BB082BA7CBC1009A06EC /* PaddedHoverButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaddedHoverButtonStyle.swift; sourceTree = "<group>"; };
@@ -432,7 +448,7 @@
 		AF779BF22BA4D91E00231BC5 /* CaptureScrollWheelModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureScrollWheelModifier.swift; sourceTree = "<group>"; };
 		AF779BF62BA4DDD000231BC5 /* WrappingHStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WrappingHStack.swift; sourceTree = "<group>"; };
 		AF8CB9ED2BDABE3000115C88 /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
-		AF8EF51C2BB60EAF002A4D6D /* SettingsNavigationWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsNavigationWrapper.swift; sourceTree = "<group>"; };
+		AF8EF51C2BB60EAF002A4D6D /* NavigationDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationDestination.swift; sourceTree = "<group>"; };
 		AF94AEF22C0BEA8200D8D7CF /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		AF95B6F62ADF2F9F005FC338 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.crashreport; };
 		AF95B6FD2ADF2FEC005FC338 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
@@ -602,8 +618,10 @@
 			children = (
 				AF2480632BDB4D8300EF47AE /* RoamWidgetsRelease.entitlements */,
 				AFD9C4E02AE9802200C4079C /* SmallRemoteView.swift */,
+				AF1899FC2C1CE2E5001EDA78 /* AccessoryGroupRemoteView.swift */,
 				AF95B7192ADF340A005FC338 /* WidgetHelpers.swift */,
 				AF95B7132ADF304E005FC338 /* SmallRemoteWidget.swift */,
+				AFD9C4DC2AE9800500C4079C /* SmallAppView.swift */,
 				AFC4A65B2AE8AABA005DAC6C /* AppWidget.swift */,
 				AF95B71D2ADF3BA7005FC338 /* MediumRemoteWidget.swift */,
 				AF27400F2AE02C25007C6208 /* RoamWidgetsApp.swift */,
@@ -652,8 +670,10 @@
 		AF56E3BA2AD9863100F5E6E0 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				AF67C8F32C1D1A9000A6D077 /* UUIDUpdater.swift */,
+				AF1899F82C1CDFBC001EDA78 /* SettingsNavigationWrapper.swift */,
 				AF11D36E2AD35D2800527AF6 /* SettingsView.swift */,
-				AF8EF51C2BB60EAF002A4D6D /* SettingsNavigationWrapper.swift */,
+				AF8EF51C2BB60EAF002A4D6D /* NavigationDestination.swift */,
 				AF11D36A2AD2D0B800527AF6 /* AppLinksView.swift */,
 				AFC4A65E2AE8AF3F005DAC6C /* DataImage.swift */,
 				AFA165BF2AE92F92003F45ED /* AboutView.swift */,
@@ -661,7 +681,6 @@
 				AF779BF22BA4D91E00231BC5 /* CaptureScrollWheelModifier.swift */,
 				AF779BF62BA4DDD000231BC5 /* WrappingHStack.swift */,
 				AF70BB062BA7C4D2009A06EC /* HoveredView.swift */,
-				AFD9C4DC2AE9800500C4079C /* SmallAppView.swift */,
 				AF70BB082BA7CBC1009A06EC /* PaddedHoverButtonStyle.swift */,
 			);
 			path = Views;
@@ -699,6 +718,7 @@
 				AF56E3AF2AD97AA300F5E6E0 /* Models */,
 				AF56E3BB2AD9865400F5E6E0 /* Utils */,
 				AFD590D52AEC787700189620 /* ModelContainer.swift */,
+				AF1899F12C1CB200001EDA78 /* NavigationManager.swift */,
 				AF05B4792BFDA63100FA3783 /* Bridge.h */,
 			);
 			path = Shared;
@@ -1081,8 +1101,10 @@
 				AFD9C4E72AE980A800C4079C /* LaunchAppIntent.swift in Sources */,
 				AFD9C4E92AE980B200C4079C /* RemoteButton.swift in Sources */,
 				AFD9C4DB2AE97FE100C4079C /* AboutView.swift in Sources */,
+				AF67C8F42C1D1A9200A6D077 /* UUIDUpdater.swift in Sources */,
 				AF0C82962AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */,
 				AF5ED8E52AE99D95007DB2B8 /* ButtonGridView.swift in Sources */,
+				AF1899F42C1CB204001EDA78 /* NavigationManager.swift in Sources */,
 				AF779BF82BA4DE2200231BC5 /* WrappingHStack.swift in Sources */,
 				AF42442F2BB1118700334AAF /* SchemaFile.swift in Sources */,
 				AFD9C4F32AE982E400C4079C /* DiscoveryActor.swift in Sources */,
@@ -1105,7 +1127,8 @@
 				AF70BB0A2BA7CBD0009A06EC /* HoveredView.swift in Sources */,
 				AF0C82982AEBFBD500CBE7F8 /* StatelessDeviceAPI.swift in Sources */,
 				AF6E294B2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */,
-				AF8EF51E2BB60EAF002A4D6D /* SettingsNavigationWrapper.swift in Sources */,
+				AF1899FA2C1CDFC2001EDA78 /* SettingsNavigationWrapper.swift in Sources */,
+				AF8EF51E2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */,
 				AF5ED8E32AE992D1007DB2B8 /* AppListView.swift in Sources */,
 				AFD9C4EB2AE980BD00C4079C /* AsyncHelpers.swift in Sources */,
 				AFD9C4FC2AE983C700C4079C /* AsyncSemaphore.swift in Sources */,
@@ -1127,6 +1150,7 @@
 			files = (
 				AF05B4722BFDA49E00FA3783 /* ObjcErrors.swift in Sources */,
 				AFD9C4F22AE9828600C4079C /* SmallRemoteView.swift in Sources */,
+				AF1899F62C1CDF83001EDA78 /* NavigationDestination.swift in Sources */,
 				AF205B272AE02D0100041CDF /* NetworkHelpers.swift in Sources */,
 				AF205B2B2AE02D1C00041CDF /* ButtonPressIntents.swift in Sources */,
 				AF24805A2BDB42F600EF47AE /* TestData.swift in Sources */,
@@ -1136,6 +1160,7 @@
 				AF205B282AE02D0100041CDF /* AppLink.swift in Sources */,
 				AF205B2A2AE02D1C00041CDF /* RemoteButtonAppEnum.swift in Sources */,
 				AF205B212AE02CAF00041CDF /* SmallRemoteWidget.swift in Sources */,
+				AF1899FD2C1CE2E5001EDA78 /* AccessoryGroupRemoteView.swift in Sources */,
 				AF205B2C2AE02D1C00041CDF /* WidgetIntents.swift in Sources */,
 				AF19CA242AE455B400A42DFF /* DataHelpers.swift in Sources */,
 				AF6E294C2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */,
@@ -1149,6 +1174,7 @@
 				AFA9F8972B1B878600829B7C /* Shortcuts.swift in Sources */,
 				AF0042872AEABA9F0051BB1E /* CollectionHelpers.swift in Sources */,
 				AFF6DE142BCF0A14002C13FC /* Message.swift in Sources */,
+				AF1899F22C1CB204001EDA78 /* NavigationManager.swift in Sources */,
 				AFC4A6602AE8AF3F005DAC6C /* DataImage.swift in Sources */,
 				AFE6249F2BDCAA5000F4992E /* DataActor.swift in Sources */,
 				AF205B242AE02D0100041CDF /* RemoteButton.swift in Sources */,
@@ -1175,7 +1201,7 @@
 				AF8EF51B2BB60E62002A4D6D /* DevicePicker.swift in Sources */,
 				AF8EF4E42BB60A9F002A4D6D /* AboutView.swift in Sources */,
 				AF8EF4E52BB60A9F002A4D6D /* Badge.swift in Sources */,
-				AF8EF51F2BB60EAF002A4D6D /* SettingsNavigationWrapper.swift in Sources */,
+				AF8EF51F2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */,
 				AF71071F2BD00C8600384691 /* MessagingView.swift in Sources */,
 				AF8EF5162BB60D46002A4D6D /* AsyncBufferedChannel.swift in Sources */,
 				AF8EF5172BB60D46002A4D6D /* AsyncThrowingBufferedChannel.swift in Sources */,
@@ -1193,6 +1219,7 @@
 				AF8EF4EA2BB60A9F002A4D6D /* PaddedHoverButtonStyle.swift in Sources */,
 				AF8EF51A2BB60E43002A4D6D /* KeyboardShortcutPanel.swift in Sources */,
 				AF8EF4EB2BB60AB5002A4D6D /* Debugger.swift in Sources */,
+				AF67C8F52C1D1A9200A6D077 /* UUIDUpdater.swift in Sources */,
 				AF8EF5212BB61ADC002A4D6D /* SSDPService.swift in Sources */,
 				AF6E294D2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */,
 				AF8EF4EC2BB60AB5002A4D6D /* StatelessDeviceAPI.swift in Sources */,
@@ -1207,6 +1234,7 @@
 				AF8EF4F42BB60AE8002A4D6D /* AppLink.swift in Sources */,
 				AF05B4732BFDA49E00FA3783 /* ObjcErrors.swift in Sources */,
 				AF8EF5022BB60B31002A4D6D /* ButtonGrid.swift in Sources */,
+				AF1899F52C1CB204001EDA78 /* NavigationManager.swift in Sources */,
 				AF8EF4F02BB60ADA002A4D6D /* AppLinkAppEntity.swift in Sources */,
 				AF8EF4ED2BB60AB5002A4D6D /* DeviceApi.swift in Sources */,
 				AF8EF4FD2BB60B15002A4D6D /* LatencyListener.swift in Sources */,
@@ -1214,6 +1242,7 @@
 				AF8EF4DE2BB60A15002A4D6D /* RoamApp.swift in Sources */,
 				AF44021D2BFBEF2500004C15 /* LinkedTextView.swift in Sources */,
 				AF8EF5202BB61AD6002A4D6D /* DiscoveryActor.swift in Sources */,
+				AF1899F92C1CDFC2001EDA78 /* SettingsNavigationWrapper.swift in Sources */,
 				AF8EF4F52BB60AF0002A4D6D /* NetworkMonitor.swift in Sources */,
 				AF8EF4F62BB60AF0002A4D6D /* DataHelpers.swift in Sources */,
 				AF8EF5062BB60B45002A4D6D /* NotificationBanner.swift in Sources */,
@@ -1262,6 +1291,7 @@
 				AFE6249D2BDCAA5000F4992E /* DataActor.swift in Sources */,
 				AF19CA232AE455B400A42DFF /* DataHelpers.swift in Sources */,
 				AFA079DA2AE02561003E2754 /* DeviceAppEntity.swift in Sources */,
+				AF1899F32C1CB204001EDA78 /* NavigationManager.swift in Sources */,
 				AF65A88C2BB5AD02005ECF7F /* ExternalAboutView.swift in Sources */,
 				AF0042752AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */,
 				AF20AD0D2AE01E9100D371C7 /* Device.swift in Sources */,
@@ -1285,6 +1315,7 @@
 				AF19CA142AE4471200A42DFF /* AsyncHelpers.swift in Sources */,
 				AFA165C02AE92F92003F45ED /* AboutView.swift in Sources */,
 				AF44021C2BFBEF2500004C15 /* LinkedTextView.swift in Sources */,
+				AF1899FB2C1CDFC2001EDA78 /* SettingsNavigationWrapper.swift in Sources */,
 				AF3EEF962AE0206E00B661F3 /* RokuSession.swift in Sources */,
 				AF95B76F2ADF5BA1005FC338 /* AppLinksView.swift in Sources */,
 				AF19CA1E2AE4517600A42DFF /* RTCP.swift in Sources */,
@@ -1308,8 +1339,9 @@
 				AF6E294A2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */,
 				AFF6DE0D2BCF0326002C13FC /* Message.swift in Sources */,
 				AF42442E2BB1118700334AAF /* SchemaFile.swift in Sources */,
+				AF67C8F62C1D1A9200A6D077 /* UUIDUpdater.swift in Sources */,
 				AF3EEF952AE0206E00B661F3 /* AudioPlayer.swift in Sources */,
-				AF8EF51D2BB60EAF002A4D6D /* SettingsNavigationWrapper.swift in Sources */,
+				AF8EF51D2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */,
 				AF19CA2E2AE692E600A42DFF /* AsyncBufferedChannel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1916,8 +1948,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/alta/swift-opus";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.0.2;
+				branch = main;
+				kind = branch;
 			};
 		};
 		AFECDE1E2AE18519003F6676 /* XCRemoteSwiftPackageReference "swift-rtp" */ = {

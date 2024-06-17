@@ -212,7 +212,7 @@ actor ECPSession {
 
     private func preInitWebsocket() async throws {
         if webSocketTask.state != .running {
-            Self.logger.info("WS not running, re-configuring")
+            Self.logger.info("WS not running, re-configuring. Error: \(self.webSocketTask.error)")
             try await configure()
         }
     }

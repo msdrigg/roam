@@ -22,10 +22,12 @@ func sendDeviceTokenToServer(_ token: String) async {
     import AppKit
 
     class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject {
-        @Published var navigationPath: [NavigationDestination] = []
+        @Published var navigationPath: NavigationManager
         @Published var messagingWindowOpenTrigger: UUID?
 
+        @MainActor
         override init() {
+            navigationPath = NavigationManager()
             super.init()
             UNUserNotificationCenter.current().delegate = self
             logger.info("Setting Notifications delegate to self")
@@ -176,7 +178,7 @@ func sendDeviceTokenToServer(_ token: String) async {
     }
 
     class RoamAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject, Sendable {
-        @Published var navigationPath: [NavigationDestination] = []
+        @Published var navigationPath: NavigationManager = NavigationManager()
 
         private var cancellables: Set<AnyCancellable> = []
 

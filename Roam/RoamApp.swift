@@ -17,6 +17,8 @@ struct RoamApp: App {
         @UIApplicationDelegateAdaptor(RoamAppDelegate.self) var appDelegate
     #endif
 
+    @ObservedObject var uuidUpdater = UUIDUpdater()
+
     var sharedModelContainer: ModelContainer
     init() {
         sharedModelContainer = getSharedModelContainer()
@@ -29,6 +31,7 @@ struct RoamApp: App {
                     .translucentBackground()
                     .removeToolbarTitle()
                     .removeToolbarBackground()
+                    .environment(\.uuidUpdater, uuidUpdater)
             }
             .enableBackgroundDragging()
             .defaultSize(width: 400, height: 1000)
@@ -83,7 +86,7 @@ struct RoamApp: App {
 #if os(visionOS)
                     .frame(minWidth: 400, minHeight: 950)
 #endif
-                    .translucentBackground()
+                    .environment(\.uuidUpdater, uuidUpdater)
             }
             #if os(visionOS)
             .windowResizability(.contentMinSize)
@@ -98,6 +101,7 @@ struct RoamApp: App {
                 MessageView()
                     .frame(width: 400)
                     .translucentBackground()
+                    .environment(\.uuidUpdater, uuidUpdater)
             }
             .windowResizability(.contentSize)
             .modelContainer(sharedModelContainer)
@@ -117,6 +121,7 @@ struct RoamApp: App {
                 MacSettings()
                     .translucentBackground()
                     .enableResize()
+                    .environment(\.uuidUpdater, uuidUpdater)
             }
             .modelContainer(sharedModelContainer)
             .environment(\.createDataHandler, dataHandlerCreator())

@@ -47,13 +47,14 @@ public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Enc
 
     public var rtcpPort: UInt16?
     public var supportsDatagram: Bool?
+    public var icon: Data?
 
     public var id: String {
         udn
     }
 
     public var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(name)")
+        DisplayRepresentation(title: "\(name)", image: (icon != nil) ? DisplayRepresentation.Image(data: icon!) : DisplayRepresentation.Image(systemName: "tv"))
     }
 
     func usingMac() -> String? {
@@ -76,6 +77,7 @@ public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Enc
         lastOnlineAt = device.lastOnlineAt
         lastScannedAt = device.lastScannedAt
         deletedAt = device.deletedAt
+        icon = device.deviceIcon
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -122,3 +124,9 @@ public extension Device {
         DeviceAppEntity(device: self)
     }
 }
+
+#if !os(watchOS)
+import CoreSpotlight
+
+extension DeviceAppEntity: IndexedEntity {}
+#endif

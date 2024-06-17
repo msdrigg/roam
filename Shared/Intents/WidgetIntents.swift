@@ -4,6 +4,25 @@ import os
 
 #if !os(tvOS)
     @available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
+public struct OpenDeviceIntent: OpenIntent {
+        public typealias Value = DeviceAppEntity
+
+        public init() {}
+        public static let title: LocalizedStringResource = LocalizedStringResource("Open a device", comment: "Configuration title for a settings page")
+
+        public static let openAppWhenRun: Bool = true
+
+        @Parameter(title: LocalizedStringResource("Device", comment: "Configuration field title for a device selection field"))
+        public var target: DeviceAppEntity
+
+        @MainActor
+        public func perform() async throws -> some IntentResult {
+            await dataHandlerCreator()().setSelectedDevice(target.modelId)
+            return .result()
+        }
+    }
+
+    @available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
     public struct DeviceChoiceIntent: AppIntent, WidgetConfigurationIntent {
         public static let title: LocalizedStringResource = LocalizedStringResource("Choose a device", comment: "Configuration title for a settings page")
         public static let description = IntentDescription(LocalizedStringResource("Choose which device to target", comment: "Configuration description for a settings page"))
@@ -72,8 +91,10 @@ import os
         @Parameter(title: LocalizedStringResource("App 3", comment: "Configuration field title for selecting the third app"))
         public var app3: AppLinkAppEntity?
 
+        #if !os(watchOS)
         @Parameter(title: LocalizedStringResource("App 4", comment: "Configuration field title for selecting the fourth app"))
         public var app4: AppLinkAppEntity?
+        #endif
 
         public static var parameterSummary: some ParameterSummary {
             When(\.$manuallySelectDevice, .equalTo, true) {
@@ -85,7 +106,9 @@ import os
                         \.$app1
                         \.$app2
                         \.$app3
+                        #if !os(watchOS)
                         \.$app4
+                        #endif
                     }
                 } otherwise: {
                     Summary {
@@ -102,7 +125,9 @@ import os
                         \.$app1
                         \.$app2
                         \.$app3
+#if !os(watchOS)
                         \.$app4
+                        #endif
                     }
                 } otherwise: {
                     Summary {

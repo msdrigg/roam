@@ -7,26 +7,10 @@ import StoreKit
 import SwiftData
 import SwiftUI
 import Foundation
+import TipKit
 
 #if os(iOS) && !APPCLIP
 import WatchConnectivity
-#endif
-
-#if os(macOS) || os(visionOS)
-    let globalButtonWidth: CGFloat = 44
-    let globalButtonHeight: CGFloat = 36
-    let globalButtonSpacing: CGFloat = 10
-    let globalAppLinkShrinkWidth: CGFloat = 500
-#elseif os(tvOS)
-    let globalButtonWidth: CGFloat = 60
-    let globalButtonSpacing: CGFloat = 30
-    let globalButtonHeight: CGFloat = 50
-    let globalAppLinkShrinkWidth: CGFloat = 600
-#else
-    let globalButtonSpacing: CGFloat = 10
-    let globalButtonWidth: CGFloat = 28
-    let globalButtonHeight: CGFloat = 20
-    let globalAppLinkShrinkWidth = 700
 #endif
 
 let globalToolbarShrinkWidth: CGFloat = 300
@@ -167,6 +151,8 @@ struct RemoteView: View {
 
     @Namespace var animation
 
+    @Environment(\.uuidUpdater) private var updater
+
     var deviceStatusColor: Color {
         selectedDevice?.isOnline() ?? false ? Color.green : Color.secondary
     }
@@ -221,11 +207,11 @@ struct RemoteView: View {
 
     var body: some View {
         if runningInPreview {
-            SettingsNavigationWrapper(path: $appDelegate.navigationPath) {
+            SettingsNavigationWrapper(path: $appDelegate.navigationPath.navigationPath) {
                 remotePage
             }
         } else {
-            SettingsNavigationWrapper(path: $appDelegate.navigationPath) {
+            SettingsNavigationWrapper(path: $appDelegate.navigationPath.navigationPath) {
                 remotePage
                     .task {
                         // Hack to make sure we don't get ina badk focus state :/
@@ -261,6 +247,13 @@ struct RemoteView: View {
                             }
                         }
                     }
+            }
+            .task {
+                // Configure and load your tips at app launch.
+                try? Tips.configure([
+                    .displayFrequency(.immediate),
+                    .datastoreLocation(.groupContainer(identifier: "group.com.msdrigg.roam.tips"))
+                ])
             }
             .task {
                 while true {
@@ -435,7 +428,7 @@ struct RemoteView: View {
                         }
                     #endif
 
-                    #if os(macOS) || os(visionOS)
+                    #if os(macOS)
                     HStack(alignment: .center) {
                         Spacer()
                             .layoutPriority(1)
@@ -456,6 +449,61 @@ struct RemoteView: View {
                         #endif
                         Spacer()
                             .layoutPriority(1)
+                    }
+                    #elseif os(visionOS)
+                    HStack(alignment: .center) {
+                        Button(action: {
+                            keyboardLeaving = showKeyboardEntry
+                            withAnimation {
+                                showKeyboardEntry = !showKeyboardEntry
+                            }
+                        }, label: {
+                            Label(String(localized: "Keyboard", comment: "Label on a button to open the keyboard"), systemImage: "keyboard")
+                        })
+                        .focusable(true, interactions: [.activate, .edit])
+                        .focused($focusKeyboardMonitor, equals: .monitor)
+                        .onKeyPress { ke in
+                            for shortcut in allKeyboardShortcuts {
+                                if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
+                                    let title = shortcut.title
+                                    Self.logger.info("Not handling key press because found shortcut with title \(title)")
+                                    if let rb = title.matchingRemoteButton {
+                                        pressButton(rb)
+                                        return .handled
+                                    }
+
+                                    if title == .chatWithDeveloper{
+                                        appDelegate.navigationPath.append(.messageDestination)
+                                    } else if title == .keyboardShortcuts {
+                                        appDelegate.navigationPath.append(.keyboardShortcutDestinaion)
+                                    } else {
+                                        Self.logger.warning("Unknown function for keyboard shortcut \(title)")
+                                    }
+
+                                    return .handled
+                                }
+                            }
+
+                            pressKey(ke.key)
+                            return .handled
+                        }
+                        .controlSize(.large)
+                        .font(.headline)
+                        .labelStyle(.iconOnly)
+                        .buttonStyle(.borderless)
+                        .disabled(selectedDevice == nil)
+
+                        Spacer()
+
+                        DevicePicker(
+                            devices: devices,
+                            device: Binding(get: {
+                                selectedDevice
+                            }, set: {
+                                manuallySelectedDevice = $0
+                            })
+                        )
+                        .font(.body)
                     }
                     #endif
 
@@ -489,12 +537,7 @@ struct RemoteView: View {
                     }
 #endif
 
-                    if hideUIForKeyboardEntry {
-                        Spacer()
-                        Spacer()
-                        Spacer()
-                        Spacer()
-                    } else {
+                    if !hideUIForKeyboardEntry {
                         if unreadMessages.count > 0 {
                             // swiftlint:disable:next line_length
                             NotificationBanner(message: LocalizedStringResource("The developer chatted you back", comment: "Notification indicator that there was is message response waiting to be read"), onClick: {
@@ -508,10 +551,18 @@ struct RemoteView: View {
                         networkConnectivityBanner
                         Spacer().frame(maxHeight: 10)
                     }
+
                     if selectedDevice == nil {
                         NotificationBanner(message: LocalizedStringResource("Scanning for devices...", comment: "Notification indicator that devices are getting scanned for"), level: .info)
                             .frame(maxWidth: .infinity)
                     }
+
+#if !os(macOS)
+                    if showKeyboardEntry {
+                        Spacer()
+                            .frame(minHeight: 200)
+                    }
+#endif
                 }
                 Spacer()
             }
@@ -597,10 +648,10 @@ struct RemoteView: View {
             .padding(.top, 20)
             #endif
             .padding(.bottom, 10)
-            #if !os(tvOS)
+            #if !os(tvOS) && !os(visionOS)
             .toolbar(id: "remote") {
-                #if !os(macOS) && !os(visionOS)
-                    ToolbarItem(id: "keyboard", placement: .navigationBarLeading) {
+                #if !os(macOS)
+                    ToolbarItem(id: "keyboard", placement: .topBarLeading) {
                         Button(action: {
                             keyboardLeaving = showKeyboardEntry
                             withAnimation {
@@ -653,6 +704,7 @@ struct RemoteView: View {
                             })
                         )
                         .font(.body)
+                        .frame(idealWidth: 100, maxWidth: 350)
                     }
                 #else
                 ToolbarItem(id: "device-picker", placement: .navigation) {
@@ -674,7 +726,9 @@ struct RemoteView: View {
             }
             #endif
                 .onAppear {
-                    scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer())
+                    scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                        updater?.update()
+                    })
                 }
             #if !os(visionOS)
                 .sensoryFeedback(.error, trigger: errorTrigger)
@@ -905,24 +959,31 @@ struct RemoteView: View {
     }
 
     func verticalBody() -> some View {
-        VStack(alignment: .center, spacing: 20) {
-            #if os(macOS) || os(visionOS)
+        VStack(alignment: .center, spacing: 0) {
+            #if os(macOS)
                 Spacer()
+            #elseif os(visionOS)
+                Spacer()
+                    .frame(maxHeight: 30)
             #endif
 
             // Row with Back and Home buttons
             TopBar(pressCounter: buttonPressCount, action: pressButton)
                 .matchedGeometryEffect(id: "topBar", in: animation)
+                .layoutPriority(1)
 
             Spacer()
+                    .frame(minHeight: 10)
 
             // Center Controller with directional buttons
             CenterController(pressCounter: buttonPressCount, action: pressButton)
                 .transition(.scale.combined(with: .opacity))
                 .matchedGeometryEffect(id: "centerController", in: animation)
+                .layoutPriority(1)
 
             if !hideUIForKeyboardEntry {
                 Spacer()
+                    .frame(minHeight: 10)
                 // Grid of 9 buttons
                 ButtonGrid(
                     pressCounter: buttonPressCount,
@@ -932,15 +993,18 @@ struct RemoteView: View {
                 )
                 .transition(.scale.combined(with: .opacity))
                 .matchedGeometryEffect(id: "buttonGrid", in: animation)
+                .layoutPriority(1)
             }
 
             if !showKeyboardEntry && selectedDevice != nil {
                 Spacer()
+                    .frame(minHeight: 10)
                 AppLinksView(deviceId: selectedDevice?.udn, rows: appLinkRows, handleOpenApp: launchApp)
                     .matchedGeometryEffect(id: "appLinksBar", in: animation)
                 #if !os(visionOS)
                     .sensoryFeedback(SensoryFeedback.impact, trigger: buttonPressCount(.inputAV1))
                 #endif
+                    .layoutPriority(1)
 
                 Spacer()
             } else {

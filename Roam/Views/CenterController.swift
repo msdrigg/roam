@@ -13,6 +13,10 @@ struct CenterController: View {
     let action: (RemoteButton) -> Void
     @State private var pressCount: [RemoteButton: Int] = [:]
 
+    @ScaledMetric var buttonWidth = globalButtonWidth
+    @ScaledMetric var buttonHeight = globalButtonHeight
+    @ScaledMetric var buttonSpacing = globalButtonSpacing
+
     var body: some View {
         let buttons: [(String?, RemoteButton, String, CustomKeyboardShortcut.Key)?] = [
             nil, ("chevron.up", .up, "Up", .up), nil,
@@ -22,7 +26,7 @@ struct CenterController: View {
             nil, ("chevron.down", .down, "Down", .down), nil,
         ]
         return VStack(alignment: .center) {
-            Grid(horizontalSpacing: globalButtonSpacing / 5, verticalSpacing: globalButtonSpacing / 5) {
+            Grid(horizontalSpacing: buttonSpacing / 5, verticalSpacing: buttonSpacing / 5) {
                 ForEach(0 ..< 3) { row in
                     GridRow {
                         ForEach(0 ..< 3) { col in
@@ -30,11 +34,11 @@ struct CenterController: View {
                                 Button(action: { action(button.1) }, label: {
                                     if let systemImage = button.0 {
                                         Label(button.2, systemImage: systemImage)
-                                            .frame(width: globalButtonWidth, height: globalButtonHeight)
+                                            .frame(width: buttonWidth, height: buttonHeight)
                                             .symbolEffect(.bounce, value: pressCounter(button.1))
                                     } else {
                                         Text(button.2)
-                                            .frame(width: globalButtonWidth, height: globalButtonHeight)
+                                            .frame(width: buttonWidth, height: buttonHeight)
                                             .lineLimit(1)
                                             .minimumScaleFactor(0.6)
                                             .scaleEffect((pressCount[button.1] ?? 0) != pressCounter(button.1) ? 1.15 :
@@ -58,13 +62,12 @@ struct CenterController: View {
                                     .sensoryFeedback(.impact, trigger: pressCounter(button.1))
                                 #endif
                             } else {
-                                Spacer()
+                                Spacer().frame(maxWidth: buttonWidth, maxHeight: buttonHeight)
                             }
                         }
                     }
                 }
             }
-            .frame(maxWidth: globalButtonWidth * 3 + 6, maxHeight: globalButtonHeight * 3 + 6)
             .environment(\.layoutDirection, .leftToRight)
         }
         .id("controllerGrid")

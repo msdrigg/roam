@@ -2,17 +2,17 @@ import SwiftData
 import SwiftUI
 
 #if os(tvOS) || os(visionOS)
-    let gridWidth: CGFloat = 100
-    let gridSpacing: CGFloat = 20
-    let gridHeight: CGFloat = 130
+    let globalGridWidth: CGFloat = 100
+    let globalGridSpacing: CGFloat = 20
+    let globalGridHeight: CGFloat = 130
 #elseif os(visionOS)
-    let gridWidth: CGFloat = 80
-    let gridSpacing: CGFloat = 20
-    let gridHeight: CGFloat = 130
+    let globalGridWidth: CGFloat = 80
+    let globalGridSpacing: CGFloat = 20
+    let globalGridHeight: CGFloat = 130
 #else
-    let gridWidth: CGFloat = 60
-    let gridSpacing: CGFloat = 10
-    let gridHeight: CGFloat = 80
+    let globalGridWidth: CGFloat = 60
+    let globalGridSpacing: CGFloat = 10
+    let globalGridHeight: CGFloat = 80
 #endif
 
 struct AppLinksView: View {
@@ -20,6 +20,10 @@ struct AppLinksView: View {
     @Query private var appLinks: [AppLink]
     let rows: Int
     @State var cachedAppLinks: [AppLink]
+
+    @ScaledMetric var gridWidth: CGFloat = globalGridWidth
+    @ScaledMetric var gridSpacing: CGFloat = globalGridSpacing
+    @ScaledMetric var gridHeight: CGFloat = globalGridHeight
 
     var appIdsIconsHashed: Int {
         var appLinkPairs: Set<String> = Set()
@@ -94,6 +98,9 @@ struct AppLinksView: View {
 struct AppLinkButton: View {
     let app: AppLink
     let action: (AppLinkAppEntity) -> Void
+
+    @ScaledMetric var gridWidth: CGFloat = globalGridWidth
+    @ScaledMetric var gridHeight: CGFloat = globalGridHeight
 
     var body: some View {
         Button(action: {

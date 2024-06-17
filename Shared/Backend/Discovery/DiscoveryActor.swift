@@ -12,13 +12,19 @@ actor DeviceDiscoveryActor {
     )
 
     let dataHandler: DataHandler
+    let updater: @Sendable @MainActor () -> Void
 
-    init(modelContainer: ModelContainer) {
+    init(modelContainer: ModelContainer, updater: @Sendable @MainActor @escaping () -> Void) {
         dataHandler = DataHandler(modelContainer: modelContainer)
+        self.updater = updater
     }
 
     func refreshDevice(id: PersistentIdentifier) async {
         await dataHandler.refreshDevice(id)
+        let updater = updater
+        await MainActor.run {
+            updater()
+        }
     }
 
     @discardableResult

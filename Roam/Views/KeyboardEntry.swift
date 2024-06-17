@@ -34,13 +34,11 @@
             #if !os(tvOS)
                 .task {
                     let listener = KeyboardListener()
-                    if let events = await listener.events {
+                    if let events = listener.events {
                         for await _ in events {
-                            DispatchQueue.main.async {
-                                withAnimation {
-                                    keyboardFocused = false
-                                    showing = false
-                                }
+                            withAnimation {
+                                keyboardFocused = false
+                                showing = false
                             }
                         }
                     }
@@ -182,80 +180,83 @@
     }
 
     #if !os(tvOS)
-        actor KeyboardListener {
-            private nonisolated static let logger = Logger(
-                subsystem: Bundle.main.bundleIdentifier!,
-                category: String(describing: KeyboardListener.self)
+    @MainActor
+    class KeyboardListener {
+        private nonisolated static let logger = Logger(
+            subsystem: Bundle.main.bundleIdentifier!,
+            category: String(describing: KeyboardListener.self)
+        )
+
+        var observerTokens: [Any] = []
+
+        var keyboardHideNotifier: (() -> Void)?
+        var keyboardShowNotifier: (() -> Void)?
+
+        func handleHideKeyboard() {
+            keyboardHideNotifier?()
+        }
+        func handleShowKeyboard() {
+            keyboardShowNotifier?()
+        }
+
+        func startListening() throws {
+            Self.logger.info("Starting keyboard observations")
+            // Get the default notification center instance.
+            let t1 = NotificationCenter.default.addObserver(
+                forName: UIResponder.keyboardWillHideNotification,
+                object: nil,
+                queue: .main,
+                using: { [weak self] _ in
+                    MainActor.assumeIsolated {
+                        self?.handleHideKeyboard()
+                    }
+                }
+            )
+            let t2 = NotificationCenter.default.addObserver(
+                forName: UIResponder.keyboardWillHideNotification,
+                object: nil,
+                queue: .main,
+                using: { [weak self] _ in
+                    MainActor.assumeIsolated {
+                        self?.handleShowKeyboard()
+                    }
+                }
             )
 
-            var keyboardHideNotifier: (() -> Void)?
-            var keyboardShowNotifier: (() -> Void)?
+            observerTokens.append(t1)
+            observerTokens.append(t2)
+        }
 
-            @objc nonisolated func handleHideKeyboardNonisolated(notification _: Notification) async {
-                await handleHideKeyboard()
-            }
-            @objc nonisolated func handleShowKeyboardNonisolated(notification _: Notification) async {
-                await handleShowKeyboard()
-            }
-
-            func handleHideKeyboard() {
-                keyboardHideNotifier?()
-            }
-            func handleShowKeyboard() {
-                keyboardShowNotifier?()
-            }
-
-            func startListening() throws {
-                Self.logger.info("Starting keyboard observations")
-                // Get the default notification center instance.
-                NotificationCenter.default.addObserver(
-                    self,
-                    selector: #selector(handleHideKeyboardNonisolated),
-                    name: UIResponder.keyboardWillHideNotification,
-                    object: nil
-                )
-                NotificationCenter.default.addObserver(
-                    self,
-                    selector: #selector(handleShowKeyboardNonisolated),
-                    name: UIResponder.keyboardWillShowNotification,
-                    object: nil
-                )
-            }
-
-            func stopListening() {
-                Self.logger.info("Stoping keyboard observations")
-                self.keyboardShowNotifier = nil
-                self.keyboardHideNotifier = nil
-                NotificationCenter.default.removeObserver(
-                    self,
-                    name: UIResponder.keyboardWillHideNotification,
-                    object: nil
-                )
-                NotificationCenter.default.removeObserver(
-                    self,
-                    name: UIResponder.keyboardWillShowNotification,
-                    object: nil
-                )
-            }
-
-            var events: AsyncStream<Bool>? {
-                AsyncStream { continuation in
-                    do {
-                        self.keyboardShowNotifier = {
-                            self.keyboardHideNotifier = {
-                                continuation.yield(true)
-                            }
-                        }
-
-                        try startListening()
-                        continuation.onTermination = { @Sendable _ in
-                            Task {
-                                await self.stopListening()
-                            }
-                        }
-                    } catch {}
-                }
+        func stopListening() {
+            Self.logger.info("Stoping keyboard observations")
+            self.keyboardShowNotifier = nil
+            self.keyboardHideNotifier = nil
+            let ot = self.observerTokens
+            self.observerTokens = []
+            for token in ot {
+                NotificationCenter.default.removeObserver(token)
             }
         }
+
+        var events: AsyncStream<Bool>? {
+            AsyncStream { continuation in
+                do {
+                    self.keyboardShowNotifier = {
+                        self.keyboardHideNotifier = {
+                            continuation.yield(true)
+                        }
+                    }
+
+                    try startListening()
+
+                    continuation.onTermination = { @Sendable _ in
+                        Task {
+                            await self.stopListening()
+                        }
+                    }
+                } catch {}
+            }
+        }
+    }
     #endif
 #endif

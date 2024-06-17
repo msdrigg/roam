@@ -4,15 +4,24 @@ import WidgetKit
 @main
 struct RoamWidgetsApp: WidgetBundle {
     var body: some Widget {
-        #if !os(watchOS)
-            SmallDpadWidget()
-            SmallMediaWidget()
-            SmallAppWidget()
-            MediumRemoteWidget()
-        #endif
-        #if !os(macOS)
+#if !os(watchOS)
+        MediumRemoteWidget()
+        SmallDpadWidget()
+        SmallMediaWidget()
+        SmallAppWidget()
+#endif
+
+#if !os(macOS)
+        if #available(watchOS 11.0, iOS 17.0, visionOS 1.0, *) {
             SmallVolumeWidget()
             SmallerAppWidget()
-        #endif
+            SmallControlWidget()
+            #if os(watchOS)
+            SmallPowerWidget()
+            SmallOkWidget()
+            SmallMuteWidget()
+            #endif
+        }
+#endif
     }
 }

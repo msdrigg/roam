@@ -4,10 +4,10 @@ import SwiftUI
 
 #if os(tvOS)
     let globalBaselineOffset: CGFloat = 4
-    let circleIconSize: CGFloat = 16
+    let globalCircleIconSize: CGFloat = 16
 #else
     let globalBaselineOffset: CGFloat = 2
-    let circleIconSize: CGFloat = 10
+    let globalCircleIconSize: CGFloat = 10
 #endif
 
 struct DevicePicker: View {
@@ -15,6 +15,9 @@ struct DevicePicker: View {
         subsystem: Bundle.main.bundleIdentifier!,
         category: String(describing: DevicePicker.self)
     )
+
+    @ScaledMetric var baselineOffset = globalBaselineOffset
+    @ScaledMetric var circleIconSize = globalCircleIconSize
 
     @Environment(\.openURL) private var openURL
     @Environment(\.createDataHandler) private var createDataHandler
@@ -71,26 +74,28 @@ struct DevicePicker: View {
                 .labelStyle(.titleAndIcon)
             #endif
         } label: {
-            if let device {
-                Group {
+            Group {
+                if let device {
                     Text(Image(systemName: "circle.fill")).font(.system(size: circleIconSize))
                         .foregroundColor(deviceStatusColor)
-                        .baselineOffset(globalBaselineOffset) +
+                        .baselineOffset(baselineOffset) +
                     Text("  ", comment: "Empty space") +
                     Text(device.name) +
                     Text("  ", comment: "Empty space")
-                }.multilineTextAlignment(.center)
-                    .font(.body)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: 180)
-            } else {
-                Text("No devices")
-                    .multilineTextAlignment(.center)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: 180)
+                } else {
+                    Text("No devices")
+                        .multilineTextAlignment(.center)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: 180)
+                }
+
             }
+                .multilineTextAlignment(.center)
+                .font(.body)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: 180)
         }
         .animation(nil, value: UUID())
     }

@@ -7,6 +7,10 @@ struct ButtonGrid: View {
     let enabled: Set<RemoteButton>
     let disabled: Set<RemoteButton>
 
+    @ScaledMetric var buttonWidth = globalButtonWidth
+    @ScaledMetric var buttonHeight = globalButtonHeight
+    @ScaledMetric var buttonSpacing = globalButtonSpacing
+
     var body: some View {
         let buttonRows: [[(String, String, RemoteButton, CustomKeyboardShortcut.Key)]] = [
             [("Replay", "arrow.uturn.backward", .instantReplay, .instantReplay),
@@ -19,21 +23,20 @@ struct ButtonGrid: View {
              ("Mute", "speaker.slash", .mute, .mute),
              ("Volume Up", "speaker.plus", .volumeUp, .volumeUp)],
         ]
-        return Grid(horizontalSpacing: globalButtonSpacing, verticalSpacing: globalButtonSpacing) {
+        return Grid(horizontalSpacing: buttonSpacing, verticalSpacing: buttonSpacing) {
             ForEach(buttonRows, id: \.first?.0) { row in
                 GridRow {
                     ForEach(row, id: \.0) { button in
                         let view = Button(action: { action(button.2) }, label: {
                             Label(button.0, systemImage: button.1)
-                                .frame(width: globalButtonWidth, height: globalButtonHeight)
+                                .frame(width: buttonWidth, height: buttonHeight)
                         })
-                        #if os(macOS)
-                        .buttonStyle(.borderedProminent)
-                        .tint(Color.secondary)
-                        #endif
                         .disabled(disabled.contains(button.2))
                         .breatheEffect(enabled.contains(button.2))
                         .symbolEffect(.bounce, value: pressCounter(button.2))
+#if os(macOS)
+                        .tint(Color.secondary)
+#endif
                         #if !os(visionOS)
                             .sensoryFeedback(.impact, trigger: pressCounter(button.2))
                         #endif

@@ -124,14 +124,6 @@
                 window?.makeFirstResponder(self)
             }
 
-            deinit {
-                DispatchQueue.main.async{
-                    for token in self.observerTokens {
-                        NotificationCenter.default.removeObserver(token)
-                    }
-                }
-            }
-
             private func windowDidBecomeMain() {
                 window?.makeFirstResponder(self)
             }

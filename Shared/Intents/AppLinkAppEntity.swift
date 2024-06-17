@@ -30,6 +30,12 @@ public struct AppLinkAppEntity: Identifiable, Equatable, Hashable, Encodable, Se
     }
 }
 
+#if !os(watchOS)
+import CoreSpotlight
+
+extension AppLinkAppEntity: IndexedEntity {}
+#endif
+
 #if !os(tvOS)
     extension AppLinkAppEntity: AppEntity {
         public static let typeDisplayRepresentation = TypeDisplayRepresentation(name: LocalizedStringResource("TV App", comment: "TV App Selection option"))
@@ -57,7 +63,7 @@ public struct AppLinkAppEntity: Identifiable, Equatable, Hashable, Encodable, Se
         }
 
         public var displayRepresentation: DisplayRepresentation {
-            DisplayRepresentation(title: "\(name)")
+            DisplayRepresentation(title: "\(name)", image: (icon != nil) ? DisplayRepresentation.Image(data: icon!) : DisplayRepresentation.Image(systemName: "app.dashed"))
         }
     }
 #endif
