@@ -1,10 +1,3 @@
-//
-//  PaddedHoverButtonStyle.swift
-//  Roam
-//
-//  Created by Scott Driggers on 3/17/24.
-//
-
 #if os(macOS)
     import SwiftUI
 
@@ -34,10 +27,12 @@
         }
     }
 
-    private struct HoverEffectBackground: View {
+    public struct HoverEffectBackground: View {
         @State private var isHovered = false
 
-        var body: some View {
+        @ScaledMetric private var buttonRadius = globalButtonRadius
+
+        public var body: some View {
             Rectangle()
                 .fill(isHovered ? Color.secondary
                     .opacity(0.2) : Color.clear)
@@ -45,15 +40,26 @@
                     isHovered = hover
                 }
                 .animation(.easeInOut.speed(2), value: isHovered)
+                .cornerRadius(buttonRadius)
         }
     }
 
     extension View {
-        func hoverHighlight() -> some View {
-            return self
-                .padding(6)
-                .background(HoverEffectBackground())
-                .cornerRadius(5)
+        func hoverHighlight(enabled: Bool = true) -> some View {
+            if enabled {
+                return AnyView(
+                    self
+                    #if os(macOS)
+                        .background(
+                            HoverEffectBackground()
+                       )
+                    #else
+                        .hoverEffect(.highlight)
+                    #endif
+                )
+            } else {
+                return AnyView(self)
+            }
         }
     }
 #endif

@@ -190,44 +190,41 @@ struct SettingsView: View {
                 }
 #endif
             } header: {
-#if os(macOS)
+#if os(macOS) || os(visionOS)
                 HStack {
                     Text("Devices")
                     Spacer()
-                    if isScanning {
-                        Label("Scanning for devices...", systemImage: "rays")
-                            .labelStyle(.iconOnly)
-                            .symbolEffect(.variableColor, isActive: isScanning)
-                            .padding(.init(top: 3, leading: 8, bottom: 3, trailing: 8))
-                            .offset(x: 6)
-                            .help("Scanning for devices...")
-                    } else {
-                        Button("Scan for devices", systemImage: "arrow.clockwise") {
-                            Task {
-                                isScanning = true
-                                defer {
-                                    isScanning = false
-                                }
-
-                                await scanningActor.scanIPV4Once()
+                    Button(isScanning ? "Scanning for devices..." : "Scan for devices", systemImage: isScanning ? "rays" : "arrow.clockwise") {
+                        Task {
+                            isScanning = true
+                            defer {
+                                isScanning = false
                             }
+
+                            await scanningActor.scanIPV4Once()
                         }
-                        .buttonStyle(PaddedHoverButtonStyle(padding: .init(
-                            top: 3,
-                            leading: 8,
-                            bottom: 3,
-                            trailing: 8
-                        )))
-                        .help("Scan for devices")
-                        .labelStyle(.iconOnly)
-                        .offset(x: 6)
                     }
+                    .symbolEffect(.variableColor, isActive: isScanning)
+                    .disabled(isScanning)
+                    #if os(macOS)
+                    .buttonStyle(PaddedHoverButtonStyle(padding: .init(
+                        top: 3,
+                        leading: 8,
+                        bottom: 3,
+                        trailing: 8
+                    )))
+                    #else
+                    .buttonStyle(.borderless)
+                    #endif
+                    .help("Scan for devices")
+                    .labelStyle(.iconOnly)
+                    .offset(x: 6)
                 }
 #else
                 Text("Devices", comment: "Header in device selection menu")
 #endif
             } footer: {
-#if !os(watchOS) && !os(macOS)
+#if !os(watchOS) && !os(macOS) && !os(visionOS)
                 if isScanning {
                     Label("Scanning for devices...", systemImage: "rays")
                         .symbolEffect(.variableColor, isActive: isScanning)
@@ -612,8 +609,19 @@ struct DeviceDetailView: View {
                     }
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    TextField(String(localized: "IP Address", comment: "Settings field label for the device's IP address"), text: $deviceIP)
-                        .frame(maxWidth: .infinity)
+                    HStack {
+                        TextField(String(localized: "IP Address", comment: "Settings field label for the device's IP address"), text: $deviceIP)
+                            .frame(maxWidth: .infinity)
+                        Spacer()
+                            .frame(maxWidth: 10)
+
+                        Link(destination: URL(string: "https://roam.msd3.io/manually-add-tv")!) {
+                            Label("Info", systemImage: "info.circle")
+                                .labelStyle(.iconOnly)
+                        }
+                        .foregroundStyle(Color.secondary)
+                    }
+
                     if let addressValidation {
                         Text(addressValidation)
                             .foregroundStyle(.red)

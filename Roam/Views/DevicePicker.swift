@@ -21,12 +21,21 @@ struct DevicePicker: View {
 
     @Environment(\.openURL) private var openURL
     @Environment(\.createDataHandler) private var createDataHandler
+    @Environment(\.uuidUpdater) private var updater
 
     let devices: [Device]
-    @Binding var device: Device?
+    var device: Binding<Device?>
+
+    let showScanning: Bool
 
     var deviceStatusColor: Color {
-        device?.isOnline() ?? false ? Color.green : Color.secondary
+        device.wrappedValue?.isOnline() ?? false ? Color.green : Color.secondary
+    }
+
+    init(devices: [Device], device: Binding<Device?>, showScanning: Bool = false) {
+        self.devices = devices
+        self.device = device
+        self.showScanning = showScanning
     }
 
     var body: some View {
@@ -34,10 +43,10 @@ struct DevicePicker: View {
             if !devices.isEmpty {
                 Picker("Device", selection: Binding<Device?>(
                     get: {
-                        device
+                        device.wrappedValue
                     },
                     set: {
-                        device = $0
+                        device.wrappedValue = $0
                         if let pid = $0?.persistentModelID {
                             Task.detached {
                                 try? await Task.sleep(duration: 0.5)
@@ -75,7 +84,7 @@ struct DevicePicker: View {
             #endif
         } label: {
             Group {
-                if let device {
+                if let device = device.wrappedValue {
                     Text(Image(systemName: "circle.fill")).font(.system(size: circleIconSize))
                         .foregroundColor(deviceStatusColor)
                         .baselineOffset(baselineOffset) +
@@ -83,20 +92,25 @@ struct DevicePicker: View {
                     Text(device.name) +
                     Text("  ", comment: "Empty space")
                 } else {
-                    Text("No devices")
-                        .multilineTextAlignment(.center)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .frame(maxWidth: 180)
+                    if showScanning {
+                        Label("Scanning for devices", systemImage: "rays")
+                            .labelStyle(.titleAndIcon)
+                            .symbolEffect(.variableColor)
+                    } else {
+                        Text("No devices")
+                    }
                 }
-
             }
                 .multilineTextAlignment(.center)
-                .font(.body)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .frame(maxWidth: 180)
+            #if os(visionOS)
+                .font(.headline)
+            #else
+                .font(.body)
+            #endif
         }
         .animation(nil, value: UUID())
+        .id(updater?.uuid.uuidString ?? "--")
     }
 }

@@ -36,6 +36,7 @@ struct ButtonGrid: View {
                         .symbolEffect(.bounce, value: pressCounter(button.2))
 #if os(macOS)
                         .tint(Color.secondary)
+                        .buttonStyle(.borderedProminent)
 #endif
                         #if !os(visionOS)
                             .sensoryFeedback(.impact, trigger: pressCounter(button.2))
@@ -48,5 +49,6 @@ struct ButtonGrid: View {
                 }
             }
         }
+        .fixedSize()
     }
 }

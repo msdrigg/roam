@@ -110,6 +110,9 @@
 		AF4244302BB1118700334AAF /* SchemaFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF42442D2BB1118700334AAF /* SchemaFile.swift */; };
 		AF44021C2BFBEF2500004C15 /* LinkedTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF44021B2BFBEF2500004C15 /* LinkedTextView.swift */; };
 		AF44021D2BFBEF2500004C15 /* LinkedTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF44021B2BFBEF2500004C15 /* LinkedTextView.swift */; };
+		AF5C23982C35DCD1004C7A63 /* GlowingButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5C23972C35DCC7004C7A63 /* GlowingButton.swift */; };
+		AF5C23992C35DCD1004C7A63 /* GlowingButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5C23972C35DCC7004C7A63 /* GlowingButton.swift */; };
+		AF5C239A2C35DCD1004C7A63 /* GlowingButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5C23972C35DCC7004C7A63 /* GlowingButton.swift */; };
 		AF5ED8D52AE984E9007DB2B8 /* WidgetColor.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AF5ED8D42AE984E9007DB2B8 /* WidgetColor.xcassets */; };
 		AF5ED8E12AE98EE7007DB2B8 /* DevicePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5ED8E02AE98EE7007DB2B8 /* DevicePicker.swift */; };
 		AF5ED8E32AE992D1007DB2B8 /* AppListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5ED8D62AE985E1007DB2B8 /* AppListView.swift */; };
@@ -210,6 +213,28 @@
 		AFA079DE2AE02561003E2754 /* LaunchAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E68F2ADDE4AA0036EC90 /* LaunchAppIntent.swift */; };
 		AFA079DF2AE0263F003E2754 /* Shortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6B72ADE28C80036EC90 /* Shortcuts.swift */; };
 		AFA165C02AE92F92003F45ED /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA165BF2AE92F92003F45ED /* AboutView.swift */; };
+		AFA21D342C2C7C83008EF24A /* RoamWatchUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D332C2C7C83008EF24A /* RoamWatchUITests.swift */; };
+		AFA21D362C2C7C83008EF24A /* RoamWatchUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D352C2C7C83008EF24A /* RoamWatchUITestsLaunchTests.swift */; };
+		AFA21D432C2C7CB6008EF24A /* RoamUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D422C2C7CB6008EF24A /* RoamUITests.swift */; };
+		AFA21D452C2C7CB6008EF24A /* RoamUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D442C2C7CB6008EF24A /* RoamUITestsLaunchTests.swift */; };
+		AFA21D942C2C7D00008EF24A /* ViewToNSImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8D2C2C7D00008EF24A /* ViewToNSImage.swift */; };
+		AFA21D952C2C7D00008EF24A /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8B2C2C7D00008EF24A /* Localization.swift */; };
+		AFA21D962C2C7D00008EF24A /* TitleAlignment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8C2C2C7D00008EF24A /* TitleAlignment.swift */; };
+		AFA21D972C2C7D00008EF24A /* ImageBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8A2C2C7D00008EF24A /* ImageBackground.swift */; };
+		AFA21D982C2C7D00008EF24A /* CapturingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D902C2C7D00008EF24A /* CapturingView.swift */; };
+		AFA21D992C2C7D00008EF24A /* ExportSize.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D892C2C7D00008EF24A /* ExportSize.swift */; };
+		AFA21D9A2C2C7D00008EF24A /* ExportMarketingImageToURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D882C2C7D00008EF24A /* ExportMarketingImageToURL.swift */; };
+		AFA21D9B2C2C7D00008EF24A /* ViewToUIImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8E2C2C7D00008EF24A /* ViewToUIImage.swift */; };
+		AFA21D9C2C2C7D00008EF24A /* ScreenshotWithTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D912C2C7D00008EF24A /* ScreenshotWithTitle.swift */; };
+		AFA21D9D2C2C7D00008EF24A /* ViewToNSImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8D2C2C7D00008EF24A /* ViewToNSImage.swift */; };
+		AFA21D9E2C2C7D00008EF24A /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8B2C2C7D00008EF24A /* Localization.swift */; };
+		AFA21D9F2C2C7D00008EF24A /* TitleAlignment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8C2C2C7D00008EF24A /* TitleAlignment.swift */; };
+		AFA21DA02C2C7D00008EF24A /* ImageBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8A2C2C7D00008EF24A /* ImageBackground.swift */; };
+		AFA21DA12C2C7D00008EF24A /* CapturingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D902C2C7D00008EF24A /* CapturingView.swift */; };
+		AFA21DA22C2C7D00008EF24A /* ExportSize.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D892C2C7D00008EF24A /* ExportSize.swift */; };
+		AFA21DA32C2C7D00008EF24A /* ExportMarketingImageToURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D882C2C7D00008EF24A /* ExportMarketingImageToURL.swift */; };
+		AFA21DA42C2C7D00008EF24A /* ViewToUIImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8E2C2C7D00008EF24A /* ViewToUIImage.swift */; };
+		AFA21DA52C2C7D00008EF24A /* ScreenshotWithTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D912C2C7D00008EF24A /* ScreenshotWithTitle.swift */; };
 		AFA9F8972B1B878600829B7C /* Shortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6B72ADE28C80036EC90 /* Shortcuts.swift */; };
 		AFA9F8992B1D29E000829B7C /* KeyboardShortcutPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */; };
 		AFC24EFF2AD0E5A1002AB66C /* RoamApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC24EFE2AD0E5A1002AB66C /* RoamApp.swift */; };
@@ -303,6 +328,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = AF27400A2AE02C25007C6208;
 			remoteInfo = RoamWidgets;
+		};
+		AFA21D372C2C7C83008EF24A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AFC24EF32AD0E5A1002AB66C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AF15C2452AE8672700B79FD9;
+			remoteInfo = RoamWatch;
+		};
+		AFA21D462C2C7CB6008EF24A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AFC24EF32AD0E5A1002AB66C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AFC24EFA2AD0E5A1002AB66C;
+			remoteInfo = Roam;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -430,6 +469,7 @@
 		AF44021B2BFBEF2500004C15 /* LinkedTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedTextView.swift; sourceTree = "<group>"; };
 		AF56E3B02AD97AB100F5E6E0 /* AppLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLink.swift; sourceTree = "<group>"; };
 		AF5B16E32AD5D5BB00053BDC /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
+		AF5C23972C35DCC7004C7A63 /* GlowingButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowingButton.swift; sourceTree = "<group>"; };
 		AF5ED8D42AE984E9007DB2B8 /* WidgetColor.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = WidgetColor.xcassets; sourceTree = "<group>"; };
 		AF5ED8D62AE985E1007DB2B8 /* AppListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppListView.swift; sourceTree = "<group>"; };
 		AF5ED8D92AE98607007DB2B8 /* ButtonGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonGridView.swift; sourceTree = "<group>"; };
@@ -463,6 +503,21 @@
 		AFA165C12AE933D7003F45ED /* LICENSE-APACHE */ = {isa = PBXFileReference; lastKnownFileType = text; path = "LICENSE-APACHE"; sourceTree = "<group>"; };
 		AFA165C22AE93401003F45ED /* LICENSE-MIT */ = {isa = PBXFileReference; lastKnownFileType = text; path = "LICENSE-MIT"; sourceTree = "<group>"; };
 		AFA165C32AE93FE1003F45ED /* AppIcons */ = {isa = PBXFileReference; lastKnownFileType = folder; path = AppIcons; sourceTree = "<group>"; };
+		AFA21D312C2C7C83008EF24A /* RoamWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RoamWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AFA21D332C2C7C83008EF24A /* RoamWatchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamWatchUITests.swift; sourceTree = "<group>"; };
+		AFA21D352C2C7C83008EF24A /* RoamWatchUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamWatchUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		AFA21D402C2C7CB6008EF24A /* RoamUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RoamUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AFA21D422C2C7CB6008EF24A /* RoamUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamUITests.swift; sourceTree = "<group>"; };
+		AFA21D442C2C7CB6008EF24A /* RoamUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		AFA21D882C2C7D00008EF24A /* ExportMarketingImageToURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportMarketingImageToURL.swift; sourceTree = "<group>"; };
+		AFA21D892C2C7D00008EF24A /* ExportSize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportSize.swift; sourceTree = "<group>"; };
+		AFA21D8A2C2C7D00008EF24A /* ImageBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageBackground.swift; sourceTree = "<group>"; };
+		AFA21D8B2C2C7D00008EF24A /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
+		AFA21D8C2C2C7D00008EF24A /* TitleAlignment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleAlignment.swift; sourceTree = "<group>"; };
+		AFA21D8D2C2C7D00008EF24A /* ViewToNSImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewToNSImage.swift; sourceTree = "<group>"; };
+		AFA21D8E2C2C7D00008EF24A /* ViewToUIImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewToUIImage.swift; sourceTree = "<group>"; };
+		AFA21D902C2C7D00008EF24A /* CapturingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturingView.swift; sourceTree = "<group>"; };
+		AFA21D912C2C7D00008EF24A /* ScreenshotWithTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotWithTitle.swift; sourceTree = "<group>"; };
 		AFA68FE32BD06424005A102E /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = backend/src; sourceTree = "<group>"; };
 		AFA68FE72BD06474005A102E /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = docs/src; sourceTree = "<group>"; };
 		AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutPanel.swift; sourceTree = "<group>"; };
@@ -502,8 +557,27 @@
 		AFFED2502AD75EAF00357FA4 /* BinaryHeap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryHeap.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AFC78ED32C389D1200A5FC0E /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				GlobalKeyboardShortcutsTip.swift,
+				HeadphonesModeTip.swift,
+			);
+			target = AFC24EFA2AD0E5A1002AB66C /* Roam */;
+		};
+		AFC78ED42C389D1200A5FC0E /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				GlobalKeyboardShortcutsTip.swift,
+				HeadphonesModeTip.swift,
+			);
+			target = AF15C2452AE8672700B79FD9 /* RoamWatch */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		AFA922F52C20A2DA008F49B4 /* Tips */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Tips; sourceTree = "<group>"; };
+		AFA922F52C20A2DA008F49B4 /* Tips */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (AFC78ED32C389D1200A5FC0E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, AFC78ED42C389D1200A5FC0E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Tips; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -535,6 +609,20 @@
 				AF8EF50A2BB60C53002A4D6D /* RTP in Frameworks */,
 				AF8EF50E2BB60C6C002A4D6D /* XMLCoder in Frameworks */,
 				AF8EF50C2BB60C57002A4D6D /* Opus in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AFA21D2E2C2C7C83008EF24A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AFA21D3D2C2C7CB6008EF24A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -674,6 +762,7 @@
 		AF56E3BA2AD9863100F5E6E0 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				AF5C23972C35DCC7004C7A63 /* GlowingButton.swift */,
 				AF67C8F32C1D1A9000A6D077 /* UUIDUpdater.swift */,
 				AF1899F82C1CDFBC001EDA78 /* SettingsNavigationWrapper.swift */,
 				AF11D36E2AD35D2800527AF6 /* SettingsView.swift */,
@@ -752,6 +841,56 @@
 			path = Scanning;
 			sourceTree = "<group>";
 		};
+		AFA21D322C2C7C83008EF24A /* RoamWatchUITests */ = {
+			isa = PBXGroup;
+			children = (
+				AFA21D332C2C7C83008EF24A /* RoamWatchUITests.swift */,
+				AFA21D352C2C7C83008EF24A /* RoamWatchUITestsLaunchTests.swift */,
+			);
+			path = RoamWatchUITests;
+			sourceTree = "<group>";
+		};
+		AFA21D412C2C7CB6008EF24A /* RoamUITests */ = {
+			isa = PBXGroup;
+			children = (
+				AFA21D422C2C7CB6008EF24A /* RoamUITests.swift */,
+				AFA21D442C2C7CB6008EF24A /* RoamUITestsLaunchTests.swift */,
+			);
+			path = RoamUITests;
+			sourceTree = "<group>";
+		};
+		AFA21D8F2C2C7D00008EF24A /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				AFA21D882C2C7D00008EF24A /* ExportMarketingImageToURL.swift */,
+				AFA21D892C2C7D00008EF24A /* ExportSize.swift */,
+				AFA21D8A2C2C7D00008EF24A /* ImageBackground.swift */,
+				AFA21D8B2C2C7D00008EF24A /* Localization.swift */,
+				AFA21D8C2C2C7D00008EF24A /* TitleAlignment.swift */,
+				AFA21D8D2C2C7D00008EF24A /* ViewToNSImage.swift */,
+				AFA21D8E2C2C7D00008EF24A /* ViewToUIImage.swift */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+		AFA21D922C2C7D00008EF24A /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				AFA21D902C2C7D00008EF24A /* CapturingView.swift */,
+				AFA21D912C2C7D00008EF24A /* ScreenshotWithTitle.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		AFA21D932C2C7D00008EF24A /* RoamTests */ = {
+			isa = PBXGroup;
+			children = (
+				AFA21D8F2C2C7D00008EF24A /* Helpers */,
+				AFA21D922C2C7D00008EF24A /* Views */,
+			);
+			path = RoamTests;
+			sourceTree = "<group>";
+		};
 		AFA68FE02BD063DD005A102E /* External */ = {
 			isa = PBXGroup;
 			children = (
@@ -793,6 +932,9 @@
 				AF27400E2AE02C25007C6208 /* RoamWidgets */,
 				AF15C2472AE8672700B79FD9 /* RoamWatch */,
 				AF3503582BB493F3004F4337 /* RoamClip */,
+				AFA21D932C2C7D00008EF24A /* RoamTests */,
+				AFA21D322C2C7C83008EF24A /* RoamWatchUITests */,
+				AFA21D412C2C7CB6008EF24A /* RoamUITests */,
 				AFC24EFC2AD0E5A1002AB66C /* Products */,
 				AF4D5F322AD4355E0055AF35 /* Frameworks */,
 			);
@@ -805,6 +947,8 @@
 				AF27400B2AE02C25007C6208 /* RoamWidgets.appex */,
 				AF15C2462AE8672700B79FD9 /* Roam.app */,
 				AF3503572BB493F3004F4337 /* RoamClip.app */,
+				AFA21D312C2C7C83008EF24A /* RoamWatchUITests.xctest */,
+				AFA21D402C2C7CB6008EF24A /* RoamUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -924,6 +1068,42 @@
 			productReference = AF3503572BB493F3004F4337 /* RoamClip.app */;
 			productType = "com.apple.product-type.application.on-demand-install-capable";
 		};
+		AFA21D302C2C7C83008EF24A /* RoamWatchUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AFA21D392C2C7C83008EF24A /* Build configuration list for PBXNativeTarget "RoamWatchUITests" */;
+			buildPhases = (
+				AFA21D2D2C2C7C83008EF24A /* Sources */,
+				AFA21D2E2C2C7C83008EF24A /* Frameworks */,
+				AFA21D2F2C2C7C83008EF24A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AFA21D382C2C7C83008EF24A /* PBXTargetDependency */,
+			);
+			name = RoamWatchUITests;
+			productName = RoamWatchUITests;
+			productReference = AFA21D312C2C7C83008EF24A /* RoamWatchUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		AFA21D3F2C2C7CB6008EF24A /* RoamUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AFA21D482C2C7CB6008EF24A /* Build configuration list for PBXNativeTarget "RoamUITests" */;
+			buildPhases = (
+				AFA21D3C2C2C7CB6008EF24A /* Sources */,
+				AFA21D3D2C2C7CB6008EF24A /* Frameworks */,
+				AFA21D3E2C2C7CB6008EF24A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AFA21D472C2C7CB6008EF24A /* PBXTargetDependency */,
+			);
+			name = RoamUITests;
+			productName = RoamUITests;
+			productReference = AFA21D402C2C7CB6008EF24A /* RoamUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		AFC24EFA2AD0E5A1002AB66C /* Roam */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = AFC24F222AD0E5A3002AB66C /* Build configuration list for PBXNativeTarget "Roam" */;
@@ -964,7 +1144,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1530;
+				LastSwiftUpdateCheck = 1600;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					AF15C2452AE8672700B79FD9 = {
@@ -975,6 +1155,14 @@
 					};
 					AF3503562BB493F3004F4337 = {
 						CreatedOnToolsVersion = 15.3;
+					};
+					AFA21D302C2C7C83008EF24A = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = AF15C2452AE8672700B79FD9;
+					};
+					AFA21D3F2C2C7CB6008EF24A = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = AFC24EFA2AD0E5A1002AB66C;
 					};
 					AFC24EFA2AD0E5A1002AB66C = {
 						CreatedOnToolsVersion = 15.0;
@@ -1018,6 +1206,8 @@
 				AF15C2452AE8672700B79FD9 /* RoamWatch */,
 				AF27400A2AE02C25007C6208 /* RoamWidgets */,
 				AF3503562BB493F3004F4337 /* RoamClip */,
+				AFA21D302C2C7C83008EF24A /* RoamWatchUITests */,
+				AFA21D3F2C2C7CB6008EF24A /* RoamUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -1054,6 +1244,20 @@
 				AF8EF4E02BB60A65002A4D6D /* AccentColor.xcassets in Resources */,
 				AFDB19A82C0D8E7B00C4DAB7 /* InfoPlist.xcstrings in Resources */,
 				AF94AEF62C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AFA21D2F2C2C7C83008EF24A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AFA21D3E2C2C7CB6008EF24A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1110,6 +1314,7 @@
 				AF0C82962AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */,
 				AF5ED8E52AE99D95007DB2B8 /* ButtonGridView.swift in Sources */,
 				AF1899F42C1CB204001EDA78 /* NavigationManager.swift in Sources */,
+				AF5C23992C35DCD1004C7A63 /* GlowingButton.swift in Sources */,
 				AF779BF82BA4DE2200231BC5 /* WrappingHStack.swift in Sources */,
 				AF42442F2BB1118700334AAF /* SchemaFile.swift in Sources */,
 				AFD9C4F32AE982E400C4079C /* DiscoveryActor.swift in Sources */,
@@ -1203,6 +1408,7 @@
 				AF24805B2BDB42F600EF47AE /* TestData.swift in Sources */,
 				AF8EF4E32BB60A9F002A4D6D /* HoveredView.swift in Sources */,
 				AF8EF5012BB60B2E002A4D6D /* RemoteView.swift in Sources */,
+				AF5C239A2C35DCD1004C7A63 /* GlowingButton.swift in Sources */,
 				AF8EF51B2BB60E62002A4D6D /* DevicePicker.swift in Sources */,
 				AF8EF4E42BB60A9F002A4D6D /* AboutView.swift in Sources */,
 				AF8EF4E52BB60A9F002A4D6D /* Badge.swift in Sources */,
@@ -1268,6 +1474,42 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AFA21D2D2C2C7C83008EF24A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AFA21D942C2C7D00008EF24A /* ViewToNSImage.swift in Sources */,
+				AFA21D952C2C7D00008EF24A /* Localization.swift in Sources */,
+				AFA21D962C2C7D00008EF24A /* TitleAlignment.swift in Sources */,
+				AFA21D972C2C7D00008EF24A /* ImageBackground.swift in Sources */,
+				AFA21D982C2C7D00008EF24A /* CapturingView.swift in Sources */,
+				AFA21D992C2C7D00008EF24A /* ExportSize.swift in Sources */,
+				AFA21D9A2C2C7D00008EF24A /* ExportMarketingImageToURL.swift in Sources */,
+				AFA21D9B2C2C7D00008EF24A /* ViewToUIImage.swift in Sources */,
+				AFA21D9C2C2C7D00008EF24A /* ScreenshotWithTitle.swift in Sources */,
+				AFA21D342C2C7C83008EF24A /* RoamWatchUITests.swift in Sources */,
+				AFA21D362C2C7C83008EF24A /* RoamWatchUITestsLaunchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AFA21D3C2C2C7CB6008EF24A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AFA21D9D2C2C7D00008EF24A /* ViewToNSImage.swift in Sources */,
+				AFA21D9E2C2C7D00008EF24A /* Localization.swift in Sources */,
+				AFA21D9F2C2C7D00008EF24A /* TitleAlignment.swift in Sources */,
+				AFA21DA02C2C7D00008EF24A /* ImageBackground.swift in Sources */,
+				AFA21DA12C2C7D00008EF24A /* CapturingView.swift in Sources */,
+				AFA21DA22C2C7D00008EF24A /* ExportSize.swift in Sources */,
+				AFA21DA32C2C7D00008EF24A /* ExportMarketingImageToURL.swift in Sources */,
+				AFA21DA42C2C7D00008EF24A /* ViewToUIImage.swift in Sources */,
+				AFA21DA52C2C7D00008EF24A /* ScreenshotWithTitle.swift in Sources */,
+				AFA21D432C2C7CB6008EF24A /* RoamUITests.swift in Sources */,
+				AFA21D452C2C7CB6008EF24A /* RoamUITestsLaunchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AFC24EF72AD0E5A1002AB66C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1319,6 +1561,7 @@
 				AF0C828C2AEB494D00CBE7F8 /* VolumeSliderView.swift in Sources */,
 				AF19CA142AE4471200A42DFF /* AsyncHelpers.swift in Sources */,
 				AFA165C02AE92F92003F45ED /* AboutView.swift in Sources */,
+				AF5C23982C35DCD1004C7A63 /* GlowingButton.swift in Sources */,
 				AF44021C2BFBEF2500004C15 /* LinkedTextView.swift in Sources */,
 				AF1899FB2C1CDFC2001EDA78 /* SettingsNavigationWrapper.swift in Sources */,
 				AF3EEF962AE0206E00B661F3 /* RokuSession.swift in Sources */,
@@ -1379,6 +1622,16 @@
 			isa = PBXTargetDependency;
 			target = AF27400A2AE02C25007C6208 /* RoamWidgets */;
 			targetProxy = AF3503902BB499F3004F4337 /* PBXContainerItemProxy */;
+		};
+		AFA21D382C2C7C83008EF24A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AF15C2452AE8672700B79FD9 /* RoamWatch */;
+			targetProxy = AFA21D372C2C7C83008EF24A /* PBXContainerItemProxy */;
+		};
+		AFA21D472C2C7CB6008EF24A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AFC24EFA2AD0E5A1002AB66C /* Roam */;
+			targetProxy = AFA21D462C2C7CB6008EF24A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1619,6 +1872,98 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		AFA21D3A2C2C7C83008EF24A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2865NTZ7H3;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamWatchUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = RoamWatch;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Debug;
+		};
+		AFA21D3B2C2C7C83008EF24A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2865NTZ7H3;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamWatchUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = RoamWatch;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Release;
+		};
+		AFA21D492C2C7CB6008EF24A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2865NTZ7H3;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,3,7";
+				TEST_TARGET_NAME = Roam;
+			};
+			name = Debug;
+		};
+		AFA21D4A2C2C7CB6008EF24A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2865NTZ7H3;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,3,7";
+				TEST_TARGET_NAME = Roam;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -1900,6 +2245,24 @@
 			buildConfigurations = (
 				AF35036A2BB493F4004F4337 /* Debug */,
 				AF35036B2BB493F4004F4337 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AFA21D392C2C7C83008EF24A /* Build configuration list for PBXNativeTarget "RoamWatchUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AFA21D3A2C2C7C83008EF24A /* Debug */,
+				AFA21D3B2C2C7C83008EF24A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AFA21D482C2C7CB6008EF24A /* Build configuration list for PBXNativeTarget "RoamUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AFA21D492C2C7CB6008EF24A /* Debug */,
+				AFA21D4A2C2C7CB6008EF24A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

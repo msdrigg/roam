@@ -135,6 +135,8 @@ struct RemoteView: View {
     @State var volume: Float = 0
     @State var lastVolumeChangeFromTv: Bool = false
 
+    @ScaledMetric var buttonRadius = globalButtonRadius
+
     private struct IsHorizontalKey: PreferenceKey {
         static let defaultValue: Bool = false
         static func reduce(value: inout Bool, nextValue: () -> Bool) {
@@ -422,7 +424,6 @@ struct RemoteView: View {
                                         manuallySelectedDevice = $0
                                     })
                                 )
-                                .font(.body)
                             }
                             .focusSection()
                         }
@@ -431,24 +432,23 @@ struct RemoteView: View {
                     #if os(macOS)
                     HStack(alignment: .center) {
                         Spacer()
-                            .layoutPriority(1)
+
                         DevicePicker(
                             devices: devices,
                             device: Binding(get: {
                                 selectedDevice
                             }, set: {
                                 manuallySelectedDevice = $0
-                            })
+                            }),
+                            showScanning: true
                         )
-                        .font(.body)
-                        .frame(idealWidth: 100, maxWidth: 350)
-                        .buttonStyle(.borderless)
+                        .buttonStyle(PaddedBorderlessButtonStyle())
                         .menuStyle(.button)
-                        #if os(macOS)
-                        .hoverHighlight()
-                        #endif
+                        .controlSize(.extraLarge)
+                        .glowing(enabled: selectedDevice == nil)
+                        .hoverHighlight(enabled: selectedDevice != nil)
+
                         Spacer()
-                            .layoutPriority(1)
                     }
                     #elseif os(visionOS)
                     HStack(alignment: .center) {
@@ -501,9 +501,38 @@ struct RemoteView: View {
                                 selectedDevice
                             }, set: {
                                 manuallySelectedDevice = $0
-                            })
+                            }),
+                            showScanning: true
                         )
-                        .font(.body)
+                        .menuStyle(.button)
+                        .buttonStyle(PaddedBorderlessButtonStyle())
+                        .controlSize(.extraLarge)
+                        .hoverEffect(.highlight)
+                        .cornerRadius(buttonRadius)
+                        .glowing(enabled: selectedDevice == nil)
+                    }
+                    #elseif os(iOS)
+                    if selectedDevice == nil {
+                        HStack(alignment: .center) {
+                            Spacer()
+
+                            DevicePicker(
+                                devices: devices,
+                                device: Binding(get: {
+                                    selectedDevice
+                                }, set: {
+                                    manuallySelectedDevice = $0
+                                }),
+                                showScanning: true
+                            )
+                            .buttonStyle(PaddedBorderlessButtonStyle())
+                            .menuStyle(.button)
+                            .controlSize(.extraLarge)
+                            .glowing(enabled: selectedDevice == nil)
+
+                            Spacer()
+                        }
+                        .offset(y: -20)
                     }
                     #endif
 
@@ -514,28 +543,6 @@ struct RemoteView: View {
                         verticalBody()
                             .disabled(selectedDevice == nil)
                     }
-
-#if !APPCLIP
-                    if selectedDevice == nil {
-                            #if os(macOS)
-                                SettingsLink {
-                                    Label(String(localized: "Setup a device to get started :)", comment: "Label on a button to open the device setup page"), systemImage: "gear")
-                                        .padding(8)
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .labelStyle(.titleAndIcon)
-
-                            #else
-                                NavigationLink(value: NavigationDestination.settingsDestination(.global)) {
-                                    Label(String(localized: "Setup a device to get started :)", comment: "Label on a button to open the device setup page"), systemImage: "gear")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .labelStyle(.titleAndIcon)
-                            #endif
-                    }
-#endif
 
                     if !hideUIForKeyboardEntry {
                         if unreadMessages.count > 0 {
@@ -550,11 +557,6 @@ struct RemoteView: View {
                         }
                         networkConnectivityBanner
                         Spacer().frame(maxHeight: 10)
-                    }
-
-                    if selectedDevice == nil {
-                        NotificationBanner(message: LocalizedStringResource("Scanning for devices...", comment: "Notification indicator that devices are getting scanned for"), level: .info)
-                            .frame(maxWidth: .infinity)
                     }
 
 #if !os(macOS)
@@ -703,8 +705,8 @@ struct RemoteView: View {
                                 manuallySelectedDevice = $0
                             })
                         )
-                        .font(.body)
                         .frame(idealWidth: 100, maxWidth: 350)
+                        .disabled(selectedDevice == nil)
                     }
                 #else
                 ToolbarItem(id: "device-picker", placement: .navigation) {
@@ -719,7 +721,6 @@ struct RemoteView: View {
                                 manuallySelectedDevice = $0
                             })
                         )
-                        .font(.body)
                     }
                 }
                 #endif
@@ -970,7 +971,6 @@ struct RemoteView: View {
             // Row with Back and Home buttons
             TopBar(pressCounter: buttonPressCount, action: pressButton)
                 .matchedGeometryEffect(id: "topBar", in: animation)
-                .layoutPriority(1)
 
             Spacer()
                     .frame(minHeight: 10)
@@ -979,7 +979,6 @@ struct RemoteView: View {
             CenterController(pressCounter: buttonPressCount, action: pressButton)
                 .transition(.scale.combined(with: .opacity))
                 .matchedGeometryEffect(id: "centerController", in: animation)
-                .layoutPriority(1)
 
             if !hideUIForKeyboardEntry {
                 Spacer()
@@ -993,7 +992,6 @@ struct RemoteView: View {
                 )
                 .transition(.scale.combined(with: .opacity))
                 .matchedGeometryEffect(id: "buttonGrid", in: animation)
-                .layoutPriority(1)
             }
 
             if !showKeyboardEntry && selectedDevice != nil {
@@ -1004,12 +1002,15 @@ struct RemoteView: View {
                 #if !os(visionOS)
                     .sensoryFeedback(SensoryFeedback.impact, trigger: buttonPressCount(.inputAV1))
                 #endif
-                    .layoutPriority(1)
 
                 Spacer()
             } else {
                 Spacer()
+                    .frame(minHeight: 20)
+                Spacer()
+                    .frame(minHeight: 20)
             }
+            Spacer()
         }
     }
 

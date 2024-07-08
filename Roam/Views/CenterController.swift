@@ -70,6 +70,7 @@ struct CenterController: View {
             }
             .environment(\.layoutDirection, .leftToRight)
         }
+        .fixedSize()
         .id("controllerGrid")
     }
 }

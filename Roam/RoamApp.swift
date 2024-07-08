@@ -24,6 +24,8 @@ struct RoamApp: App {
     init() {
         sharedModelContainer = getSharedModelContainer()
 
+//        try? Tips.resetDatastore()
+
         try? Tips.configure([
             .displayFrequency(.immediate),
             .datastoreLocation(.groupContainer(identifier: "group.com.msdrigg.roam.tips"))

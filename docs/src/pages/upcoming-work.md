@@ -13,10 +13,16 @@ hide_table_of_contents: true
 
 ## General Improvements
 
+- Automate Screenshot Capture
+    - Use UITests to get actual screenshots
+    - Use AppScreens https://appscreens.com/user/project/DRxTFSSIQtuU0y9Eew4w to get the screenshots in the frames
+    - Or something else
+        - https://www.figma.com/community/file/886620275115089774
+        - https://www.figma.com/community/file/1071476530354359587/app-store-screenshots?searchSessionId=lxw3ep02-oubp844ov8
+        - https://www.figma.com/community/file/1256854154932829222/free-app-store-screenshot-templates?searchSessionId=lxw3ep02-oubp844ov8
+        - https://www.canva.com/templates/s/iphone/
+
 - Think about nav sidebar (+ tab bar) for ipad/visionOS
-- Improve bottom getting started button
-    - Convert to Tip that only shows if there aren't any devices
-    - Show with a gradient background + large text + subtitle (go to settings)
 - Test more keyboard hacks
     - GCKeyboard for one
     - FocusEnvironment for 2
@@ -55,15 +61,11 @@ hide_table_of_contents: true
 
 ## TipKit
 
-- Add help text to some views for macos, visionOS
-- Add tips for private listening
-- Add tips for keyboard shortcuts
-- Add tips for messaging the dev?
-- Add tips for features that don't work when there is no API key (message developer, share diagnostics)
+- Add tip for private listening
+    - Popover in main screen after a device is connected and play button has been pressed until dismissed
 - Add tip for setting up global keyboard shortcuts via macos app
+    - Inline in keyboard shortcut page until dismissed
 - https://fatbobman.com/en/posts/mastering-tipkit-advance/
-- Use TipGroup for tips https://www.youtube.com/watch?v=raHy6XT3Rlc&list=WL&index=4
-- Switch the initial "Connect a device to get started" into a tip
 
 ## Improve Testing
 
@@ -159,5 +161,6 @@ Keyboard ECP Session Commands (notes)
 - SwiftData
     - Use new #Index macro for models
     - Use new #Unique macro for models
+    - Use batch deletion
 - TipKit
     - Use CloudkitContainer https://developer.apple.com/videos/play/wwdc2024/10070/?time=698

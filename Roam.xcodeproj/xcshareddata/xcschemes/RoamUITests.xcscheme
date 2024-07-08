@@ -4,23 +4,8 @@
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
-      <BuildActionEntries>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "AFC24EFA2AD0E5A1002AB66C"
-               BuildableName = "Roam.app"
-               BlueprintName = "Roam"
-               ReferencedContainer = "container:Roam.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-      </BuildActionEntries>
+      buildImplicitDependencies = "YES"
+      buildArchitectures = "Automatic">
    </BuildAction>
    <TestAction
       buildConfiguration = "Debug"
@@ -52,16 +37,6 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "AFC24EFA2AD0E5A1002AB66C"
-            BuildableName = "Roam.app"
-            BlueprintName = "Roam"
-            ReferencedContainer = "container:Roam.xcodeproj">
-         </BuildableReference>
-      </BuildableProductRunnable>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -69,16 +44,6 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "AFC24EFA2AD0E5A1002AB66C"
-            BuildableName = "Roam.app"
-            BlueprintName = "Roam"
-            ReferencedContainer = "container:Roam.xcodeproj">
-         </BuildableReference>
-      </BuildableProductRunnable>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

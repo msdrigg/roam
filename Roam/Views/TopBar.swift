@@ -55,5 +55,6 @@ struct TopBar: View {
             #endif
             .symbolEffect(.bounce, value: pressCounter(.home))
         }
+        .fixedSize(horizontal: false, vertical: true)
     }
 }

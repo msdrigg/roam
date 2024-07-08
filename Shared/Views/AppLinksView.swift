@@ -84,6 +84,7 @@ struct AppLinksView: View {
             }
         }
         .frame(height: gridHeight * CGFloat(rows))
+        .fixedSize(horizontal: false, vertical: true)
         .onAppear {
             cachedAppLinks = appLinks
         }

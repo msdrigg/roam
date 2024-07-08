@@ -921,7 +921,7 @@
       }
     },
     "App Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1253,7 +1253,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2164,6 +2164,9 @@
           }
         }
       }
+    },
+    "Click here to play your TV audio through your device!" : {
+
     },
     "Click Ok" : {
       "comment" : "Title for Ok intent",
@@ -10761,10 +10764,10 @@
       }
     },
     "Roku Apps" : {
-      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation"
+      "comment" : "Siri spotlight recommendation"
     },
     "Roku Controls" : {
-      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation"
+      "comment" : "Siri spotlight recommendation"
     },
     "RTCP Port" : {
       "comment" : "Settings label for the device's RTCP port",
@@ -11097,6 +11100,9 @@
           }
         }
       }
+    },
+    "Scanning for devices" : {
+
     },
     "Scanning for devices..." : {
       "comment" : "Notification indicator that devices are getting scanned for",
@@ -13431,6 +13437,12 @@
           }
         }
       }
+    },
+    "Want to listen through your headphones?" : {
+
+    },
+    "Want to setup a global " : {
+
     },
     "WatchOS Note" : {
       "comment" : "Description on a button to see info about watchOS limitations",

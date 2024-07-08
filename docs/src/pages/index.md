@@ -46,7 +46,7 @@ If you have any questions or issues, please contact me at: [roam-support@msd3.io
 
 -   [Privacy Policy](/privacy)
 -   [Core Repository on GitHub](https://github.com/msdrigg/roam)
--   [Roam Discord](https://discord.gg/Q7M7M6Sw)
+-   [Roam Discord](https://discord.gg/FqaTNRccbG)
 -   [Download on the app store](https://apps.apple.com/us/app/roam/6469834197)
 -   [Download the app clip](/scan)
 -   [Roadmap](/upcoming-work)

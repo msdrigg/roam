@@ -61,7 +61,7 @@ const config: Config = {
         },
         {
           label: 'Discord',
-          href: 'https://discord.gg/cCNW55ZJ',
+          href: 'https://discord.gg/FqaTNRccbG',
         },
       ],
       copyright: `Copyright © ${new Date().getFullYear()} Roam, Inc.`,
