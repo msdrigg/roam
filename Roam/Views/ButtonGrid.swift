@@ -11,6 +11,29 @@ struct ButtonGrid: View {
     @ScaledMetric var buttonHeight = globalButtonHeight
     @ScaledMetric var buttonSpacing = globalButtonSpacing
 
+    @ViewBuilder
+    func maybeTipButton(_ button: (String, String, RemoteButton, CustomKeyboardShortcut.Key)) -> some View {
+        let view = Button(action: {
+            if button.2 == .headphonesMode {
+                HeadphonesModeTip.toggledHeadphonesMode.sendDonation()
+            }
+            if button.2 == .mute || button.2 == .playPause {
+                HeadphonesModeTip.toggledMuteOrPlayPause.sendDonation()
+            }
+            action(button.2)
+        }, label: {
+            Label(button.0, systemImage: button.1)
+                .frame(width: buttonWidth, height: buttonHeight)
+        })
+
+        if button.2 == .headphonesMode && !disabled.contains(button.2){
+            view
+                .popoverTip(HeadphonesModeTip())
+        } else {
+            view
+        }
+    }
+
     var body: some View {
         let buttonRows: [[(String, String, RemoteButton, CustomKeyboardShortcut.Key)]] = [
             [("Replay", "arrow.uturn.backward", .instantReplay, .instantReplay),
@@ -27,20 +50,18 @@ struct ButtonGrid: View {
             ForEach(buttonRows, id: \.first?.0) { row in
                 GridRow {
                     ForEach(row, id: \.0) { button in
-                        let view = Button(action: { action(button.2) }, label: {
-                            Label(button.0, systemImage: button.1)
-                                .frame(width: buttonWidth, height: buttonHeight)
-                        })
-                        .disabled(disabled.contains(button.2))
-                        .breatheEffect(enabled.contains(button.2))
-                        .symbolEffect(.bounce, value: pressCounter(button.2))
+                        let view = maybeTipButton(button)
+                            .disabled(disabled.contains(button.2))
+                            .breatheEffect(enabled.contains(button.2))
+                            .symbolEffect(.bounce, value: pressCounter(button.2))
 #if os(macOS)
-                        .tint(Color.secondary)
-                        .buttonStyle(.borderedProminent)
+                            .tint(Color.secondary)
+                            .buttonStyle(.borderedProminent)
 #endif
-                        #if !os(visionOS)
+#if !os(visionOS)
                             .sensoryFeedback(.impact, trigger: pressCounter(button.2))
-                        #endif
+
+#endif
                             view
 #if !os(tvOS) && !os(watchOS)
                             .customKeyboardShortcut(button.3)

@@ -2165,7 +2165,7 @@
         }
       }
     },
-    "Click here to play your TV audio through your device!" : {
+    "Click here to play your TV audio through your computer!" : {
 
     },
     "Click Ok" : {
@@ -8166,6 +8166,9 @@
         }
       }
     },
+    "Open the \"Shortcuts\" application, and choose one of the Roam shortcuts. Then add a [keyboard shortcut](https://support.apple.com/guide/shortcuts-mac/launch-a-shortcut-from-another-app-apd163eb9f95/7.0/mac/14.0#apd94a0e7c32) to it" : {
+
+    },
     "Options" : {
       "comment" : "Keyboard shortcut to open the options menu\nRemote button for options menu",
       "localizations" : {
@@ -13438,10 +13441,10 @@
         }
       }
     },
-    "Want to listen through your headphones?" : {
+    "Want a keyboard shortcut that works everywhere?" : {
 
     },
-    "Want to setup a global " : {
+    "Want to listen through your device?" : {
 
     },
     "WatchOS Note" : {

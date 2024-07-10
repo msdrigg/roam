@@ -59,14 +59,6 @@ hide_table_of_contents: true
     - if they aren't work backwards up to why and fix
     - if they are, why aren't they stopping...
 
-## TipKit
-
-- Add tip for private listening
-    - Popover in main screen after a device is connected and play button has been pressed until dismissed
-- Add tip for setting up global keyboard shortcuts via macos app
-    - Inline in keyboard shortcut page until dismissed
-- https://fatbobman.com/en/posts/mastering-tipkit-advance/
-
 ## Improve Testing
 
 -   UI Tests

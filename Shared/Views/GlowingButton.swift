@@ -3,7 +3,7 @@ import TipKit
 
 struct GlowingModifier: ViewModifier {
     @State private var animate = false
-    
+
     @ScaledMetric var buttonRadius = globalButtonRadius
 
     let gradientColors = Gradient(colors: [.teal, .blue, .pink, .accentColor, .indigo])

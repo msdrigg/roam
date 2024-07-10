@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import OSLog
+import TipKit
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "KeyboardShortcut")
 
@@ -677,11 +678,18 @@ struct KeyboardShortcutPanel: View {
     }
 
     @State private var focusedShortcut: CustomKeyboardShortcut.Key?
+    @Environment(\.openURL) var openURL
 
     @ViewBuilder
     var body: some View {
         Form {
-            #if os(macOS)
+#if os(macOS)
+            TipView(GlobalKeyboardShortcutTip(), action: { _ in
+                openURL(URL(string: "shortcuts://create-shortcut")!)
+            })
+#endif
+
+#if os(macOS)
             Text("Click on a row below to change the shortcut, or right click it to reset", comment: "Caption on a keyboard shortcut panel")
                 .foregroundStyle(.secondary)
                 .swipeActions(edge: .trailing) {
@@ -696,12 +704,12 @@ struct KeyboardShortcutPanel: View {
                         for shortcut in shortcuts {
                             let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
                             scClone.persist()
-
+                            
                         }
                     }, label: {
                         Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
                     })
-
+                    
                 }
                 .contextMenu {
                     Button(role: .cancel, action: {
@@ -715,17 +723,17 @@ struct KeyboardShortcutPanel: View {
                         for shortcut in shortcuts {
                             let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
                             scClone.persist()
-
+                            
                         }
                     }, label: {
                         Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
                     })
-
+                    
                 }
-            #else
+#else
             Text("Tap a row below to change the shortcut, or swipe to reset", comment: "Caption on a keyboard shortcut panel")
                 .foregroundStyle(.secondary)
-            #if !os(tvOS)
+#if !os(tvOS)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button(role: .cancel, action: {
                         for shortcut in shortcuts {
@@ -738,14 +746,14 @@ struct KeyboardShortcutPanel: View {
                         for shortcut in shortcuts {
                             let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
                             scClone.persist()
-
+                            
                         }
                     }, label: {
                         Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
                     })
-
+                    
                 }
-            #endif
+#endif
                 .contextMenu {
                     Button(role: .cancel, action: {
                         for shortcut in shortcuts {
@@ -758,15 +766,15 @@ struct KeyboardShortcutPanel: View {
                         for shortcut in shortcuts {
                             let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
                             scClone.persist()
-
+                            
                         }
                     }, label: {
                         Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
                     })
-
+                    
                 }
-
-            #endif
+            
+#endif
             ForEach(shortcuts, id: \.id) { shortcut in
                 Button(action: {
                     focusedShortcut = shortcut.title
@@ -783,7 +791,7 @@ struct KeyboardShortcutPanel: View {
                         .scaleEffect(focusedShortcut == shortcut.title ? 1 : 1.04)
                         .animation(focusedShortcut == shortcut.title ? .easeIn(duration: 0.2) : .easeOut(duration: 0.0), value: focusedShortcut == shortcut.title)
                 )
-                #if !os(tvOS)
+#if !os(tvOS)
                 .swipeActions(edge: .trailing) {
                     Button(role: .cancel, action: {
                         shortcut.reset()
@@ -796,9 +804,8 @@ struct KeyboardShortcutPanel: View {
                     }, label: {
                         Label(String(localized: "Clear", comment: "Label on a button to clear a keyboard shortcut"), systemImage: "xmark")
                     })
-
                 }
-                #endif
+#endif
                 .contextMenu {
                     Button(role: .cancel, action: {
                         shortcut.reset()
@@ -815,6 +822,9 @@ struct KeyboardShortcutPanel: View {
             }
         }
         #if os(macOS)
+        .onAppear {
+            GlobalKeyboardShortcutTip.viewedKeyboardShortcuts.sendDonation()
+        }
         .onKeyDown({ key in
             if let focusedShortcut {
                 CustomKeyboardShortcut(title: focusedShortcut, shortcut: KeyboardShortcut(key.key, modifiers: key.modifiers)).persist()

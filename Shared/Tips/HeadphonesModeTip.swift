@@ -1,14 +1,37 @@
 import TipKit
 import SwiftUI
 
-// TODO: Add popover to headphones mode button
 struct HeadphonesModeTip: Tip {
-    var title: Text = Text("Want to listen through your headphones?")
+    static let toggledHeadphonesMode: Event = Event(id: "toggledHeadphonesMode")
+    static let toggledMuteOrPlayPause: Event = Event(id: "toggledMuteOrPlayPause")
 
-    // TODO: Make this say computer/ipad/iphone
-    var message: Text = Text("Click here to play your TV audio through your device!")
+    var title: Text = Text("Want to listen through your device?")
+    var image: Image? {
+        Image(systemName: "headphones")
+    }
 
-    var image: Image = Image(systemName: "headphones")
+    var message: Text? {
+        #if os(macOS)
+        Text("Click here to play your TV audio through your computer!")
+        #elseif os(visionOS)
+        Text("Click here to play your TV audio through your Vision Pro!")
+        #elseif os(tvOS)
+        Text("Click here to play your TV audio through your Apple TV!")
+        #else
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            Text("Click here to play your TV audio through your iPad or connected headphones")
+        } else {
+            Text("Click here to play your TV audio through your iPhone or connected headphones")
+        }
+        #endif
+    }
 
-    // TODO: Make only appear after a device has been sucessfully muted/unmuted or play/paused
+    var rules: [Rule] {
+        #Rule(Self.toggledHeadphonesMode) {
+            $0.donations.count == 0
+        }
+        #Rule(Self.toggledMuteOrPlayPause) {
+            $0.donations.count > 2
+        }
+    }
 }
