@@ -921,7 +921,7 @@
       }
     },
     "App Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1253,7 +1253,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2166,6 +2166,12 @@
       }
     },
     "Click here to play your TV audio through your computer!" : {
+
+    },
+    "Click here to play your TV audio through your iPad or connected headphones" : {
+
+    },
+    "Click here to play your TV audio through your iPhone or connected headphones" : {
 
     },
     "Click Ok" : {
@@ -10767,10 +10773,10 @@
       }
     },
     "Roku Apps" : {
-      "comment" : "Siri spotlight recommendation"
+      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation"
     },
     "Roku Controls" : {
-      "comment" : "Siri spotlight recommendation"
+      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation"
     },
     "RTCP Port" : {
       "comment" : "Settings label for the device's RTCP port",

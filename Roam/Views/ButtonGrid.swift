@@ -14,12 +14,14 @@ struct ButtonGrid: View {
     @ViewBuilder
     func maybeTipButton(_ button: (String, String, RemoteButton, CustomKeyboardShortcut.Key)) -> some View {
         let view = Button(action: {
+            #if !os(watchOS)
             if button.2 == .headphonesMode {
                 HeadphonesModeTip.toggledHeadphonesMode.sendDonation()
             }
             if button.2 == .mute || button.2 == .playPause {
                 HeadphonesModeTip.toggledMuteOrPlayPause.sendDonation()
             }
+            #endif
             action(button.2)
         }, label: {
             Label(button.0, systemImage: button.1)
@@ -28,7 +30,9 @@ struct ButtonGrid: View {
 
         if button.2 == .headphonesMode && !disabled.contains(button.2){
             view
+            #if !os(watchOS)
                 .popoverTip(HeadphonesModeTip())
+            #endif
         } else {
             view
         }

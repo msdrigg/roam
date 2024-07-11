@@ -9,6 +9,7 @@ import SwiftUI
     let globalButtonWidthPadding: CGFloat = 40
     let globalButtonHeightPaddingSmall: CGFloat = 20
     let globalButtonWidthPaddingSmall: CGFloat = 28
+    let globalGlowingRadius: CGFloat = 6
     let globalButtonRadius: CGFloat = 10
 #elseif os(macOS)
     let globalButtonWidth: CGFloat = 44
@@ -19,6 +20,7 @@ import SwiftUI
     let globalButtonHeightPaddingSmall: CGFloat = 6
     let globalButtonWidthPaddingSmall: CGFloat = 8
     let globalButtonRadius: CGFloat = 6
+    let globalGlowingRadius: CGFloat = 4
     let globalAppLinkShrinkWidth: CGFloat = 500
 #elseif os(tvOS)
     let globalButtonWidth: CGFloat = 60
@@ -30,6 +32,7 @@ import SwiftUI
     let globalButtonHeightPadding: CGFloat = 32
     let globalButtonWidthPadding: CGFloat = 36
     let globalButtonHeightPaddingSmall: CGFloat = 20
+    let globalGlowingRadius: CGFloat = 6
     let globalButtonWidthPaddingSmall: CGFloat = 28
 #else
     let globalButtonSpacing: CGFloat = 10
@@ -40,8 +43,9 @@ import SwiftUI
     let globalButtonWidthPadding: CGFloat = 40
     let globalAppLinkShrinkWidth = 700
     let globalButtonRadius: CGFloat = 10
-    let globalButtonHeightPaddingSmall: CGFloat = 16
-    let globalButtonWidthPaddingSmall: CGFloat = 24
+    let globalButtonHeightPaddingSmall: CGFloat = 12
+    let globalGlowingRadius: CGFloat = 6
+    let globalButtonWidthPaddingSmall: CGFloat = 18
 #endif
 
 extension View {

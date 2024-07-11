@@ -527,7 +527,6 @@ struct RemoteView: View {
                             )
                             .buttonStyle(PaddedBorderlessButtonStyle())
                             .menuStyle(.button)
-                            .controlSize(.extraLarge)
                             .glowing(enabled: selectedDevice == nil)
 
                             Spacer()

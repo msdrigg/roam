@@ -5,6 +5,7 @@ struct GlowingModifier: ViewModifier {
     @State private var animate = false
 
     @ScaledMetric var buttonRadius = globalButtonRadius
+    @ScaledMetric var glowRadius = globalGlowingRadius
 
     let gradientColors = Gradient(colors: [.teal, .blue, .pink, .accentColor, .indigo])
 
@@ -20,13 +21,13 @@ struct GlowingModifier: ViewModifier {
                    )
 #endif
             )
-            .padding(4)
+            .padding(glowRadius)
             .background(
                 RoundedRectangle(cornerRadius: buttonRadius)
                     .fill(AngularGradient(gradient: gradientColors, center: .center, angle: .degrees(animate ? 360 : 0)))
-                    .blur(radius: 4)
+                    .blur(radius: glowRadius)
             )
-            .padding(7)
+            .padding(glowRadius * 2 - glowRadius / 4)
             .onAppear {
                 withAnimation(.easeInOut(duration: 5).repeatForever(autoreverses: true)) {
                     animate = true

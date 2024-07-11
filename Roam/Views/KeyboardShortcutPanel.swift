@@ -704,12 +704,12 @@ struct KeyboardShortcutPanel: View {
                         for shortcut in shortcuts {
                             let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
                             scClone.persist()
-                            
+
                         }
                     }, label: {
                         Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
                     })
-                    
+
                 }
                 .contextMenu {
                     Button(role: .cancel, action: {
@@ -723,12 +723,10 @@ struct KeyboardShortcutPanel: View {
                         for shortcut in shortcuts {
                             let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
                             scClone.persist()
-                            
                         }
                     }, label: {
                         Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
                     })
-                    
                 }
 #else
             Text("Tap a row below to change the shortcut, or swipe to reset", comment: "Caption on a keyboard shortcut panel")
@@ -746,12 +744,12 @@ struct KeyboardShortcutPanel: View {
                         for shortcut in shortcuts {
                             let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
                             scClone.persist()
-                            
+
                         }
                     }, label: {
                         Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
                     })
-                    
+
                 }
 #endif
                 .contextMenu {
@@ -766,14 +764,14 @@ struct KeyboardShortcutPanel: View {
                         for shortcut in shortcuts {
                             let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
                             scClone.persist()
-                            
+
                         }
                     }, label: {
                         Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
                     })
-                    
+
                 }
-            
+
 #endif
             ForEach(shortcuts, id: \.id) { shortcut in
                 Button(action: {

@@ -558,6 +558,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AF26BAC92C3F0234002C9C04 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				HeadphonesModeTip.swift,
+			);
+			target = AF3503562BB493F3004F4337 /* RoamClip */;
+		};
 		AFC78ED32C389D1200A5FC0E /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -570,14 +577,13 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				GlobalKeyboardShortcutsTip.swift,
-				HeadphonesModeTip.swift,
 			);
 			target = AF15C2452AE8672700B79FD9 /* RoamWatch */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		AFA922F52C20A2DA008F49B4 /* Tips */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (AFC78ED32C389D1200A5FC0E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, AFC78ED42C389D1200A5FC0E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Tips; sourceTree = "<group>"; };
+		AFA922F52C20A2DA008F49B4 /* Tips */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (AFC78ED32C389D1200A5FC0E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, AFC78ED42C389D1200A5FC0E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, AF26BAC92C3F0234002C9C04 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Tips; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
