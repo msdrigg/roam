@@ -7,7 +7,9 @@ hide_table_of_contents: true
 - Localizations in many languages
 - Spanish, Portuges, French, German, Filipino, Chinese, Vietnamese, Arabic, Punjabi, Italian
 - Improve customized keyboard shortcut support on iPad even if Full Keyboard Access is turned on
-- UI Improvements especially on macOS
+- UI Improvements
+    - Pretty buttons for scanning for devices
+    - Translucent windows on macOS
 
 # Upcoming Roam Updates
 
@@ -52,12 +54,6 @@ hide_table_of_contents: true
 - Figure out if the loop of calls to `nextPacket` make sense.
     - Instead of looping every 10ms and hoping the timing is correct, should I instead be looping over received packets and trying to schedule them at host time `10ms * globalSequenceNumber + startHostTime` and sampleTime to `sequenceNumber * Int64(lastSampleTime.sampleRate) / packetsPerSec + startSampleTime`
     - Then I can switch from a `for await` loop over the clock to a `while !Task.isCancelled` loop with a `Task.sleep` in it.
-- Figure out what causes race condition when quickly clicking headphones mode keyboard shortcut 
-    - Figure out what causes data leak in case of long-running private listening after TV shuts off...
-    - Fix weird headphones mode not disabling bug
-    - ensure rtcp/rtp listeners are cancelled...
-    - if they aren't work backwards up to why and fix
-    - if they are, why aren't they stopping...
 
 ## Improve Testing
 

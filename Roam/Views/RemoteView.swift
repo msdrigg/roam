@@ -339,19 +339,11 @@ struct RemoteView: View {
                         let location = device.location
                         let rtcpPort = device.rtcpPort
                         do {
-                            let task = Task.detached {
-                                try await listenContinually(
-                                    ecpSession: ecpSession,
-                                    location: location,
-                                    rtcpPort: rtcpPort
-                                )
-                            }
-                            defer {
-                                if !task.isCancelled {
-                                    task.cancel()
-                                }
-                            }
-                            try await task.value
+                            try await listenContinually(
+                                ecpSession: ecpSession,
+                                location: location,
+                                rtcpPort: rtcpPort
+                            )
                             Self.logger.info("Listencontinually returned")
                         } catch {
                             Self.logger.warning("Catching error in pl handler \(error)")
