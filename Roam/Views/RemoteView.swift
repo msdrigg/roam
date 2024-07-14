@@ -258,11 +258,7 @@ struct RemoteView: View {
                 ])
             }
             .task {
-                while true {
-                    if Task.isCancelled {
-                        return
-                    }
-
+                while !Task.isCancelled {
                     let createDataHandler = createDataHandler
                     Task.detached {
                         guard let ownedDataHandler = await createDataHandler() else {
@@ -307,9 +303,7 @@ struct RemoteView: View {
                     Self.logger
                         .info("Creating ecp session with location \(String(describing: selectedDevice?.location))")
                     let oldECP = ecpSession
-                    Task.detached {
-                        await oldECP?.close()
-                    }
+                    await oldECP?.close()
                     ecpSession = nil
                     if let device = selectedDevice?.toAppEntity() {
                         do {
