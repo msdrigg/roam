@@ -24,7 +24,7 @@ actor OpusDecoderWithJitterBuffer {
     var lastPacketNumber: Int64 = 0
     var syncPacket: RtpPacket?
     var lastSampleTime: AVAudioTime?
-    let audioBuffer: TimeInterval
+    let audioBufferDuration: TimeInterval
     var rollingSequenceNumber: Int64?
 
     init(audioBuffer: TimeInterval) throws {
@@ -38,7 +38,7 @@ actor OpusDecoderWithJitterBuffer {
             Self.logger.error("Error initializing opus decoder \(error)")
             throw error
         }
-        self.audioBuffer = audioBuffer
+        self.audioBufferDuration = audioBuffer
     }
 
     func syncAudio(time: AVAudioTime, additionalAudioDelay: TimeInterval) -> Bool {
@@ -46,21 +46,21 @@ actor OpusDecoderWithJitterBuffer {
             Self.logger.info("Not synced packet yet. Can't sync audio yet")
             return false
         }
-        Self.logger.info("Syncing time with additional audio delay \(additionalAudioDelay) buffer \(self.audioBuffer)")
+        Self.logger.info("Syncing time with additional audio delay \(additionalAudioDelay) buffer \(self.audioBufferDuration)")
 
-        let packetsSubtracted = Int64(audioBuffer * Double(packetsPerSec))
+        let packetsInBuffer = Int64(audioBufferDuration * Double(packetsPerSec))
 
         // Estimating getting 100 packets per second
         let currentEstimatedPacketNumber =
             Int64((machTimeToSeconds(time.hostTime) - machTimeToSeconds(syncPacket.receivedAt)) *
                 Double(packetsPerSec)) + Int64(syncPacket.sequenceNumber)
-        lastPacketNumber = (currentEstimatedPacketNumber - packetsSubtracted + Int64(UInt16.max)) % Int64(UInt16.max)
+        lastPacketNumber = (currentEstimatedPacketNumber - packetsInBuffer + Int64(UInt16.max)) % Int64(UInt16.max)
         lastSampleTime = AVAudioTime(
             hostTime: time.hostTime + secondsToMachTime(additionalAudioDelay),
             sampleTime: time.sampleTime + Int64(time.sampleRate * additionalAudioDelay),
             atRate: time.sampleRate
         )
-        rollingSequenceNumber = lastPacketNumber + packetsSubtracted
+        rollingSequenceNumber = lastPacketNumber + packetsInBuffer
 
         return true
     }
@@ -197,7 +197,7 @@ actor AudioPlayer {
 
     public func sab(atTime: consuming AVAudioTime) async {
     }
-    public func scheduleAudioBytes(buffer: AVAudioPCMBuffer, atTime: sending AVAudioTime) async {
+    public func scheduleAudioBytes(buffer: sending AVAudioPCMBuffer, atTime: sending AVAudioTime) async {
         let outputBuffer = AVAudioPCMBuffer(
             pcmFormat: convertor.outputFormat,
             frameCapacity: AVAudioFrameCount(convertor.outputFormat.sampleRate) * buffer

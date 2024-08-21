@@ -18,13 +18,13 @@ struct RoamApp: App {
         @UIApplicationDelegateAdaptor(RoamAppDelegate.self) var appDelegate
     #endif
 
+    @AppStorage(UserDefaultKeys.showMenuBar) private var showMenuBar: Bool = false
+
     @ObservedObject var uuidUpdater = UUIDUpdater()
 
     var sharedModelContainer: ModelContainer
     init() {
         sharedModelContainer = getSharedModelContainer()
-
-//        try? Tips.resetDatastore()
 
         try? Tips.configure([
             .displayFrequency(.immediate),
@@ -40,6 +40,16 @@ struct RoamApp: App {
                     .removeToolbarTitle()
                     .removeToolbarBackground()
                     .environment(\.uuidUpdater, uuidUpdater)
+                    .onAppear {
+                        NSApp.setActivationPolicy(.regular)
+                        NSApp.activate(ignoringOtherApps: true)
+                    }
+                    .onDisappear {
+                        // If there is only one window left (this one), then revert to .accessory app
+                        if NSApp.windows.filter({$0.level != .statusBar && $0.isVisible}).count <= 1 && showMenuBar {
+                            NSApp.setActivationPolicy(.accessory)
+                        }
+                    }
             }
             .enableBackgroundDragging()
             .defaultSize(width: 400, height: 1000)
@@ -49,6 +59,9 @@ struct RoamApp: App {
                 CommandGroup(replacing: CommandGroupPlacement.appInfo) {
                     Button(action: {
                         openWindow(id: "about")
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            NSApplication.shared.activate(ignoringOtherApps: true)
+                        }
                     }, label: {
                         Text("About Roam", comment: "Button to open the about page of the Roam app")
                     })
@@ -56,11 +69,17 @@ struct RoamApp: App {
                 CommandGroup(after: .help) {
                     Button("Keyboard Shortcuts", systemImage: "keyboard") {
                         openWindow(id: "keyboard-shortcuts")
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            NSApplication.shared.activate(ignoringOtherApps: true)
+                        }
                     }
                     .customKeyboardShortcut(.keyboardShortcuts)
 
                     Button("Chat with the Developer", systemImage: "message") {
                         openWindow(id: "messages")
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            NSApplication.shared.activate(ignoringOtherApps: true)
+                        }
                     }
                     .customKeyboardShortcut(.chatWithDeveloper)
                 }
@@ -68,10 +87,16 @@ struct RoamApp: App {
                 CommandGroup(after: .singleWindowList) {
                     Button("Keyboard Shortcuts", systemImage: "keyboard") {
                         openWindow(id: "keyboard-shortcuts")
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            NSApplication.shared.activate(ignoringOtherApps: true)
+                        }
                     }
                     .customKeyboardShortcut(.keyboardShortcuts)
                     Button("Chat with the Developer", systemImage: "message") {
                         openWindow(id: "messages")
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            NSApplication.shared.activate(ignoringOtherApps: true)
+                        }
                     }
                     .customKeyboardShortcut(.chatWithDeveloper)
                 }
@@ -79,12 +104,29 @@ struct RoamApp: App {
             .modelContainer(sharedModelContainer)
             .environment(\.createDataHandler, dataHandlerCreator())
 
+            MenuBarExtra("Roam Menu Bar", systemImage: "appletvremote.gen3", isInserted: self.$showMenuBar) {
+                RemoteViewContained(isInMenuBar: true)
+                    .modelContainer(sharedModelContainer)
+                    .environment(\.createDataHandler, dataHandlerCreator())
+                    .environment(\.uuidUpdater, uuidUpdater)
+            }
+            .menuBarExtraStyle(.window)
+
             Window("About Roam", id: "about") {
                 ExternalAboutView()
                     .removeToolbarTitle()
                     .removeToolbarBackground()
                     .translucentBackground()
                     .disableWindowMinimize()
+                    .onAppear {
+                        NSApp.setActivationPolicy(.regular)
+                        NSApp.activate(ignoringOtherApps: true)
+                    }
+                    .onDisappear {
+                        if NSApp.windows.filter({$0.level != .statusBar && $0.isVisible}).count <= 1 && showMenuBar {
+                            NSApp.setActivationPolicy(.accessory)
+                        }
+                    }
             }
             .disableRestoration()
             .defaultSize(width: 450, height: 200)
@@ -110,6 +152,16 @@ struct RoamApp: App {
                     .frame(width: 400)
                     .translucentBackground()
                     .environment(\.uuidUpdater, uuidUpdater)
+                    .onAppear {
+                        NSApp.setActivationPolicy(.regular)
+                        NSApp.activate(ignoringOtherApps: true)
+                    }
+                    .onDisappear {
+                        // If there is only one window left (this one), then revert to .accessory app
+                        if NSApp.windows.filter({$0.level != .statusBar && $0.isVisible}).count <= 1 && showMenuBar {
+                            NSApp.setActivationPolicy(.accessory)
+                        }
+                    }
             }
             .windowResizability(.contentSize)
             .modelContainer(sharedModelContainer)
@@ -118,6 +170,15 @@ struct RoamApp: App {
             Window("Roam Keyboard Shortcuts", id: "keyboard-shortcuts") {
                 KeyboardShortcutPanel()
                     .translucentBackground()
+                    .onAppear {
+                        NSApp.setActivationPolicy(.regular)
+                        NSApp.activate(ignoringOtherApps: true)
+                    }
+                    .onDisappear {
+                        if NSApp.windows.filter({!$0.isExcludedFromWindowsMenu && $0.canBecomeKey && $0.isVisible}).count <= 1 {
+                            NSApp.setActivationPolicy(.accessory)
+                        }
+                    }
             }
             .windowResizability(.contentSize)
             .modelContainer(sharedModelContainer)
@@ -130,6 +191,17 @@ struct RoamApp: App {
                     .translucentBackground()
                     .enableResize()
                     .environment(\.uuidUpdater, uuidUpdater)
+                    .onAppear {
+                        NSApp.setActivationPolicy(.regular)
+                        NSApp.activate(ignoringOtherApps: true)
+                    }
+                    .onDisappear {
+                        // If there is only one window left (this one), then revert to .accessory app
+
+                        if NSApp.windows.filter({$0.level != .statusBar && $0.isVisible}).count <= 1 && showMenuBar {
+                            NSApp.setActivationPolicy(.accessory)
+                        }
+                    }
             }
             .modelContainer(sharedModelContainer)
             .environment(\.createDataHandler, dataHandlerCreator())

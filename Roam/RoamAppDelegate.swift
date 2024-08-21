@@ -35,11 +35,15 @@ func sendDeviceTokenToServer(_ token: String) async {
 
         func applicationDidFinishLaunching(_ notification: Notification) {
             let hasSentFirstMessage = UserDefaults.standard.bool(forKey: "hasSentFirstMessage")
+
             if hasSentFirstMessage {
                 UserDefaults.standard.setValue(Date.now.timeIntervalSince1970, forKey: "lastApnsRequestTime")
                 requestNotificationPermission()
             }
 
+        }
+        func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+            return !UserDefaults.standard.bool(forKey: UserDefaultKeys.showMenuBar)
         }
 
         func application(_: NSApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {

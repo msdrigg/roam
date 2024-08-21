@@ -6,7 +6,7 @@ import os.log
 
     @MainActor
     class LatencyListener {
-        private nonisolated static let logger = Logger(
+        private static nonisolated let logger = Logger(
             subsystem: Bundle.main.bundleIdentifier!,
             category: String(describing: LatencyListener.self)
         )
@@ -65,7 +65,7 @@ import os.log
     import CoreAudio
 
     actor LatencyListener {
-        private nonisolated static let logger = Logger(
+        private static nonisolated let logger = Logger(
             subsystem: Bundle.main.bundleIdentifier!,
             category: String(describing: LatencyListener.self)
         )

@@ -123,9 +123,11 @@ struct AboutView: View {
 }
 
 #if DEBUG
-#Preview("About") {
+#Preview(
+    "About",
+    traits: .fixedLayout(width: 100.0, height: 300.0)
+) {
     AboutView()
-        .previewLayout(.fixed(width: 100.0, height: 300.0))
         .modelContainer(previewContainer)
 }
 #endif

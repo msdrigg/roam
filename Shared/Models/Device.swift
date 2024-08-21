@@ -25,14 +25,6 @@ public extension Device {
         }
         return Date().timeIntervalSince(lastOnlineAt) < 60
     }
-
-    internal func usingMac() -> String? {
-        if networkType == "ethernet" {
-            ethernetMAC
-        } else {
-            wifiMAC
-        }
-    }
 }
 
 func getHost(from urlString: String) -> String {

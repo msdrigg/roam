@@ -50,9 +50,9 @@ public enum SchemaV1: VersionedSchema {
 
     @Model
     public final class AppLink: Identifiable {
-        public let id: String
-        public let type: String
-        public let name: String
+        public var id: String
+        public var type: String
+        public var name: String
         public var lastSelected: Date?
         public var deviceUid: String?
         @Attribute(.externalStorage) public var icon: Data?
@@ -68,10 +68,10 @@ public enum SchemaV1: VersionedSchema {
 
     @Model
     public final class Message: Identifiable {
-        @Attribute(.unique) public let id: String
-        let message: String
-        let author: AuthorType
-        let fetchedBackend: Bool
+        @Attribute(.unique) public var id: String
+        var message: String
+        var author: AuthorType
+        var fetchedBackend: Bool
         var viewed: Bool = false
 
         enum AuthorType: String, Codable {

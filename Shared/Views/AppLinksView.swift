@@ -38,6 +38,7 @@ struct AppLinksView: View {
 
     @Namespace var linkAnimation
 
+    @MainActor
     init(deviceId: String?, rows: Int, handleOpenApp: @escaping (AppLinkAppEntity) -> Void) {
         self.handleOpenApp = handleOpenApp
         self.rows = rows
@@ -130,15 +131,17 @@ struct AppLinkButton: View {
 }
 
 #if DEBUG
-#Preview {
+#Preview(
+    traits: .fixedLayout(width: 100, height: 300)
+) {
     AppLinksView(deviceId: nil, rows: 1, handleOpenApp: { _ in })
         .modelContainer(previewContainer)
-        .previewLayout(.fixed(width: 100.0, height: 300.0))
 }
 
-#Preview {
+#Preview(
+    traits: .fixedLayout(width: 100, height: 300)
+) {
     AppLinksView(deviceId: nil, rows: 2, handleOpenApp: { _ in })
         .modelContainer(previewContainer)
-        .previewLayout(.fixed(width: 100.0, height: 300.0))
 }
 #endif

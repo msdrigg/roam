@@ -2,7 +2,7 @@ import SwiftUI
 
 struct UUIDUpdaterKey: EnvironmentKey {
     // We can do this because UUIDUpdater is nil
-    nonisolated(unsafe) static let defaultValue: UUIDUpdater? = nil
+    static let defaultValue: UUIDUpdater? = nil
 }
 
 extension EnvironmentValues {

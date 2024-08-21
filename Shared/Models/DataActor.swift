@@ -3,10 +3,7 @@ import OSLog
 import SwiftData
 import SwiftUI
 
-#if swift(>=6.0)
-    #warning("Reevaluate whether this decoration is necessary.")
-#endif
-nonisolated(unsafe) private let logger = Logger(
+private let logger = Logger(
     subsystem: Bundle.main.bundleIdentifier!,
     category: "DataManagement"
 )

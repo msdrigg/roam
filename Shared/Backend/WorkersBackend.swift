@@ -5,7 +5,7 @@ import SwiftData
 private let globalBackendURL = "https://backend.roam.msd3.io"
 // private let globalBackendURL = "http://192.168.8.133:8787"
 
-nonisolated(unsafe) private let logger = Logger(
+private let logger = Logger(
     subsystem: Bundle.main.bundleIdentifier!,
     category: "WorkersBackend"
 )

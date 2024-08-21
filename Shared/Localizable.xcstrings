@@ -921,7 +921,7 @@
       }
     },
     "App Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1253,7 +1253,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8172,6 +8172,9 @@
         }
       }
     },
+    "Open main window" : {
+
+    },
     "Open the \"Shortcuts\" application, and choose one of the Roam shortcuts. Then add a [keyboard shortcut](https://support.apple.com/guide/shortcuts-mac/launch-a-shortcut-from-another-app-apd163eb9f95/7.0/mac/14.0#apd94a0e7c32) to it" : {
 
     },
@@ -10686,6 +10689,9 @@
     "Roam Keyboard Shortcuts" : {
 
     },
+    "Roam Menu Bar" : {
+
+    },
     "Roam Messages" : {
       "comment" : "Window header for the messages window"
     },
@@ -10773,10 +10779,10 @@
       }
     },
     "Roku Apps" : {
-      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation"
+      "comment" : "Siri spotlight recommendation"
     },
     "Roku Controls" : {
-      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation"
+      "comment" : "Siri spotlight recommendation"
     },
     "RTCP Port" : {
       "comment" : "Settings label for the device's RTCP port",
@@ -11776,6 +11782,9 @@
           }
         }
       }
+    },
+    "Show menu bar icon" : {
+      "comment" : "Label on a settings toggle"
     },
     "Some Roku devices support streaming audio directly to Roam. Roam hasn't been able to check for support on this device. Click the headphones button in the main view to see if it works for you or visit https://www.roku.com/products/compare to see which devices do support this feature." : {
       "comment" : "Descriptive caption in a device settings page",

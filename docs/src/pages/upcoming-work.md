@@ -4,71 +4,107 @@ hide_table_of_contents: true
 
 # Most recent roam work
 
-- Localizations in many languages
-- Spanish, Portuges, French, German, Filipino, Chinese, Vietnamese, Arabic, Punjabi, Italian
-- Improve customized keyboard shortcut support on iPad even if Full Keyboard Access is turned on
-- UI Improvements
-    - Pretty buttons for scanning for devices
-    - Translucent windows on macOS
+-   Localizations in many languages
+-   Spanish, Portuges, French, German, Filipino, Chinese, Vietnamese, Arabic, Punjabi, Italian
+-   Improve customized keyboard shortcut support on iPad even if Full Keyboard Access is turned on
+-   UI Improvements
+    -   Pretty buttons for scanning for devices
+    -   Translucent windows on macOS
 
 # Upcoming Roam Updates
 
 ## General Improvements
 
-- Automate Screenshot Capture
-    - Use UITests to get actual screenshots
-    - Use AppScreens https://appscreens.com/user/project/DRxTFSSIQtuU0y9Eew4w to get the screenshots in the frames
-    - Or something else
-        - https://www.figma.com/community/file/886620275115089774
-        - https://www.figma.com/community/file/1071476530354359587/app-store-screenshots?searchSessionId=lxw3ep02-oubp844ov8
-        - https://www.figma.com/community/file/1256854154932829222/free-app-store-screenshot-templates?searchSessionId=lxw3ep02-oubp844ov8
-        - https://www.canva.com/templates/s/iphone/
+-   How to do voice-to-text or general voice commands?
 
-- Think about nav sidebar (+ tab bar) for ipad/visionOS
-- Test more keyboard hacks
-    - GCKeyboard for one
-    - FocusEnvironment for 2
-    - Ensure that whatever solution gets used for iOS doesn't break text entry in messages/keyboard entry
-- AppIntents
-    - Add control center app intents
-        - Use toggle for mute/unmute and power on/off
-        - Use buttons for everything else
-        - Use tint correct purple
-        - Make configurable just like widgets
-        - Make work with action hint
-    - Let siri/spotlight better see the things in my app somehow?
-        - Add universal links to the devices so siri can link to them?
-        - Ensure that semantic search works
-        - Implement transferrable via string/codeable for my app entities
-            - ProxyRepresentation
-            - CodableRepresentation
-- Provide an optional Minimalist view on iOS that replicates siri remote's view closely
-    - https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
-    - Support visionos gestures as well...
-    - Need to build the textedit api first
-- Add some event tracking on what actions users are actually doing on their devices (connect to firebase analytics maybe?)
-    - Track who is using minimalist view, what actions they are doing, etc...
+-   Automate Screenshot Capture
+
+    -   Use UITests to get actual screenshots
+    -   Use AppScreens https://appscreens.com/user/project/DRxTFSSIQtuU0y9Eew4w to get the screenshots in the frames
+    -   Or something else
+        -   https://www.figma.com/community/file/886620275115089774
+        -   https://www.figma.com/community/file/1071476530354359587/app-store-screenshots?searchSessionId=lxw3ep02-oubp844ov8
+        -   https://www.figma.com/community/file/1256854154932829222/free-app-store-screenshot-templates?searchSessionId=lxw3ep02-oubp844ov8
+        -   https://www.canva.com/templates/s/iphone/
+
+-   Think about nav sidebar (+ tab bar) for ipad/visionOS
+-   Test more keyboard hacks
+    -   GCKeyboard for one
+    -   FocusEnvironment for 2
+    -   Ensure that whatever solution gets used for iOS doesn't break text entry in messages/keyboard entry
+-   AppIntents
+    -   Add control center app intents
+        -   Use toggle for mute/unmute and power on/off
+        -   Use buttons for everything else
+        -   Use tint correct purple
+        -   Make configurable just like widgets
+        -   Make work with action hint
+    -   Let siri/spotlight better see the things in my app somehow?
+        -   Add universal links to the devices so siri can link to them?
+        -   Ensure that semantic search works
+        -   Implement transferrable via string/codeable for my app entities
+            -   ProxyRepresentation
+            -   CodableRepresentation
+-   Provide an optional Minimalist view on iOS that replicates siri remote's view closely
+    -   https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
+    -   Support visionos gestures as well...
+    -   Need to build the textedit api first
+-   Add some event tracking on what actions users are actually doing on their devices (connect to firebase analytics maybe?)
+    -   Track who is using minimalist view, what actions they are doing, etc...
 
 ## Bug Fixes
 
-- Figure out if the loop of calls to `nextPacket` make sense.
-    - Instead of looping every 10ms and hoping the timing is correct, should I instead be looping over received packets and trying to schedule them at host time `10ms * globalSequenceNumber + startHostTime` and sampleTime to `sequenceNumber * Int64(lastSampleTime.sampleRate) / packetsPerSec + startSampleTime`
-    - Then I can switch from a `for await` loop over the clock to a `while !Task.isCancelled` loop with a `Task.sleep` in it.
-    - Okay so we need to loop every 10 ms and try to pull the last packet off and then schedule it at that time
+-   Figure out if the loop of calls to `nextPacket` make sense.
+    -   Instead of looping every 10ms and hoping the timing is correct, should I instead be looping over received packets and trying to schedule them at host time `10ms * globalSequenceNumber + startHostTime` and sampleTime to `sequenceNumber * Int64(lastSampleTime.sampleRate) / packetsPerSec + startSampleTime`
+    -   Then I can switch from a `for await` loop over the clock to a `while !Task.isCancelled` loop with a `Task.sleep` in it.
+    -   Okay so we need to loop every 10 ms and try to pull the last packet off and then schedule it at that time
+    -   Whenever we do an audio sync
+        -   We have lastRenderTime + a sync packet
+        -   Estimate the packet number we should be sending out at + the sync time
+            -   Render Time + additional
+-   Nana Test fixes
+    -   When sending diagnostics, it jumps to messages but the “Sent diagnostics” doesn’t show up immediately.
+        -   Possibly do an app updater trigger or just refresh messages proactively if that’s the problem
+    -   Check the IPV4 space scanning algorithm
+        -   Could be not showing all addresses?
+        -   Would this interface show .32 or just .33
+            -                     {
+            -                         "address": "172.16.33.239",
+            -                         "flags": 34915,
+            -                         "isRunning": true,
+            -                         "family": 2,
+            -                         "isLoopback": false,
+            -                         "isIPv4": true,
+            -                         "netmask": "255.255.254.0",
+            -                         "name": "en0"
+            -                     }
+    -   Turn off scanning for devices TOTALLY when scan for devices automatically is disabled
+        -   Update messaging to reflect this
+        -   Make sure scanning is on by default
+        -   Don’t mark a newly scanned device as selected automatically unless it was done in a foreground scan or a user added device
+    -   Ensure that when there are multiple valid interfaces that all addresses are properly scanned, and all broadcast interfaces are properly SSDP’d
+    -   Add broadcast interface, scan range and parse the flags properly for display in debug interface
+    -   Ensure all my logs are not sensitized
+        -   Cannot connect to <private> because of ...
+        -   Found SSDP service at <private>
+        -   Changing empty target from <private> to...
+        -   Received successful ecp response <private>
+        -   Transferring devices <private> to watch
+    -   Make custom menu bar icon
 
 ## Improve Testing
 
 -   UI Tests
-    - Test when device is added that it shows up in device picker and is selected by roam
-    - Test that user can navigate to settings -> devices
-    - Test that user can navigate to settings -> messages
-    - Test that user can navigate to settings -> about
-    - Test that user can edit/delete devices
-    - Test that user can click buttons once devices are added
-    - Test that user sees banner for no devices when it shows up
-    - Test that the user sees applinks
-    - Refer to swiftdat testingmodelcontainer for modelcontainers
-    - Refer to here https://medium.com/appledeveloperacademy-ufpe/how-to-implement-ui-tests-with-swiftui-a-few-examples-636708ee26ad for how to setup tests
+    -   Test when device is added that it shows up in device picker and is selected by roam
+    -   Test that user can navigate to settings -> devices
+    -   Test that user can navigate to settings -> messages
+    -   Test that user can navigate to settings -> about
+    -   Test that user can edit/delete devices
+    -   Test that user can click buttons once devices are added
+    -   Test that user sees banner for no devices when it shows up
+    -   Test that the user sees applinks
+    -   Refer to swiftdat testingmodelcontainer for modelcontainers
+    -   Refer to here https://medium.com/appledeveloperacademy-ufpe/how-to-implement-ui-tests-with-swiftui-a-few-examples-636708ee26ad for how to setup tests
 
 ## App Clip
 
@@ -144,12 +180,12 @@ Keyboard ECP Session Commands (notes)
 
 ## To update when dropping support for iOS 17/macOS 15 (2025)
 
-- Use preview traits to inject sample data into previews
-    - How to do this with iOS 17 still being a factor?
-    - How to use @Previewable in previews with iOS 17 still a factor??
-- SwiftData
-    - Use new #Index macro for models
-    - Use new #Unique macro for models
-    - Use batch deletion
-- TipKit
-    - Use CloudkitContainer https://developer.apple.com/videos/play/wwdc2024/10070/?time=698
+-   Use preview traits to inject sample data into previews
+    -   How to do this with iOS 17 still being a factor?
+    -   How to use @Previewable in previews with iOS 17 still a factor??
+-   SwiftData
+    -   Use new #Index macro for models
+    -   Use new #Unique macro for models
+    -   Use batch deletion
+-   TipKit
+    -   Use CloudkitContainer https://developer.apple.com/videos/play/wwdc2024/10070/?time=698

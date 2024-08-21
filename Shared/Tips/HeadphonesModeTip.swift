@@ -1,7 +1,7 @@
 import TipKit
 import SwiftUI
 
-struct HeadphonesModeTip: @preconcurrency Tip {
+struct HeadphonesModeTip: Tip {
     static let toggledHeadphonesMode: Event = Event(id: "toggledHeadphonesMode")
     static let toggledMuteOrPlayPause: Event = Event(id: "toggledMuteOrPlayPause")
 
@@ -10,7 +10,6 @@ struct HeadphonesModeTip: @preconcurrency Tip {
         Image(systemName: "headphones")
     }
 
-    @MainActor
     var message: Text? {
         #if os(macOS)
         Text("Click here to play your TV audio through your computer!")

@@ -57,12 +57,8 @@ public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Enc
         DisplayRepresentation(title: "\(name)", image: (icon != nil) ? DisplayRepresentation.Image(data: icon!) : DisplayRepresentation.Image(systemName: "tv"))
     }
 
-    func usingMac() -> String? {
-        if networkType == "ethernet" {
-            ethernetMAC
-        } else {
-            wifiMAC
-        }
+    func macs() -> [String] {
+        return [self.ethernetMAC, self.wifiMAC].compactMap({$0})
     }
 
     init(device: Device) {

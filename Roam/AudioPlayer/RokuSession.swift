@@ -89,7 +89,7 @@ actor RTPSession {
     let videoBufferMs: UInt32 = 400
     let baseAudioTransitMs: UInt32 = 0
 
-    var softwareAudioDelayMs: UInt32 {
+    var baseAudioDelayMs: UInt32 {
         videoBufferMs + baseAudioTransitMs
     }
 
@@ -483,35 +483,13 @@ actor RTPSession {
                         await rtpAudioPlayer.stop()
                     }
                 }
-//                var lastTimer: Date?
-//
-//                while !Task.isCancelled {
-//                    if lastTimer == nil {
-//                        lastTimer = Date.now
-//                    }
-//                    Self.logger.info("Checking for new packets \(-(lastTimer?.timeIntervalSince1970 ?? 1)) \(lastTimer?.timeIntervalSinceNow ?? -1)")
-//                    
-//                    if let lrt = await rtpAudioPlayer.lastRender() {
-//                        if let (pcmBuffer, audioTime) = await decoder.nextPacket(atTime: lrt) {
-//                            Self.logger.info("Scheduling packet at \(audioTime)")
-//                            await rtpAudioPlayer.scheduleAudioBytes(buffer: pcmBuffer, atTime: audioTime)
-//                            lastTimer = Date.now
-//                        }
-//                    }
-//                    
-//                    try? await Task.sleep(nanoseconds: 1000 * 1000 * 10)
-//                    
-//                    if let lastTimer, -lastTimer.timeIntervalSinceNow > 8 {
-//                        Self.logger.warning("Stopping audio because last packet received \(lastTimer) seconds ago")
-//                        throw HeadphonesModeError.audioStreamingTimeout
-//                    }
-//                }
+
                 for await _ in AsyncTimerSequence.repeating(every: .milliseconds(10), tolerance: .microseconds(10)) {
                     Task {
                         if let lrt = await rtpAudioPlayer.lastRender() {
                             if let returns = await decoder.nextPacket(atTime: consume lrt) {
-                                nonisolated(unsafe) let pcmBuffer = returns.0
-                                nonisolated(unsafe) let audioTime = returns.1
+                                let pcmBuffer = returns.0
+                                let audioTime = returns.1
 
                                 await rtpAudioPlayer.scheduleAudioBytes(buffer: pcmBuffer, atTime: audioTime)
                             }
@@ -526,7 +504,7 @@ actor RTPSession {
                         let latency = await rtpAudioPlayer.getOutputLatency()
                         if await decoder.syncAudio(
                             time: lrt,
-                            additionalAudioDelay: Double(globalHugeFixedVDLYMS - self.softwareAudioDelayMs) / 1000 -
+                            additionalAudioDelay: Double(globalHugeFixedVDLYMS - self.baseAudioDelayMs) / 1000 -
                                 latency
                         ) {
                             break
@@ -541,7 +519,7 @@ actor RTPSession {
                             if let lrt = await rtpAudioPlayer.lastRender() {
                                 if await decoder.syncAudio(
                                     time: lrt,
-                                    additionalAudioDelay: Double(globalHugeFixedVDLYMS - self.softwareAudioDelayMs) /
+                                    additionalAudioDelay: Double(globalHugeFixedVDLYMS - self.baseAudioDelayMs) /
                                         1000 -
                                         latency
                                 ) {

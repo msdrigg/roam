@@ -219,7 +219,7 @@ public struct OpenDeviceIntent: OpenIntent {
             let success = await sendKeyToDeviceRawNotRecommended(
                 location: targetDevice.location,
                 key: deviceKey,
-                mac: targetDevice.usingMac()
+                macs: targetDevice.macs()
             )
             if !success {
                 logger.warning("Error sending key to device")

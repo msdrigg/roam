@@ -65,6 +65,7 @@ struct SettingsView: View {
 
     @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanIpAutomatically: Bool = true
     @AppStorage(UserDefaultKeys.shouldControlVolumeWithHWButtons) private var controlVolumeWithHWButtons: Bool = true
+    @AppStorage(UserDefaultKeys.showMenuBar) private var showMenuBar: Bool = false
     @AppStorage(UserDefaultKeys.userMajorActionCount) private var majorActionsCount = 0
 
     @State private var reportingDebugLogs: Bool = false
@@ -90,6 +91,9 @@ struct SettingsView: View {
                     debugLogReportID = logs.installationInfo.userId
 #elseif os(macOS)
                     openWindow(id: "messages")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        NSApplication.shared.activate(ignoringOtherApps: true)
+                    }
 #else
                     path.append(NavigationDestination.messageDestination)
 #endif
@@ -281,6 +285,11 @@ struct SettingsView: View {
                 Toggle(String(localized: "Use volume buttons to control TV volume", comment: "Label on a settings toggle"), isOn: $controlVolumeWithHWButtons)
 #endif
 
+                #if os(macOS)
+                Toggle(String(localized: "Show menu bar icon", comment: "Label on a settings toggle"), isOn: $showMenuBar)
+
+                #endif
+
                 Toggle(String(localized: "Scan for devices automatically", comment: "Label on a settings toggle"), isOn: $scanIpAutomatically)
             }
 #endif
@@ -323,6 +332,9 @@ struct SettingsView: View {
                 Button(action: {
 #if os(macOS)
                     openWindow(id: "messages")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        NSApplication.shared.activate(ignoringOtherApps: true)
+                    }
 #else
                     path.append(NavigationDestination.messageDestination)
 #endif
@@ -553,6 +565,7 @@ struct DeviceDetailView: View {
     @Query private var selectedDevices: [Device]
     @Environment(\.uuidUpdater) private var updater
 
+    @MainActor
     init(deviceId: PersistentIdentifier, dismiss: @escaping () -> Void) {
         self.dismiss = dismiss
         self.deviceId = deviceId
@@ -867,6 +880,7 @@ struct DeviceDetailView: View {
     }
 }
 
+@MainActor
 public extension Binding where Value == Bool {
     /// Creates a binding by mapping an optional value to a `Bool` that is
     /// `true` when the value is non-`nil` and `false` when the value is `nil`.
@@ -902,21 +916,25 @@ public extension Binding {
     ///
     /// When the value of the produced binding is set to `false` this binding's value
     /// is set to `nil`.
-    func mappedToBool<Wrapped>() -> Binding<Bool> where Value == Wrapped? {
+    @MainActor func mappedToBool<Wrapped>() -> Binding<Bool> where Value == Wrapped? {
         Binding<Bool>(mappedTo: self)
     }
 }
 
 #if DEBUG
-#Preview("Device List") {
-    @State var path: [NavigationDestination] = []
+#Preview(
+    "Device List",
+     traits: .fixedLayout(width: 100, height: 300)
+) {
+    @Previewable @State var path: [NavigationDestination] = []
     return SettingsView(path: $path, destination: .global)
-        .previewLayout(.fixed(width: 100.0, height: 300.0))
         .modelContainer(previewContainer)
 }
 
-#Preview("Device Detail") {
+#Preview(
+    "Device Detail",
+    traits: .fixedLayout(width: 100, height: 300)
+) {
     DeviceDetailView(deviceId: getTestingDevices()[0].persistentModelID) {}
-        .previewLayout(.fixed(width: 100.0, height: 300.0))
 }
 #endif

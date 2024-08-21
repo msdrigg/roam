@@ -109,7 +109,6 @@ import AppIntents
                 intent: ButtonPressIntent(),
                 phrases: [
                     "Press \(\.$button) with \(.applicationName)",
-                    "Press \(\.$button) on \(\.$device) with \(.applicationName)",
                     "Press a button on TV with \(.applicationName)",
                     "Press a button on Roku with \(.applicationName)",
                 ],
@@ -120,11 +119,9 @@ import AppIntents
                 intent: LaunchAppIntent(),
                 phrases: [
                     "Launch \(\.$app) with \(.applicationName)",
-                    "Launch \(\.$app) on \(\.$device) with \(.applicationName)",
                     "Launch \(\.$app) on TV with \(.applicationName)",
                     "Launch \(\.$app) on Roku \(.applicationName)",
                     "Open \(\.$app) with \(.applicationName)",
-                    "Open \(\.$app) on \(\.$device) with \(.applicationName)",
                     "Open \(\.$app) on TV with \(.applicationName)",
                     "Open app with \(.applicationName)",
                     "Launch app on \(\.$device) \(.applicationName)",

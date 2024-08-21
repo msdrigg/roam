@@ -112,22 +112,29 @@ public func exponentialBackoff(
     max maxTime: TimeInterval,
     multiplier: Double = 2
 ) -> AsyncStream<Date> {
-    var currentTimeout: TimeInterval?
-    return AsyncStream {
-        if let timeout = currentTimeout {
-            // Jitter for 1% of timeout
-            let jitter = Double.random(in: 0 ..< timeout * 0.01)
-            try? await Task.sleep(duration: timeout + jitter)
-            currentTimeout = min(timeout * multiplier, maxTime)
-        } else {
-            currentTimeout = minTime
+    return AsyncStream<Date>.init(Date.self, bufferingPolicy: .bufferingOldest(1), { (continuation: AsyncStream<Date>.Continuation) in
+        let task = Task {
+            var currentTimeout: TimeInterval?
+            while !Task.isCancelled {
+                if let timeout = currentTimeout {
+                    // Jitter for 1% of timeout
+                    let jitter = Double.random(in: 0 ..< timeout * 0.01)
+                    try? await Task.sleep(duration: timeout + jitter)
+                    currentTimeout = min(timeout * multiplier, maxTime)
+                } else {
+                    currentTimeout = minTime
+                }
+                if Task.isCancelled {
+                    continuation.finish()
+                } else {
+                    continuation.yield(Date.now)
+                }
+            }
         }
-        if Task.isCancelled {
-            return nil
+        continuation.onTermination =  { @Sendable _ in
+            task.cancel()
         }
-
-        return Date.now
-    }
+    })
 }
 
 public func interval(

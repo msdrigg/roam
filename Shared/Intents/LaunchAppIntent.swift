@@ -16,7 +16,7 @@ import Intents
         public var device: DeviceAppEntity?
 
         @Parameter(title: LocalizedStringResource("App", comment: "Description on a configuration field"))
-        public var app: AppLinkAppEntity
+        public var app: AppLinkAppEntity?
 
         public static var parameterSummary: some ParameterSummary {
             Summary("App \(\.$app) on \(\.$device)")
@@ -25,19 +25,21 @@ import Intents
         public static var predictionConfiguration: some IntentPredictionConfiguration {
             IntentPrediction(parameters: (\.$app, \.$device)) { app, device in
                 DisplayRepresentation(
-                    title: LocalizedStringResource("Launch \(app) on \(device!)", comment: "Title on a siri shortcut")
+                    title: LocalizedStringResource("Launch \(app!) on \(device!)", comment: "Title on a siri shortcut")
                 )
             }
 
             IntentPrediction(parameters: \.$app) { app in
                 DisplayRepresentation(
-                    title: LocalizedStringResource("Launch \(app) on the current device", comment: "Title on a siri shortcut")
+                    title: LocalizedStringResource("Launch \(app!) on the current device", comment: "Title on a siri shortcut")
                 )
             }
         }
 
         public func perform() async throws -> some IntentResult {
-            try await launchApp(app: app, device: device)
+            if let app {
+                try await launchApp(app: app, device: device)
+            }
             return .result()
         }
 

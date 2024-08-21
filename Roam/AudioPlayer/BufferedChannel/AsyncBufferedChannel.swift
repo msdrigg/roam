@@ -92,7 +92,7 @@ public final class AsyncBufferedChannel<Element>: AsyncSequence, Sendable {
         }
     }
 
-    func send(_ value: Value) {
+    func send(_ value: sending Value) {
         let decision = state.withCriticalRegion { state -> SendDecision in
             switch (state, value) {
             case (.idle, .element):
@@ -130,7 +130,7 @@ public final class AsyncBufferedChannel<Element>: AsyncSequence, Sendable {
         }
     }
 
-    public func send(_ element: Element) {
+    public func send(_ element: sending Element) {
         send(.element(element))
     }
 

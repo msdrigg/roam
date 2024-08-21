@@ -52,7 +52,7 @@ func wakeOnLAN(macAddress: String) async -> Bool {
                     if let error {
                         logger.error("Error sending WOL packet for MAC \(macAddress): \(error)")
                     } else {
-                        logger.info("Sent WOL packet")
+                        logger.info("Sent WOL packet for address \(macAddress)")
                     }
                     connection.cancel()
                     continuation.yield(true)
@@ -97,7 +97,7 @@ public func openApp(location: String, app: String) async throws {
 }
 
 @discardableResult
-public func powerToggleDeviceStateless(location: String, mac: String?) async -> Bool {
+public func powerToggleDeviceStateless(location: String, macs: [String]) async -> Bool {
     logger.debug("Toggling power for device \(location)")
 
     // Attempt checking the device power mode
@@ -109,12 +109,12 @@ public func powerToggleDeviceStateless(location: String, mac: String?) async -> 
         timeout: 1.1
     )
     if !toggleResult {
-        logger.debug("API toggle failed, trying to WOL to mac \(String(describing: mac))")
-        guard let mac else {
-            return false
+        logger.debug("API toggle failed, trying to WOL to macs \(String(describing: macs))")
+        for mac in macs {
+            logger.debug("Sending wol packet to \(mac)")
+            await wakeOnLAN(macAddress: mac)
         }
-        logger.debug("Sending wol packet to \(mac)")
-        return await wakeOnLAN(macAddress: mac)
+        return true
     } else {
         logger.debug("API toggle suceeded!")
         return true
@@ -126,9 +126,9 @@ public func sendKeyPressTodevice(location: String, key: Character) async -> Bool
 }
 
 @discardableResult
-public func sendKeyToDevice(location: String, mac: String?, key: RemoteButton) async -> Bool {
+public func sendKeyToDevice(location: String, macs: [String], key: RemoteButton) async -> Bool {
     if key == .power {
-        return await powerToggleDeviceStateless(location: location, mac: mac)
+        return await powerToggleDeviceStateless(location: location, macs: macs)
     } else {
         if let apiValue = key.apiValue {
             return await internalSendKeyToDevice(location: location, rawKey: apiValue)
@@ -138,10 +138,10 @@ public func sendKeyToDevice(location: String, mac: String?, key: RemoteButton) a
     return false
 }
 
-public func sendKeyToDeviceRawNotRecommended(location: String, key: String, mac: String?) async -> Bool {
+public func sendKeyToDeviceRawNotRecommended(location: String, key: String, macs: [String]) async -> Bool {
     if key == RemoteButton.power.apiValue {
-        logger.debug("Toggling power on device \(location) with mac \(String(describing: mac))")
-        return await powerToggleDeviceStateless(location: location, mac: mac)
+        logger.debug("Toggling power on device \(location) with mac \(String(describing: macs))")
+        return await powerToggleDeviceStateless(location: location, macs: macs)
     } else {
         logger.debug("Sending key to device \(key)")
         return await internalSendKeyToDevice(location: location, rawKey: key)

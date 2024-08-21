@@ -4,7 +4,7 @@
     @preconcurrency import WatchConnectivity
 
     final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
-        private nonisolated static let logger = Logger(
+        private static nonisolated let logger = Logger(
             subsystem: Bundle.main.bundleIdentifier!,
             category: String(describing: WatchConnectivity.self)
         )

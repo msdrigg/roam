@@ -22,6 +22,10 @@ struct DevicePicker: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.createDataHandler) private var createDataHandler
     @Environment(\.uuidUpdater) private var updater
+#if os(macOS)
+    @Environment(\.openSettings) private var openSettings
+    @Environment(\.openWindow) private var openWindow
+#endif
 
     let devices: [Device]
     var device: Binding<Device?>
@@ -67,10 +71,16 @@ struct DevicePicker: View {
 
             Divider()
             #if os(macOS)
-                SettingsLink {
+                Button(action: {
+                    openSettings()
+                    openWindow(id: "main")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        NSApplication.shared.activate(ignoringOtherApps: true)
+                    }
+                }, label: {
                     Label("Settings", systemImage: "gear")
                         .labelStyle(.titleAndIcon)
-                }
+                })
             #elseif !APPCLIP
                 NavigationLink(value: NavigationDestination.settingsDestination(.global)) {
                     Label("Settings", systemImage: "gear")

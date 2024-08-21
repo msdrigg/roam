@@ -67,10 +67,12 @@ extension LabelStyle where Self == BadgeLabelStyle {
 #endif
 
 #if DEBUG
-#Preview("About") {
+#Preview(
+    "About",
+    traits: .fixedLayout(width: 100.0, height: 300.0)
+) {
     Label(String(localized: "Test Badge!", comment: "Label for a badge"), systemImage: "keyboard")
         .labelStyle(.badge(Color.green))
-        .previewLayout(.fixed(width: 100.0, height: 300.0))
         .modelContainer(previewContainer)
 }
 #endif

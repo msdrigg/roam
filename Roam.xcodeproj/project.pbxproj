@@ -237,6 +237,8 @@
 		AFA21DA52C2C7D00008EF24A /* ScreenshotWithTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D912C2C7D00008EF24A /* ScreenshotWithTitle.swift */; };
 		AFA9F8972B1B878600829B7C /* Shortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6B72ADE28C80036EC90 /* Shortcuts.swift */; };
 		AFA9F8992B1D29E000829B7C /* KeyboardShortcutPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */; };
+		AFBBE16E2C764564002B7F68 /* RemoteViewContained.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBBE16D2C76455E002B7F68 /* RemoteViewContained.swift */; };
+		AFBBE16F2C764564002B7F68 /* RemoteViewContained.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBBE16D2C76455E002B7F68 /* RemoteViewContained.swift */; };
 		AFC24EFF2AD0E5A1002AB66C /* RoamApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC24EFE2AD0E5A1002AB66C /* RoamApp.swift */; };
 		AFC24F052AD0E5A2002AB66C /* AppIcon.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AFC24F042AD0E5A2002AB66C /* AppIcon.xcassets */; };
 		AFC4A6582AE867A3005DAC6C /* AppIcon.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AFC24F042AD0E5A2002AB66C /* AppIcon.xcassets */; };
@@ -521,6 +523,7 @@
 		AFA68FE32BD06424005A102E /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = backend/src; sourceTree = "<group>"; };
 		AFA68FE72BD06474005A102E /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = docs/src; sourceTree = "<group>"; };
 		AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutPanel.swift; sourceTree = "<group>"; };
+		AFBBE16D2C76455E002B7F68 /* RemoteViewContained.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteViewContained.swift; sourceTree = "<group>"; };
 		AFC24EFB2AD0E5A1002AB66C /* Roam.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Roam.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AFC24EFE2AD0E5A1002AB66C /* RoamApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamApp.swift; sourceTree = "<group>"; };
 		AFC24F042AD0E5A2002AB66C /* AppIcon.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AppIcon.xcassets; sourceTree = "<group>"; };
@@ -655,6 +658,7 @@
 				AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */,
 				AF3AD55A2AE2947E00E2D780 /* KeyboardEntry.swift */,
 				AF0C828B2AEB494D00CBE7F8 /* VolumeSliderView.swift */,
+				AFBBE16D2C76455E002B7F68 /* RemoteViewContained.swift */,
 				AFFC71E52AD1212100EE8EA0 /* RemoteView.swift */,
 				AF3AD5522AE28F7400E2D780 /* ButtonGrid.swift */,
 				AF3AD5542AE2910B00E2D780 /* CenterController.swift */,
@@ -1448,6 +1452,7 @@
 				AF8EF5102BB60D20002A4D6D /* RokuSession.swift in Sources */,
 				AF8EF4F32BB60AE8002A4D6D /* SchemaFile.swift in Sources */,
 				AF7107202BD00D9400384691 /* RoamAppDelegate.swift in Sources */,
+				AFBBE16E2C764564002B7F68 /* RemoteViewContained.swift in Sources */,
 				AF8EF4F42BB60AE8002A4D6D /* AppLink.swift in Sources */,
 				AF05B4732BFDA49E00FA3783 /* ObjcErrors.swift in Sources */,
 				AF8EF5022BB60B31002A4D6D /* ButtonGrid.swift in Sources */,
@@ -1520,6 +1525,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AFBBE16F2C764564002B7F68 /* RemoteViewContained.swift in Sources */,
 				AF0C82952AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */,
 				AF65A88A2BB5ABF9005ECF7F /* RoamAppDelegate.swift in Sources */,
 				AF19CA2B2AE54AD100A42DFF /* SSDPDiscovery.swift in Sources */,
@@ -2047,6 +2053,7 @@
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY = YES;
 				SWIFT_UPCOMING_FEATURE_GLOBAL_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_INFER_SENDABLE_FROM_CAPTURES = YES;
 				SWIFT_UPCOMING_FEATURE_ISOLATED_DEFAULT_VALUES = YES;
 				SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION = YES;
 				TVOS_DEPLOYMENT_TARGET = 17.0;
@@ -2121,6 +2128,7 @@
 				SWIFT_STRICT_CONCURRENCY = complete;
 				SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY = YES;
 				SWIFT_UPCOMING_FEATURE_GLOBAL_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_INFER_SENDABLE_FROM_CAPTURES = YES;
 				SWIFT_UPCOMING_FEATURE_ISOLATED_DEFAULT_VALUES = YES;
 				SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION = YES;
 				TVOS_DEPLOYMENT_TARGET = 17.0;

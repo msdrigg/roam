@@ -35,7 +35,8 @@ struct GlowingModifier: ViewModifier {
             }
     }
 }
-struct PaddedBorderlessButtonStyle: ButtonStyle {
+
+struct PaddedBorderlessButtonStyleWithChevron: ButtonStyle {
     @ScaledMetric var buttonPaddingWidth = globalButtonWidthPaddingSmall
     @ScaledMetric var buttonPaddingHeight = globalButtonHeightPaddingSmall
     @ScaledMetric var buttonRadius = globalButtonRadius
@@ -48,6 +49,18 @@ struct PaddedBorderlessButtonStyle: ButtonStyle {
                 .labelStyle(.iconOnly)
                 .font(.caption.bold())
         }
+        .padding(.horizontal, buttonPaddingWidth)
+        .padding(.vertical, buttonPaddingHeight)
+        .contentShape(.rect(cornerRadius: buttonRadius))
+    }
+}
+struct PaddedBorderlessButtonStyle: ButtonStyle {
+    @ScaledMetric var buttonPaddingWidth = globalButtonWidthPaddingSmall
+    @ScaledMetric var buttonPaddingHeight = globalButtonHeightPaddingSmall
+    @ScaledMetric var buttonRadius = globalButtonRadius
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
         .padding(.horizontal, buttonPaddingWidth)
         .padding(.vertical, buttonPaddingHeight)
         .contentShape(.rect(cornerRadius: buttonRadius))
