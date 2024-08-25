@@ -16,6 +16,16 @@ hide_table_of_contents: true
 ## General Improvements
 
 -   How to do voice-to-text or general voice commands?
+    - Need to reverse-engineer the roku voice remote udp protocol
+
+-   Add +30 second mute timer with countdown
+    -   Hold mute to mute for +30 seconds
+    -   Click again to cancel mute
+    -   Show a top bar notification
+        -   Progress bar has a linear progress indicator
+        -   Progress bar has two buttons: +30 seconds, cancel
+        -   Show underneath the main button panel so it's close to mute
+    -   Make the +30 configurable to 30, 15, 60 second mute options
 
 -   Automate Screenshot Capture
 
@@ -164,8 +174,11 @@ hide_table_of_contents: true
 -   Update keyboard handling to support ecp-textedit on `KeyboardEntry`
     -   Show keyboard when textedit is opened
     -   Hide keyboard when textedit closed
+    -   Test that pasting + select/delete into the textedit field works as expected
     -   If ecp-textedit is supported, allow selecting, deleting text and moving cursor. Just re-send text each time it changes if this is supported.
     -   If ecp-textedit is not supported, fall back to current behavior of sending keys
+    -   On macOS show an indicator when textedit is enabled 
+    -   On macOS allow cmd+v and cmd+c and cmd+x to copy paste from/to the buffer
 
 Keyboard ECP Session Commands (notes)
 

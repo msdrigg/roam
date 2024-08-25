@@ -9,10 +9,6 @@ import SwiftUI
 import Foundation
 import TipKit
 
-#if os(iOS) && !APPCLIP
-import WatchConnectivity
-#endif
-
 @MainActor
 private func deviceFetchDescriptor() -> FetchDescriptor<Device> {
     var fd = FetchDescriptor(

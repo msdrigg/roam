@@ -5,9 +5,15 @@ struct HeadphonesModeTip: Tip {
     static let toggledHeadphonesMode: Event = Event(id: "toggledHeadphonesMode")
     static let toggledMuteOrPlayPause: Event = Event(id: "toggledMuteOrPlayPause")
 
+    var interfaceIdiom: UIUserInterfaceIdiom = .phone
     var title: Text = Text("Want to listen through your device?")
     var image: Image? {
         Image(systemName: "headphones")
+    }
+
+    init(interfaceIdiom: UIUserInterfaceIdiom, title: Text = Text("Want to listen through your device?")) {
+        self.interfaceIdiom = interfaceIdiom
+        self.title = title
     }
 
     var message: Text? {
@@ -18,7 +24,7 @@ struct HeadphonesModeTip: Tip {
         #elseif os(tvOS)
         Text("Click here to play your TV audio through your Apple TV!")
         #else
-        if UIDevice.current.userInterfaceIdiom == .pad {
+        if interfaceIdiom == .pad {
             Text("Click here to play your TV audio through your iPad or connected headphones")
         } else {
             Text("Click here to play your TV audio through your iPhone or connected headphones")

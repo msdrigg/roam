@@ -40,7 +40,7 @@
 
         func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
             WatchConnectivity.logger.info("WCSession got message from watch to \(message). Sending devices")
-            Task.detached {
+            Task {
                 do {
                     let container = getSharedModelContainer()
                     let devices = try await DataHandler(modelContainer: container).allDeviceEntities()

@@ -9,6 +9,10 @@ import SwiftUI
 import Foundation
 import TipKit
 
+#if os(iOS) && !APPCLIP
+import WatchConnectivity
+#endif
+
 let globalToolbarShrinkWidth: CGFloat = 300
 
 let globalMajorActions: [RemoteButton] = [.power, .playPause, .mute, .headphonesMode]
@@ -60,7 +64,7 @@ struct RemoteViewContained: View {
     @Query(messageFetchDescriptor()) private var unreadMessages: [Message]
     @Environment(\.dismiss) var dismiss
 
-    @State private var scanningActor: DeviceDiscoveryActor!
+    @State private var scanningActor: DeviceDiscoveryActor?
     @State private var manuallySelectedDevice: Device?
     @State private var showKeyboardEntry: Bool = false
     @State private var keyboardLeaving: Bool = false
@@ -310,17 +314,12 @@ struct RemoteViewContained: View {
                 .onDisappear {
                     networkMonitor.stopMonitoring()
                 }
-                .task(priority: .background) {
-                    await withDiscardingTaskGroup { taskGroup in
-                        taskGroup.addTask {
-                            await scanningActor.scanSSDPContinually()
-                        }
-
-                        if scanIpAutomatically {
-                            taskGroup.addTask {
-                                await scanningActor.scanIPV4Once()
-                            }
-                        }
+                .task(id: scanningActor != nil) {
+                    await scanningActor?.scanSSDPContinually()
+                }
+                .task(id: scanningActor != nil) {
+                    if scanIpAutomatically {
+                        await scanningActor?.scanIPV4Once()
                     }
                 }
                 .task(id: selectedDevice?.location, priority: .medium) {
@@ -340,9 +339,12 @@ struct RemoteViewContained: View {
                         ecpSession = nil
                     }
                 }
-                .task(id: selectedDevice?.persistentModelID, priority: .medium) {
+                .task(id: scanningActor == nil ? nil : selectedDevice?.persistentModelID, priority: .medium) {
+                    if scanningActor == nil {
+                        return
+                    }
                     if let devId = selectedDevice?.persistentModelID {
-                        await scanningActor.refreshSelectedDeviceContinually(id: devId)
+                        await scanningActor?.refreshSelectedDeviceContinually(id: devId)
                     }
                 }
                 .task(id: "\(headphonesModeEnabled),\(selectedDevice?.location ?? "--")") {
@@ -755,11 +757,6 @@ struct RemoteViewContained: View {
                 #endif
             }
             #endif
-                .onAppear {
-                    scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
-                        updater?.update()
-                    })
-                }
             #if !os(visionOS)
                 .sensoryFeedback(.error, trigger: errorTrigger)
             #endif
@@ -767,6 +764,12 @@ struct RemoteViewContained: View {
                     inBackground = newPhase != ScenePhase.active
                 }
         }
+        .onAppear {
+            scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                updater?.update()
+            })
+        }
+
         #if os(macOS)
         .onKeyDown({ key in pressKey(key.key) }, enabled: !showKeyboardEntry)
         #endif
