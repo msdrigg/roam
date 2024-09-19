@@ -30,7 +30,9 @@
                     do {
                         let container = getSharedModelContainer()
                         let devices = try await DataHandler(modelContainer: container).allDeviceEntities()
-                        self.transferDevices(session, devices: devices)
+                        DispatchQueue.main.async {
+                            self.transferDevices(session, devices: devices)
+                        }
                     } catch {
                         WatchConnectivity.logger.error("Error refreshing devices on session active: \(error)")
                     }

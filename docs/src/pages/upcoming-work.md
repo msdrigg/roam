@@ -15,6 +15,10 @@ hide_table_of_contents: true
 
 ## General Improvements
 
+-   Document the discord support bot and maybe duplicate it into a library
+
+-   Move the share diagnostics button within the chat window somehow? Prevent constant share diagnostic span.
+
 -   How to do voice-to-text or general voice commands?
     - Need to reverse-engineer the roku voice remote udp protocol
 
