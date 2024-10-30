@@ -40,6 +40,17 @@
                ReferencedContainer = "container:Roam.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AFEDCDF32CD1331E0001D959"
+               BuildableName = "RoamSwiftTests.xctest"
+               BlueprintName = "RoamSwiftTests"
+               ReferencedContainer = "container:Roam.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

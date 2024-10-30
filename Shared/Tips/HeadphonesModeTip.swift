@@ -5,16 +5,24 @@ struct HeadphonesModeTip: Tip {
     static let toggledHeadphonesMode: Event = Event(id: "toggledHeadphonesMode")
     static let toggledMuteOrPlayPause: Event = Event(id: "toggledMuteOrPlayPause")
 
+    #if os(iOS)
     var interfaceIdiom: UIUserInterfaceIdiom = .phone
+    #endif
     var title: Text = Text("Want to listen through your device?")
     var image: Image? {
         Image(systemName: "headphones")
     }
 
+    #if os(iOS)
     init(interfaceIdiom: UIUserInterfaceIdiom, title: Text = Text("Want to listen through your device?")) {
         self.interfaceIdiom = interfaceIdiom
         self.title = title
     }
+    #else
+    init(title: Text = Text("Want to listen through your device?")) {
+        self.title = title
+    }
+    #endif
 
     var message: Text? {
         #if os(macOS)

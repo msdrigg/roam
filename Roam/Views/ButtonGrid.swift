@@ -30,8 +30,10 @@ struct ButtonGrid: View {
 
         if button.2 == .headphonesMode && !disabled.contains(button.2){
             view
-            #if !os(watchOS)
+            #if os(iOS)
                 .popoverTip(HeadphonesModeTip(interfaceIdiom: UIDevice.current.userInterfaceIdiom))
+            #elseif !os(watchOS)
+                .popoverTip(HeadphonesModeTip())
             #endif
         } else {
             view

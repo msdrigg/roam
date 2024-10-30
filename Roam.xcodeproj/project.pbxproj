@@ -291,6 +291,7 @@
 		AFECDE1D2AE18511003F6676 /* Opus in Frameworks */ = {isa = PBXBuildFile; productRef = AFECDE1C2AE18511003F6676 /* Opus */; };
 		AFECDE202AE18519003F6676 /* RTP in Frameworks */ = {isa = PBXBuildFile; productRef = AFECDE1F2AE18519003F6676 /* RTP */; };
 		AFED424A2AEE8F3B0023D684 /* VolumeListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED42492AEE8F3B0023D684 /* VolumeListener.swift */; };
+		AFEDCDFD2CD134130001D959 /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */; };
 		AFF6077F2ADFACBA00A7D657 /* AsyncSemaphore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E67E2ADCE5D80036EC90 /* AsyncSemaphore.swift */; };
 		AFF607802ADFACBA00A7D657 /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */; };
 		AFF607812ADFACBA00A7D657 /* DiscoveryActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF95B7532ADF4435005FC338 /* DiscoveryActor.swift */; };
@@ -339,6 +340,13 @@
 			remoteInfo = RoamWatch;
 		};
 		AFA21D462C2C7CB6008EF24A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AFC24EF32AD0E5A1002AB66C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AFC24EFA2AD0E5A1002AB66C;
+			remoteInfo = Roam;
+		};
+		AFEDCDF82CD1331E0001D959 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AFC24EF32AD0E5A1002AB66C /* Project object */;
 			proxyType = 1;
@@ -553,6 +561,7 @@
 		AFE6249C2BDCAA5000F4992E /* DataActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataActor.swift; sourceTree = "<group>"; };
 		AFE89A2C2B9E793E0078387C /* Debugger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debugger.swift; sourceTree = "<group>"; };
 		AFED42492AEE8F3B0023D684 /* VolumeListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeListener.swift; sourceTree = "<group>"; };
+		AFEDCDF42CD1331E0001D959 /* RoamSwiftTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RoamSwiftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AFF607892AE0037900A7D657 /* WidgetIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetIntents.swift; sourceTree = "<group>"; };
 		AFF6DE0C2BCF0326002C13FC /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		AFF6DE102BCF0740002C13FC /* MessagingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagingView.swift; sourceTree = "<group>"; };
@@ -587,6 +596,7 @@
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AFA922F52C20A2DA008F49B4 /* Tips */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (AFC78ED32C389D1200A5FC0E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, AFC78ED42C389D1200A5FC0E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, AF26BAC92C3F0234002C9C04 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Tips; sourceTree = "<group>"; };
+		AFEDCDF52CD1331E0001D959 /* RoamSwiftTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = RoamSwiftTests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -644,6 +654,13 @@
 				AFECDE1A2AE184FE003F6676 /* XMLCoder in Frameworks */,
 				AFECDE1D2AE18511003F6676 /* Opus in Frameworks */,
 				AF19CA212AE4536700A42DFF /* AsyncAlgorithms in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AFEDCDF12CD1331E0001D959 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -945,6 +962,7 @@
 				AFA21D932C2C7D00008EF24A /* RoamTests */,
 				AFA21D322C2C7C83008EF24A /* RoamWatchUITests */,
 				AFA21D412C2C7CB6008EF24A /* RoamUITests */,
+				AFEDCDF52CD1331E0001D959 /* RoamSwiftTests */,
 				AFC24EFC2AD0E5A1002AB66C /* Products */,
 				AF4D5F322AD4355E0055AF35 /* Frameworks */,
 			);
@@ -959,6 +977,7 @@
 				AF3503572BB493F3004F4337 /* RoamClip.app */,
 				AFA21D312C2C7C83008EF24A /* RoamWatchUITests.xctest */,
 				AFA21D402C2C7CB6008EF24A /* RoamUITests.xctest */,
+				AFEDCDF42CD1331E0001D959 /* RoamSwiftTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1147,6 +1166,29 @@
 			productReference = AFC24EFB2AD0E5A1002AB66C /* Roam.app */;
 			productType = "com.apple.product-type.application";
 		};
+		AFEDCDF32CD1331E0001D959 /* RoamSwiftTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AFEDCDFC2CD1331E0001D959 /* Build configuration list for PBXNativeTarget "RoamSwiftTests" */;
+			buildPhases = (
+				AFEDCDF02CD1331E0001D959 /* Sources */,
+				AFEDCDF12CD1331E0001D959 /* Frameworks */,
+				AFEDCDF22CD1331E0001D959 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AFEDCDF92CD1331E0001D959 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AFEDCDF52CD1331E0001D959 /* RoamSwiftTests */,
+			);
+			name = RoamSwiftTests;
+			packageProductDependencies = (
+			);
+			productName = RoamSwiftTests;
+			productReference = AFEDCDF42CD1331E0001D959 /* RoamSwiftTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1154,7 +1196,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1600;
+				LastSwiftUpdateCheck = 1610;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					AF15C2452AE8672700B79FD9 = {
@@ -1176,6 +1218,10 @@
 					};
 					AFC24EFA2AD0E5A1002AB66C = {
 						CreatedOnToolsVersion = 15.0;
+					};
+					AFEDCDF32CD1331E0001D959 = {
+						CreatedOnToolsVersion = 16.1;
+						TestTargetID = AFC24EFA2AD0E5A1002AB66C;
 					};
 				};
 			};
@@ -1218,6 +1264,7 @@
 				AF3503562BB493F3004F4337 /* RoamClip */,
 				AFA21D302C2C7C83008EF24A /* RoamWatchUITests */,
 				AFA21D3F2C2C7CB6008EF24A /* RoamUITests */,
+				AFEDCDF32CD1331E0001D959 /* RoamSwiftTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1280,6 +1327,13 @@
 				AF0C82882AEB44C000CBE7F8 /* AccentColor.xcassets in Resources */,
 				AF94AEF32C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */,
 				AFC24F052AD0E5A2002AB66C /* AppIcon.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AFEDCDF22CD1331E0001D959 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1606,6 +1660,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AFEDCDF02CD1331E0001D959 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AFEDCDFD2CD134130001D959 /* NetworkUtils.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1644,6 +1706,11 @@
 			isa = PBXTargetDependency;
 			target = AFC24EFA2AD0E5A1002AB66C /* Roam */;
 			targetProxy = AFA21D462C2C7CB6008EF24A /* PBXContainerItemProxy */;
+		};
+		AFEDCDF92CD1331E0001D959 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AFC24EFA2AD0E5A1002AB66C /* Roam */;
+			targetProxy = AFEDCDF82CD1331E0001D959 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -2233,6 +2300,46 @@
 			};
 			name = Release;
 		};
+		AFEDCDFA2CD1331E0001D959 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2865NTZ7H3;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamSwiftTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Roam.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Roam";
+			};
+			name = Debug;
+		};
+		AFEDCDFB2CD1331E0001D959 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2865NTZ7H3;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamSwiftTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Roam.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Roam";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -2295,6 +2402,15 @@
 			buildConfigurations = (
 				AFC24F232AD0E5A3002AB66C /* Debug */,
 				AFC24F242AD0E5A3002AB66C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AFEDCDFC2CD1331E0001D959 /* Build configuration list for PBXNativeTarget "RoamSwiftTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AFEDCDFA2CD1331E0001D959 /* Debug */,
+				AFEDCDFB2CD1331E0001D959 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
