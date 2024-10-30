@@ -921,7 +921,7 @@
       }
     },
     "App Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1253,7 +1253,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2172,6 +2172,9 @@
 
     },
     "Click here to play your TV audio through your iPhone or connected headphones" : {
+
+    },
+    "Click here to play your TV audio through your Vision Pro!" : {
 
     },
     "Click Ok" : {

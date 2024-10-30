@@ -501,10 +501,11 @@ struct RemoteViewContained: View {
                                         return .handled
                                     }
 
-                                    if title == .chatWithDeveloper{
-                                        appDelegate?.navigationPath.append(.messageDestination)
-                                    } else if title == .keyboardShortcuts {
-                                        appDelegate?.navigationPath.append(.keyboardShortcutDestinaion)
+                                    if title == .chatWithDeveloper {
+                                        appDelegate.navigationPath.append(.messageDestination)
+                                    } else
+                                    if title == .keyboardShortcuts {
+                                        appDelegate.navigationPath.append(.keyboardShortcutDestinaion)
                                     } else {
                                         Self.logger.warning("Unknown function for keyboard shortcut \(title)")
                                     }
