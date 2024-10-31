@@ -26,13 +26,14 @@
 
     public let testingContainer: ModelContainer = {
         do {
+
             let schema = Schema(
                 versionedSchema: SchemaV2.self
             )
             let modelConfiguration = ModelConfiguration(
                 schema: schema,
                 isStoredInMemoryOnly: false,
-                groupContainer: .identifier("group.com.msdrigg.roam.load")
+                groupContainer: .identifier(loadAppGroup)
             )
 
             let container = try ModelContainer(

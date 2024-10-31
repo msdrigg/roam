@@ -15,7 +15,7 @@ struct RoamWatch: App {
 
         try? Tips.configure([
             .displayFrequency(.immediate),
-            .datastoreLocation(.groupContainer(identifier: "group.com.msdrigg.roam.tips"))
+            .datastoreLocation(.groupContainer(identifier: tipsAppGroup))
         ])
 
         Self.logger.info("Getting WatchConnectivity \(String(describing: WatchConnectivity.shared))")

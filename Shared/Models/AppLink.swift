@@ -15,6 +15,19 @@ extension AppLink: Decodable {
 
         self.init(id: id, type: type, name: name)
     }
+    
+    internal static func fetchAllRequest() -> FetchDescriptor<AppLink> {
+        var fd = FetchDescriptor(
+            predicate: #Predicate<AppLink> { _ in
+                true
+            },
+            sortBy: [SortDescriptor(\AppLink.id, order: .reverse)]
+        )
+        fd.relationshipKeyPathsForPrefetching = []
+        fd.propertiesToFetch = [\.id, \.type, \.name, \.lastSelected, \.deviceUid, \.icon]
+        
+        return fd
+    }
 
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)

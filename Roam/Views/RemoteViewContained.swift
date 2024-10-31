@@ -285,8 +285,21 @@ struct RemoteViewContained: View {
                     // Configure and load your tips at app launch.
                     try? Tips.configure([
                         .displayFrequency(.immediate),
-                        .datastoreLocation(.groupContainer(identifier: "group.com.msdrigg.roam.tips"))
+                        .datastoreLocation(.groupContainer(identifier: tipsAppGroup))
                     ])
+                }
+                .task {
+                    guard let mainAppGroupBackup else {
+                        return
+                    }
+                    
+                    if UserDefaults.standard.bool(forKey: UserDefaultKeys.usingNewAppGroup) {
+                        return
+                    }
+                    
+                    
+                    
+                    UserDefaults.standard.set(true, forKey: UserDefaultKeys.usingNewAppGroup)
                 }
                 .task {
                     while !Task.isCancelled {

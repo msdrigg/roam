@@ -499,6 +499,7 @@
 		AF779BF62BA4DDD000231BC5 /* WrappingHStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WrappingHStack.swift; sourceTree = "<group>"; };
 		AF8CB9ED2BDABE3000115C88 /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		AF8EF51C2BB60EAF002A4D6D /* NavigationDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationDestination.swift; sourceTree = "<group>"; };
+		AF91C6FF2CD33117008BF5AB /* RoamMacOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RoamMacOS.entitlements; sourceTree = "<group>"; };
 		AF94AEF22C0BEA8200D8D7CF /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		AF95B6F62ADF2F9F005FC338 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.crashreport; };
 		AF95B6FD2ADF2FEC005FC338 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = /System/Library/Frameworks/WidgetKit.framework; sourceTree = "<absolute>"; };
@@ -986,6 +987,7 @@
 			isa = PBXGroup;
 			children = (
 				AF2480652BDB4DA500EF47AE /* RoamRelease.entitlements */,
+				AF91C6FF2CD33117008BF5AB /* RoamMacOS.entitlements */,
 				AFC24F092AD0E5A2002AB66C /* Roam.entitlements */,
 				AF35ACF12BA3D21F00CC8B36 /* PrivacyInfo.xcprivacy */,
 				AFDB19A52C0D8E4A00C4DAB7 /* Info.plist */,
@@ -2216,6 +2218,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = Roam/Roam.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = Roam/RoamMacOS.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -2263,7 +2266,8 @@
 				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=xrsimulator*]" = AppIconVOS;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
-				CODE_SIGN_ENTITLEMENTS = Roam/RoamRelease.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Roam/Roam.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = Roam/RoamMacOS.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;

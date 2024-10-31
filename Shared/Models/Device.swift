@@ -25,6 +25,19 @@ public extension Device {
         }
         return Date().timeIntervalSince(lastOnlineAt) < 60
     }
+    
+    internal static func fetchAllRequest() -> FetchDescriptor<Device> {
+        var fd = FetchDescriptor(
+            predicate: #Predicate {
+                $0.deletedAt == nil
+            },
+            sortBy: [SortDescriptor(\Device.name, order: .reverse)]
+        )
+        fd.relationshipKeyPathsForPrefetching = []
+        fd.propertiesToFetch = [\.udn, \.location, \.name, \.lastOnlineAt, \.lastSelectedAt, \.lastScannedAt]
+        
+        return fd
+    }
 }
 
 func getHost(from urlString: String) -> String {

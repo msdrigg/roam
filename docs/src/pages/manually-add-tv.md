@@ -18,4 +18,7 @@ If Roam still can't control your Roku, please try the following steps
 
 -   Make sure your iOS device is connected to the same WiFi network as your Roku TV
 -   Make sure your TV is turned on
+-   Make sure Local Network Permissions is enabled for Roam (or disable and re-enable it if it is already enabled)
+    - On macOS: Go to System Settings -> Privacy and Security -> Local Network -> Roam
+    - On iOS: Go to Settings -> Apps -> Roam -> Local Network
 -   See additional possibilities here [https://support.roku.com/article/115001480188](https://support.roku.com/article/115001480188)

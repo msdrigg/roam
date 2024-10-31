@@ -28,7 +28,7 @@ struct RoamApp: App {
 
         try? Tips.configure([
             .displayFrequency(.immediate),
-            .datastoreLocation(.groupContainer(identifier: "group.com.msdrigg.roam.tips"))
+            .datastoreLocation(.groupContainer(identifier: tipsAppGroup))
         ])
     }
 
