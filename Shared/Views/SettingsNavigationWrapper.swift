@@ -26,7 +26,6 @@ struct SettingsNavigationWrapper<Content>: View where Content: View {
                                 if path.count > 0 {
                                     path.removeLast()
                                 }
-                                print("Updating here!! \(updater != nil)")
                                 updater?.update()
                             }
                         #endif

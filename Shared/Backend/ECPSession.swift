@@ -255,7 +255,7 @@ actor ECPSession {
             }
             Self.logger
                 .info(
-                    "Received successful ecp response \(String(describing: response.statusMsg)) for command \(response.response)"
+                    "Received successful ecp response \(String(describing: response.statusMsg), privacy: .public) for command \(response.response, privacy: .public)"
                 )
         } catch {
             // If cancellation error igonre

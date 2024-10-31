@@ -97,7 +97,6 @@
         }
 
         override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
-            print("Getting PBPB")
             var handled = false
             for press in presses {
                 if let key = press.key, let ke = getKeyEquivalent(key) {
@@ -120,7 +119,6 @@
         }
 
         override func pressesEnded(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
-            print("Getting PEPE")
         }
 
         @objc func handleKeyPress(_ command: UIKeyCommand) {

@@ -18,3 +18,36 @@ struct LinkedText: View {
         Text(.init(replaced))
     }
 }
+
+struct MessageViewText: View {
+    let message: Message
+
+    init(_ message: Message) {
+        self.message = message
+    }
+
+    var alignment: HorizontalAlignment {
+        if message.author == .support {
+            return .leading
+        } else if message.author == .me {
+            return .trailing
+        } else {
+            return .trailing
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: alignment, spacing: 10) {
+            if let title = message.messageTitle {
+                Text(title)
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+                    .font(.caption)
+            }
+            LinkedText(message.message)
+            if message.robotMessage {
+                Text("P.S. This is an auto-reply. 🤖")
+            }
+        }
+    }
+}

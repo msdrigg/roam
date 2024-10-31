@@ -8,6 +8,7 @@ enum UserDefaultKeys {
 
     // App settings
     static let shouldScanIPRangeAutomatically: String = "scanIPAutomatically"
+    static let shouldDisableAllAutoScanning: String = "disableAllScanning"
     static let shouldControlVolumeWithHWButtons: String = "controlVolumeWithHWButtons"
     static let showMenuBar: String = "showMenuBar"
 }

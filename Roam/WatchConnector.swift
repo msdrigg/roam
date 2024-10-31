@@ -75,7 +75,7 @@
                     WatchConnectivity.logger.info("Not sending because all devices have been sent in the past day")
                     return
                 }
-                Self.logger.info("Transferring devices \(String(describing: devices)) to watch")
+                Self.logger.info("Transferring devices \(String(describing: devices), privacy: .public) to watch")
                 WatchConnectivity.logger.info("Transfering devices \(deviceMap)")
                 if session.outstandingUserInfoTransfers.count > 0 {
                     WatchConnectivity.logger.info("Cancelling ongoing transfer because we are creating a new one")

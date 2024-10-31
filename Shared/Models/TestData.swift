@@ -27,7 +27,7 @@
     public let testingContainer: ModelContainer = {
         do {
             let schema = Schema(
-                versionedSchema: SchemaV1.self
+                versionedSchema: SchemaV2.self
             )
             let modelConfiguration = ModelConfiguration(
                 schema: schema,
@@ -69,7 +69,7 @@
     public let previewContainer: ModelContainer = {
         do {
             let container = try ModelContainer(
-                for: Schema(versionedSchema: SchemaV1.self),
+                for: Schema(versionedSchema: SchemaV2.self),
                 configurations: ModelConfiguration(isStoredInMemoryOnly: true)
             )
 

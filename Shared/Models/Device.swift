@@ -2,7 +2,7 @@ import Foundation
 import os
 import SwiftData
 
-typealias Device = SchemaV1.Device
+typealias Device = SchemaV2.Device
 
 extension Device: Identifiable {
     public var id: PersistentIdentifier {

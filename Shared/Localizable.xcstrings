@@ -921,7 +921,7 @@
       }
     },
     "App Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1253,7 +1253,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3093,6 +3093,9 @@
           }
         }
       }
+    },
+    "Disable all scanning even in the background" : {
+      "comment" : "Label on a settings toggle"
     },
     "Down" : {
       "comment" : "Keyboard shortcut to move down\nRemote button to move down",
@@ -8347,6 +8350,9 @@
         }
       }
     },
+    "P.S. This is an auto-reply. 🤖" : {
+
+    },
     "Parameters" : {
       "comment" : "Settings section title indicating device parameters",
       "localizations" : {
@@ -9348,6 +9354,7 @@
     },
     "Press [esc] to close" : {
       "comment" : "Footnote indicating the escape key can be used to close a dialog",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -11373,6 +11380,7 @@
     },
     "Send" : {
       "comment" : "Label on a button to send a message",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -11456,6 +11464,7 @@
     },
     "Send the message" : {
       "comment" : "Help text on a button to send a chat message",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -11785,6 +11794,9 @@
           }
         }
       }
+    },
+    "Sharing diagnostics..." : {
+
     },
     "Show menu bar icon" : {
       "comment" : "Label on a settings toggle"

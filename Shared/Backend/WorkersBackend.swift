@@ -105,9 +105,9 @@ func getMessages(after: String?) async throws -> [MessageModelResponse] {
     let (data, response) = try await URLSession.shared.data(for: request)
     guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
         if let responseData = String(data: data, encoding: .utf8) {
-            print("Received non-200 response with data: \(responseData)")
+            logger.info("Received non-200 response with data: \(responseData)")
         } else {
-            print("Received non-200 response and data could not be converted to a String")
+            logger.info("Received non-200 response and data could not be converted to a String")
         }
         throw URLError(.badServerResponse)
     }

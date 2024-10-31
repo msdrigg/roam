@@ -76,8 +76,6 @@ struct RemoteView: View {
         #endif
     }
 
-    @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanIpAutomatically: Bool = true
-
     private var selectedDevice: Device? {
         if manuallySelectedDevice != nil && manuallySelectedDevice?.deletedAt == nil {
             manuallySelectedDevice

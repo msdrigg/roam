@@ -48,19 +48,62 @@ struct MessageView: View {
     @State private var textEditorHeight: CGFloat = 100
     @State private var refreshInterval: TimeInterval = 20
     @State private var refreshResetId = UUID()
+    @State private var reportingDebugLogs = false
     @AppStorage("hasSentFirstMessage") private var hasSentFirstMessage: Bool = false
     @AppStorage("lastApnsRequestTime") private var lastApnsRequestTime: Double = -1
     @Environment(\.colorScheme) var colorScheme
 
     @Environment(\.createDataHandler) private var createDataHandler
 
+    var roboMessage: Message? {
+        let connectRegex = /(\bconnect)|(\badd)|(\bfind my tv)|(\bconexión)|(\bconecta)|(\bscan)/
+        if messageText.firstMatch(of: connectRegex) != nil {
+            return Message(
+                id: "connect-help",
+                message: "If Roam isn't auto-discovering your tv, check this guide to manually add your TV: https://roam.msd3.io/manually-add-tv/",
+                author: .support,
+                fetchedBackend: false,
+                messageTitle: "Are you having trouble connecting your TV?",
+                robotMessage: true
+            )
+        } else {
+            return nil
+        }
+    }
+
     var messages: [Message] {
-        ([Message(
-            id: "start",
-            message: "Hi, I'm Scott. I make Roam. What's on your mind? I'll do my best to respond to these messages as quick as I can.",
-            author: .support,
-            fetchedBackend: false
-        )] + baseMessages).filter { !$0.message.isEmpty }
+        (
+            [Message(
+                id: "start",
+                message: "Hi, I'm Scott. I make Roam. What's on your mind? I'll do my best to respond to these messages as quick as I can.",
+                author: .support,
+                fetchedBackend: false
+            )]
+            + baseMessages
+            + [roboMessage].compactMap({$0})
+        ).filter { !$0.message.isEmpty }
+    }
+
+    func reportDebugLogs() {
+        Task {
+            reportingDebugLogs = true
+            defer {
+                reportingDebugLogs = false
+            }
+            logger.info("Starting to send logs")
+            let logs = await getDebugInfo(container: getSharedModelContainer())
+            logger.info("Sending logs \(logs.installationInfo.userId)")
+
+            do {
+                try await uploadDebugLogs(logs: logs)
+                try await sendMessage(message: "Diagnostics Shared at \(Date.now.formatted())", apnsToken: nil)
+
+                logger.info("Upload successful")
+                refreshResetId = UUID()
+            } catch {
+                logger.error("Failed to upload logs: \(error)")
+            }
+        }
     }
 
     var body: some View {
@@ -69,11 +112,11 @@ struct MessageView: View {
                 ScrollViewReader { scrollValue in
                     ScrollView {
                         LazyVStack {
-                            ForEach(messages, id: \.persistentModelID) { message in
+                            ForEach(messages, id: \.id) { message in
                                 HStack {
                                     if message.author == .me {
                                         Spacer()
-                                        LinkedText(message.message)
+                                        MessageViewText(message)
                                             .padding(.vertical, 6)
                                             .padding(.horizontal, 10)
                                             .background(Color.accentColor.opacity(0.5))
@@ -84,7 +127,7 @@ struct MessageView: View {
                                             .frame(maxWidth: geometry.size.width * 2 / 3, alignment: .trailing)
                                             .padding(.trailing, 10)
                                     } else {
-                                        LinkedText(message.message)
+                                        MessageViewText(message)
                                             .padding(.vertical, 6)
                                             .padding(.horizontal, 10)
                                             .background(Color.gray.opacity(0.5))
@@ -98,31 +141,26 @@ struct MessageView: View {
                         }
                         .padding(.vertical, 12)
                     }
-                    #if !os(visionOS)
+                    .defaultScrollAnchor(.bottom)
+#if !os(visionOS)
                     .scrollDismissesKeyboard(.interactively)
-                    #endif
-                    #if !os(tvOS)
+#endif
+#if !os(tvOS)
                     .textSelection(.enabled)
-                    #endif
+#endif
                     .onChange(of: messages.count) { _, _ in
-                        if let id = messages.last?.persistentModelID {
-                            withAnimation {
-                                scrollValue.scrollTo(id)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            if let id = messages.last?.id {
+                                withAnimation(.easeInOut) {
+                                    scrollValue.scrollTo(id)
+                                }
                             }
                         }
                     }
-                    .onAppear {
-                        if let id = messages.last?.persistentModelID {
-                            withAnimation {
-                                scrollValue.scrollTo(id)
-                            }
-                        }
-                    }
-                }
-                .padding(.horizontal, 12)
+                    .padding(.horizontal, 12)
 
-                HStack(alignment: .bottom, spacing: 10) {
-                    TextField(String(localized: "Message", comment: "Text entry field for a new message"), text: $messageText, axis: .vertical)
+                    HStack(alignment: .bottom, spacing: 10) {
+                        TextField(String(localized: "Message", comment: "Text entry field for a new message"), text: $messageText.animation(), axis: .vertical)
                         .onSubmit {
                             sendTypedMessage()
                         }
@@ -134,13 +172,18 @@ struct MessageView: View {
                         .background(RoundedRectangle(cornerRadius: 15).stroke(Color.secondary, lineWidth: 2)
                             .background(Color.clear))
                         .scrollIndicators(.hidden)
-                    #if os(visionOS)
+#if os(visionOS)
                         .padding(.bottom, 6)
-                    #endif
+#endif
 
-                    #if os(macOS)
+                        SendDiagnosticsButton(shareDiagnostics: {reportDebugLogs()}, sharingDiagnostics: reportingDebugLogs)
+#if os(macOS)
+                            .padding(.bottom, 2)
+#endif
+
+#if os(macOS)
                         EmojiPicker().padding(.bottom, 2)
-                    #else
+#else
                         Button(action: sendTypedMessage) {
                             Label(String(localized: "Send", comment: "Label on a button to send a message"), systemImage: "arrow.up")
                         }
@@ -149,10 +192,11 @@ struct MessageView: View {
                         .labelStyle(.iconOnly)
                         .help(String(localized: "Send the message", comment: "Help text on a button to send a chat message"))
 
-                    #endif
+#endif
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 16)
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 16)
             }
             #if !os(tvOS)
             .onAppear {
@@ -252,6 +296,30 @@ struct MessageView: View {
         }
 
         messageText = ""
+    }
+}
+
+struct SendDiagnosticsButton: View {
+    let shareDiagnostics: () -> Void
+    let sharingDiagnostics: Bool
+
+    var body: some View {
+        Button(action: {
+            shareDiagnostics()
+        }, label: {
+            Image(systemName: "paperclip")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 24, height: 24)
+                .foregroundColor(Color.gray)
+                .symbolEffect(.variableColor, isActive: sharingDiagnostics)
+        })
+        .buttonStyle(.plain)
+        .help(
+            sharingDiagnostics ? "Sharing diagnostics..." :
+            "Share diagnostics"
+        )
+
     }
 }
 

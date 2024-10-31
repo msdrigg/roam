@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-public typealias Message = SchemaV1.Message
+public typealias Message = SchemaV2.Message
 
 @available(*, unavailable)
 extension Message: Sendable {}

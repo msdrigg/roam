@@ -100,7 +100,12 @@ struct RemoteViewContained: View {
     }
 
     @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanIpAutomatically: Bool = true
+    @AppStorage(UserDefaultKeys.shouldDisableAllAutoScanning) private var disableAllScanning: Bool = false
     @AppStorage(UserDefaultKeys.shouldControlVolumeWithHWButtons) private var controlVolumeWithHWButtons: Bool = true
+
+    var scanSSDP: Bool {
+        scanIpAutomatically || !disableAllScanning
+    }
 
     @Environment(\.verticalSizeClass) var verticalSizeClass
 
@@ -222,7 +227,6 @@ struct RemoteViewContained: View {
                 .defaultFocus($focusKeyboardMonitor, .monitor, priority: .userInitiated)
                 .onChange(of: focusKeyboardMonitor) {
                     if focusKeyboardMonitor == nil && !showKeyboardEntry {
-                        print("Setting focus early")
                         focusKeyboardMonitor = .monitor
                     }
                     if !showKeyboardEntry {
@@ -258,7 +262,6 @@ struct RemoteViewContained: View {
                 .defaultFocus($focusKeyboardMonitor, .monitor, priority: .userInitiated)
                 .onChange(of: focusKeyboardMonitor) {
                     if focusKeyboardMonitor == nil && !showKeyboardEntry {
-                        print("Setting focus early")
                         focusKeyboardMonitor = .monitor
                     }
                     if !showKeyboardEntry {
@@ -314,10 +317,12 @@ struct RemoteViewContained: View {
                 .onDisappear {
                     networkMonitor.stopMonitoring()
                 }
-                .task(id: scanningActor != nil) {
-                    await scanningActor?.scanSSDPContinually()
+                .task(id: scanningActor != nil && scanSSDP) {
+                    if scanSSDP {
+                        await scanningActor?.scanSSDPContinually()
+                    }
                 }
-                .task(id: scanningActor != nil) {
+                .task(id: scanningActor != nil && scanIpAutomatically) {
                     if scanIpAutomatically {
                         await scanningActor?.scanIPV4Once()
                     }

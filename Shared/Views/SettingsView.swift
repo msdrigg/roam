@@ -64,6 +64,7 @@ struct SettingsView: View {
     @Environment(\.createDataHandler) private var createDataHandler
 
     @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanIpAutomatically: Bool = true
+    @AppStorage(UserDefaultKeys.shouldDisableAllAutoScanning) private var disableAllScanning: Bool = true
     @AppStorage(UserDefaultKeys.shouldControlVolumeWithHWButtons) private var controlVolumeWithHWButtons: Bool = true
     @AppStorage(UserDefaultKeys.showMenuBar) private var showMenuBar: Bool = false
     @AppStorage(UserDefaultKeys.userMajorActionCount) private var majorActionsCount = 0
@@ -99,7 +100,7 @@ struct SettingsView: View {
 #endif
                 }
             } catch {
-                Self.logger.error("Failed to upload logs to s3: \(error)")
+                Self.logger.error("Failed to upload logs: \(error)")
             }
         }
     }
@@ -287,10 +288,22 @@ struct SettingsView: View {
 
                 #if os(macOS)
                 Toggle(String(localized: "Show menu bar icon", comment: "Label on a settings toggle"), isOn: $showMenuBar)
-
                 #endif
 
-                Toggle(String(localized: "Scan for devices automatically", comment: "Label on a settings toggle"), isOn: $scanIpAutomatically)
+                Toggle(
+                    String(localized: "Scan for devices automatically", comment: "Label on a settings toggle"),
+                    isOn: Binding<Bool>(get: {
+                        return scanIpAutomatically
+                    }, set: { newValue in
+                        withAnimation {
+                            scanIpAutomatically = newValue
+                        }
+                    })
+                )
+
+                if !scanIpAutomatically {
+                    Toggle(String(localized: "Disable all scanning even in the background", comment: "Label on a settings toggle"), isOn: $disableAllScanning)
+                }
             }
 #endif
 
@@ -361,6 +374,7 @@ struct SettingsView: View {
 
 #endif
 
+#if os(watchOS) || os(tvOS)
                 Button(action: { reportDebugLogs() }, label: {
                     HStack {
                         Label(
@@ -375,11 +389,6 @@ struct SettingsView: View {
                         }
                     }
                 })
-#if os(macOS)
-                .frame(maxWidth: .infinity)
-                .contentShape(Rectangle())
-                .buttonStyle(.plain)
-#endif
                 .sheet(isPresented: Binding<Bool>(
                     get: { debugLogReportID != nil && !reportingDebugLogs },
                     set: { if !$0 { debugLogReportID = nil } }
@@ -409,16 +418,10 @@ struct SettingsView: View {
 #endif
                             Button(String(localized: "Close", comment: "Label on a button to close a menu"), systemImage: "xmark", role: .destructive) { debugLogReportID = nil }
                         }
-
-#if os(macOS)
-                        Text("Press [esc] to close", comment: "Footnote indicating the escape key can be used to close a dialog")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-#endif
                     }
                     .padding()
                 }
+#endif
             }
 
             Section {

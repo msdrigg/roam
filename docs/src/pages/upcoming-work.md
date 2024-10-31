@@ -10,14 +10,13 @@ hide_table_of_contents: true
 -   UI Improvements
     -   Pretty buttons for scanning for devices
     -   Translucent windows on macOS
+    -   Added some quick-response messages for common problems
 
 # Upcoming Roam Updates
 
 ## General Improvements
 
 -   Document the discord support bot and maybe duplicate it into a library
-
--   Move the share diagnostics button within the chat window somehow? Prevent constant share diagnostic span.
 
 -   How to do voice-to-text or general voice commands?
     - Need to reverse-engineer the roku voice remote udp protocol
@@ -41,7 +40,6 @@ hide_table_of_contents: true
         -   https://www.figma.com/community/file/1256854154932829222/free-app-store-screenshot-templates?searchSessionId=lxw3ep02-oubp844ov8
         -   https://www.canva.com/templates/s/iphone/
 
--   Think about nav sidebar (+ tab bar) for ipad/visionOS
 -   Test more keyboard hacks
     -   GCKeyboard for one
     -   FocusEnvironment for 2
@@ -81,11 +79,6 @@ hide_table_of_contents: true
         -   Don’t mark a newly scanned device as selected automatically unless it was done in a foreground scan or a user added device
     -   Add broadcast interface, scan range and parse the flags properly for display in debug interface
     -   Ensure all my logs are not sensitized
-        -   Cannot connect to <private> because of ...
-        -   Found SSDP service at <private>
-        -   Changing empty target from <private> to...
-        -   Received successful ecp response <private>
-        -   Transferring devices <private> to watch
     -   Make custom menu bar icon
 
 ## Improve Testing

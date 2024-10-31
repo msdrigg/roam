@@ -17,7 +17,7 @@ let checkConnectLogger = Logger(
               let host = url.host,
               let port = url.port
         else {
-            checkConnectLogger.error("Cannot connect to url \(location) bc url not valid")
+            checkConnectLogger.error("Cannot connect to url \(location, privacy: .public) bc url not valid")
             return nil
         }
         checkConnectLogger.debug("Checking can connect to url \(location) (\(host):\(port)) with interface \(interface?.name ?? "--")")
@@ -67,7 +67,7 @@ let checkConnectLogger = Logger(
                 }
             }
         } catch {
-            checkConnectLogger.warning("Cannot connect to \(location) because of error \(error)")
+            checkConnectLogger.warning("Cannot connect to \(location, privacy: .public) because of error \(error, privacy: .public)")
             return nil
         }
     }

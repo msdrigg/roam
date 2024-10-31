@@ -100,7 +100,7 @@
                 if targetVolume == 0 || targetVolume == nil {
                     logger
                         .info(
-                            "Changing empty target from \(String(describing: targetVolume)) to \(audioSession.outputVolume)"
+                            "Changing empty target from \(String(describing: targetVolume), privacy: .public) to \(audioSession.outputVolume, privacy: .public)"
                         )
                     targetVolume = newVolume
                 }

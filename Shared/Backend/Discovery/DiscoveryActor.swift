@@ -139,7 +139,7 @@ actor DeviceDiscoveryActor {
             await withDiscardingTaskGroup { taskGroup in
                 do {
                     for try await device in stream {
-                        Self.logger.info("Found SSDP service at \(device.location ?? "--")")
+                        Self.logger.info("Found SSDP service at \(device.location ?? "--", privacy: .public)")
                         if let location = device.location {
                             taskGroup.addTask {
                                 await self.addDevice(location: location)
