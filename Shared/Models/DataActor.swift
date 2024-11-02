@@ -473,7 +473,7 @@ extension DataHandler {
         }
 
         guard let deviceInfo = await fetchDeviceInfo(location: location) else {
-            DataHandler.logger.info("Failed to get device info \(location)")
+            DataHandler.logger.info("Failed to get device info \(location, privacy: .public)")
             return
         }
 
@@ -641,7 +641,7 @@ extension DataHandler {
         let lastMessage = try? modelContext.fetchSafer(descriptor).last
 
         let lastMessageId = lastMessage?.id
-        Self.logger.info("Refreshing messages with last message \(String(describing: lastMessage?.id))")
+        Self.logger.info("Refreshing messages with last message \(String(describing: lastMessage?.id), privacy: .public)")
         if lastMessage == nil {
             return 0
         }

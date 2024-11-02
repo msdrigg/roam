@@ -26,7 +26,7 @@ func scanDevicesContinually() throws -> AsyncThrowingStream<SSDPService, any Err
 
         if sockfd < 0 {
             let errorString = String(cString: strerror(errno))
-            logger.error("Error creating socket with message: \(errorString)")
+            logger.error("Error creating socket with message: \(errorString, privacy: .public)")
 
             continuation.finish(throwing: SSDPError.socketCreationFailed)
             return
@@ -35,7 +35,7 @@ func scanDevicesContinually() throws -> AsyncThrowingStream<SSDPService, any Err
         let groupAddr = inet_addr("239.255.255.250")
         if groupAddr == INADDR_NONE {
             let errorString = String(cString: strerror(errno))
-            logger.error("Error group address with message: \(errorString)")
+            logger.error("Error group address with message: \(errorString, privacy: .public)")
             continuation.finish(throwing: SSDPError.socketCreationFailed)
 
             close(sockfd)
@@ -66,7 +66,7 @@ func scanDevicesContinually() throws -> AsyncThrowingStream<SSDPService, any Err
                     )
                     if sent < 0 {
                         let errorString = String(cString: strerror(errno))
-                        logger.warning("Error sending SSDP request with message \(errorString)")
+                        logger.warning("Error sending SSDP request with message \(errorString, privacy: .public)")
                     } else {
                         logger.debug("Sent SSDP request successfully")
                     }
@@ -87,7 +87,7 @@ func scanDevicesContinually() throws -> AsyncThrowingStream<SSDPService, any Err
                     }
                 } else if received < 0 {
                     let errorString = String(cString: strerror(errno))
-                    logger.warning("Error receiving from socket with message: \(errorString)")
+                    logger.warning("Error receiving from socket with message: \(errorString, privacy: .public)")
                 }
             }
         }

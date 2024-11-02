@@ -57,7 +57,7 @@
 
         func transferDevices(_ session: WCSession, devices: [DeviceAppEntity]) {
             WatchConnectivity.logger
-                .info("WCSession with activationState \(session.activationState.rawValue) trying to send devices \(devices)")
+                .info("WCSession with activationState \(session.activationState.rawValue) trying to send devices \(devices, privacy: .public)")
             if session.activationState == .activated {
                 if devices.count == 0 {
                     WatchConnectivity.logger.info("Not transfering devices because devices is empty")
@@ -84,7 +84,7 @@
                 do {
                     try session.updateApplicationContext(deviceMap)
                 } catch {
-                    WatchConnectivity.logger.error("Error transfering app context \(deviceMap)")
+                    WatchConnectivity.logger.error("Error transfering app context \(deviceMap, privacy: .public)")
                 }
 
                 session.sendMessage(deviceMap, replyHandler: { reply in

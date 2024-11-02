@@ -109,10 +109,10 @@
                     return
                 }
 
-                logger.info("Getting volume change \(volume) with target \(String(describing: targetVolume))")
+                logger.info("Getting volume change \(volume) with target \(String(describing: targetVolume), privacy: .public)")
                 if let tv = targetVolume, volume != tv, !inBackground {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                        logger.info("Setting volume to new value \(volume) with target \(tv)")
+                        logger.info("Setting volume to new value \(volume) with target \(tv, privacy: .public)")
                         volume = tv
                     }
                 }
@@ -140,11 +140,11 @@
             }
             .onChange(of: scenePhase) { oldPhase, newPhase in
                 inBackground = newPhase != .active
-                logger.info("New scene phase \(String(describing: newPhase))")
+                logger.info("New scene phase \(String(describing: newPhase), privacy: .public)")
                 if oldPhase != .active, newPhase == .active {
                     logger
                         .info(
-                            "Changing target from \(String(describing: targetVolume)) to \(audioSession.outputVolume)"
+                            "Changing target from \(String(describing: targetVolume), privacy: .public) to \(audioSession.outputVolume)"
                         )
                     targetVolume = audioSession.outputVolume
                 }

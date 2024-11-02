@@ -32,7 +32,7 @@ class NetworkMonitor: ObservableObject {
                 }
                 Self.logger
                     .info(
-                        "Getting new network \(String(describing: path)). Updating self type to \(String(describing: self?.networkConnection))"
+                        "Getting new network \(String(describing: path), privacy: .public). Updating self type to \(String(describing: self?.networkConnection), privacy: .public)"
                     )
             }
         }

@@ -329,7 +329,7 @@ struct RemoteViewContained: View {
                 }
                 .task(id: selectedDevice?.location, priority: .medium) {
                     Self.logger
-                        .info("Creating ecp session with location \(String(describing: selectedDevice?.location))")
+                        .info("Creating ecp session with location \(String(describing: selectedDevice?.location), privacy: .public)")
                     let oldECP = ecpSession
                     await oldECP?.close()
                     ecpSession = nil

@@ -51,7 +51,7 @@ func sendDeviceTokenToServer(_ token: String) async {
                 String(format: "%02.2hhx", data)
             }
             let token = tokenParts.joined()
-            logger.info("Device Token: \(token)")
+            logger.info("Device Token: \(token, privacy: .public)")
 
             Task {
                 await sendDeviceTokenToServer(token)
@@ -205,7 +205,7 @@ func sendDeviceTokenToServer(_ token: String) async {
                 String(format: "%02.2hhx", data)
             }
             let token = tokenParts.joined()
-            logger.info("Device Token: \(token)")
+            logger.info("Device Token: \(token, privacy: .public)")
 
             Task {
                 await sendDeviceTokenToServer(token)

@@ -28,7 +28,7 @@ actor ECPSession {
     }
 
     public init(device: DeviceAppEntity) throws {
-        Self.logger.info("Initing ECP Session with url \(device.location)")
+        Self.logger.info("Initing ECP Session with url \(device.location, privacy: .public)")
         // SAFETY: "http" is always a valid regex
         // swiftlint:disable:next force_try
         guard let url = URL(string: "\(device.location.replacing(try! Regex("http"), with: "ws"))ecp-session") else {
