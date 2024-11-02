@@ -25,7 +25,7 @@ public extension Device {
         }
         return Date().timeIntervalSince(lastOnlineAt) < 60
     }
-    
+
     internal static func fetchAllRequest() -> FetchDescriptor<Device> {
         var fd = FetchDescriptor(
             predicate: #Predicate {
@@ -35,7 +35,7 @@ public extension Device {
         )
         fd.relationshipKeyPathsForPrefetching = []
         fd.propertiesToFetch = [\.udn, \.location, \.name, \.lastOnlineAt, \.lastSelectedAt, \.lastScannedAt]
-        
+
         return fd
     }
 }

@@ -289,19 +289,6 @@ struct RemoteViewContained: View {
                     ])
                 }
                 .task {
-                    guard let mainAppGroupBackup else {
-                        return
-                    }
-                    
-                    if UserDefaults.standard.bool(forKey: UserDefaultKeys.usingNewAppGroup) {
-                        return
-                    }
-                    
-                    
-                    
-                    UserDefaults.standard.set(true, forKey: UserDefaultKeys.usingNewAppGroup)
-                }
-                .task {
                     while !Task.isCancelled {
                         let createDataHandler = createDataHandler
                         Task.detached {

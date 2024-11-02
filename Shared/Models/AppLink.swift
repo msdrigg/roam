@@ -15,7 +15,7 @@ extension AppLink: Decodable {
 
         self.init(id: id, type: type, name: name)
     }
-    
+
     internal static func fetchAllRequest() -> FetchDescriptor<AppLink> {
         var fd = FetchDescriptor(
             predicate: #Predicate<AppLink> { _ in
@@ -25,7 +25,7 @@ extension AppLink: Decodable {
         )
         fd.relationshipKeyPathsForPrefetching = []
         fd.propertiesToFetch = [\.id, \.type, \.name, \.lastSelected, \.deviceUid, \.icon]
-        
+
         return fd
     }
 

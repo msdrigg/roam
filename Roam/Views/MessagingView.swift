@@ -56,14 +56,14 @@ struct MessageView: View {
     @Environment(\.createDataHandler) private var createDataHandler
 
     var roboMessage: Message? {
-        let connectRegex = /(\bconnect)|(\badd)|(\bfind my tv)|(\bconexión)|(\bconecta)|(\bscan)/
+        let connectRegex = /(\bconnect)|(\badd)|(\bfind my tv)|(\bconexión)|(\bconecta)|(\bscan)/.ignoresCase(true)
         if messageText.firstMatch(of: connectRegex) != nil {
             return Message(
                 id: "connect-help",
-                message: "If Roam isn't auto-discovering your tv, check this guide to manually add your TV: https://roam.msd3.io/manually-add-tv/",
+                message: String(localized: "If Roam isn't auto-discovering your tv, check this guide to manually add your TV: https://roam.msd3.io/manually-add-tv/"),
                 author: .support,
                 fetchedBackend: false,
-                messageTitle: "Are you having trouble connecting your TV?",
+                messageTitle: String(localized: "Are you having trouble connecting your TV?"),
                 robotMessage: true
             )
         } else {
@@ -75,7 +75,10 @@ struct MessageView: View {
         (
             [Message(
                 id: "start",
-                message: "Hi, I'm Scott. I make Roam. What's on your mind? I'll do my best to respond to these messages as quick as I can.",
+                message: String(
+                    localized: "Hi, I'm Scott. I make Roam. What's on your mind? I'll do my best to respond to these messages as quick as I can.",
+                    comment: "First message to user in a chat"
+                ),
                 author: .support,
                 fetchedBackend: false
             )]
@@ -96,10 +99,9 @@ struct MessageView: View {
 
             do {
                 try await uploadDebugLogs(logs: logs)
-                try await sendMessage(message: "Diagnostics Shared at \(Date.now.formatted())", apnsToken: nil)
+                self.sendMessageText(messageText: String(localized: "Diagnostics Shared at \(Date.now.formatted())"))
 
                 logger.info("Upload successful")
-                refreshResetId = UUID()
             } catch {
                 logger.error("Failed to upload logs: \(error)")
             }
@@ -160,6 +162,15 @@ struct MessageView: View {
                     .padding(.horizontal, 12)
 
                     HStack(alignment: .bottom, spacing: 10) {
+                        SendDiagnosticsButton(shareDiagnostics: {reportDebugLogs()}, sharingDiagnostics: reportingDebugLogs)
+#if os(macOS)
+                            .padding(.bottom, 2)
+#elseif os(iOS)
+                            .padding(.bottom, 6)
+#elseif os(visionOS)
+                            .padding(.bottom, 12)
+#endif
+
                         TextField(String(localized: "Message", comment: "Text entry field for a new message"), text: $messageText.animation(), axis: .vertical)
                         .onSubmit {
                             sendTypedMessage()
@@ -175,11 +186,7 @@ struct MessageView: View {
 #if os(visionOS)
                         .padding(.bottom, 6)
 #endif
-
-                        SendDiagnosticsButton(shareDiagnostics: {reportDebugLogs()}, sharingDiagnostics: reportingDebugLogs)
-#if os(macOS)
-                            .padding(.bottom, 2)
-#endif
+                        .animation(nil, value: messageText)
 
 #if os(macOS)
                         EmojiPicker().padding(.bottom, 2)
@@ -191,6 +198,9 @@ struct MessageView: View {
                         .buttonStyle(.borderedProminent)
                         .labelStyle(.iconOnly)
                         .help(String(localized: "Send the message", comment: "Help text on a button to send a chat message"))
+                        #if os(visionOS)
+                        .padding(.bottom, 2)
+                        #endif
 
 #endif
                     }
@@ -264,7 +274,7 @@ struct MessageView: View {
         }
     }
 
-    func sendTypedMessage() {
+    func sendMessageText(messageText: String) {
         logger.info("Sending message \"\(messageText)\"")
         let messageCopy = messageText
         let createDataHandler = self.createDataHandler
@@ -295,7 +305,11 @@ struct MessageView: View {
             requestNotificationPermission()
         }
 
-        messageText = ""
+        self.messageText = ""
+    }
+
+    func sendTypedMessage() {
+        self.sendMessageText(messageText: messageText)
     }
 }
 
@@ -307,13 +321,18 @@ struct SendDiagnosticsButton: View {
         Button(action: {
             shareDiagnostics()
         }, label: {
+#if os(macOS)
             Image(systemName: "paperclip")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 24, height: 24)
-                .foregroundColor(Color.gray)
-                .symbolEffect(.variableColor, isActive: sharingDiagnostics)
+#else
+            Label(String(localized: "Share Diagnostics", comment: "Label on a button"), systemImage: "paperclip")
+                .labelStyle(.iconOnly)
+#endif
         })
+        .symbolEffect(.variableColor, isActive: sharingDiagnostics)
+        .foregroundColor(Color.gray)
         .buttonStyle(.plain)
         .help(
             sharingDiagnostics ? "Sharing diagnostics..." :

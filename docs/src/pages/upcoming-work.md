@@ -4,22 +4,17 @@ hide_table_of_contents: true
 
 # Most recent roam work
 
--   Localizations in many languages
--   Spanish, Portuges, French, German, Filipino, Chinese, Vietnamese, Arabic, Punjabi, Italian
--   Improve customized keyboard shortcut support on iPad even if Full Keyboard Access is turned on
--   UI Improvements
-    -   Pretty buttons for scanning for devices
-    -   Translucent windows on macOS
-    -   Added some quick-response messages for common problems
-
 # Upcoming Roam Updates
 
 ## General Improvements
 
+-   Update the translations to make sure all are at 100%
 -   Document the discord support bot and maybe duplicate it into a library
+-   Make custom menu bar icon
 
 -   How to do voice-to-text or general voice commands?
     - Need to reverse-engineer the roku voice remote udp protocol
+    - Or need to add custom text-to-speech with remote button engine?
 
 -   Add +30 second mute timer with countdown
     -   Hold mute to mute for +30 seconds
@@ -44,7 +39,8 @@ hide_table_of_contents: true
     -   GCKeyboard for one
     -   FocusEnvironment for 2
     -   Ensure that whatever solution gets used for iOS doesn't break text entry in messages/keyboard entry
--   AppIntents
+    
+-   Implement iOS 18 AppIntents
     -   Add control center app intents
         -   Use toggle for mute/unmute and power on/off
         -   Use buttons for everything else
@@ -74,12 +70,6 @@ hide_table_of_contents: true
         -   We have lastRenderTime + a sync packet
         -   Estimate the packet number we should be sending out at + the sync time
             -   Render Time + additional
--   Nana Test fixes
-    -   Option to turn off scanning for devices FULLY (leave on by default)
-        -   Don’t mark a newly scanned device as selected automatically unless it was done in a foreground scan or a user added device
-    -   Add broadcast interface, scan range and parse the flags properly for display in debug interface
-    -   Ensure all my logs are not sensitized
-    -   Make custom menu bar icon
 
 ## Improve Testing
 

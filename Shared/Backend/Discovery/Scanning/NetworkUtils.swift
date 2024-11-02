@@ -95,6 +95,37 @@ struct Addressed4NetworkInterface: Encodable {
         try container.encode(isRunning, forKey: .isRunning)
         try container.encode(isLoopback, forKey: .isLoopback)
         try container.encode(isIPV4, forKey: .isIPv4)
+        try container.encode(getFlagList(), forKey: .flagList)
+    }
+
+    private func getFlagList() -> [String] {
+        let flagBooleans: [(String, Int32)] = [
+            ("UP", IFF_UP),
+            ("BROADCAST", IFF_BROADCAST),
+            ("DEBUG", IFF_DEBUG),
+            ("LOOPBACK", IFF_LOOPBACK),
+            ("POINTOPOINT", IFF_POINTOPOINT),
+            ("NOTRAILERS", IFF_NOTRAILERS),
+            ("RUNNING", IFF_RUNNING),
+            ("NOARP", IFF_NOARP),
+            ("PROMISC", IFF_PROMISC),
+            ("ALLMULTI", IFF_ALLMULTI),
+            ("OACTIVE", IFF_OACTIVE),
+            ("SIMPLEX", IFF_SIMPLEX),
+            ("MULTICAST", IFF_MULTICAST),
+            ("NOARP", IFF_NOARP),
+            ("ALTPHYS", IFF_ALTPHYS),
+            ("LINK0", IFF_LINK0),
+            ("LINK1", IFF_LINK1),
+            ("LINK2", IFF_LINK2),
+        ]
+
+        var flagStrings: [String] = []
+        for (flag, value) in flagBooleans where flags & UInt32(value) != 0  {
+            flagStrings.append(flag)
+        }
+
+        return flagStrings
     }
 
     // Custom coding keys
@@ -107,6 +138,7 @@ struct Addressed4NetworkInterface: Encodable {
         case isRunning
         case isLoopback
         case isIPv4
+        case flagList
     }
 }
 
