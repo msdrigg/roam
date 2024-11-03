@@ -224,7 +224,7 @@ extension PlayIntent: ControlWidget {
             }
         }
         .displayName("Play/Pause")
-        .description("An control that plays and pauses your TV")
+        .description("A control that plays and pauses your TV")
     }
 }
 
@@ -243,7 +243,7 @@ extension OkIntent: ControlWidget {
             }
         }
         .displayName("Ok")
-        .description("An control that makes a selection on your TV")
+        .description("A control that makes a selection on your TV")
     }
 }
 
@@ -262,7 +262,7 @@ extension MuteIntent: ControlWidget {
             }
         }
         .displayName("Mute/Unmute")
-        .description("An control that mutes or unmutes your TV")
+        .description("A control that mutes or unmutes your TV")
     }
 }
 
@@ -281,7 +281,7 @@ extension VolumeUpIntent: ControlWidget {
             }
         }
         .displayName("Raise volume")
-        .description("An control that raises the volume on your TV")
+        .description("A control that raises the volume on your TV")
     }
 }
 
@@ -300,7 +300,7 @@ extension VolumeDownIntent: ControlWidget {
             }
         }
         .displayName("Lower volume")
-        .description("An control that lowers the volume on your TV")
+        .description("A control that lowers the volume on your TV")
     }
 }
 
@@ -319,7 +319,7 @@ extension PowerIntent: ControlWidget {
             }
         }
         .displayName("Toggle power")
-        .description("An control that turns on or off your TV")
+        .description("A control that turns on or off your TV")
     }
 }
 
