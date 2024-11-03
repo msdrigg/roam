@@ -35,6 +35,7 @@ type InstallationInfo = {
 	buildVersion: string | null;
 	osPlatform: string | null;
 	osVersion: string | null;
+	userLocale?: string | null;
 }
 
 async function maybeSendDeviceInfo(env: Env, userId: string, threadId: string, installationInfo: InstallationInfo | undefined, discordClient: DiscordClient) {
@@ -54,7 +55,7 @@ async function maybeSendDeviceInfo(env: Env, userId: string, threadId: string, i
 	}
 
 	console.log(`Maybe sending device info: alreadySent=${!!lastInstallationInfoSent} blank=${!installationInfo}`);
-	if (lastInstallationInfoSent?.buildVersion !== installationInfo.buildVersion || lastInstallationInfoSent?.osVersion !== installationInfo.osVersion || lastInstallationInfoSent?.osPlatform !== installationInfo.osPlatform) {
+	if (lastInstallationInfoSent?.buildVersion !== installationInfo.buildVersion || lastInstallationInfoSent?.osVersion !== installationInfo.osVersion || lastInstallationInfoSent?.osPlatform !== installationInfo.osPlatform || lastInstallationInfoSent?.userLocale !== installationInfo.userLocale) {
 		console.log("Installation info changed, (re)sending");
 
 		let { userId, buildVersion, osPlatform, osVersion, userLocale } = installationInfo;
