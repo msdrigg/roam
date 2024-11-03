@@ -103,7 +103,6 @@ public struct DebugLanguage: Encodable, Sendable {
     let translatedLanguageCode: String
 }
 
-
 public struct DebugInfo: Encodable, Sendable {
     let installationInfo: InstallationInfo
     let devices: [DeviceDebugInfo]

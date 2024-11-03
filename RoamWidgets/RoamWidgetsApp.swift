@@ -4,6 +4,17 @@ import WidgetKit
 @main
 struct RoamWidgetsApp: WidgetBundle {
     var body: some Widget {
+        #if os(iOS)
+        if #available(iOS 18.0, *) {
+            PlayIntent()
+            PowerIntent()
+            OkIntent()
+            MuteIntent()
+            VolumeUpIntent()
+            VolumeDownIntent()
+        }
+        #endif
+
 #if !os(watchOS)
         MediumRemoteWidget()
         SmallDpadWidget()

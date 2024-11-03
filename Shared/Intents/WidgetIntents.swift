@@ -60,6 +60,11 @@ public struct OpenDeviceIntent: OpenIntent {
         }
     }
 
+#if os(iOS)
+    @available(iOS 18.0, *)
+    extension DeviceChoiceIntent: ControlConfigurationIntent {}
+#endif
+
     @available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
     public struct DeviceAndAppChoiceIntent: AppIntent, WidgetConfigurationIntent {
         public static let title: LocalizedStringResource = LocalizedStringResource("Choose a device and apps", comment: "Configuration title for a settings page")

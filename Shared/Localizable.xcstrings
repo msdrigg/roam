@@ -582,6 +582,24 @@
         }
       }
     },
+    "An control that lowers the volume on your TV" : {
+
+    },
+    "An control that makes a selection on your TV" : {
+
+    },
+    "An control that mutes or unmutes your TV" : {
+
+    },
+    "An control that plays and pauses your TV" : {
+
+    },
+    "An control that raises the volume on your TV" : {
+
+    },
+    "An control that turns on or off your TV" : {
+
+    },
     "App" : {
       "comment" : "Description on a configuration field\nPlaceholder label for an app",
       "localizations" : {
@@ -7553,6 +7571,9 @@
         }
       }
     },
+    "Lower the volume on your TV" : {
+
+    },
     "Lower volume" : {
       "comment" : "Title for volume down intent",
       "localizations" : {
@@ -7635,6 +7656,9 @@
           }
         }
       }
+    },
+    "Lower Volume" : {
+
     },
     "Made with ❤️ by Scott Driggers" : {
       "comment" : "Text description within the About View for the app",
@@ -8382,6 +8406,9 @@
           }
         }
       }
+    },
+    "Mute or unmute your TV" : {
+
     },
     "Mute/Unmute" : {
       "comment" : "Remote button to mute/unmute\nSiri shortcut to mute/unmute the device",
@@ -10123,6 +10150,9 @@
         }
       }
     },
+    "Play or pause your TV" : {
+
+    },
     "Play/Pause" : {
       "comment" : "Keyboard shortcut to Play/Pause the TV\nRemote button to play/pause\nSiri shortcut to play/pause",
       "localizations" : {
@@ -11784,6 +11814,12 @@
           }
         }
       }
+    },
+    "Raise the volume on your TV" : {
+
+    },
+    "Raise volume" : {
+
     },
     "Refresh devices" : {
       "comment" : "Button text to refresh the device list",
@@ -13608,6 +13644,9 @@
         }
       }
     },
+    "Select Ok on your TV" : {
+
+    },
     "Send" : {
       "comment" : "Label on a button to send a message",
       "localizations" : {
@@ -15185,6 +15224,9 @@
         }
       }
     },
+    "Toggle power" : {
+
+    },
     "Toggle Power" : {
       "comment" : "Title for power intent",
       "localizations" : {
@@ -15432,6 +15474,9 @@
           }
         }
       }
+    },
+    "Turns on or off your TV" : {
+
     },
     "TV App" : {
       "comment" : "TV App Selection option",

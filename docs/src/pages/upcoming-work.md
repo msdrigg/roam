@@ -6,24 +6,43 @@ hide_table_of_contents: true
 
 # Upcoming Roam Updates
 
-## General Improvements
+- Added control widgets: Play, Mute, Change Volume and Select from Control center!
 
--   Update the translations to make sure all are at 100%
--   Document the discord support bot and maybe duplicate it into a library
+## Roadmap
+
+-   Update keyboard handling to support ecp-textedit on `KeyboardEntry`
+    -   Show keyboard when textedit is opened
+    -   Hide keyboard when textedit closed
+    -   Ensure that pasting + select/delete into the textedit field works as expected
+    -   Use current modified textfield if ecp-textedit is not supported, use standard textfield if it is
+    -   On macOS, support paste with cmdP, copy/cut with cmdX + cmdC
+    -   If ecp-textedit is not supported, fall back to current behavior of sending keys
+    -   On macOS show a bottom text field when textedit is enabled 
+    -   On macOS allow cmd+v and cmd+c and cmd+x to copy paste from/to the buffer
+
+-   Add +30 second mute timer with countdown
+    -   Hold mute to mute for +30 seconds
+    -   Click again to unmute and cancel it
+    -   Show an indicator below mute button line 
+        -   Progress bar has a linear progress indicator
+        -   Progress bar has two buttons: +30 seconds, cancel
+        -   Show underneath the main button panel so it's close to mute
+    -   Make the +30 configurable to 30, 15, 60 second mute options
+
+-   Provide an optional Minimalist view on iOS that replicates siri remote's view closely
+    -   https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
+    -   Support visionos gestures as well...
+
+## General Future Ideas
+
+-   Write a blog post about the discord bot and point to my MessageView
+-   Write a blog post about the auto-translation and logic around that
+
 -   Make custom menu bar icon
 
 -   How to do voice-to-text or general voice commands?
     - Need to reverse-engineer the roku voice remote udp protocol
     - Or need to add custom text-to-speech with remote button engine?
-
--   Add +30 second mute timer with countdown
-    -   Hold mute to mute for +30 seconds
-    -   Click again to cancel mute
-    -   Show a top bar notification
-        -   Progress bar has a linear progress indicator
-        -   Progress bar has two buttons: +30 seconds, cancel
-        -   Show underneath the main button panel so it's close to mute
-    -   Make the +30 configurable to 30, 15, 60 second mute options
 
 -   Automate Screenshot Capture
 
@@ -39,24 +58,7 @@ hide_table_of_contents: true
     -   GCKeyboard for one
     -   FocusEnvironment for 2
     -   Ensure that whatever solution gets used for iOS doesn't break text entry in messages/keyboard entry
-    
--   Implement iOS 18 AppIntents
-    -   Add control center app intents
-        -   Use toggle for mute/unmute and power on/off
-        -   Use buttons for everything else
-        -   Use tint correct purple
-        -   Make configurable just like widgets
-        -   Make work with action hint
-    -   Let siri/spotlight better see the things in my app somehow?
-        -   Add universal links to the devices so siri can link to them?
-        -   Ensure that semantic search works
-        -   Implement transferrable via string/codeable for my app entities
-            -   ProxyRepresentation
-            -   CodableRepresentation
--   Provide an optional Minimalist view on iOS that replicates siri remote's view closely
-    -   https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
-    -   Support visionos gestures as well...
-    -   Need to build the textedit api first
+
 -   Add some event tracking on what actions users are actually doing on their devices (connect to firebase analytics maybe?)
     -   Track who is using minimalist view, what actions they are doing, etc...
 
@@ -138,16 +140,7 @@ hide_table_of_contents: true
             -   Link https://roam.msd3.io/manually-add-tv.md and https://support.roku.com/article/115001480188 for more troubleshooting or chat
 -   Add badge for supportsWakeOnWLAN and supportsMute
 
-## Support ecp textedit
-
--   Update keyboard handling to support ecp-textedit on `KeyboardEntry`
-    -   Show keyboard when textedit is opened
-    -   Hide keyboard when textedit closed
-    -   Test that pasting + select/delete into the textedit field works as expected
-    -   If ecp-textedit is supported, allow selecting, deleting text and moving cursor. Just re-send text each time it changes if this is supported.
-    -   If ecp-textedit is not supported, fall back to current behavior of sending keys
-    -   On macOS show an indicator when textedit is enabled 
-    -   On macOS allow cmd+v and cmd+c and cmd+x to copy paste from/to the buffer
+## ECP textedit notes
 
 Keyboard ECP Session Commands (notes)
 
@@ -160,8 +153,9 @@ Keyboard ECP Session Commands (notes)
     - {"response":"set-textedit-text","response-id":"29","status":"200","status-msg":"OK"}
 ```
 
-## To update when dropping support for iOS 17/macOS 15 (2025)
+## To update when dropping support for iOS 17/macOS 14 (Feb 2026)
 
+-   Go around and remove @available(iOS 18) tags
 -   Use preview traits to inject sample data into previews
     -   How to do this with iOS 17 still being a factor?
     -   How to use @Previewable in previews with iOS 17 still a factor??
