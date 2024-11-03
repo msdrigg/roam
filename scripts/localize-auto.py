@@ -2,8 +2,10 @@
 
 import json
 import os
-import sys
+import re
 from openai import OpenAI
+import argparse
+import hashlib
 
 
 client = OpenAI(
@@ -36,7 +38,7 @@ def translate_text(text, language, context=None):
     return response.choices[0].message.content
 
 
-def localize_text(seed_file_path, output_file_path):
+def localize_xcstrings_copied(seed_file_path, output_file_path):
     # Load the seed file
     with open(seed_file_path, "r", encoding="utf-8") as seed_file:
         data = json.load(seed_file)
@@ -97,16 +99,278 @@ def localize_text(seed_file_path, output_file_path):
         json.dump(data, output_file, ensure_ascii=False, indent=4)
 
 
-if __name__ == "__main__":
-    if sys.argv[-1] == "--help":
+def localize_xcstrings(file_path: str):
+    localize_xcstrings_copied(file_path, file_path)
+
+
+def translate_docusaurus_string_obj(string_obj: dict, language: str):
+    response = client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a helpful assistant who helps provide translations for developers. You will only return a plain text translation for the given string and no other information or context. Please do not add any quotes around the translated text.",
+            },
+            {
+                "role": "user",
+                "content": get_text_message(
+                    string_obj["message"], language, string_obj.get("description")
+                ),
+            },
+        ],
+        model="gpt-4",
+    )
+
+    return response.choices[0].message.content
+
+
+def get_doc_page_message(page: dict, language: str):
+    return f"Please translate the following page into {language}:\n\n```\n{page['content']}\n```"
+
+
+def translate_docusaurus_page(page: dict, language: str):
+    response = client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a helpful assistant who helps provide translations for developers for mdx files. Mdx files are markdown files that can contain JSX. Please translate the strings as a whole respecting the grammar of the page and trying to preserve the original meaning of the page as well as keeping the jsx formatted correctly. You will only return a translation for the given page and no other information or context. Please do not add any quotes around the translated page.",
+            },
+            {
+                "role": "user",
+                "content": get_doc_page_message(page, language),
+            },
+        ],
+        model="gpt-4",
+    )
+
+    return response.choices[0].message.content
+
+
+def translate_docusaurus_strings_file_content(
+    existing_data: dict, seed_data: dict, strings_translation: dict, language: str
+) -> dict:
+    for key in seed_data:
+        # Check if key has changed
+        translated_hash = strings_translation.get(key)
+        current_hash = hashlib.sha256(
+            json.dumps(seed_data[key], sort_keys=True).encode()
+        ).hexdigest()
+
+        if translated_hash != current_hash and key in existing_data:
+            del existing_data[key]
+
+        if key not in existing_data:
+            print(f"Translating {key} into {language}")
+            existing_data[key] = translate_docusaurus_string_obj(
+                seed_data[key], language
+            )
+        else:
+            print(f"Skipping {key} as it already exists")
+
+    for key in existing_data:
+        if key not in seed_data:
+            del existing_data[key]
+
+    return existing_data
+
+
+def translate_docusaurus_strings_file(
+    translation_dir, relative_file_path: str, strings_translation: dict, language: str
+):
+    with open(
+        os.path.join(translation_dir, "en", relative_file_path),
+        "r",
+        encoding="utf-8",
+    ) as file_data:
+        seed_data = json.load(file_data)
+
+    print(f"Translating {relative_file_path} into {language}")
+
+    locale_dir = os.path.join(translation_dir, language)
+
+    parent_dir = os.path.dirname(os.path.join(
+        locale_dir, relative_file_path
+    ))
+    if not os.path.exists(parent_dir):
+        os.makedirs(parent_dir)
+
+    with open(
+        os.path.join(locale_dir, relative_file_path),
+        "w+",
+        encoding="utf-8",
+    ) as file_data:
+        data = file_data.read()
+
+        existing_navbar = json.loads(data) if data else {}
+        new_navbar = translate_docusaurus_strings_file_content(
+            existing_navbar, seed_data, strings_translation, language
+        )
+
+        file_data.seek(0)
+        json.dump(new_navbar, file_data, indent=4)
+
+
+def unify_strings_cache(strings_translation: dict, file_path: str):
+    with open(file_path, "r", encoding="utf-8") as file_data:
+        data = json.load(file_data)
+
+    for key in data:
+        strings_translation[key] = hashlib.sha256(
+            json.dumps(data[key], sort_keys=True).encode()
+        ).hexdigest()
+
+
+def localize_docusaurus(docs_dir: str):
+    # Parse the locales: [.*] from the docusaurus config file (.ts)
+    docusaurus_config_file = os.path.join(docs_dir, "docusaurus.config.ts")
+
+    with open(docusaurus_config_file, "r", encoding="utf-8") as config_file:
+        config_data = config_file.read()
+
+    # Extract the locales from the config file
+    locales = re.findall(r"locales: \[(.*?)\]", config_data, re.MULTILINE | re.DOTALL)[
+        0
+    ].strip()
+
+    if not locales:
         print(
-            "Usage: python export_incomplete_translations.py <seed_file_path> <output_file_path>"
+            f"Locales not found in the Docusaurus config file {docusaurus_config_file}"
         )
+        return
     else:
-        seed_file_path = (
-            sys.argv[1] if len(sys.argv) > 1 else "../Shared/Localizable.xcstrings"
+        locales = [
+            locale.strip().replace('"', "")
+            for locale in locales.split(",")
+            if locale.strip().replace('"', "") != "en"
+        ]
+        print(f"Locales found: {locales}")
+
+    file_translate_map = {}
+
+    translation_dir = os.path.join(docs_dir, "i18n")
+
+    with open(
+        os.path.join(translation_dir, "file_hashes.json"), "w+", encoding="utf-8"
+    ) as file_data:
+        data = file_data.read()
+        file_hash_state = json.loads(data) if data else {}
+
+    # Find all the files in the pages
+    pages_dir = os.path.join(docs_dir, "src", "pages")
+    for root, _, files in os.walk(pages_dir):
+        for file in files:
+            if file.endswith(".md") or file.endswith(".mdx"):
+                file_path = os.path.join(root, file)
+                with open(file_path, "r", encoding="utf-8") as file_data:
+                    data = file_data.read()
+                    # Hash the data with sha256
+                    hash = hashlib.sha256(data.encode()).hexdigest()
+                file_translate_map[file_path] = {
+                    "relative_path": os.path.join(
+                        "docusaurus-plugin-content-pages", file
+                    ),
+                    "hash": hash,
+                }
+
+    with open(
+        os.path.join(translation_dir, "strings.json"), "w+", encoding="utf-8"
+    ) as file_data:
+        data = file_data.read()
+        strings_translation = json.loads(data) if data else {}
+
+    for localization in locales:
+        print(f"Localizing {localization}")
+
+        locale_dir = os.path.join(translation_dir, localization)
+
+        if not os.path.exists(locale_dir):
+            os.makedirs(locale_dir)
+
+        # Translate the code strings first
+        translate_docusaurus_strings_file(
+            translation_dir, "code.json", strings_translation, localization
         )
-        output_file_path = (
-            sys.argv[2] if len(sys.argv) > 2 else "../Shared/Localizable.xcstrings"
+        translate_docusaurus_strings_file(
+            translation_dir,
+            os.path.join("docusaurus-theme-classic", "navbar.json"),
+            strings_translation,
+            localization,
         )
-        localize_text(seed_file_path, output_file_path)
+        translate_docusaurus_strings_file(
+            translation_dir,
+            os.path.join("docusaurus-theme-classic", "footer.json"),
+            strings_translation,
+            localization,
+        )
+
+        # Translate the pages
+        for file_path, relative_file_path in file_translate_map.items():
+            with open(file_path, "r", encoding="utf-8") as file_data:
+                data = file_data.read()
+
+            has_current = os.path.exists(os.path.join(locale_dir, relative_file_path))
+            with open(
+                os.path.join(locale_dir, relative_file_path),
+                "w",
+                encoding="utf-8",
+            ) as file_data:
+                if (
+                    file_hash_state.get(relative_file_path)
+                    != file_translate_map["hash"]
+                    or not has_current
+                ):
+                    translated_data = translate_docusaurus_page(data, localization)
+                    file_data.write(translated_data)
+                    file_hash_state[relative_file_path] = file_translate_map["hash"]
+
+        # Persist the file hash state and the strings translation
+        with open(
+            os.path.join(translation_dir, "file_hashes.json"), "w", encoding="utf-8"
+        ) as file_data:
+            json.dump(file_hash_state, file_data, indent=4)
+
+        unify_strings_cache(
+            strings_translation,
+            os.path.join(translation_dir, "docusaurus-theme-classic", "footer.json"),
+        )
+        unify_strings_cache(
+            strings_translation,
+            os.path.join(translation_dir, "docusaurus-theme-classic", "navbar.json"),
+        )
+        unify_strings_cache(
+            strings_translation,
+            os.path.join(translation_dir, "code.json"),
+        )
+
+        with open(
+            os.path.join(translation_dir, "strings.json"), "w", encoding="utf-8"
+        ) as file_data:
+            json.dump(strings_translation, file_data, indent=4)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Localize strings\nThis localizes by default:\n\n- Shared/Localizable.xcstrings\n\n- Shared/InfoPlist.xcstrings\n\n- The docs website (docusaurus)"
+    )
+
+    parser.add_argument(
+        "--docs",
+        help="Docs directory to localize",
+    )
+
+    parser.add_argument(
+        "--xcstrings",
+        help="Xcstrings file to localize (instead of the default behavior)",
+    )
+
+    parsed = parser.parse_args()
+
+    if not parsed.docs and not parsed.xcstrings:
+        localize_xcstrings(os.path.join("Shared", "Localizable.xcstrings"))
+        localize_xcstrings(os.path.join("Shared", "InfoPlist.xcstrings"))
+        localize_docusaurus("docs")
+
+    if parsed.docs:
+        localize_docusaurus(parsed.docs)
+
+    if parsed.xcstrings:
+        localize_xcstrings(parsed.xcstrings)

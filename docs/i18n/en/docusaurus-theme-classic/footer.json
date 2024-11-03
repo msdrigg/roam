@@ -1,0 +1,14 @@
+{
+  "link.item.label.Github": {
+    "message": "Github",
+    "description": "The label of footer link with label=Github linking to https://github.com/msdrigg/roam"
+  },
+  "link.item.label.Discord": {
+    "message": "Discord",
+    "description": "The label of footer link with label=Discord linking to https://discord.gg/FqaTNRccbG"
+  },
+  "copyright": {
+    "message": "Copyright © 2024 Roam, Inc.",
+    "description": "The footer copyright"
+  }
+}

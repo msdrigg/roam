@@ -15,7 +15,11 @@ const config: Config = {
 
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: [
+      "en", "ar", "de", "es", "es-419",
+      "fil", "fr", "fr-CA", "it", "pa",
+      "pt-BR", "pt-PT", "vi", "zh-Hans"
+    ],
   },
 
   presets: [
@@ -48,6 +52,10 @@ const config: Config = {
         {
           href: 'https://github.com/msdrigg/roam',
           label: 'GitHub',
+          position: 'right',
+        },
+        {
+          type: 'localeDropdown',
           position: 'right',
         },
       ],
