@@ -42,6 +42,10 @@ func getNotificationSettings() {
     }
 }
 
+@MainActor
+// swiftlint:disable:next line_length force_try
+let connectRegex = try! Regex("\\bconnect\\b|\\badd\\b|\\bfind my tv\\b|\\bscan\\b|\\bconnexion\\b|\\bconnecter\\b|\\btrouver ma télé\\b|\\bconectar\\b|\\bconexión\\b|\\bconecta\\b|\\bno puedo\\b|\\b无法连接\\b|\\b连接\\b|\\bconexão\\b|\\bconectar\\b|\\bnão consigo\\b|\\bkết nối\\b|\\bلا أستطيع\\b|\\bالاتصال\\b|\\bਕਨੈਕਟ\\b|\\bਹੋ ਨਹੀਂ ਸਕਦਾ\\b|\\bmaghanap ng tv\\b|\\bmagkonekta\\b|\\bverbinden\\b|\\bconnettere\\b|\\btrovare la tv\\b").ignoresCase()
+
 struct MessageView: View {
     @State private var messageText = ""
     @Query(sort: \Message.id) private var baseMessages: [Message]
@@ -56,7 +60,7 @@ struct MessageView: View {
     @Environment(\.createDataHandler) private var createDataHandler
 
     var roboMessage: Message? {
-        let connectRegex = /(\bconnect)|(\badd)|(\bfind my tv)|(\bconexión)|(\bconecta)|(\bscan)/.ignoresCase(true)
+
         if messageText.firstMatch(of: connectRegex) != nil {
             return Message(
                 id: "connect-help",
@@ -100,6 +104,9 @@ struct MessageView: View {
             do {
                 try await uploadDebugLogs(logs: logs)
                 self.sendMessageText(messageText: String(localized: "Diagnostics Shared at \(Date.now.formatted())"))
+                if Locale.autoupdatingCurrent.language.languageCode?.identifier != "en" {
+                    self.sendMessageText(messageText: ":ninja:\nDiagnostics Shared at \(Date.now.formatted(.iso8601))")
+                }
 
                 logger.info("Upload successful")
             } catch {

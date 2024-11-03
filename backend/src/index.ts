@@ -59,7 +59,7 @@ async function maybeSendDeviceInfo(env: Env, userId: string, threadId: string, i
 		console.log("Installation info changed, (re)sending");
 
 		let { userId, buildVersion, osPlatform, osVersion, userLocale } = installationInfo;
-		await discordClient.sendMessage(threadId, `:ninja:\n\n**Device info**:\n- User ID: ${userId}\n- Build version: ${buildVersion}\n- OS platform: ${osPlatform}\n- OS version: ${osVersion}\n- User Locale ${userLocale}`);
+		await discordClient.sendMessage(threadId, `:ninja:\n\n**Device info**:\n- User ID: ${userId}\n- Build version: ${buildVersion}\n- OS platform: ${osPlatform}\n- OS version: ${osVersion}\n- User Locale: ${userLocale}`);
 		await env.ROAM_KV.put(`deviceInfoSent:${userId}`, JSON.stringify(installationInfo));
 	}
 }

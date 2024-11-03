@@ -55,6 +55,7 @@
             }
         }
 
+        @MainActor
         func transferDevices(_ session: WCSession, devices: [DeviceAppEntity]) {
             WatchConnectivity.logger
                 .info("WCSession with activationState \(session.activationState.rawValue) trying to send devices \(devices, privacy: .public)")
