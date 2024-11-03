@@ -92,7 +92,7 @@ def localize_xcstrings_copied(seed_file_path, output_file_path):
             data_ref["localizations"][language] = {
                 "stringUnit": {"state": "translated", "value": translation}
             }
-        print(f"   Updated translations: {data["strings"][key]}")
+        print(f"   Updated translations: {data['strings'][key]}")
 
     # Write the updated translations to the output file
     with open(output_file_path, "w", encoding="utf-8") as output_file:
@@ -120,19 +120,19 @@ def translate_docusaurus_string_obj(string_obj: dict, language: str):
         model="gpt-4",
     )
 
-    return response.choices[0].message.content
+    return {"message": response.choices[0].message.content}
 
 
-def get_doc_page_message(page: dict, language: str):
-    return f"Please translate the following page into {language}:\n\n```\n{page['content']}\n```"
+def get_doc_page_message(page: str, language: str):
+    return f"Please translate the following page into {language}:\n\n```\n{page}\n```"
 
 
-def translate_docusaurus_page(page: dict, language: str):
+def translate_docusaurus_page(page: str, language: str):
     response = client.chat.completions.create(
         messages=[
             {
                 "role": "system",
-                "content": "You are a helpful assistant who helps provide translations for developers for mdx files. Mdx files are markdown files that can contain JSX. Please translate the strings as a whole respecting the grammar of the page and trying to preserve the original meaning of the page as well as keeping the jsx formatted correctly. You will only return a translation for the given page and no other information or context. Please do not add any quotes around the translated page.",
+                "content": "You are a helpful assistant who helps provide translations for developers for mdx files. Mdx files are markdown files that can contain JSX. Please translate the strings as a whole respecting the grammar of the page and trying to preserve the original meaning of the page as well as keeping the jsx formatted correctly. You will only return a translation for the given page and no other information or context. Please do not add any quotes or \"```\" marks around the translated page. Also please don't translate `true/false` or the parameter names within the frontmatter header. Please do not translate any of the slugs or links or any piece of the `import` lines",
             },
             {
                 "role": "user",
@@ -142,7 +142,14 @@ def translate_docusaurus_page(page: dict, language: str):
         model="gpt-4",
     )
 
-    return response.choices[0].message.content
+    result = response.choices[0].message.content
+    if result.startswith("```\n"):
+        result = result[4:]
+    if result.endswith("```\n"):
+        result = result[:-4]
+    elif result.endswith("```"):
+        result = result[:-4]
+    return result
 
 
 def translate_docusaurus_strings_file_content(
@@ -152,7 +159,7 @@ def translate_docusaurus_strings_file_content(
         # Check if key has changed
         translated_hash = strings_translation.get(key)
         current_hash = hashlib.sha256(
-            json.dumps(seed_data[key], sort_keys=True).encode()
+            json.dumps(seed_data[key], sort_keys=True, ensure_ascii=False).encode()
         ).hexdigest()
 
         if translated_hash != current_hash and key in existing_data:
@@ -163,6 +170,8 @@ def translate_docusaurus_strings_file_content(
             existing_data[key] = translate_docusaurus_string_obj(
                 seed_data[key], language
             )
+            print(f"Translated {key} into {existing_data[key]}")
+            print(existing_data)
         else:
             print(f"Skipping {key} as it already exists")
 
@@ -206,7 +215,7 @@ def translate_docusaurus_strings_file(
         )
 
         file_data.seek(0)
-        json.dump(new_navbar, file_data, indent=4)
+        json.dump(new_navbar, file_data, ensure_ascii=False, indent=4)
 
 
 def unify_strings_cache(strings_translation: dict, file_path: str):
@@ -215,7 +224,7 @@ def unify_strings_cache(strings_translation: dict, file_path: str):
 
     for key in data:
         strings_translation[key] = hashlib.sha256(
-            json.dumps(data[key], sort_keys=True).encode()
+            json.dumps(data[key], sort_keys=True, ensure_ascii=False).encode()
         ).hexdigest()
 
 
@@ -240,7 +249,7 @@ def localize_docusaurus(docs_dir: str):
         locales = [
             locale.strip().replace('"', "")
             for locale in locales.split(",")
-            if locale.strip().replace('"', "") != "en"
+            if locale.strip().replace('"', "") != "en" and locale.strip().replace('"', "") != "ar" and locale.strip().replace('"', "") != "de"  and locale.strip().replace('"', "") != "es"
         ]
         print(f"Locales found: {locales}")
 
@@ -260,13 +269,14 @@ def localize_docusaurus(docs_dir: str):
         for file in files:
             if file.endswith(".md") or file.endswith(".mdx"):
                 file_path = os.path.join(root, file)
+                relative_file_path = os.path.relpath(file_path, pages_dir)
                 with open(file_path, "r", encoding="utf-8") as file_data:
                     data = file_data.read()
                     # Hash the data with sha256
                     hash = hashlib.sha256(data.encode()).hexdigest()
                 file_translate_map[file_path] = {
                     "relative_path": os.path.join(
-                        "docusaurus-plugin-content-pages", file
+                        "docusaurus-plugin-content-pages", relative_file_path
                     ),
                     "hash": hash,
                 }
@@ -303,48 +313,55 @@ def localize_docusaurus(docs_dir: str):
         )
 
         # Translate the pages
-        for file_path, relative_file_path in file_translate_map.items():
+        for file_path, file_info in file_translate_map.items():
+            relative_file_path = file_info["relative_path"]
+            file_hash = file_info["hash"]
             with open(file_path, "r", encoding="utf-8") as file_data:
                 data = file_data.read()
 
-            has_current = os.path.exists(os.path.join(locale_dir, relative_file_path))
+            full_path = os.path.join(locale_dir, relative_file_path)
+            parent_path = os.path.dirname(full_path)
+            if not os.path.exists(parent_path):
+                os.makedirs(parent_path)
+            has_current = os.path.exists(full_path)
             with open(
-                os.path.join(locale_dir, relative_file_path),
-                "w",
+                full_path,
+                "w+",
                 encoding="utf-8",
             ) as file_data:
                 if (
                     file_hash_state.get(relative_file_path)
-                    != file_translate_map["hash"]
+                    != file_hash
                     or not has_current
                 ):
+                    print(f"Translating page at {relative_file_path}")
                     translated_data = translate_docusaurus_page(data, localization)
                     file_data.write(translated_data)
-                    file_hash_state[relative_file_path] = file_translate_map["hash"]
+                    file_hash_state[relative_file_path] = file_hash
 
-        # Persist the file hash state and the strings translation
-        with open(
-            os.path.join(translation_dir, "file_hashes.json"), "w", encoding="utf-8"
-        ) as file_data:
-            json.dump(file_hash_state, file_data, indent=4)
+    # Persist the file hash state and the strings translation
+    with open(
+        os.path.join(translation_dir, "file_hashes.json"), "w", encoding="utf-8"
+    ) as file_data:
+        json.dump(file_hash_state, file_data, indent=4, ensure_ascii=False)
 
-        unify_strings_cache(
-            strings_translation,
-            os.path.join(translation_dir, "docusaurus-theme-classic", "footer.json"),
-        )
-        unify_strings_cache(
-            strings_translation,
-            os.path.join(translation_dir, "docusaurus-theme-classic", "navbar.json"),
-        )
-        unify_strings_cache(
-            strings_translation,
-            os.path.join(translation_dir, "code.json"),
-        )
+    unify_strings_cache(
+        strings_translation,
+        os.path.join(translation_dir, "en", "docusaurus-theme-classic", "footer.json"),
+    )
+    unify_strings_cache(
+        strings_translation,
+        os.path.join(translation_dir, "en", "docusaurus-theme-classic", "navbar.json"),
+    )
+    unify_strings_cache(
+        strings_translation,
+        os.path.join(translation_dir, "en", "code.json"),
+    )
 
-        with open(
-            os.path.join(translation_dir, "strings.json"), "w", encoding="utf-8"
-        ) as file_data:
-            json.dump(strings_translation, file_data, indent=4)
+    with open(
+        os.path.join(translation_dir, "strings.json"), "w", encoding="utf-8"
+    ) as file_data:
+        json.dump(strings_translation, file_data, indent=4, ensure_ascii=False)
 
 
 if __name__ == "__main__":

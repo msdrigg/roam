@@ -1,0 +1,11 @@
+{
+    "title": {
+        "message": "Lumibot"
+    },
+    "logo.alt": {
+        "message": "Icon ng Roam App"
+    },
+    "item.label.GitHub": {
+        "message": "GitHub"
+    }
+}

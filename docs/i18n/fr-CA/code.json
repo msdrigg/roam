@@ -1,0 +1,218 @@
+{
+    "theme.ErrorPageContent.title": {
+        "message": "Cette page a planté."
+    },
+    "theme.blog.archive.title": {
+        "message": "Archives"
+    },
+    "theme.blog.archive.description": {
+        "message": "Archive"
+    },
+    "theme.BackToTopButton.buttonAriaLabel": {
+        "message": "Retourner en haut de la page"
+    },
+    "theme.blog.paginator.navAriaLabel": {
+        "message": "Navigation de la page de liste des blogues"
+    },
+    "theme.blog.paginator.newerEntries": {
+        "message": "Entrées plus récentes"
+    },
+    "theme.blog.paginator.olderEntries": {
+        "message": "Anciennes entrées"
+    },
+    "theme.blog.post.paginator.navAriaLabel": {
+        "message": "Navigation de page de publication de blog"
+    },
+    "theme.blog.post.paginator.newerPost": {
+        "message": "Publication plus récente"
+    },
+    "theme.blog.post.paginator.olderPost": {
+        "message": "Ancien article"
+    },
+    "theme.blog.post.plurals": {
+        "message": "Un article|{count} articles"
+    },
+    "theme.blog.tagTitle": {
+        "message": "{nPosts} étiquetés avec \"{tagName}\""
+    },
+    "theme.tags.tagsPageLink": {
+        "message": "Voir tous les tags"
+    },
+    "theme.docs.breadcrumbs.navAriaLabel": {
+        "message": "Miettes de pain"
+    },
+    "theme.colorToggle.ariaLabel": {
+        "message": "Basculer entre le mode sombre et le mode clair (actuellement {mode})"
+    },
+    "theme.colorToggle.ariaLabel.mode.dark": {
+        "message": "mode sombre"
+    },
+    "theme.colorToggle.ariaLabel.mode.light": {
+        "message": "mode clair"
+    },
+    "theme.docs.paginator.navAriaLabel": {
+        "message": "Pages de documentation"
+    },
+    "theme.docs.paginator.previous": {
+        "message": "Précédent"
+    },
+    "theme.docs.paginator.next": {
+        "message": "Suivant"
+    },
+    "theme.docs.DocCard.categoryDescription.plurals": {
+        "message": "{count} articles"
+    },
+    "theme.docs.tagDocListPageTitle.nDocsTagged": {
+        "message": "Un doc étiqueté|{count} docs étiquetés"
+    },
+    "theme.docs.tagDocListPageTitle": {
+        "message": "{nDocsTagged} avec \"{tagName}\""
+    },
+    "theme.docs.versionBadge.label": {
+        "message": "Version : {versionLabel}"
+    },
+    "theme.docs.versions.unreleasedVersionLabel": {
+        "message": "Il s'agit de la documentation non publiée pour {siteTitle} version {versionLabel}."
+    },
+    "theme.docs.versions.unmaintainedVersionLabel": {
+        "message": "Il s'agit de la documentation pour {siteTitle} {versionLabel}, qui n'est plus maintenue activement."
+    },
+    "theme.docs.versions.latestVersionSuggestionLabel": {
+        "message": "Pour une documentation à jour, consultez le {latestVersionLink} ({versionLabel})."
+    },
+    "theme.docs.versions.latestVersionLinkLabel": {
+        "message": "dernière version"
+    },
+    "theme.common.editThisPage": {
+        "message": "Modifier cette page"
+    },
+    "theme.common.headingLinkTitle": {
+        "message": "Lien direct vers {heading}"
+    },
+    "theme.lastUpdated.atDate": {
+        "message": "le {date}"
+    },
+    "theme.lastUpdated.byUser": {
+        "message": "par {user}"
+    },
+    "theme.lastUpdated.lastUpdatedAtBy": {
+        "message": "Dernière mise à jour{atDate}{byUser}"
+    },
+    "theme.NotFound.title": {
+        "message": "Page non trouvée"
+    },
+    "theme.navbar.mobileVersionsDropdown.label": {
+        "message": "Versions"
+    },
+    "theme.tags.tagsListLabel": {
+        "message": "Étiquettes :"
+    },
+    "theme.AnnouncementBar.closeButtonAriaLabel": {
+        "message": "Fermer"
+    },
+    "theme.admonition.caution": {
+        "message": "prudence"
+    },
+    "theme.admonition.danger": {
+        "message": "danger"
+    },
+    "theme.admonition.info": {
+        "message": "informations"
+    },
+    "theme.admonition.note": {
+        "message": "note"
+    },
+    "theme.admonition.tip": {
+        "message": "pourboire"
+    },
+    "theme.admonition.warning": {
+        "message": "avertissement"
+    },
+    "theme.blog.sidebar.navAriaLabel": {
+        "message": "Navigation des articles récents du blog"
+    },
+    "theme.CodeBlock.wordWrapToggle": {
+        "message": "Activer/Désactiver le retour à la ligne"
+    },
+    "theme.CodeBlock.copied": {
+        "message": "Copié"
+    },
+    "theme.CodeBlock.copyButtonAriaLabel": {
+        "message": "Copier le code dans le presse-papiers"
+    },
+    "theme.CodeBlock.copy": {
+        "message": "Copier"
+    },
+    "theme.DocSidebarItem.expandCategoryAriaLabel": {
+        "message": "Développer la catégorie de la barre latérale '{label}'"
+    },
+    "theme.DocSidebarItem.collapseCategoryAriaLabel": {
+        "message": "Réduire la catégorie de la barre latérale '{label}'"
+    },
+    "theme.NavBar.navAriaLabel": {
+        "message": "Principal"
+    },
+    "theme.NotFound.p1": {
+        "message": "Nous n'avons pas pu trouver ce que vous cherchiez."
+    },
+    "theme.NotFound.p2": {
+        "message": "Veuillez contacter le propriétaire du site qui vous a lié à l'URL d'origine et les informer que leur lien est brisé."
+    },
+    "theme.TOCCollapsible.toggleButtonLabel": {
+        "message": "Sur cette page"
+    },
+    "theme.navbar.mobileLanguageDropdown.label": {
+        "message": "Langues"
+    },
+    "theme.blog.post.readMore": {
+        "message": "Lire la suite"
+    },
+    "theme.blog.post.readMoreLabel": {
+        "message": "En savoir plus sur {titre}"
+    },
+    "theme.docs.breadcrumbs.home": {
+        "message": "Page d'accueil"
+    },
+    "theme.blog.post.readingTime.plurals": {
+        "message": "Une minute de lecture|{readingTime} min de lecture"
+    },
+    "theme.docs.sidebar.collapseButtonTitle": {
+        "message": "Réduire la barre latérale"
+    },
+    "theme.docs.sidebar.collapseButtonAriaLabel": {
+        "message": "Réduire la barre latérale"
+    },
+    "theme.docs.sidebar.closeSidebarButtonAriaLabel": {
+        "message": "Fermer la barre de navigation"
+    },
+    "theme.docs.sidebar.navAriaLabel": {
+        "message": "Barre latérale des documents"
+    },
+    "theme.docs.sidebar.toggleSidebarButtonAriaLabel": {
+        "message": "Basculer la barre de navigation"
+    },
+    "theme.navbar.mobileSidebarSecondaryMenu.backButtonLabel": {
+        "message": "← Retour au menu principal"
+    },
+    "theme.docs.sidebar.expandButtonTitle": {
+        "message": "Développer la barre latérale"
+    },
+    "theme.docs.sidebar.expandButtonAriaLabel": {
+        "message": "Développer la barre latérale"
+    },
+    "theme.ErrorPageContent.tryAgain": {
+        "message": "Essaie encore"
+    },
+    "theme.common.skipToMainContent": {
+        "message": "Passer au contenu principal"
+    },
+    "theme.tags.tagsPageTitle": {
+        "message": "Étiquettes"
+    },
+    "theme.unlistedContent.title": {
+        "message": "Page non répertoriée"
+    },
+    "theme.unlistedContent.message": {
+        "message": "Cette page n'est pas répertoriée. Les moteurs de recherche ne l'indexeront pas, et seuls les utilisateurs ayant un lien direct peuvent y accéder."
+    }
+}

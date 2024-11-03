@@ -1,0 +1,218 @@
+{
+    "theme.ErrorPageContent.title": {
+        "message": "Trang này đã bị lỗi."
+    },
+    "theme.blog.archive.title": {
+        "message": "Lưu trữ"
+    },
+    "theme.blog.archive.description": {
+        "message": "Lưu trữ"
+    },
+    "theme.BackToTopButton.buttonAriaLabel": {
+        "message": "Cuộn trở lại đầu trang"
+    },
+    "theme.blog.paginator.navAriaLabel": {
+        "message": "Điều hướng trang danh sách blog"
+    },
+    "theme.blog.paginator.newerEntries": {
+        "message": "Các mục mới hơn"
+    },
+    "theme.blog.paginator.olderEntries": {
+        "message": "Các mục cũ hơn"
+    },
+    "theme.blog.post.paginator.navAriaLabel": {
+        "message": "Điều hướng trang bài đăng blog"
+    },
+    "theme.blog.post.paginator.newerPost": {
+        "message": "Bài đăng mới hơn"
+    },
+    "theme.blog.post.paginator.olderPost": {
+        "message": "Bài viết cũ hơn"
+    },
+    "theme.blog.post.plurals": {
+        "message": "Một bài viết|{count} bài viết"
+    },
+    "theme.blog.tagTitle": {
+        "message": "{nPosts} được gắn thẻ với \"{tagName}\""
+    },
+    "theme.tags.tagsPageLink": {
+        "message": "Xem tất cả các thẻ"
+    },
+    "theme.docs.breadcrumbs.navAriaLabel": {
+        "message": "Mẩu bánh mì"
+    },
+    "theme.colorToggle.ariaLabel": {
+        "message": "Chuyển đổi giữa chế độ tối và sáng (hiện tại là {mode})"
+    },
+    "theme.colorToggle.ariaLabel.mode.dark": {
+        "message": "chế độ tối"
+    },
+    "theme.colorToggle.ariaLabel.mode.light": {
+        "message": "chế độ sáng"
+    },
+    "theme.docs.paginator.navAriaLabel": {
+        "message": "Trang tài liệu"
+    },
+    "theme.docs.paginator.previous": {
+        "message": "Trước đó"
+    },
+    "theme.docs.paginator.next": {
+        "message": "Tiếp theo"
+    },
+    "theme.docs.DocCard.categoryDescription.plurals": {
+        "message": "{count} mục"
+    },
+    "theme.docs.tagDocListPageTitle.nDocsTagged": {
+        "message": "Một tài liệu đã được gắn thẻ|{count} tài liệu đã được gắn thẻ"
+    },
+    "theme.docs.tagDocListPageTitle": {
+        "message": "{nDocsTagged} với \"{tagName}\""
+    },
+    "theme.docs.versionBadge.label": {
+        "message": "Phiên bản: {versionLabel}"
+    },
+    "theme.docs.versions.unreleasedVersionLabel": {
+        "message": "Đây là tài liệu chưa được phát hành cho phiên bản {versionLabel} của {siteTitle}."
+    },
+    "theme.docs.versions.unmaintainedVersionLabel": {
+        "message": "Đây là tài liệu cho {siteTitle} {versionLabel}, mà không còn được duy trì tích cực nữa."
+    },
+    "theme.docs.versions.latestVersionSuggestionLabel": {
+        "message": "Đối với tài liệu cập nhật, xem {latestVersionLink} ({versionLabel})."
+    },
+    "theme.docs.versions.latestVersionLinkLabel": {
+        "message": "phiên bản mới nhất"
+    },
+    "theme.common.editThisPage": {
+        "message": "Chỉnh sửa trang này"
+    },
+    "theme.common.headingLinkTitle": {
+        "message": "Liên kết trực tiếp đến {tiêu đề}"
+    },
+    "theme.lastUpdated.atDate": {
+        "message": "vào ngày {date}"
+    },
+    "theme.lastUpdated.byUser": {
+        "message": "bởi {user}"
+    },
+    "theme.lastUpdated.lastUpdatedAtBy": {
+        "message": "Cập nhật lần cuối{atDate}{byUser}"
+    },
+    "theme.NotFound.title": {
+        "message": "Trang không tìm thấy"
+    },
+    "theme.navbar.mobileVersionsDropdown.label": {
+        "message": "Phiên bản"
+    },
+    "theme.tags.tagsListLabel": {
+        "message": "Thẻ:"
+    },
+    "theme.AnnouncementBar.closeButtonAriaLabel": {
+        "message": "Đóng"
+    },
+    "theme.admonition.caution": {
+        "message": "cảnh báo"
+    },
+    "theme.admonition.danger": {
+        "message": "nguy hiểm"
+    },
+    "theme.admonition.info": {
+        "message": "thông tin"
+    },
+    "theme.admonition.note": {
+        "message": "ghi chú"
+    },
+    "theme.admonition.tip": {
+        "message": "tiền boa"
+    },
+    "theme.admonition.warning": {
+        "message": "cảnh báo"
+    },
+    "theme.blog.sidebar.navAriaLabel": {
+        "message": "Điều hướng bài đăng gần đây của blog"
+    },
+    "theme.CodeBlock.wordWrapToggle": {
+        "message": "Chuyển đổi ngắt dòng từ"
+    },
+    "theme.CodeBlock.copied": {
+        "message": "Đã sao chép"
+    },
+    "theme.CodeBlock.copyButtonAriaLabel": {
+        "message": "Sao chép mã vào bảng tạm"
+    },
+    "theme.CodeBlock.copy": {
+        "message": "Sao chép"
+    },
+    "theme.DocSidebarItem.expandCategoryAriaLabel": {
+        "message": "Mở rộng danh mục thanh bên '{label}'"
+    },
+    "theme.DocSidebarItem.collapseCategoryAriaLabel": {
+        "message": "Thu gọn danh mục thanh bên '{label}'"
+    },
+    "theme.NavBar.navAriaLabel": {
+        "message": "Chính"
+    },
+    "theme.NotFound.p1": {
+        "message": "Chúng tôi không thể tìm thấy những gì bạn đang tìm kiếm."
+    },
+    "theme.NotFound.p2": {
+        "message": "Vui lòng liên hệ với chủ sở hữu của trang web đã liên kết bạn đến URL gốc và cho họ biết liên kết của họ bị hỏng."
+    },
+    "theme.TOCCollapsible.toggleButtonLabel": {
+        "message": "Trên trang này"
+    },
+    "theme.navbar.mobileLanguageDropdown.label": {
+        "message": "Ngôn ngữ"
+    },
+    "theme.blog.post.readMore": {
+        "message": "Đọc thêm"
+    },
+    "theme.blog.post.readMoreLabel": {
+        "message": "Đọc thêm về {title}"
+    },
+    "theme.docs.breadcrumbs.home": {
+        "message": "Trang chủ"
+    },
+    "theme.blog.post.readingTime.plurals": {
+        "message": "Đọc trong một phút|Đọc trong {readingTime} phút"
+    },
+    "theme.docs.sidebar.collapseButtonTitle": {
+        "message": "Thu gọn thanh bên"
+    },
+    "theme.docs.sidebar.collapseButtonAriaLabel": {
+        "message": "Thu gọn thanh bên"
+    },
+    "theme.docs.sidebar.closeSidebarButtonAriaLabel": {
+        "message": "Đóng thanh điều hướng"
+    },
+    "theme.docs.sidebar.navAriaLabel": {
+        "message": "Thanh bên tài liệu"
+    },
+    "theme.docs.sidebar.toggleSidebarButtonAriaLabel": {
+        "message": "Chuyển đổi thanh điều hướng"
+    },
+    "theme.navbar.mobileSidebarSecondaryMenu.backButtonLabel": {
+        "message": "← Trở lại menu chính"
+    },
+    "theme.docs.sidebar.expandButtonTitle": {
+        "message": "Mở rộng thanh bên"
+    },
+    "theme.docs.sidebar.expandButtonAriaLabel": {
+        "message": "Mở rộng thanh bên"
+    },
+    "theme.ErrorPageContent.tryAgain": {
+        "message": "Thử lại"
+    },
+    "theme.common.skipToMainContent": {
+        "message": "Chuyển đến nội dung chính"
+    },
+    "theme.tags.tagsPageTitle": {
+        "message": "Thẻ"
+    },
+    "theme.unlistedContent.title": {
+        "message": "Trang không được liệt kê"
+    },
+    "theme.unlistedContent.message": {
+        "message": "Trang này không được liệt kê. Các công cụ tìm kiếm sẽ không lập chỉ mục nó, và chỉ có người dùng có liên kết trực tiếp mới có thể truy cập vào nó."
+    }
+}

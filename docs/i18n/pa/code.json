@@ -1,0 +1,218 @@
+{
+    "theme.ErrorPageContent.title": {
+        "message": "ਇਹ ਪੇਜ ਕ੍ਰੈਸ਼ ਹੋ ਗਿਆ ਹੈ।"
+    },
+    "theme.blog.archive.title": {
+        "message": "ਆਰਕਾਈਵ"
+    },
+    "theme.blog.archive.description": {
+        "message": "ਆਰਕਾਈਵ"
+    },
+    "theme.BackToTopButton.buttonAriaLabel": {
+        "message": "ਉੱਪਰ ਸਕਰੋਲ ਵਾਪਸ ਜਾਓ"
+    },
+    "theme.blog.paginator.navAriaLabel": {
+        "message": "ਬਲੌਗ ਸੂਚੀ ਸਫ਼ਾ ਨੇਵੀਗੇਸ਼ਨ"
+    },
+    "theme.blog.paginator.newerEntries": {
+        "message": "ਨਵੇਂ ਐਂਟਰੀਜ਼"
+    },
+    "theme.blog.paginator.olderEntries": {
+        "message": "ਪੁਰਾਣੇ ਐਂਟਰੀਜ਼"
+    },
+    "theme.blog.post.paginator.navAriaLabel": {
+        "message": "ਬਲੌਗ ਪੋਸਟ ਪੇਜ ਨੈਵੀਗੇਸ਼ਨ"
+    },
+    "theme.blog.post.paginator.newerPost": {
+        "message": "ਨਵਾਂ ਪੋਸਟ"
+    },
+    "theme.blog.post.paginator.olderPost": {
+        "message": "ਪੁਰਾਣਾ ਪੋਸਟ"
+    },
+    "theme.blog.post.plurals": {
+        "message": "ਇੱਕ ਪੋਸਟ|{count} ਪੋਸਟਾਂ"
+    },
+    "theme.blog.tagTitle": {
+        "message": "\"{tagName}\" ਨਾਲ ਟੈਗ ਕੀਤੇ {nPosts} ਪੋਸਟ"
+    },
+    "theme.tags.tagsPageLink": {
+        "message": "ਸਾਰੇ ਟੈਗ ਵੇਖੋ"
+    },
+    "theme.docs.breadcrumbs.navAriaLabel": {
+        "message": "ਬ੍ਰੈੱਡਕਰੰਬਸ"
+    },
+    "theme.colorToggle.ariaLabel": {
+        "message": "ਡਾਰਕ ਅਤੇ ਲਾਈਟ ਮੋਡ ਵਿਚ ਸਿਫਟ ਕਰੋ (ਮੌਜੂਦਾ {mode})"
+    },
+    "theme.colorToggle.ariaLabel.mode.dark": {
+        "message": "ਗੂੜ੍ਹਾ ਮੋਡ"
+    },
+    "theme.colorToggle.ariaLabel.mode.light": {
+        "message": "ਹਲਕਾ ਮੋਡ"
+    },
+    "theme.docs.paginator.navAriaLabel": {
+        "message": "ਡੌਕ ਪੇਜ਼"
+    },
+    "theme.docs.paginator.previous": {
+        "message": "ਪਿਛਲਾ"
+    },
+    "theme.docs.paginator.next": {
+        "message": "ਅਗਲਾ"
+    },
+    "theme.docs.DocCard.categoryDescription.plurals": {
+        "message": "'{count} ਚੀਜ਼ਾਂ'"
+    },
+    "theme.docs.tagDocListPageTitle.nDocsTagged": {
+        "message": "'ਇੱਕ ਡਾਕ ਟੈਗ ਕੀਤਾ|{count} ਡਾਕਾਂ ਨੂੰ ਟੈਗ ਕੀਤਾ ਗਿਆ'"
+    },
+    "theme.docs.tagDocListPageTitle": {
+        "message": "\"{tagName}\" ਨਾਲ {nDocsTagged} ਟੈਗ ਕੀਤੇ ਗਏ ਹਨ"
+    },
+    "theme.docs.versionBadge.label": {
+        "message": "संस्करण: {versionLabel}"
+    },
+    "theme.docs.versions.unreleasedVersionLabel": {
+        "message": "ਇਹ {siteTitle} {versionLabel} ਵਰਜਨ ਲਈ ਰਿਲੀਜ਼ ਨਾ ਕੀਤੀ ਦਸਤਾਵੇਜ਼ੀਕਰਣ ਹੈ।"
+    },
+    "theme.docs.versions.unmaintainedVersionLabel": {
+        "message": "ਇਹ ਡੌਕੂਮੈਂਟੇਸ਼ਨ {siteTitle} {versionLabel} ਲਈ ਹੈ, ਜਿਸ ਨੂੰ ਹੁਣ ਵਧੇਰੇ ਸਰਗਰਮੀ ਦਾ ਪਾਲਣ ਨਹੀਂ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ।"
+    },
+    "theme.docs.versions.latestVersionSuggestionLabel": {
+        "message": "ਅਦਿਆਨਤ ਡਾਕੂਮੈਂਟੇਸ਼ਨ ਲਈ, {latestVersionLink} ({versionLabel}) ਦੇਖੋ."
+    },
+    "theme.docs.versions.latestVersionLinkLabel": {
+        "message": "ਤਾਜ਼ਾ ਵਰਜ਼ਨ"
+    },
+    "theme.common.editThisPage": {
+        "message": "ਇਸ ਪੰਨੇ ਨੂੰ ਸੋਧੋ"
+    },
+    "theme.common.headingLinkTitle": {
+        "message": "'{heading} ਨਾਲ ਸਿੱਧਾ ਜੋੜ'"
+    },
+    "theme.lastUpdated.atDate": {
+        "message": "{ਤਾਰੀਖ} 'ਤੇ"
+    },
+    "theme.lastUpdated.byUser": {
+        "message": "ਦੁਆਰਾ {user}"
+    },
+    "theme.lastUpdated.lastUpdatedAtBy": {
+        "message": "ਆਖਰੀ ਅਪਡੇਟ {atDate}{byUser}"
+    },
+    "theme.NotFound.title": {
+        "message": "ਪੇਜ ਨਹੀਂ ਮਿਲ ਰਿਹਾ"
+    },
+    "theme.navbar.mobileVersionsDropdown.label": {
+        "message": "ਵਰਜ਼ਨਜ਼"
+    },
+    "theme.tags.tagsListLabel": {
+        "message": "ਟੈਗ:"
+    },
+    "theme.AnnouncementBar.closeButtonAriaLabel": {
+        "message": "ਬੰਦ ਕਰੋ"
+    },
+    "theme.admonition.caution": {
+        "message": "ਸਾਵਧਾਨ"
+    },
+    "theme.admonition.danger": {
+        "message": "ਖਤਰਾ"
+    },
+    "theme.admonition.info": {
+        "message": "ਜਾਣਕਾਰੀ"
+    },
+    "theme.admonition.note": {
+        "message": "ਨੋਟ"
+    },
+    "theme.admonition.tip": {
+        "message": "ਸੁਝਾਅ"
+    },
+    "theme.admonition.warning": {
+        "message": "ਚੇਤਾਵਨੀ"
+    },
+    "theme.blog.sidebar.navAriaLabel": {
+        "message": "ਬਲੌਗ ਦੇ ਹਾਲੀ ਵਾਲੇ ਪੋਸਟਾਂ ਦਾ ਨੈਵੀਗੇਸ਼ਨ"
+    },
+    "theme.CodeBlock.wordWrapToggle": {
+        "message": "ਸ਼ਬਦ ਲੱਪੇਟਣਾ ਤੋਗਲ ਕਰੋ"
+    },
+    "theme.CodeBlock.copied": {
+        "message": "ਨਕਲ ਕੀਤੀ"
+    },
+    "theme.CodeBlock.copyButtonAriaLabel": {
+        "message": "ਕੋਡ ਨੂੰ ਕਲਿਪਬੋਰਡ 'ਤੇ ਨਕਲ ਕਰੋ"
+    },
+    "theme.CodeBlock.copy": {
+        "message": "ਕਾਪੀ"
+    },
+    "theme.DocSidebarItem.expandCategoryAriaLabel": {
+        "message": "'{label}' ਸਾਈਡਬਾਰ ਸ਼੍ਰੇਣੀ ਖੋਲ੍ਹੋ"
+    },
+    "theme.DocSidebarItem.collapseCategoryAriaLabel": {
+        "message": "'{label}' ਸ਼੍ਰੇਣੀ ਨੂੰ ਸਮੇਟੋ"
+    },
+    "theme.NavBar.navAriaLabel": {
+        "message": "ਮੁੱਖ"
+    },
+    "theme.NotFound.p1": {
+        "message": "ਅਸੀਂ ਤੁਹਾਨੂੰ ਜੋ ਕੁਝ ਲੱਭ ਰਹੇ ਸੀ, ਉਹ ਸਾਨੂੰ ਨਹੀਂ ਮਿਲਿਆ."
+    },
+    "theme.NotFound.p2": {
+        "message": "ਕਿਰਪਾ ਕਰਕੇ ਉਸ ਸਾਈਟ ਦੇ ਮਾਲਕ ਨੂੰ ਸੰਪਰਕ ਕਰੋ ਜਿਸ ਨੇ ਤੁਹਾਨੂੰ ਮੂਲ URL ਨਾਲ ਜੋੜਿਆ ਸੀ ਅਤੇ ਉਨ੍ਹਾਂ ਨੂੰ ਦੱਸੋ ਕਿ ਉਨ੍ਹਾਂ ਦਾ ਲਿੰਕ ਟੁੱਟ ਗਿਆ ਹੈ।"
+    },
+    "theme.TOCCollapsible.toggleButtonLabel": {
+        "message": "ਇਸ ਪੰਨੇ ਤੇ"
+    },
+    "theme.navbar.mobileLanguageDropdown.label": {
+        "message": "ਭਾਸ਼ਾਵਾਂ"
+    },
+    "theme.blog.post.readMore": {
+        "message": "ਹੋਰ ਪੜ੍ਹੋ"
+    },
+    "theme.blog.post.readMoreLabel": {
+        "message": "{title} ਬਾਰੇ ਹੋਰ ਪੜ੍ਹੋ"
+    },
+    "theme.docs.breadcrumbs.home": {
+        "message": "ਮੁੱਖ ਪੰਨਾ"
+    },
+    "theme.blog.post.readingTime.plurals": {
+        "message": "'ਇਕ ਮਿੰਟ ਪੜ੍ਹਨ ਲਈ|{readingTime} ਮਿੰਟ ਪੜ੍ਹਨ ਲਈ'"
+    },
+    "theme.docs.sidebar.collapseButtonTitle": {
+        "message": "ਸਾਈਡਬਾਰ ਸਮੇਟੋ"
+    },
+    "theme.docs.sidebar.collapseButtonAriaLabel": {
+        "message": "ਸਾਈਡਬਾਰ ਕੋਲੇਪਸ ਕਰੋ"
+    },
+    "theme.docs.sidebar.closeSidebarButtonAriaLabel": {
+        "message": "ਨੈਵੀਗੇਸ਼ਨ ਬਾਰ ਬੰਦ ਕਰੋ"
+    },
+    "theme.docs.sidebar.navAriaLabel": {
+        "message": "ਡੌਕ ਸਾਈਡਬਾਰ"
+    },
+    "theme.docs.sidebar.toggleSidebarButtonAriaLabel": {
+        "message": "ਨੈਵੀਗੇਸ਼ਨ ਬਾਰ ਨੂੰ ਟੌਗਲ ਕਰੋ"
+    },
+    "theme.navbar.mobileSidebarSecondaryMenu.backButtonLabel": {
+        "message": "← ਮੁੱਖ ਮੇਨੂ ਵਾਲੇ ਵਾਪਸ"
+    },
+    "theme.docs.sidebar.expandButtonTitle": {
+        "message": "ਸਾਈਡਬਾਰ ਵਿਸਤ੍ਰਿਤ ਕਰੋ"
+    },
+    "theme.docs.sidebar.expandButtonAriaLabel": {
+        "message": "ਸਾਈਡਬਾਰ ਵੱਡਾ ਕਰੋ"
+    },
+    "theme.ErrorPageContent.tryAgain": {
+        "message": "ਮੁੜ ਕੋਸ਼ਿਸ ਕਰੋ"
+    },
+    "theme.common.skipToMainContent": {
+        "message": "ਮੁੱਖ ਸਮੱਗਰੀ 'ਤੇ ਜਾਓ"
+    },
+    "theme.tags.tagsPageTitle": {
+        "message": "ਟੈਗਜ਼"
+    },
+    "theme.unlistedContent.title": {
+        "message": "ਅਣਲਿਸਟਡ ਪੇਜ"
+    },
+    "theme.unlistedContent.message": {
+        "message": "ਇਹ ਪੇਜ ਨਾਮਜਤ ਨਹੀਂ ਹੈ। ਸਰਚ ਇੰਜੀਨ ਇਸ ਨੂੰ ਸੂਚੀਬੱਧ ਨਹੀਂ ਕਰਨਗੇ, ਅਤੇ ਸਿਰਫ ਉਹ ਯੂਜ਼ਰ ਹੀ ਇਸ ਨੂੰ ਪ੍ਰਾਪਤ ਕਰ ਸਕਦੇ ਹਨ ਜੋ ਇਸ ਦੇ ਸਿਧੇ ਲਿੰਕ ਨਾਲ ਹੋਣਗੇ।"
+    }
+}

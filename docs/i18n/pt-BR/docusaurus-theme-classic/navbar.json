@@ -1,0 +1,11 @@
+{
+    "title": {
+        "message": "Percorrer"
+    },
+    "logo.alt": {
+        "message": "Ícone do Aplicativo Roam"
+    },
+    "item.label.GitHub": {
+        "message": "GitHub"
+    }
+}

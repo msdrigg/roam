@@ -1,0 +1,11 @@
+{
+    "link.item.label.Github": {
+        "message": "Github"
+    },
+    "link.item.label.Discord": {
+        "message": "不和"
+    },
+    "copyright": {
+        "message": "版权© 2024 Roam, Inc."
+    }
+}

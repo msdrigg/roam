@@ -1,0 +1,218 @@
+{
+    "theme.ErrorPageContent.title": {
+        "message": "Esta página travou."
+    },
+    "theme.blog.archive.title": {
+        "message": "Arquivo"
+    },
+    "theme.blog.archive.description": {
+        "message": "Arquivo"
+    },
+    "theme.BackToTopButton.buttonAriaLabel": {
+        "message": "Role para voltar ao topo"
+    },
+    "theme.blog.paginator.navAriaLabel": {
+        "message": "Navegação da página da lista de blogs"
+    },
+    "theme.blog.paginator.newerEntries": {
+        "message": "Entradas Mais Recentes"
+    },
+    "theme.blog.paginator.olderEntries": {
+        "message": "Entradas Antigas"
+    },
+    "theme.blog.post.paginator.navAriaLabel": {
+        "message": "Navegação da página de postagens do blog"
+    },
+    "theme.blog.post.paginator.newerPost": {
+        "message": "Postagem Mais Recente"
+    },
+    "theme.blog.post.paginator.olderPost": {
+        "message": "Postagem Antiga"
+    },
+    "theme.blog.post.plurals": {
+        "message": "Uma publicação|{count} publicações"
+    },
+    "theme.blog.tagTitle": {
+        "message": "{nPosts} marcados com \"{tagName}\""
+    },
+    "theme.tags.tagsPageLink": {
+        "message": "Ver Todas as Tags"
+    },
+    "theme.docs.breadcrumbs.navAriaLabel": {
+        "message": "Migalhas de pão"
+    },
+    "theme.colorToggle.ariaLabel": {
+        "message": "Alternar entre modo escuro e modo claro (atualmente {mode})"
+    },
+    "theme.colorToggle.ariaLabel.mode.dark": {
+        "message": "modo escuro"
+    },
+    "theme.colorToggle.ariaLabel.mode.light": {
+        "message": "modo claro"
+    },
+    "theme.docs.paginator.navAriaLabel": {
+        "message": "Páginas de documentação"
+    },
+    "theme.docs.paginator.previous": {
+        "message": "Anterior"
+    },
+    "theme.docs.paginator.next": {
+        "message": "Próximo"
+    },
+    "theme.docs.DocCard.categoryDescription.plurals": {
+        "message": "{count} itens"
+    },
+    "theme.docs.tagDocListPageTitle.nDocsTagged": {
+        "message": "Um documento marcado|{count} documentos marcados"
+    },
+    "theme.docs.tagDocListPageTitle": {
+        "message": "'{nDocsTagged} com \"{tagName}\"'"
+    },
+    "theme.docs.versionBadge.label": {
+        "message": "Versão: {versionLabel}"
+    },
+    "theme.docs.versions.unreleasedVersionLabel": {
+        "message": "Esta é a documentação não lançada para {siteTitle} versão {versionLabel}."
+    },
+    "theme.docs.versions.unmaintainedVersionLabel": {
+        "message": "Esta é a documentação para {siteTitle} {versionLabel}, que não está mais sendo ativamente mantida."
+    },
+    "theme.docs.versions.latestVersionSuggestionLabel": {
+        "message": "Para documentação atualizada, consulte o {latestVersionLink} ({versionLabel})."
+    },
+    "theme.docs.versions.latestVersionLinkLabel": {
+        "message": "última versão"
+    },
+    "theme.common.editThisPage": {
+        "message": "Edite esta página"
+    },
+    "theme.common.headingLinkTitle": {
+        "message": "Link direto para {título}"
+    },
+    "theme.lastUpdated.atDate": {
+        "message": "em {data}"
+    },
+    "theme.lastUpdated.byUser": {
+        "message": "por {user}"
+    },
+    "theme.lastUpdated.lastUpdatedAtBy": {
+        "message": "Última atualização{atDate}{byUser}"
+    },
+    "theme.NotFound.title": {
+        "message": "Página Não Encontrada"
+    },
+    "theme.navbar.mobileVersionsDropdown.label": {
+        "message": "Versões"
+    },
+    "theme.tags.tagsListLabel": {
+        "message": "Tags:"
+    },
+    "theme.AnnouncementBar.closeButtonAriaLabel": {
+        "message": "Fechar"
+    },
+    "theme.admonition.caution": {
+        "message": "cuidado"
+    },
+    "theme.admonition.danger": {
+        "message": "perigo"
+    },
+    "theme.admonition.info": {
+        "message": "informação"
+    },
+    "theme.admonition.note": {
+        "message": "nota"
+    },
+    "theme.admonition.tip": {
+        "message": "gorjeta"
+    },
+    "theme.admonition.warning": {
+        "message": "aviso"
+    },
+    "theme.blog.sidebar.navAriaLabel": {
+        "message": "Navegação de posts recentes do blog"
+    },
+    "theme.CodeBlock.wordWrapToggle": {
+        "message": "Alternar quebra de linha"
+    },
+    "theme.CodeBlock.copied": {
+        "message": "Copiado"
+    },
+    "theme.CodeBlock.copyButtonAriaLabel": {
+        "message": "Copiar código para a área de transferência"
+    },
+    "theme.CodeBlock.copy": {
+        "message": "Copiar"
+    },
+    "theme.DocSidebarItem.expandCategoryAriaLabel": {
+        "message": "Expanda a categoria da barra lateral '{label}'"
+    },
+    "theme.DocSidebarItem.collapseCategoryAriaLabel": {
+        "message": "Recolher a categoria '{label}' na barra lateral"
+    },
+    "theme.NavBar.navAriaLabel": {
+        "message": "Principal"
+    },
+    "theme.NotFound.p1": {
+        "message": "Não conseguimos encontrar o que você estava procurando."
+    },
+    "theme.NotFound.p2": {
+        "message": "Por favor, entre em contato com o proprietário do site que te direcionou para a URL original e informe a eles que o link está quebrado."
+    },
+    "theme.TOCCollapsible.toggleButtonLabel": {
+        "message": "Nesta página"
+    },
+    "theme.navbar.mobileLanguageDropdown.label": {
+        "message": "Idiomas"
+    },
+    "theme.blog.post.readMore": {
+        "message": "Leia Mais"
+    },
+    "theme.blog.post.readMoreLabel": {
+        "message": "Leia mais sobre {title}"
+    },
+    "theme.docs.breadcrumbs.home": {
+        "message": "Página inicial"
+    },
+    "theme.blog.post.readingTime.plurals": {
+        "message": "Leitura de um minuto|Leitura de {readingTime} minutos"
+    },
+    "theme.docs.sidebar.collapseButtonTitle": {
+        "message": "Recolher barra lateral"
+    },
+    "theme.docs.sidebar.collapseButtonAriaLabel": {
+        "message": "Recolher barra lateral"
+    },
+    "theme.docs.sidebar.closeSidebarButtonAriaLabel": {
+        "message": "Fechar barra de navegação"
+    },
+    "theme.docs.sidebar.navAriaLabel": {
+        "message": "Barra lateral de documentos"
+    },
+    "theme.docs.sidebar.toggleSidebarButtonAriaLabel": {
+        "message": "Alternar barra de navegação"
+    },
+    "theme.navbar.mobileSidebarSecondaryMenu.backButtonLabel": {
+        "message": "← Voltar para o menu principal"
+    },
+    "theme.docs.sidebar.expandButtonTitle": {
+        "message": "Expandir barra lateral"
+    },
+    "theme.docs.sidebar.expandButtonAriaLabel": {
+        "message": "Expandir barra lateral"
+    },
+    "theme.ErrorPageContent.tryAgain": {
+        "message": "Tente novamente"
+    },
+    "theme.common.skipToMainContent": {
+        "message": "Pular para o conteúdo principal"
+    },
+    "theme.tags.tagsPageTitle": {
+        "message": "Etiquetas"
+    },
+    "theme.unlistedContent.title": {
+        "message": "Página não listada"
+    },
+    "theme.unlistedContent.message": {
+        "message": "Esta página não está listada. Os motores de busca não irão indexá-la, e apenas usuários que possuem um link direto podem acessá-la."
+    }
+}

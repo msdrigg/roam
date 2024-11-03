@@ -1,0 +1,218 @@
+{
+    "theme.ErrorPageContent.title": {
+        "message": "Ang pahinang ito ay nag-crash."
+    },
+    "theme.blog.archive.title": {
+        "message": "Arkiba"
+    },
+    "theme.blog.archive.description": {
+        "message": "Arkibo"
+    },
+    "theme.BackToTopButton.buttonAriaLabel": {
+        "message": "I-scroll pabalik sa itaas"
+    },
+    "theme.blog.paginator.navAriaLabel": {
+        "message": "Pag-navigate ng pahina ng listahan ng blog"
+    },
+    "theme.blog.paginator.newerEntries": {
+        "message": "Mas Bagong mga Entry"
+    },
+    "theme.blog.paginator.olderEntries": {
+        "message": "Mga Nakaraang Entry"
+    },
+    "theme.blog.post.paginator.navAriaLabel": {
+        "message": "Pag-navigate sa pahina ng post sa blog"
+    },
+    "theme.blog.post.paginator.newerPost": {
+        "message": "Bagong Post"
+    },
+    "theme.blog.post.paginator.olderPost": {
+        "message": "Mas Lumang Post"
+    },
+    "theme.blog.post.plurals": {
+        "message": "Isang post|{count} na mga post"
+    },
+    "theme.blog.tagTitle": {
+        "message": "{nPosts} na may tag na \"{tagName}\""
+    },
+    "theme.tags.tagsPageLink": {
+        "message": "Tingnan ang Lahat ng mga Tag"
+    },
+    "theme.docs.breadcrumbs.navAriaLabel": {
+        "message": "Mga tinapay na durog"
+    },
+    "theme.colorToggle.ariaLabel": {
+        "message": "Lumipat sa pagitan ng madilim at maliwanag na mode (kasalukuyang {mode})"
+    },
+    "theme.colorToggle.ariaLabel.mode.dark": {
+        "message": "madilim na mode"
+    },
+    "theme.colorToggle.ariaLabel.mode.light": {
+        "message": "mode ng liwanag"
+    },
+    "theme.docs.paginator.navAriaLabel": {
+        "message": "Mga pahina ng Docs"
+    },
+    "theme.docs.paginator.previous": {
+        "message": "Nakaraan"
+    },
+    "theme.docs.paginator.next": {
+        "message": "Susunod"
+    },
+    "theme.docs.DocCard.categoryDescription.plurals": {
+        "message": "{count} na mga item"
+    },
+    "theme.docs.tagDocListPageTitle.nDocsTagged": {
+        "message": "Isang doc ang natag|{count} docs ang natag"
+    },
+    "theme.docs.tagDocListPageTitle": {
+        "message": "'{nDocsTagged} na may tag na \"{tagName}\"'"
+    },
+    "theme.docs.versionBadge.label": {
+        "message": "Bersyon: {versionLabel}"
+    },
+    "theme.docs.versions.unreleasedVersionLabel": {
+        "message": "Ito ay hindi pa nailalabas na dokumentasyon para sa {siteTitle} {versionLabel} na bersyon."
+    },
+    "theme.docs.versions.unmaintainedVersionLabel": {
+        "message": "Ito ay dokumentasyon para sa {siteTitle} {versionLabel}, na hindi na aktibong pinapanatili."
+    },
+    "theme.docs.versions.latestVersionSuggestionLabel": {
+        "message": "Para sa pinakabagong dokumentasyon, tingnan ang {latestVersionLink} ({versionLabel})."
+    },
+    "theme.docs.versions.latestVersionLinkLabel": {
+        "message": "pinakabagong bersyon"
+    },
+    "theme.common.editThisPage": {
+        "message": "I-edit ang pahinang ito"
+    },
+    "theme.common.headingLinkTitle": {
+        "message": "Direktang link sa {heading}"
+    },
+    "theme.lastUpdated.atDate": {
+        "message": "sa {petsa}"
+    },
+    "theme.lastUpdated.byUser": {
+        "message": "ng {user}"
+    },
+    "theme.lastUpdated.lastUpdatedAtBy": {
+        "message": "Huling na-update{atDate}{byUser}"
+    },
+    "theme.NotFound.title": {
+        "message": "Hindi Natagpuan ang Pahina"
+    },
+    "theme.navbar.mobileVersionsDropdown.label": {
+        "message": "Mga Bersyon"
+    },
+    "theme.tags.tagsListLabel": {
+        "message": "Mga Tag:"
+    },
+    "theme.AnnouncementBar.closeButtonAriaLabel": {
+        "message": "Isara"
+    },
+    "theme.admonition.caution": {
+        "message": "ingat"
+    },
+    "theme.admonition.danger": {
+        "message": "panganib"
+    },
+    "theme.admonition.info": {
+        "message": "impormasyon"
+    },
+    "theme.admonition.note": {
+        "message": "tala"
+    },
+    "theme.admonition.tip": {
+        "message": "pabuya"
+    },
+    "theme.admonition.warning": {
+        "message": "babala"
+    },
+    "theme.blog.sidebar.navAriaLabel": {
+        "message": "Pag-navigate sa mga kamakailang post sa blog"
+    },
+    "theme.CodeBlock.wordWrapToggle": {
+        "message": "Palitan ang pagkakabalot ng salita"
+    },
+    "theme.CodeBlock.copied": {
+        "message": "Nakopya"
+    },
+    "theme.CodeBlock.copyButtonAriaLabel": {
+        "message": "Kopyahin ang code sa clipboard"
+    },
+    "theme.CodeBlock.copy": {
+        "message": "Kopyahin"
+    },
+    "theme.DocSidebarItem.expandCategoryAriaLabel": {
+        "message": "Palawakin ang kategorya ng sidebar na '{label}'"
+    },
+    "theme.DocSidebarItem.collapseCategoryAriaLabel": {
+        "message": "I-collapse ang sidebar na kategorya '{label}'"
+    },
+    "theme.NavBar.navAriaLabel": {
+        "message": "Pangunahin"
+    },
+    "theme.NotFound.p1": {
+        "message": "Hindi kami makahanap ng hinahanap mo."
+    },
+    "theme.NotFound.p2": {
+        "message": "Mangyaring makipag-ugnayan sa may-ari ng site na nag-link sa iyo sa orihinal na URL at ipaalam sa kanila na sira ang kanilang link."
+    },
+    "theme.TOCCollapsible.toggleButtonLabel": {
+        "message": "Sa pahinang ito"
+    },
+    "theme.navbar.mobileLanguageDropdown.label": {
+        "message": "Mga wika"
+    },
+    "theme.blog.post.readMore": {
+        "message": "Magbasa Pa"
+    },
+    "theme.blog.post.readMoreLabel": {
+        "message": "Magbasa pa tungkol sa {title}"
+    },
+    "theme.docs.breadcrumbs.home": {
+        "message": "Pahina ng tahanan"
+    },
+    "theme.blog.post.readingTime.plurals": {
+        "message": "Isang min na pagbasa|{readingTime} min na pagbasa"
+    },
+    "theme.docs.sidebar.collapseButtonTitle": {
+        "message": "I-collapse ang sidebar"
+    },
+    "theme.docs.sidebar.collapseButtonAriaLabel": {
+        "message": "I-collapse ang sidebar"
+    },
+    "theme.docs.sidebar.closeSidebarButtonAriaLabel": {
+        "message": "Isara ang bar ng navigasyon"
+    },
+    "theme.docs.sidebar.navAriaLabel": {
+        "message": "Bar ng Docs"
+    },
+    "theme.docs.sidebar.toggleSidebarButtonAriaLabel": {
+        "message": "Palitan ang navigation bar"
+    },
+    "theme.navbar.mobileSidebarSecondaryMenu.backButtonLabel": {
+        "message": "← Bumalik sa pangunahing menu"
+    },
+    "theme.docs.sidebar.expandButtonTitle": {
+        "message": "Palawakin ang sidebar"
+    },
+    "theme.docs.sidebar.expandButtonAriaLabel": {
+        "message": "Palawakin ang sidebar"
+    },
+    "theme.ErrorPageContent.tryAgain": {
+        "message": "Subukan muli"
+    },
+    "theme.common.skipToMainContent": {
+        "message": "Laktawan patungo sa pangunahing nilalaman"
+    },
+    "theme.tags.tagsPageTitle": {
+        "message": "Mga tag"
+    },
+    "theme.unlistedContent.title": {
+        "message": "Pahinang hindi nakalista"
+    },
+    "theme.unlistedContent.message": {
+        "message": "Ang pahinang ito ay hindi nakalista. Hindi ito i-index ng mga search engine, at tanging mga gumagamit na may direktang link lamang ang maaaring maka-access dito."
+    }
+}
