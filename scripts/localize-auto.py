@@ -132,7 +132,7 @@ def translate_docusaurus_page(page: str, language: str):
         messages=[
             {
                 "role": "system",
-                "content": "You are a helpful assistant who helps provide translations for developers for mdx files. Mdx files are markdown files that can contain JSX. Please translate the strings as a whole respecting the grammar of the page and trying to preserve the original meaning of the page as well as keeping the jsx formatted correctly. You will only return a translation for the given page and no other information or context. Please do not add any quotes or \"```\" marks around the translated page. Also please don't translate `true/false` or the parameter names within the frontmatter header. Please do not translate any of the slugs or links or any piece of the `import` lines",
+                "content": 'You are a helpful assistant who helps provide translations for developers for mdx files. Mdx files are markdown files that can contain JSX. Please translate the strings as a whole respecting the grammar of the page and trying to preserve the original meaning of the page as well as keeping the jsx formatted correctly. You will only return a translation for the given page and no other information or context. Please do not add any quotes or "```" marks around the translated page. Also please don\'t translate `true/false` or the parameter names within the frontmatter header. Please do not translate any of the slugs or links or any piece of the `import` lines',
             },
             {
                 "role": "user",
@@ -163,7 +163,12 @@ def translate_docusaurus_strings_file_content(
         ).hexdigest()
 
         if translated_hash != current_hash and key in existing_data:
+            print(
+                f"Key has changed, retranslating {translated_hash} != {current_hash} {strings_translation}"
+            )
             del existing_data[key]
+        else:
+            print("Key has not changed, skipping")
 
         if key not in existing_data:
             print(f"Translating {key} into {language}")
@@ -171,7 +176,6 @@ def translate_docusaurus_strings_file_content(
                 seed_data[key], language
             )
             print(f"Translated {key} into {existing_data[key]}")
-            print(existing_data)
         else:
             print(f"Skipping {key} as it already exists")
 
@@ -195,16 +199,20 @@ def translate_docusaurus_strings_file(
     print(f"Translating {relative_file_path} into {language}")
 
     locale_dir = os.path.join(translation_dir, language)
+    file_path = os.path.join(locale_dir, relative_file_path)
 
-    parent_dir = os.path.dirname(os.path.join(
-        locale_dir, relative_file_path
-    ))
+    parent_dir = os.path.dirname(file_path)
     if not os.path.exists(parent_dir):
         os.makedirs(parent_dir)
 
+    # Create the file if it doesn't exist
+
+    with open(file_path, "a", encoding="utf-8") as file_data:
+        pass
+
     with open(
         os.path.join(locale_dir, relative_file_path),
-        "w+",
+        "r+",
         encoding="utf-8",
     ) as file_data:
         data = file_data.read()
@@ -216,6 +224,7 @@ def translate_docusaurus_strings_file(
 
         file_data.seek(0)
         json.dump(new_navbar, file_data, ensure_ascii=False, indent=4)
+        file_data.truncate()
 
 
 def unify_strings_cache(strings_translation: dict, file_path: str):
@@ -249,7 +258,7 @@ def localize_docusaurus(docs_dir: str):
         locales = [
             locale.strip().replace('"', "")
             for locale in locales.split(",")
-            if locale.strip().replace('"', "") != "en" and locale.strip().replace('"', "") != "ar" and locale.strip().replace('"', "") != "de"  and locale.strip().replace('"', "") != "es"
+            if locale.strip().replace('"', "") != "en"
         ]
         print(f"Locales found: {locales}")
 
@@ -258,7 +267,11 @@ def localize_docusaurus(docs_dir: str):
     translation_dir = os.path.join(docs_dir, "i18n")
 
     with open(
-        os.path.join(translation_dir, "file_hashes.json"), "w+", encoding="utf-8"
+        os.path.join(translation_dir, "file_hashes.json"), "a", encoding="utf-8"
+    ) as file_data:
+        pass
+    with open(
+        os.path.join(translation_dir, "file_hashes.json"), "r", encoding="utf-8"
     ) as file_data:
         data = file_data.read()
         file_hash_state = json.loads(data) if data else {}
@@ -282,7 +295,11 @@ def localize_docusaurus(docs_dir: str):
                 }
 
     with open(
-        os.path.join(translation_dir, "strings.json"), "w+", encoding="utf-8"
+        os.path.join(translation_dir, "strings.json"), "a", encoding="utf-8"
+    ) as file_data:
+        pass
+    with open(
+        os.path.join(translation_dir, "strings.json"), "r", encoding="utf-8"
     ) as file_data:
         data = file_data.read()
         strings_translation = json.loads(data) if data else {}
@@ -312,6 +329,8 @@ def localize_docusaurus(docs_dir: str):
             localization,
         )
 
+        next_file_hash_state = file_hash_state.copy()
+
         # Translate the pages
         for file_path, file_info in file_translate_map.items():
             relative_file_path = file_info["relative_path"]
@@ -324,26 +343,33 @@ def localize_docusaurus(docs_dir: str):
             if not os.path.exists(parent_path):
                 os.makedirs(parent_path)
             has_current = os.path.exists(full_path)
-            with open(
-                full_path,
-                "w+",
-                encoding="utf-8",
-            ) as file_data:
-                if (
-                    file_hash_state.get(relative_file_path)
-                    != file_hash
-                    or not has_current
-                ):
-                    print(f"Translating page at {relative_file_path}")
+            # Create if not exists
+            if not has_current:
+                with open(
+                    full_path,
+                    "a",
+                    encoding="utf-8",
+                ) as file_data:
+                    pass
+
+            if file_hash_state.get(relative_file_path) != file_hash or not has_current:
+                print(f"Translating page at {relative_file_path}")
+                with open(
+                    full_path,
+                    "w",
+                    encoding="utf-8",
+                ) as file_data:
                     translated_data = translate_docusaurus_page(data, localization)
                     file_data.write(translated_data)
-                    file_hash_state[relative_file_path] = file_hash
+                    next_file_hash_state[relative_file_path] = file_hash
+            else:
+                print(f"Skipping page at {relative_file_path} as it is up to date")
 
     # Persist the file hash state and the strings translation
     with open(
         os.path.join(translation_dir, "file_hashes.json"), "w", encoding="utf-8"
     ) as file_data:
-        json.dump(file_hash_state, file_data, indent=4, ensure_ascii=False)
+        json.dump(next_file_hash_state, file_data, indent=4, ensure_ascii=False)
 
     unify_strings_cache(
         strings_translation,

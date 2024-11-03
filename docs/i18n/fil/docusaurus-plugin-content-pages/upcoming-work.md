@@ -2,155 +2,147 @@
 hide_table_of_contents: true
 ---
 
-# Pinakabagong Pagtatrabaho sa Roam
+# Ang pinaka-kamakailan na trabaho sa roam
 
-# Paparating na mga Pag-update sa Roam
+# Ang mga darating na Roam Updates
 
-## Pangkalahatang Mga Pabutihin
+- Nagdagdag ng kontrol na mga widget: Play, Mute, Change Volume at Select from Control center!
 
--   Isapanahon ang mga pagsasalin para tiyakin na lahat ay 100%
--   Dokumentuhin ang bot ng discord support at baka gayahin ito sa loob ng isang aklatan
--   Gumawa ng pasadyang menu bar icon
+## Roadmap
 
--   Paano gumawa ng voice-to-text o mga pangkalahatang voice commands?
-    - Kailangang balikan at suriin ang mga Roku voice remote udp protocol
-    - O kailangan magdagdag ng pasadyang text-to-speech sa remote button engine?
+- I-update ang paghawak ng keyboard upang suportahan ang ecp-textedit sa `KeyboardEntry`
+    - Ipakita ang keyboard kapag binuksan ang textedit
+    - Itago ang keyboard kapag naisara ang textedit
+    - Siguraduhin na gumagana ang pag-paste + select/delete sa field ng textedit
+    - Gamitin ang kasalukuyang binagong textfield kung hindi suportado ang ecp-textedit, gamitin ang standard na textfield kung ito ay
+    - Sa macOS, suportahan ang paste kasama ang cmdP, copy/cut kasama ang cmdX + cmdC
+    - Kung hindi suportado ang ecp-textedit, bumalik sa kasalukuyang ugali ng pagpapadala ng mga key
+    - Sa mga macOS ipakita ang ibabang text field kapag pinagana ang textedit 
+    - Sa mga macOS payagan ang cmd+v at cmd+c at cmd+x para mag-kopya paste mula/sa buffer
 
--   Magdagdag ng +30 segundo mute timer na may countdown
-    -   Higpitan ang mute para itigil ang tunog sa loob ng +30 segundo
-    -   Mag-click muli para kanselahin ang mute
-    -   Magpakita ng isang top bar notification
-        -   Ang progress bar ay mayroong isang linear progress indicator
-        -   Ang progress bar ay may dalawang mga button: +30 segundo, kanselahin
-        -   Ipakita sa ilalim ng pangunahing button panel para malapit ito sa mute
-    -   Gawin ang +30 na configurable sa 30, 15, 60 segundo mute options
+- Magdagdag ng +30 segundo mute timer kasama ang bilang pababa
+    - Higitan ang mute para i-mute ng +30 segundo
+    - Mag-click muli upang hindi i-mute at kanselahin ito
+    - Ipakita ang isang tagapagpahiwatig sa ibaba ng linya ng mute button
+        - Ang progress bar ay may linear na tagapagsulong ng tagapagsulong
+        - May dalawang button ang progress bar: +30 segundo, kanselahin
+        - Ipakita sa ibaba ng pangunahing panel ng button para malapit ito sa mute
+    - Gawin ang +30 maaaring i-configure sa 30, 15, 60 segundo na mga opsyon ng mute
 
--   Awtomatikong Madakmat ang Screenshot
+- Magbigay ng isang opsyonal na Minimalist view sa iOS na gayahin nang malapit ang view ng siri remote
+    - https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
+    - Sumusuporta din sa mga gesture ng visionos...
 
-    -   Gamitin ang UITests para makakakuha ng aktwal na screenshots
-    -   Gamitin ang AppScreens https://appscreens.com/user/project/DRxTFSSIQtuU0y9Eew4w para makuha ang mga screenshots sa mga frame
-    -   O ang iba pa
-        -   https://www.figma.com/community/file/886620275115089774
-        -   https://www.figma.com/community/file/1071476530354359587/app-store-screenshots?searchSessionId=lxw3ep02-oubp844ov8
-        -   https://www.figma.com/community/file/1256854154932829222/free-app-store-screenshot-templates?searchSessionId=lxw3ep02-oubp844ov8
-        -   https://www.canva.com/templates/s/iphone/
+## Pangkalahatang Mga Ideya sa Hinaharap
 
--   Subukan ang iba pang mga keyboard hacks
-    -   GCKeyboard para sa isa
-    -   FocusEnvironment para sa 2
-    -   Siguraduhing ang anumang solusyon na ginagamit para sa iOS ay hindi masira ang text entry sa mga message/keyboard entry
-    
--   Isakatuparan ang iOS 18 AppIntents
-    -   Magdagdag ng control center app intents
-        -   Gamitin ang toggle para tumahimik/magpatugtog at mag-on/mag-off
-        -   Gamitin ang mga pindutan para sa lahat ng iba pa
-        -   Gamitin ang tamang purple shade
-        -   Gawing configurable tulad ng widgets
-        -   Gawing nagtatrabaho kasama ang action hint
-    -   Pagandahin ang pagkakita ni siri/spotlight sa mga nasa loob ng aking app?
-        -   Magdagdag ng universal links sa mga device para maituro ni siri ang mga ito?
-        -   Tiyakin na gumagana ang semantic search
-        -   Isakatuparan ang transferrable sa pamamagitan ng string/codeable para sa aking aplikasyon na mga entity
-            -   ProxyRepresentation
-            -   CodableRepresentation
--   Magbigay ng isang optional na Minimalist view sa iOS na maaring gayahin ang view ng siri remote
-    -   https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
-    -   Suportahan ang mga visionos gestures din ...
-    -   Kailangan mabuo muna ang textedit api
--   Magdagdag ng ibang event tracking sa mga ginagawa ng mga gumagamit sa kanilang mga device (I-konekta sa firebase analytics siguro?)
-    -   Itala kung sino ang gumagamit ng minimalist view, anong mga aksyon ang ginagawa nila, etc...
+- Sumulat ng isang blog post tungkol sa discord bot at ituro ang aking MessageView
+- Sumulat ng isang blog post tungkol sa auto-translation at logic sa paligid niyon
 
-## Pag-aayos ng Bug
+- Gumawa ng pasadyang icon ng menu bar
 
--   Alamin kung ang loop ng mga tawag sa `nextPacket` ay makatutulong.
-    -   Sa halip na umikot bawat 10ms at umaasa na tama ang timing, dapat ba akong mag-ikot sa mga natanggap na mga packet at subukang iskedyul ang mga ito sa oras na `10ms * globalSequenceNumber + startHostTime` at sampleTime sa `sequenceNumber * Int64(lastSampleTime.sampleRate) / packetsPerSec + startSampleTime`
-    -   Sa ganitong paraan maaari akong lumipat mula sa isang `for await` na loop sa oras sa isang `while !Task.isCancelled` loop na may kasamang `Task.sleep`.
-    -   Okay kaya kailangan nating mag-ikot bawat 10 ms at subukan na kunin ang huling packet at iskedyul ito sa oras na yon
-    -   Tuwing ginagawa namin ang audio sync
-        -   Mayroon tayong lastRenderTime + a sync packet
-        -   Tantiyahan ang bilang ng packet na dapat nating ipadala at + ang oras ng sync
-            -   Render Time + dagdag
+- Paano gawin ang voice-to-text o pangkalahatang mga utos ng boses?
+    - Kailangan reverse-engineer ang protocol ng roku voice remote udp
+    - O kailangan magdagdag ng pasadyang teksto-sa-talumpati sa remote button engine?
 
-## Pabutihin ang Testing
+- Automatikong Screenshot Capture
+
+    - Gamitin ang UITests upang makakuha ng aktwal na screenshots
+    - Gamitin ang AppScreens https://appscreens.com/user/project/DRxTFSSIQtuU0y9Eew4w upang makuha ang mga screenshot sa mga frame
+    - O ibang bagay
+        - https://www.figma.com/community/file/886620275115089774
+        - https://www.figma.com/community/file/1071476530354359587/app-store-screenshots?searchSessionId=lxw3ep02-oubp844ov8
+        - https://www.figma.com/community/file/1256854154932829222/free-app-store-screenshot-templates?searchSessionId=lxw3ep02-oubp844ov8
+        - https://www.canva.com/templates/s/iphone/
+
+- Subukan ang mga hack ng keyboard
+    - GCKeyboard para sa isa
+    - FocusEnvironment para sa 2
+    - Tiyakin na anuman ang solusyon na ginagamit para sa iOS hindi sinira ang pagpasok ng teksto sa mga mensahe / keyboard entry
+
+- Magdagdag ng ilang pagsubaybay sa kaganapan sa kung ano ang mga aksyon na tunay na ginagawa ng mga gumagamit sa kanilang mga device (kumonekta sa firebase analytics maybe?)
+    - Subaybayan kung sino ang gumagamit ng minimalist view, kung ano ang mga aksyon na ginagawa nila, atbp...
+
+## Ayusin ang mga error
+
+- Alamin kung ang loop ng mga tawag sa `nextPacket` ay may sentido.
+    - Sa halip na mag-loop sa bawat 10ms at umaasa na tama ang oras, dapat ba akong mag-loop sa natanggap na mga packet at sinusubukan na iskedyul ang mga ito sa host time `10ms * globalSequenceNumber + startHostTime` at sampleTime sa `sequenceNumber * Int64(lastSampleTime.sampleRate) / packetsPerSec + startSampleTime`
+    - Kaya kailangan kong mag-loop sa bawat 10 ms at subukan na kunin ang huling packet at pagtapos iskedyul ito sa panahon na iyon
+    - Tuwing gumagawa kami ng audio sync
+        - Mayroon tayong huling Render Time + isang sync na packet
+        - Tinataya ang bilang ng packet na dapat nating ipadala sa + ang oras ng sync
+            - Oras ng Render + karagdagang
+
+## Pagpapabuti ng Testing
 
 -   UI Tests
-    -   Test kung ang device ay nadagdag na ito ay lumalabas sa device picker at pinili ng roam
-    -   Test na ang user ay makakapunta sa settings -> devices
-    -   Test na ang user ay makakapunta sa settings -> messages
-    -   Test na ang user ay makakapunta sa settings -> about
-    -   Test na ang user ay makakapag-edit/delete ng mga device
-    -   Test na ang user ay makakapindot ng mga button kapag naidagdag na ang mga device
-    -   Test na ang user ang banner para sa walang mga device kapag ito ay lumalabas
-    -   Test na nakikita ng user ang applinks
-    -   Tumukoy sa swiftdat testingmodelcontainer para modelcontainers
-    -   Tumukoy dito https://medium.com/appledeveloperacademy-ufpe/how-to-implement-ui-tests-with-swiftui-a-few-examples-636708ee26ad para sa kung paano i-set up ang mga test
+    -   Subukan kapag nadagdag ang device na ito ay lumilitaw sa picker ng device at pinili ng roam
+    -   Subukan na ang user ay maaaring nag-navigate sa mga setting -> devices
+    -   Subukan na ang user ay maaaring nag-navigate sa mga setting -> messages
+    -   Subukan na ang user ay maaaring nag-navigate sa mga setting -> about
+    -   Subukan na ang user ay maaaring i-edit/delete devices
+    -   Subukan na ang user ay maaaring mag-click ng mga button kapag ang mga device ay idinagdag
+    -   Subukan na ang user nakakita ng banner para sa walang mga device kapag ito ay nagpakita
+    -   Subukan na ang user nakakita ng applinks
+    -   Tumukoy sa swiftdat testingmodelcontainer para sa modelcontainers
+    -   Tumukoy dito https://medium.com/appledeveloperacademy-ufpe/how-to-implement-ui-tests-with-swiftui-a-few-examples-636708ee26ad para sa kung paano mag-setup ng mga test
 
 ## App Clip
 
 -   AppClip
-    -   Magdagdag ng "getAShareableLinkToThisDevice" na button sa settings -> device
-        -   Pre-generate lahat ng 1.1M app clip codes at i-encode ang mga lokasyon ng ring (0.5GB)
-        -   Gumawa ng button na "Kunin ang shareable link sa device!" na may image preview sa app clip code (kulay ng roam)
-        -   I-download ang code + link at i-convert sa PNG sa device kapag ang lokasyon ng device ay nabago
-        -   Buksan ang code upang makita ang device bilang isang shared link sa isang larawan (may preview!)
-    -   Gawin rin na maaaring i-share ang aktwal na link sa device 
+    -   Magdagdag ng isang "getAShareableLinkToThisDevice" button sa settings -> device
+        - Pre-generate lahat ng 1.1M app clip codes at i-encode ang mga lokasyon ng ring (0.5GB)
+        - Gumawa ng isang button upang "Makakuha ng isang shareable link sa device!" kasama ang isang image preview sa app clip code (kulay ng roam)
+        - I-download ang code + link at i-convert sa PNG sa device kapag binago ang lokasyon ng device
+        - Magkaroon ng code upang buksan ang device bilang isang shared link sa isang imahe (kasama ang preview!)
+    - Gumawa rin ng aktwal na link ng device na shareable
 
-## Pabutihin ang user messaging patungkol sa info/status management
+## Pagpapabuti ng user messaging hinggil sa pamamahala ng info/status
 
--   I-update ang Info/status management para mas maayos na ma-handle ang hindi tiyak na kalagayan
-    -   Kapag na-disconnect, napili, napindot ang button, lumipat sa unahan, binuksan ang app -> Muling simulan ang reconnect loop kung na-disconnect
-    -   Ang reconnect loop ay upang ma-eksponensyal na backup patungan ang nagfa-fail na mga koneksyon (0.5s, doble, 10s backoff)
-    -   Kapag nakakonekta sa device, palaging i-disable ang mga babala ng network
-    -   Kung sinusubukan kumonekta sa device, o sinusubukang mag-on sa device, magpakita ng ikot na impormasyon na icon sa halip na gray dot
-    -   Kapag nag-on sa device at nagtagumpay, magpakita ng isang animasyon sa transisyon mula gray -> ikot -> luntian
-    -   Kung nag-on sa device gamit ang WOL at hindi nakakonekta pagkaraan ng 5 segundo, o kung nag-on ang device at agad na nabigo, magpakita ng isang babala sa ilalim ng wifi
-        -   "Hindi namin nagawang magising ang iyong Roku" (Alamin pa), (Huwag ng ipakita muli para sa device na ito), (X)
-        -   Alamin pa ipapakita ang ilang mga dahilan kung bakit
-            -   Hindi ka nakakonekta sa parehong network (Ipakita ang huling pangalan ng network ng device. Itanong kung naka-konekta ang user sa network na ito)
-            -   Ang iyong device ay nasa malalim na tulog (hindi kamakailan naputol) at hindi maaring magising
-                -   Ang iyong device hindi sumusuporta sa WWOL at nakakonekta sa wifi
-                -   Ang iyong device hindi sumusuporta sa WWOL o WOL
-            -   Hindi na-set up ang iyong network para maipadala namin ang mga utos na gisingin ang device
-    -   Reconnect loop = Eksponentiyal na pagtatangkang muli na kumonekta sa reconnect ECP
-        -   Reconnect ECP una
-        -   Makinig sa notify pangalawa
-            -   Hwgat +power-mode-changed, +textedit-opened, +textedit-tingi, +textedit-closed, +device-name-changed
-            -   Siguraduhin na ma-handle namin ang bawat isang mga request na ito at ang kanilang format…
-        -   Mag-refresh ng state ng device pangatlo
-        -   Mag-refresh ng query-textedit-state pang-apat
-            -   I-update ang state ng textedit
-        -   Mag-refresh ng mga icon ng device pang-lima
-    -   Sa lahat ng mga pagbabago pagkatapos mag-reconnect (sa pamamagitan ng notify o anuman)
-        -   I-update ang Device (nakaimbak) at DeviceState (volatile)
-    -   Pagkatapos ng pagka-reconnect/disconnect, mag-update ng online status sa remote view
+-   I-update ang pagmamaneho ng Info/status upang mas mahusay na hawakan ang mabagsik na estado
+    - Sa diskonekta, piliin, i-click ang button, ilipat sa harap, buksan ang app -> Muling simulan ang loop ng muling konekta kung naka-diskonekta
+    - Ang loop ng muling konekta ay upang ma-xponensiyal na gumalaw sa muling pagtatangkang muling magkonekta ng nabibigong mga koneksyon (0.5s, double, 10s backoff)
+    - Kapag nakakonekta sa device, palaging huwag paganahin ang mga babala sa network
+    - Kapag sinusubukan ma-konekta sa device, o sinusubukang isapang-enerhiya ang device, ipakita ang naglalaro ng impormasyong icon sa halip na gray dot
+    - Kapag nag-power on sa device at nagtagumpay, ipakita ang animation sa transition mula sa gray -> naglalaro -> berde
+    - Kapag nag-power on sa device na may WOL at hindi konektado pagkatapos ng 5 segundo, o kapag nag-power on ang device at agad na nabigo, ipakita ang isang babala ng mensahe sa ilalim ng isa sa wifi
+        - “Hindi kami nakapag-gising sa inyong Roku” (Malaman pa nang higit) (Huwag nang ipakita muli para sa device na ito), (X)
+        - Magpakita ng iba pang dahilan kung bakit
+            - Hindi ka konektado sa parehong network (Ipakita ang huling pangalan ng network ng device. Itanong kung ang user ay konektado sa network na ito)
+            - Ang iyong device ay nasa malalim na pagtulog (hindi kamakailan binabaan ng kapangyarihan) at hindi nagigising
+                - Ang iyong device ay hindi sumusuporta sa WWOL at konektado sa wifi
+                - Ang iyong device ay hindi sumusuporta sa WWOL o WOL
+            - Ang iyong network ay hindi itinakda sa isang paraan upang payagan kami na magpadala ng mga utos ng paggising sa device
+    - Reconnect loop = Umurong ng Exponential na pagtatangkang muling magkonekta sa reconnect ECP
+        - Muling nagkakonekta sa ECP muna
+        - Mga notify sa pangalawa
+            - Hantei +power-mode-changed,+textedit-opened,+textedit-changed,+textedit-closed,+device-name-changed
+            - Siguraduhin na maaari nating hawakan ang bawat isa sa mga kahilingang ito at ang kanilang format...
+        - I-refresh ang estado ng device sa pangatlo
+        - I-refresh ang query-textedit-state sa pang-apat
+            - I-update ang estado ng textedit
+        - I-refresh ang mga icon ng panglimang device
+    - Sa lahat ng mga pagbabago pagkatapos muling magkonekta (sa pamamagitan ng pag-abiso o anuman)
+        - I-update ang Device (naimbakan) at DeviceState (voilatile)
+    - Pagkatapos muling magkonekta/ma-diskonekta, i-update ang online status sa remote view
 
-## Improve user messaging around device capabilities
+## Pagpapabuti ng user messaging hinggil sa mga kakayahan ng device
 
--   Mag-update ng user messaging kapag ang mga error ay maaring mangyari
-    -   Kapag pinindot ang isang hindi gumaganang button, buksan ang popover upang ipakita kung bakit ito na-disable
-        -   Ipakita ang info indicator sa button para ipahiwatig na ang impormasyon ay tatanggapin kapag pinindot ito?
-        -   Ang mode ng Headphones ay na-ban -> dahil ang device ay hindi sumusuporta sa mode ng headphones sa app na ito
-        -   Ang kontrol ng Volume ay na-disable -> dahil ang audio ay outputting sa HDMI na hindi sumusuporta sa kontrol ng volume?
-    -   Kapag aktibong nag-scan para sa mga device at wala pang natagpuan na mga bagong, magpakita ng isang babala sa ilalim ng listahan ng device
-        -   "Hindi namin nagawang gumising sa iyong Roku" (Alamin kung bakit), (X)
-        -   Alamin pa magpapakita ng pop-up na may ilang mga dahilan kung bakit nangyayari ito
-            -   Siguraduhing nakasindi ang iyong device at konektado sa parehong wifi network na mayroon ang iyong app. Kung hindi pa rin gumagana, subukang magdagdag ng device ng manu-mano.
-            -   Link https://roam.msd3.io/manually-add-tv.md and https://support.roku.com/article/115001480188 para sa iba pang troubleshooting o chat
+-   I-update ang mga mensaheng user kapag maaaring mangyari ang mga error
+    -   Kapag nag-click sa isang hindi pinagana na button, buksan ang popover upang ipakita kung bakit ito ay hindi pinagana
+        -   Ipakita ang isang impormasyon na indikator sa button upang ipahiwatig na maaaring matanggap ang impormasyon kapag ito ay na-click?
+        -   Ang mode ng Headphones ay hindi pinagana -> dahil hindi sumusuporta ang device sa mode ng headphones sa app na ito
+        -   Ang kontrol ng volume ay hindi pinagana -> dahil ang audio ay nag-ooutput sa HDMI na hindi sumusuporta sa mga kontrol ng volume?
+    -   Kapag aktibong sinusuri para sa mga device at walang natagpuan na mga bago ipakita ang isang babala ng mensahe sa ibaba ng listahan ng device
+        -   “Hindi kami nakapag-gising sa inyong Roku” (Malaman kung bakit), (X)
+        -   Magpakita ng higit pang mga pagpapakita ng isang popup na may ilang mga dahilan kung bakit ito ay maaaring nangyari
+            -   Siguraduhin ang inyon device ay powered on at nakakonekta sa parehong wifi network bilang ang inyong app. Kung hindi pa rin ito gumagana, subukan itong idagdag nang manu-mano.
+            -   Link https://roam.msd3.io/manually-add-tv.md at https://support.roku.com/article/115001480188 para sa higit na paglulutas ng problema o chat
 -   Magdagdag ng badge para sa supportsWakeOnWLAN at supportsMute
 
-## Suportahan ang ecp textedit
+## Mga Tala sa Teksto ng ECP
 
--   I-update ang manipulasyon ng keyboard upang suportahan ang ecp-textedit sa `KeyboardEntry`
-    -   Ipakita ang keyboard kapag ang textedit ay binuksan
-    -   Itago ang keyboard kapag ang textedit ay kinansela
-    -   Test na ang pagdikit + select/delete sa textedit field ay gumagana tulad ng inaasahan
-    -   Kung sinusuportahan ang ecp-textedit, payagan ang pagpili, ang pagkuha ng teksto at ang paglipat ng cursor. Padala lamang ng muli ng tekstong bawat oras na ito ay nagbabago kung ito ay sinusuportahan.
-    -   Kung hindi sinusuportahan ang ecp-textedit, ibalik muna ang kasalukuyang pag-uugali ng pagpindot ng mga key
-    -   Sa MacOS ipakita ang isang indicator kapag ang textedit ay pinagana
-    -   Ang MacOS ay nagpapahintulot na cmd+v at cmd+c at cmd+x upang copy paste mula/sa buffer
+Mga utos ng Keyboard ECP Session (mga note)
 
-Mga Command ng Keyboard ECP Session (mga tala)
-   
 ```
 - {"request":"request-events","request-id":"4","param-events":"+language-changed,+language-changing,+media-player-state-changed,+plugin-ui-run,+plugin-ui-run-script,+plugin-ui-exit,+screensaver-run,+screensaver-exit,+plugins-changed,+sync-completed,+power-mode-changed,+volume-changed,+tvinput-ui-run,+tvinput-ui-exit,+tv-channel-changed,+textedit-opened,+textedit-changed,+textedit-closed,+textedit-closed,+ecs-microphone-start,+ecs-microphone-stop,+device-name-changed,+device-location-changed,+audio-setting-changed,+audio-settings-invalidated"}
     - {"notify":"textedit-opened","param-masked":"false","param-max-length":"75","param-selection-end":"0","param-selection-start":"0","param-text":"","param-textedit-id":"12","param-textedit-type":"full","timestamp":"608939.003"}
@@ -160,14 +152,16 @@ Mga Command ng Keyboard ECP Session (mga tala)
     - {"response":"set-textedit-text","response-id":"29","status":"200","status-msg":"OK"}
 ```
 
-## Ia-update kapag itinigil ang suporta para sa iOS 17/macOS 15 (2025)
+## Para i-update kapag bumabagsak ang suporta para sa iOS 17/macOS 14 (Feb 2026)
 
--   Gamitin ang mga trait ng naunang tanaw para mag-inject ng sample data sa mga naunang tanaw
-    -   Paano gawin ito kung ang iOS 17 ay mayroon pa rin mga factor?
-    -   Paano gamitin ang @Previewable sa mga naunang tanaw kung ang iOS 17 ay mayroon pa rin mga factor??
+-   Maglibot at alisin ang tatak ng @available(iOS 18)
+-   Gumamit ng mga katangian ng preview para ipasok ang halimbawa ng data sa mga preview
+    -   Paano gawin ito habang ang iOS 17 ay kasalukuyang isang factor?
+    -   Paano gagamitin ang @Previewable sa mga preview habang ang iOS 17 ay kasalukuyang isang factor??
 -   SwiftData
-    -   Gamitin ang bagong #Index macro para sa mga model
-    -   Gamitin ang bagong #Unique macro para sa mga model
-    -   Gumamit ng batch deletion
+    -   Gamitin ang bagong #Index macro para sa mga modelo
+    -   Gamitin ang bagong #Unique macro para sa mga modelo
+    -   Gamitin ang pagsasawang pagtatanggal
 -   TipKit
-    -   Gumamit ng CloudkitContainer https://developer.apple.com/videos/play/wwdc2024/10070/?time=698
+    -   Gamitin ang CloudkitContainer https://developer.apple.com/videos/play/wwdc2024/10070/?time=698
+
