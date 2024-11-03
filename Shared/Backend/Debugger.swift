@@ -70,6 +70,7 @@ public struct InstallationInfo: Encodable, Sendable {
     let buildVersion: String?
     let osPlatform: String?
     let osVersion: String?
+    let userLocale: String?
 
     init() {
         osVersion = ProcessInfo().operatingSystemVersionString
@@ -93,8 +94,15 @@ public struct InstallationInfo: Encodable, Sendable {
             buildVersion = nil
         }
         userId = getSystemInstallID()
+        userLocale = Locale.autoupdatingCurrent.language.languageCode?.identifier
     }
 }
+
+public struct DebugLanguage: Encodable, Sendable {
+    let deviceLanguageCode: String
+    let translatedLanguageCode: String
+}
+
 
 public struct DebugInfo: Encodable, Sendable {
     let installationInfo: InstallationInfo
@@ -103,6 +111,7 @@ public struct DebugInfo: Encodable, Sendable {
     let interfaces: [Addressed4NetworkInterface]
     let logs: [LogEntry]
     let debugErrors: [String]
+    let language: DebugLanguage
 }
 
 func getDebugInfo(container: ModelContainer) async -> DebugInfo {
@@ -176,7 +185,11 @@ func getDebugInfo(container: ModelContainer) async -> DebugInfo {
         appLinks: appLinks,
         interfaces: localInterfaces,
         logs: entries,
-        debugErrors: debugErrors
+        debugErrors: debugErrors,
+        language: DebugLanguage(
+            deviceLanguageCode: Locale.autoupdatingCurrent.language.languageCode?.identifier ?? "none",
+            translatedLanguageCode: String(localized: "locale.translated")
+        )
     )
 }
 

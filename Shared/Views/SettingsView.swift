@@ -631,7 +631,7 @@ struct DeviceDetailView: View {
                         Spacer()
                             .frame(maxWidth: 10)
 
-                        Link(destination: URL(string: "https://roam.msd3.io/manually-add-tv")!) {
+                        Link(destination: URL(string: String(localized: "https://roam.msd3.io/manually-add-tv"))!) {
                             Label("Info", systemImage: "info.circle")
                                 .labelStyle(.iconOnly)
                         }
