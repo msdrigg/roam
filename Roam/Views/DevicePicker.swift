@@ -31,15 +31,54 @@ struct DevicePicker: View {
     var device: Binding<Device?>
 
     let showScanning: Bool
+    let ecpSessionState: ECPSessionState?
+
+    let timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
+    @State private var currentDate: Date = .now
 
     var deviceStatusColor: Color {
-        device.wrappedValue?.isOnline() ?? false ? Color.green : Color.secondary
+        return if let ecpSessionState {
+            switch ecpSessionState.status {
+            case .connected:
+                    .green
+            case let .disconnected(date):
+                if currentDate.timeIntervalSince(date) < 1 {
+                    .green
+                } else {
+                    .secondary
+                }
+            case .connecting:
+                .secondary
+            }
+        } else {
+            device.wrappedValue?.isOnline() ?? false ? .green : .secondary
+        }
     }
 
-    init(devices: [Device], device: Binding<Device?>, showScanning: Bool = false) {
+    var showSpinning: Bool {
+        return if let ecpSessionState {
+            switch ecpSessionState.status {
+            case .connected:
+                false
+            case let .connecting(date):
+                if currentDate.timeIntervalSince(date) < 1 {
+                    true
+                } else {
+                    false
+                }
+            case .disconnected:
+                false
+            }
+        } else {
+            false
+        }
+    }
+
+    init(devices: [Device], device: Binding<Device?>, ecpSessionState: ECPSessionState? = nil, showScanning: Bool = false) {
         self.devices = devices
         self.device = device
         self.showScanning = showScanning
+        self.ecpSessionState = ecpSessionState
     }
 
     var body: some View {
@@ -95,12 +134,15 @@ struct DevicePicker: View {
         } label: {
             Group {
                 if let device = device.wrappedValue {
+                    ((showSpinning ? Text(Image(systemName: "rays")).font(.system(size: circleIconSize))
+                        .foregroundColor(deviceStatusColor)
+                        .baselineOffset(baselineOffset) :
                     Text(Image(systemName: "circle.fill")).font(.system(size: circleIconSize))
                         .foregroundColor(deviceStatusColor)
-                        .baselineOffset(baselineOffset) +
+                        .baselineOffset(baselineOffset)) +
                     Text("  ", comment: "Empty space") +
                     Text(device.name) +
-                    Text("  ", comment: "Empty space")
+                    Text("  ", comment: "Empty space"))
                 } else {
                     if showScanning {
                         Label("Scanning for devices", systemImage: "rays")
@@ -121,6 +163,9 @@ struct DevicePicker: View {
             #endif
         }
         .animation(nil, value: UUID())
+        .onReceive(timer) { _ in
+            currentDate = .now
+        }
         .id(updater?.uuid.uuidString ?? "--")
     }
 }

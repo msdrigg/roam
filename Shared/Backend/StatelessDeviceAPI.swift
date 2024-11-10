@@ -50,9 +50,9 @@ func wakeOnLAN(macAddress: String) async -> Bool {
             if state == .ready {
                 connection.send(content: packet, completion: NWConnection.SendCompletion.contentProcessed { error in
                     if let error {
-                        logger.error("Error sending WOL packet for MAC \(macAddress): \(error)")
+                        logger.error("Error sending WOL packet for MAC \(macAddress, privacy: .public): \(error, privacy: .public)")
                     } else {
-                        logger.info("Sent WOL packet for address \(macAddress)")
+                        logger.info("Sent WOL packet for address \(macAddress, privacy: .public)")
                     }
                     connection.cancel()
                     continuation.yield(true)
@@ -91,14 +91,14 @@ public func openApp(location: String, app: String) async throws {
         if httpResponse.statusCode == 200 {
             logger.info("Opened app \(app) to with location \(location)")
         } else {
-            logger.error("Error opening app \(app) at \(location)launch/\(app): \(httpResponse.statusCode)")
+            logger.error("Error opening app \(app, privacy: .public) at \(location, privacy: .public)launch/\(app, privacy: .public): \(httpResponse.statusCode)")
         }
     }
 }
 
 @discardableResult
 public func powerToggleDeviceStateless(location: String, macs: [String]) async -> Bool {
-    logger.debug("Toggling power for device \(location)")
+    logger.debug("Toggling power for device \(location, privacy: .public)")
 
     // Attempt checking the device power mode
     logger.debug("Attempting to power toggle device with api first")
@@ -109,9 +109,9 @@ public func powerToggleDeviceStateless(location: String, macs: [String]) async -
         timeout: 1.1
     )
     if !toggleResult {
-        logger.debug("API toggle failed, trying to WOL to macs \(String(describing: macs))")
+        logger.debug("API toggle failed, trying to WOL to macs \(String(describing: macs), privacy: .public)")
         for mac in macs {
-            logger.debug("Sending wol packet to \(mac)")
+            logger.debug("Sending wol packet to \(mac, privacy: .public)")
             await wakeOnLAN(macAddress: mac)
         }
         return true
@@ -140,10 +140,10 @@ public func sendKeyToDevice(location: String, macs: [String], key: RemoteButton)
 
 public func sendKeyToDeviceRawNotRecommended(location: String, key: String, macs: [String]) async -> Bool {
     if key == RemoteButton.power.apiValue {
-        logger.debug("Toggling power on device \(location) with mac \(String(describing: macs))")
+        logger.debug("Toggling power on device \(location, privacy: .public) with mac \(String(describing: macs))")
         return await powerToggleDeviceStateless(location: location, macs: macs)
     } else {
-        logger.debug("Sending key to device \(key)")
+        logger.debug("Sending key to device \(key, privacy: .public)")
         return await internalSendKeyToDevice(location: location, rawKey: key)
     }
 }
@@ -151,7 +151,7 @@ public func sendKeyToDeviceRawNotRecommended(location: String, key: String, macs
 private func internalSendKeyToDevice(location: String, rawKey: String, timeout: TimeInterval? = nil) async -> Bool {
     let keypressURL = "\(location)/keypress/\(rawKey)"
     guard let url = URL(string: keypressURL) else {
-        logger.error("Unable to send key due to bad url url `\(keypressURL)`")
+        logger.error("Unable to send key due to bad url url `\(keypressURL, privacy: .public)`")
         return false
     }
     var request = URLRequest(url: url, timeoutInterval: timeout ?? 3)
@@ -161,17 +161,17 @@ private func internalSendKeyToDevice(location: String, rawKey: String, timeout: 
         let (_, response) = try await URLSession.shared.data(for: request)
         if let httpResponse = response as? HTTPURLResponse {
             if httpResponse.statusCode == 200 {
-                logger.debug("Sent \(rawKey) to \(location)")
+                logger.debug("Sent \(rawKey, privacy: .public) to \(location, privacy: .public)")
                 return true
             } else {
-                logger.error("Error sending \(rawKey) to \(location): \(httpResponse.statusCode)")
+                logger.error("Error sending \(rawKey, privacy: .public) to \(location, privacy: .public): \(httpResponse.statusCode)")
                 return false
             }
         }
 
         return false
     } catch {
-        logger.error("Error sending \(rawKey) to \(location): \(error)")
+        logger.error("Error sending \(rawKey, privacy: .public) to \(location, privacy: .public): \(error, privacy: .public)")
         return false
     }
 }

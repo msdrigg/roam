@@ -133,7 +133,7 @@ func scanDevicesContinuallyNetwork() throws -> AsyncThrowingStream<SSDPService, 
             for await _ in exponentialBackoff(min: 2, max: 30) {
                 connectionGroup.send(content: ssdpRequestData) { error in
                     if let error {
-                        logger.warning("Error sending SSDP request: \(error)")
+                        logger.warning("Error sending SSDP request: \(error, privacy: .public)")
                     }
                 }
             }

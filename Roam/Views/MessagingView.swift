@@ -23,7 +23,7 @@ func requestNotificationPermission() {
             logger.info("Notification permission granted.")
             getNotificationSettings()
         } else if let error {
-            logger.error("Notification permission denied with error: \(error.localizedDescription)")
+            logger.error("Notification permission denied with error: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
@@ -303,7 +303,7 @@ struct MessageView: View {
                     refreshResetId = UUID()
                 }
             } catch {
-                logger.error("Error sending message \(error)")
+                logger.error("Error sending message \(error, privacy: .public)")
             }
         }
         if !hasSentFirstMessage {
@@ -323,21 +323,35 @@ struct MessageView: View {
 struct SendDiagnosticsButton: View {
     let shareDiagnostics: () -> Void
     let sharingDiagnostics: Bool
+    @State private var pressCounter = 0
+
+    var imageName: String {
+        if sharingDiagnostics {
+            "rays"
+        } else {
+            "paperclip"
+        }
+    }
 
     var body: some View {
         Button(action: {
             shareDiagnostics()
+            pressCounter += 1
         }, label: {
 #if os(macOS)
-            Image(systemName: "paperclip")
+            Image(systemName: imageName)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 24, height: 24)
 #else
-            Label(String(localized: "Share Diagnostics", comment: "Label on a button"), systemImage: "paperclip")
+            Label(String(localized: "Share Diagnostics", comment: "Label on a button"), systemImage: imageName)
                 .labelStyle(.iconOnly)
 #endif
         })
+        .symbolEffect(.bounce, value: pressCounter)
+#if !os(visionOS)
+        .sensoryFeedback(.impact, trigger: pressCounter)
+#endif
         .symbolEffect(.variableColor, isActive: sharingDiagnostics)
         .foregroundColor(Color.gray)
         .buttonStyle(.plain)

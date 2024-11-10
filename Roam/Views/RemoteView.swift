@@ -121,7 +121,7 @@ struct RemoteView: View {
                         handleIncomingURL(incomingURL)
                     }
                 #if os(macOS)
-                    .onChange(of: appDelegate.messagingWindowOpenTrigger) { _, new in
+                    .onChange(of: appDelegate.navigationPath.messagingWindowOpenTrigger) { _, new in
                         if new != nil {
                             openWindow(id: "messages")
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {

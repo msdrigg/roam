@@ -11,6 +11,7 @@ enum UserDefaultKeys {
     static let shouldDisableAllAutoScanning: String = "disableAllScanning"
     static let shouldControlVolumeWithHWButtons: String = "controlVolumeWithHWButtons"
     static let showMenuBar: String = "showMenuBar"
+    static let networkPermissionBannerDismissed = "networkPermissionBannerDismissed"
 
     // Records
     static let usingNewAppGroup: String = "usingNewAppGroup"

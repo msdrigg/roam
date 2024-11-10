@@ -32,6 +32,11 @@
 		AF0C82982AEBFBD500CBE7F8 /* StatelessDeviceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */; };
 		AF0C82992AEBFBD500CBE7F8 /* StatelessDeviceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */; };
 		AF0C82A82AEC0C2C00CBE7F8 /* Shortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6B72ADE28C80036EC90 /* Shortcuts.swift */; };
+		AF0D09EF2CDE5C410098122E /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0D09EE2CDE5C3B0098122E /* Helpers.swift */; };
+		AF0D09F02CDE5C410098122E /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0D09EE2CDE5C3B0098122E /* Helpers.swift */; };
+		AF0D09F12CDE5C410098122E /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0D09EE2CDE5C3B0098122E /* Helpers.swift */; };
+		AF0D09F22CDE5C410098122E /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0D09EE2CDE5C3B0098122E /* Helpers.swift */; };
+		AF0D09F42CDE64750098122E /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0D09EE2CDE5C3B0098122E /* Helpers.swift */; };
 		AF11D36F2AD35D2800527AF6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF11D36E2AD35D2800527AF6 /* SettingsView.swift */; };
 		AF15C2492AE8672700B79FD9 /* RoamWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF15C2482AE8672700B79FD9 /* RoamWatchApp.swift */; };
 		AF15C2532AE8672800B79FD9 /* Roam.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = AF15C2462AE8672700B79FD9 /* Roam.app */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -59,6 +64,10 @@
 		AF19CA3A2AE6BF9D00A42DFF /* XMLCoder in Frameworks */ = {isa = PBXBuildFile; productRef = AF19CA392AE6BF9D00A42DFF /* XMLCoder */; };
 		AF19CA3C2AE6BFC400A42DFF /* DeviceApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA3B2AE6BFC300A42DFF /* DeviceApi.swift */; };
 		AF19CA3D2AE6BFDF00A42DFF /* DeviceApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA3B2AE6BFC300A42DFF /* DeviceApi.swift */; };
+		AF1C74842CE035480061E9F8 /* NetworkPermissionsCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1C74832CE035440061E9F8 /* NetworkPermissionsCheck.swift */; };
+		AF1C74852CE035480061E9F8 /* NetworkPermissionsCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1C74832CE035440061E9F8 /* NetworkPermissionsCheck.swift */; };
+		AF1C74862CE035480061E9F8 /* NetworkPermissionsCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1C74832CE035440061E9F8 /* NetworkPermissionsCheck.swift */; };
+		AF1C74872CE035480061E9F8 /* NetworkPermissionsCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1C74832CE035440061E9F8 /* NetworkPermissionsCheck.swift */; };
 		AF205B1F2AE02CAF00041CDF /* MediumRemoteWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF95B71D2ADF3BA7005FC338 /* MediumRemoteWidget.swift */; };
 		AF205B202AE02CAF00041CDF /* WidgetHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF95B7192ADF340A005FC338 /* WidgetHelpers.swift */; };
 		AF205B212AE02CAF00041CDF /* SmallRemoteWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF95B7132ADF304E005FC338 /* SmallRemoteWidget.swift */; };
@@ -433,6 +442,7 @@
 		AF0C828F2AEBF2A200CBE7F8 /* ECPSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECPSession.swift; sourceTree = "<group>"; };
 		AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatelessDeviceAPI.swift; sourceTree = "<group>"; };
 		AF0C82942AEBFB4600CBE7F8 /* APIHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIHelpers.swift; sourceTree = "<group>"; };
+		AF0D09EE2CDE5C3B0098122E /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
 		AF11D36A2AD2D0B800527AF6 /* AppLinksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLinksView.swift; sourceTree = "<group>"; };
 		AF11D36C2AD2D41100527AF6 /* Device.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Device.swift; sourceTree = "<group>"; };
 		AF11D36E2AD35D2800527AF6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -451,6 +461,7 @@
 		AF19CA302AE6947600A42DFF /* ManagedCriticalState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagedCriticalState.swift; sourceTree = "<group>"; };
 		AF19CA342AE694E500A42DFF /* AsyncThrowingBufferedChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncThrowingBufferedChannel.swift; sourceTree = "<group>"; };
 		AF19CA3B2AE6BFC300A42DFF /* DeviceApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceApi.swift; sourceTree = "<group>"; };
+		AF1C74832CE035440061E9F8 /* NetworkPermissionsCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkPermissionsCheck.swift; sourceTree = "<group>"; };
 		AF20ACFB2AE017B600D371C7 /* RemoteButtonAppEnum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteButtonAppEnum.swift; sourceTree = "<group>"; };
 		AF2480572BDB42F600EF47AE /* TestData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestData.swift; sourceTree = "<group>"; };
 		AF24805C2BDB475A00EF47AE /* DebugImages.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = DebugImages.xcassets; sourceTree = "<group>"; };
@@ -810,6 +821,7 @@
 		AF56E3BB2AD9865400F5E6E0 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
+				AF0D09EE2CDE5C3B0098122E /* Helpers.swift */,
 				AF6E29492C1A2ACB0062DFB3 /* ViewHelpers.swift */,
 				AF19CA132AE4471200A42DFF /* AsyncHelpers.swift */,
 				AF95B74F2ADF43FD005FC338 /* NetworkHelpers.swift */,
@@ -1005,6 +1017,7 @@
 		AFF6077E2ADFAC4F00A7D657 /* Backend */ = {
 			isa = PBXGroup;
 			children = (
+				AF1C74832CE035440061E9F8 /* NetworkPermissionsCheck.swift */,
 				AF19CA252AE54AA800A42DFF /* Discovery */,
 				AF19CA3B2AE6BFC300A42DFF /* DeviceApi.swift */,
 				AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */,
@@ -1378,7 +1391,9 @@
 				AFD9C4DB2AE97FE100C4079C /* AboutView.swift in Sources */,
 				AF67C8F42C1D1A9200A6D077 /* UUIDUpdater.swift in Sources */,
 				AF0C82962AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */,
+				AF0D09F12CDE5C410098122E /* Helpers.swift in Sources */,
 				AF5ED8E52AE99D95007DB2B8 /* ButtonGridView.swift in Sources */,
+				AF1C74872CE035480061E9F8 /* NetworkPermissionsCheck.swift in Sources */,
 				AF1899F42C1CB204001EDA78 /* NavigationManager.swift in Sources */,
 				AF5C23992C35DCD1004C7A63 /* GlowingButton.swift in Sources */,
 				AF779BF82BA4DE2200231BC5 /* WrappingHStack.swift in Sources */,
@@ -1434,6 +1449,7 @@
 				AF205B1F2AE02CAF00041CDF /* MediumRemoteWidget.swift in Sources */,
 				AF19CA3D2AE6BFDF00A42DFF /* DeviceApi.swift in Sources */,
 				AF205B282AE02D0100041CDF /* AppLink.swift in Sources */,
+				AF0D09F02CDE5C410098122E /* Helpers.swift in Sources */,
 				AF205B2A2AE02D1C00041CDF /* RemoteButtonAppEnum.swift in Sources */,
 				AF205B212AE02CAF00041CDF /* SmallRemoteWidget.swift in Sources */,
 				AF1899FD2C1CE2E5001EDA78 /* AccessoryGroupRemoteView.swift in Sources */,
@@ -1451,6 +1467,7 @@
 				AF0042872AEABA9F0051BB1E /* CollectionHelpers.swift in Sources */,
 				AFF6DE142BCF0A14002C13FC /* Message.swift in Sources */,
 				AF1899F22C1CB204001EDA78 /* NavigationManager.swift in Sources */,
+				AF1C74842CE035480061E9F8 /* NetworkPermissionsCheck.swift in Sources */,
 				AFC4A6602AE8AF3F005DAC6C /* DataImage.swift in Sources */,
 				AFE6249F2BDCAA5000F4992E /* DataActor.swift in Sources */,
 				AF205B242AE02D0100041CDF /* RemoteButton.swift in Sources */,
@@ -1507,6 +1524,7 @@
 				AF8EF4F22BB60AE8002A4D6D /* Device.swift in Sources */,
 				AF8EF5102BB60D20002A4D6D /* RokuSession.swift in Sources */,
 				AF8EF4F32BB60AE8002A4D6D /* SchemaFile.swift in Sources */,
+				AF0D09EF2CDE5C410098122E /* Helpers.swift in Sources */,
 				AF7107202BD00D9400384691 /* RoamAppDelegate.swift in Sources */,
 				AFBBE16E2C764564002B7F68 /* RemoteViewContained.swift in Sources */,
 				AF8EF4F42BB60AE8002A4D6D /* AppLink.swift in Sources */,
@@ -1520,6 +1538,7 @@
 				AF8EF4DE2BB60A15002A4D6D /* RoamApp.swift in Sources */,
 				AF44021D2BFBEF2500004C15 /* LinkedTextView.swift in Sources */,
 				AF8EF5202BB61AD6002A4D6D /* DiscoveryActor.swift in Sources */,
+				AF1C74852CE035480061E9F8 /* NetworkPermissionsCheck.swift in Sources */,
 				AF1899F92C1CDFC2001EDA78 /* SettingsNavigationWrapper.swift in Sources */,
 				AF8EF4F52BB60AF0002A4D6D /* NetworkMonitor.swift in Sources */,
 				AF8EF4F62BB60AF0002A4D6D /* DataHelpers.swift in Sources */,
@@ -1615,6 +1634,7 @@
 				AFC4A65A2AE88411005DAC6C /* LatencyListener.swift in Sources */,
 				AF70BB072BA7C4D2009A06EC /* HoveredView.swift in Sources */,
 				AFA079DB2AE02561003E2754 /* ButtonPressIntents.swift in Sources */,
+				AF1C74862CE035480061E9F8 /* NetworkPermissionsCheck.swift in Sources */,
 				AF779BF72BA4DDD000231BC5 /* WrappingHStack.swift in Sources */,
 				AFF6DE112BCF0740002C13FC /* MessagingView.swift in Sources */,
 				AFE89A2D2B9E793E0078387C /* Debugger.swift in Sources */,
@@ -1628,6 +1648,7 @@
 				AFF607812ADFACBA00A7D657 /* DiscoveryActor.swift in Sources */,
 				AF0C828C2AEB494D00CBE7F8 /* VolumeSliderView.swift in Sources */,
 				AF19CA142AE4471200A42DFF /* AsyncHelpers.swift in Sources */,
+				AF0D09F22CDE5C410098122E /* Helpers.swift in Sources */,
 				AFA165C02AE92F92003F45ED /* AboutView.swift in Sources */,
 				AF5C23982C35DCD1004C7A63 /* GlowingButton.swift in Sources */,
 				AF44021C2BFBEF2500004C15 /* LinkedTextView.swift in Sources */,
@@ -1666,6 +1687,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AF0D09F42CDE64750098122E /* Helpers.swift in Sources */,
 				AFEDCDFD2CD134130001D959 /* NetworkUtils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

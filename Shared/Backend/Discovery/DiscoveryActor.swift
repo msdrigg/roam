@@ -30,7 +30,7 @@ actor DeviceDiscoveryActor {
     @discardableResult
     func addDevice(location: String) async -> Bool {
         guard let deviceInfo = await fetchDeviceInfo(location: location) else {
-            Self.logger.error("Error getting device info for found device \(location)")
+            Self.logger.error("Error getting device info for found device \(location, privacy: .public)")
             return false
         }
 

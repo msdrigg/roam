@@ -74,6 +74,14 @@ struct AboutView: View {
                     Text(Bundle.main.infoDictionary?["CURRENT_PROJECT_VERSION"] as? String ?? "--")
                 }
                 .focusable()
+
+                LabeledContent(String(localized: "Roam Support Page", comment: "Version label in about page for the app")) {
+                    Link("https://roam.msd3.io", destination: URL(string: "https://roam.msd3.io")!)
+                        .font(.body)
+                        .foregroundStyle(.secondary, .secondary)
+                        .lineLimit(1)
+                }
+                .focusable()
             }
 
             Section(String(localized: "Licenses", comment: "Section heading in an about page")) {

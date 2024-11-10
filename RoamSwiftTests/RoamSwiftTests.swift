@@ -27,4 +27,14 @@ struct RoamSwiftTests {
         #expect(end == IP4Address(string: "172.16.33.255")!)
     }
 
+    @Test func testKebabify() async throws {
+        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+        let res1 = kebabify("TestingKebabifyParam")
+        let res2 = kebabify("testingKebabifyParam2")
+        let res3 = kebabify("TestingKebabifyParamMULTIPLE")
+
+        #expect(res1 == "testing-kebabify-param")
+        #expect(res2 == "testing-kebabify-param2")
+        #expect(res3 == "testing-kebabify-param-multiple")
+    }
 }

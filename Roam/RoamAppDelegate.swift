@@ -14,7 +14,7 @@ func sendDeviceTokenToServer(_ token: String) async {
     do {
         try await sendMessage(message: nil, apnsToken: token)
     } catch {
-        logger.error("Error sending apns token to server \(error)")
+        logger.error("Error sending apns token to server \(error, privacy: .public)")
     }
 }
 
@@ -23,11 +23,12 @@ func sendDeviceTokenToServer(_ token: String) async {
 
     class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject {
         @Published var navigationPath: NavigationManager
-        @Published var messagingWindowOpenTrigger: UUID?
+        @Published var ecpSessionState: ECPSessionState
 
         @MainActor
         override init() {
             navigationPath = NavigationManager()
+            ecpSessionState = ECPSessionState()
             super.init()
             UNUserNotificationCenter.current().delegate = self
             logger.info("Setting Notifications delegate to self")
@@ -71,7 +72,10 @@ func sendDeviceTokenToServer(_ token: String) async {
         ) {
             logger.info("didReceive notification. Showing Messages...")
             refreshMessages()
-            messagingWindowOpenTrigger = UUID()
+            let navigationPath = self.navigationPath
+            DispatchQueue.main.async {
+                navigationPath.messagingWindowOpenTrigger = UUID()
+            }
             completionHandler()
         }
 
@@ -183,6 +187,8 @@ func sendDeviceTokenToServer(_ token: String) async {
 
     class RoamAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject, Sendable {
         @Published var navigationPath: NavigationManager = NavigationManager()
+        @Published var showingSettingsView: Bool = false
+        @Published var ecpSessionState: ECPSessionState = ECPSessionState()
 
         private var cancellables: Set<AnyCancellable> = []
 

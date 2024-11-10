@@ -62,6 +62,9 @@ struct SettingsView: View {
     @Environment(\.uuidUpdater) private var updater
 
     @Environment(\.createDataHandler) private var createDataHandler
+#if !os(watchOS)
+    @EnvironmentObject private var appDelegate: RoamAppDelegate
+#endif
 
     @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanIpAutomatically: Bool = true
     @AppStorage(UserDefaultKeys.shouldDisableAllAutoScanning) private var disableAllScanning: Bool = true
@@ -434,6 +437,15 @@ struct SettingsView: View {
                 reportDebugLogs()
             }
         }
+#if !os(watchOS)
+        .onAppear {
+            appDelegate.navigationPath.showingSettingsView = true
+        }
+        .onDisappear {
+            appDelegate.navigationPath.showingSettingsView = false
+        }
+#endif
+
 #if !os(macOS) && !os(watchOS) && !os(tvOS)
         .refreshable {
             isScanning = true

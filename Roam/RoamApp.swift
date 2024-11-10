@@ -2,14 +2,18 @@ import OSLog
 import SwiftData
 import SwiftUI
 import TipKit
+import UniformTypeIdentifiers
 #if os(macOS)
     import AppKit
 #endif
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "Main")
 
 @main
 struct RoamApp: App {
     #if os(macOS)
         @Environment(\.openWindow) private var openWindow
+        @Environment(\.openURL) private var openURL
     #endif
 
     #if os(macOS)
@@ -66,7 +70,70 @@ struct RoamApp: App {
                         Text("About Roam", comment: "Button to open the about page of the Roam app")
                     })
                 }
-                CommandGroup(after: .help) {
+
+                CommandGroup(replacing: CommandGroupPlacement.pasteboard) {
+                    PasteButton(payloadType: String.self, onPaste: { item in
+                        Task {
+                            guard let texteditId = appDelegate.ecpSessionState.textEditStatus.texteditId else {
+                                logger.info("Failed to paste because no textedit id")
+                                return
+                            }
+
+                            if let first = item.first {
+                                do {
+                                    try await appDelegate.ecpSessionState.ecpSession?.setTextEditText(first, for: texteditId)
+                                } catch {
+                                    logger.error("Failed to paste: \(error)")
+                                }
+                            } else {
+                                logger.error("Failed to paste, no items in pasteboard")
+                            }
+                        }
+                    })
+                    .customKeyboardShortcut(.paste)
+                    .disabled(appDelegate.ecpSessionState.textEditStatus.texteditId == nil || appDelegate.navigationPath.showingSettingsView)
+
+                    Button("Cut", systemImage: "clipboard", action: {
+                        Task {
+                            guard let texteditId = appDelegate.ecpSessionState.textEditStatus.texteditId else {
+                                logger.info("Failed to paste because no textedit id")
+                                return
+                            }
+
+                            if let texteditText = appDelegate.ecpSessionState.textEditStatus.text {
+                                logger.info("Cutting text \(texteditText)")
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(texteditText, forType: .string)
+                            }
+
+                            do {
+                                try await appDelegate.ecpSessionState.ecpSession?.setTextEditText("", for: texteditId)
+                            } catch {
+                                logger.error("Failed to paste: \(error)")
+                            }
+                        }
+                    })
+                    .customKeyboardShortcut(.cut)
+                    .disabled(appDelegate.ecpSessionState.textEditStatus.texteditId == nil || appDelegate.navigationPath.showingSettingsView)
+
+                    Button("Copy", systemImage: "clipboard", action: {
+                        Task {
+                            if let texteditText = appDelegate.ecpSessionState.textEditStatus.text {
+                                logger.info("Copying text \(texteditText)")
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(texteditText, forType: .string)
+                            }
+                        }
+                    })
+                    .customKeyboardShortcut(.copy)
+                    .disabled(appDelegate.ecpSessionState.textEditStatus.texteditId == nil || appDelegate.navigationPath.showingSettingsView)
+                }
+
+                CommandGroup(replacing: .help) {
+                    Button("Roam Help", systemImage: "info.circle") {
+                        openURL(URL(string: "https://roam.msd3.io/")!)
+                    }
+
                     Button("Keyboard Shortcuts", systemImage: "keyboard") {
                         openWindow(id: "keyboard-shortcuts")
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {

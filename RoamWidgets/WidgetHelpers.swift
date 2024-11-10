@@ -22,6 +22,7 @@ struct SimpleRemoteControlProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: DeviceChoiceIntent, in _: Context) async -> DeviceChoiceTimelineEntity {
+        print("Getting snapshot for \(configuration) with model container \(mainAppGroup)")
         let modelContainer = getSharedModelContainer()
         let dataHandler = DataHandler(modelContainer: modelContainer)
 
@@ -55,8 +56,7 @@ struct SimpleRemoteControlProvider: AppIntentTimelineProvider {
             []
         }
         let entryNow = DeviceChoiceTimelineEntity(date: Date.now, device: targetDevice, apps: apps)
-        let entryLater = DeviceChoiceTimelineEntity(date: Date.now + 86400, device: targetDevice, apps: apps)
-        let timeline = Timeline(entries: [entryNow, entryLater], policy: .atEnd)
+        let timeline = Timeline(entries: [entryNow], policy: .after(Date.now.advanced(by: 3600 * 24)))
         return timeline
     }
 
@@ -143,8 +143,7 @@ struct AppChoiceRemoteControlProvider: AppIntentTimelineProvider {
             apps = loadedApps
         }
         let entryNow = DeviceChoiceTimelineEntity(date: Date.now, device: targetDevice, apps: apps)
-        let entryLater = DeviceChoiceTimelineEntity(date: Date.now + 86400, device: targetDevice, apps: apps)
-        let timeline = Timeline(entries: [entryNow, entryLater], policy: .atEnd)
+        let timeline = Timeline(entries: [entryNow], policy: .after(Date.now.advanced(by: 3600 * 24)))
         return timeline
     }
 

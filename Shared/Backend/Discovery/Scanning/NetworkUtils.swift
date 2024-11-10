@@ -98,7 +98,7 @@ struct Addressed4NetworkInterface: Encodable {
         try container.encode(getFlagList(), forKey: .flagList)
     }
 
-    private func getFlagList() -> [String] {
+    func getFlagList() -> [String] {
         let flagBooleans: [(String, Int32)] = [
             ("UP", IFF_UP),
             ("BROADCAST", IFF_BROADCAST),

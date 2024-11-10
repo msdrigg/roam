@@ -66,18 +66,47 @@ struct RemoteViewContained: View {
 
     @State private var scanningActor: DeviceDiscoveryActor?
     @State private var manuallySelectedDevice: Device?
-    @State private var showKeyboardEntry: Bool = false
+    @State private var showKeyboardEntryManual: Bool = false
     @State private var keyboardLeaving: Bool = false
     @State private var keyboardEntryText: String = ""
     @State var inBackground: Bool = false
     @State var buttonPresses: [RemoteButton: Int] = [:]
     @State private var headphonesModeEnabled: Bool = false
     @State private var errorTrigger: Int = 0
-    @State private var ecpSession: ECPSession?
+    @State private var networkPermissionGranted: Bool?
+    @AppStorage(UserDefaultKeys.networkPermissionBannerDismissed) private var networkPermissionBannerDismissed: Bool = false
     @StateObject private var networkMonitor = NetworkMonitor()
     @AllCustomKeyboardShortcuts private var allKeyboardShortcuts: [CustomKeyboardShortcut]
 
     private var isInMenuBar: Bool
+
+    private var ecpSessionState: ECPSessionState {
+        get {
+            appDelegate.ecpSessionState
+        }
+        nonmutating set(val) {
+            appDelegate.ecpSessionState = val
+        }
+    }
+
+    private var ecpSession: ECPSession? {
+        get {
+            appDelegate.ecpSessionState.ecpSession
+        }
+        nonmutating set(val) {
+            appDelegate.ecpSessionState.ecpSession = val
+        }
+    }
+
+    #if os(macOS)
+    private var showKeyboardEntry: Bool {
+        return false
+    }
+    #else
+    private var showKeyboardEntry: Bool {
+        return showKeyboardEntryManual
+    }
+    #endif
 
     init(isInMenuBar: Bool = false) {
         self.isInMenuBar = isInMenuBar
@@ -88,15 +117,23 @@ struct RemoteViewContained: View {
     }
 
     var hideUIForKeyboardEntry: Bool {
-        #if os(iOS)
+#if os(iOS)
         if UIDevice.current.userInterfaceIdiom  == .pad {
             return false
         } else {
             return showKeyboardEntry
         }
-        #else
-            return false
-        #endif
+#else
+        return false
+#endif
+    }
+
+    var hideAppsForKeyboardEntry: Bool {
+#if os(iOS)
+        return showKeyboardEntry
+#else
+        return false
+#endif
     }
 
     @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanIpAutomatically: Bool = true
@@ -168,10 +205,6 @@ struct RemoteViewContained: View {
     @Namespace var animation
 
     @Environment(\.uuidUpdater) private var updater
-
-    var deviceStatusColor: Color {
-        selectedDevice?.isOnline() ?? false ? Color.green : Color.secondary
-    }
 
     func buttonPressCount(_ key: RemoteButton) -> Int {
         buttonPresses[key] ?? 0
@@ -311,8 +344,21 @@ struct RemoteViewContained: View {
                     }
                 }
 #endif
+                .task{
+                    do {
+                        Self.logger.info("Checking for local network permission")
+                        let permission = try await requestLocalNetworkAuthorization()
+                        Self.logger.info("Got permission check result \(permission)")
+                        self.networkPermissionGranted = permission
+                    } catch {
+                        Self.logger.error("Error requesting local network authorization \(error, privacy: .public)")
+                    }
+                }
                 .onAppear {
                     networkMonitor.startMonitoring()
+                }
+                .onAppear {
+                    networkPermissionBannerDismissed = false
                 }
                 .onDisappear {
                     networkMonitor.stopMonitoring()
@@ -335,10 +381,11 @@ struct RemoteViewContained: View {
                     ecpSession = nil
                     if let device = selectedDevice?.toAppEntity() {
                         do {
-                            ecpSession = try ECPSession(device: device)
+                            let sessionState = self.ecpSessionState
+                            ecpSession = try ECPSession(device: device, status: sessionState)
                             try await ecpSession?.configure()
                         } catch {
-                            Self.logger.error("Error creating ECPSession: \(error)")
+                            Self.logger.error("Error creating ECPSession: \(error, privacy: .public)")
                         }
                     } else {
                         ecpSession = nil
@@ -439,7 +486,8 @@ struct RemoteViewContained: View {
                                         selectedDevice
                                     }, set: {
                                         manuallySelectedDevice = $0
-                                    })
+                                    }),
+                                    ecpSessionState: ecpSessionState
                                 )
                             }
                             .focusSection()
@@ -457,6 +505,7 @@ struct RemoteViewContained: View {
                             }, set: {
                                 manuallySelectedDevice = $0
                             }),
+                            ecpSessionState: ecpSessionState,
                             showScanning: true
                         )
                         .buttonStyle(PaddedBorderlessButtonStyleWithChevron())
@@ -537,6 +586,7 @@ struct RemoteViewContained: View {
                             }, set: {
                                 manuallySelectedDevice = $0
                             }),
+                            ecpSessionState: ecpSessionState,
                             showScanning: true
                         )
                         .menuStyle(.button)
@@ -558,6 +608,7 @@ struct RemoteViewContained: View {
                                 }, set: {
                                     manuallySelectedDevice = $0
                                 }),
+                                ecpSessionState: ecpSessionState,
                                 showScanning: true
                             )
                             .buttonStyle(PaddedBorderlessButtonStyle())
@@ -581,7 +632,7 @@ struct RemoteViewContained: View {
                     if !hideUIForKeyboardEntry {
                         if unreadMessages.count > 0 {
                             // swiftlint:disable:next line_length
-                            NotificationBanner(message: LocalizedStringResource("The developer chatted you back", comment: "Notification indicator that there was is message response waiting to be read"), onClick: {
+                            NotificationBanner(message: String(localized: "The developer chatted you back", comment: "Notification indicator that there was is message response waiting to be read"), onClick: {
 #if os(macOS)
                                 openWindow(id: "messages")
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
@@ -593,6 +644,7 @@ struct RemoteViewContained: View {
                             }, level: .info)
                         }
                         networkConnectivityBanner
+                        networkPermissionBanner
                         Spacer().frame(maxHeight: 10)
                     }
 
@@ -633,7 +685,7 @@ struct RemoteViewContained: View {
                                 Button(action: {
                                     keyboardLeaving = true
                                     withAnimation {
-                                        showKeyboardEntry = false
+                                        showKeyboardEntryManual = false
                                     }
                                 }, label: {
                                     ZStack {
@@ -651,7 +703,7 @@ struct RemoteViewContained: View {
                                     showing: Binding<Bool>(get: {
                                         showKeyboardEntry
                                     }, set: { newVal in
-                                        showKeyboardEntry = newVal
+                                        showKeyboardEntryManual = newVal
                                     }),
                                     onKeyPress: { char in
                                         pressKey(char)
@@ -694,7 +746,7 @@ struct RemoteViewContained: View {
                         Button(action: {
                             keyboardLeaving = showKeyboardEntry
                             withAnimation {
-                                showKeyboardEntry = !showKeyboardEntry
+                                showKeyboardEntryManual = !showKeyboardEntry
                             }
                         }, label: {
                             Label(String(localized: "Keyboard", comment: "Label on a button to open the keyboard"), systemImage: "keyboard")
@@ -715,6 +767,42 @@ struct RemoteViewContained: View {
                                         appDelegate.navigationPath.append(.messageDestination)
                                     } else if title == .keyboardShortcuts {
                                         appDelegate.navigationPath.append(.keyboardShortcutDestinaion)
+                                    } else if title == .copy {
+                                        if let text = ecpSessionState.textEditStatus.text {
+                                            UIPasteboard.general.string = text
+                                        }
+                                    } else if title == .cut {
+                                        if let text = ecpSessionState.textEditStatus.text {
+                                            UIPasteboard.general.string = text
+                                        }
+
+                                        if let id = ecpSessionState.textEditStatus.texteditId {
+                                            Task {
+                                                do {
+                                                    try await ecpSession?.setTextEditText("", for: id)
+                                                } catch {
+                                                    Self.logger.error("Error cutting text: \(error, privacy: .public)")
+                                                }
+                                            }
+                                        }
+                                    } else if title == .paste {
+                                        Self.logger.info("Trying to paste")
+                                        if let id = ecpSessionState.textEditStatus.texteditId, UIPasteboard.general.hasStrings {
+                                            if let text = UIPasteboard.general.string {
+                                                Self.logger.info("Trying to paste \(text)")
+                                                Task {
+                                                    do {
+                                                        try await ecpSession?.setTextEditText(text, for: id)
+                                                    } catch {
+                                                        Self.logger.error("Error cutting text: \(error, privacy: .public)")
+                                                    }
+                                                }
+                                            } else {
+                                                Self.logger.warning("No text to paste")
+                                            }
+                                        } else {
+                                            Self.logger.info("Not pasting due to empty textedit id (\(ecpSessionState.textEditStatus.texteditId ?? "none")) or false UI pasteboard hasStrings (\(UIPasteboard.general.hasStrings))")
+                                        }
                                     } else {
                                         Self.logger.warning("Unknown function for keyboard shortcut \(title)")
                                     }
@@ -740,7 +828,8 @@ struct RemoteViewContained: View {
                                 selectedDevice
                             }, set: {
                                 manuallySelectedDevice = $0
-                            })
+                            }),
+                            ecpSessionState: ecpSessionState
                         )
                         .frame(idealWidth: 100, maxWidth: 350)
                         .disabled(selectedDevice == nil)
@@ -756,7 +845,8 @@ struct RemoteViewContained: View {
                                 selectedDevice
                             }, set: {
                                 manuallySelectedDevice = $0
-                            })
+                            }),
+                            ecpSessionState: ecpSessionState
                         )
                     }
                 }
@@ -769,6 +859,17 @@ struct RemoteViewContained: View {
                 .onChange(of: scenePhase) { _, newPhase in
                     inBackground = newPhase != ScenePhase.active
                 }
+                .onChange(of: ecpSessionState.textEditStatus) { old, new in
+                    if old.isActive && !new.isActive {
+                        withAnimation {
+                            showKeyboardEntryManual = false
+                        }
+                    } else if !old.isActive && new.isActive {
+                        withAnimation {
+                            showKeyboardEntryManual = true
+                        }
+                    }
+                }
         }
         .onAppear {
             scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
@@ -777,7 +878,7 @@ struct RemoteViewContained: View {
         }
 
         #if os(macOS)
-        .onKeyDown({ key in pressKey(key.key) }, enabled: !showKeyboardEntry)
+        .onKeyDown({ key in pressKey(key.key) }, enabled: true)
         #endif
         .font(.title2)
         .fontDesign(.rounded)
@@ -792,9 +893,37 @@ struct RemoteViewContained: View {
     @ViewBuilder
     var networkConnectivityBanner: some View {
         if networkMonitor.networkConnection == .none {
-            NotificationBanner(message: LocalizedStringResource("No network connection", comment: "Warning indicator message that there is no network connection"))
+            NotificationBanner(message: String(
+                localized: "No network connection",
+                comment: "Warning indicator message that there is no network connection")
+            )
         } else if networkMonitor.networkConnection == .remote || networkMonitor.networkConnection == .other {
-            NotificationBanner(message: LocalizedStringResource("No WiFi connection detected", comment: "Warning indicator message that there is no WiFi network connection"), level: .warning)
+            NotificationBanner(message: String(
+                localized: "No WiFi connection detected",
+                comment: "Warning indicator message that there is no WiFi network connection"
+            ), level: .warning)
+        }
+    }
+
+    @ViewBuilder
+    var networkPermissionBanner: some View {
+        if self.networkPermissionGranted == false && !self.networkPermissionBannerDismissed {
+            #if os(macOS)
+            NotificationBanner(message: String(
+                localized: "Local network permission may not be granted. Please open System Settings and navigate to Privacy and Security -> Local Network and enable access for Roam",
+                comment: "Warning indicator message that there is no local network permission"
+            ), onDismiss: {
+                self.networkPermissionBannerDismissed = true
+            })
+            #else
+            NotificationBanner(message: String(
+                localized:
+                "Local network permission may not be granted. Please navigate to System Settings -> Apps -> Roam and enable Local Network",
+                comment: "Warning indicator message that there is no local network permission"
+            ), onDismiss: {
+                self.networkPermissionBannerDismissed = true
+            })
+            #endif
         }
     }
 
@@ -854,7 +983,7 @@ struct RemoteViewContained: View {
             #endif
             .frame(maxWidth: 600)
 
-            if !showKeyboardEntry && selectedDevice != nil {
+            if !hideAppsForKeyboardEntry && selectedDevice != nil {
                 Spacer()
                 AppLinksView(deviceId: selectedDevice?.udn, rows: appLinkRows, handleOpenApp: launchApp)
                     .matchedGeometryEffect(id: "appLinksBar", in: animation)
@@ -960,7 +1089,7 @@ struct RemoteViewContained: View {
                 .matchedGeometryEffect(id: "buttonGrid", in: animation)
             }
 
-            if !showKeyboardEntry && selectedDevice != nil {
+            if !hideAppsForKeyboardEntry && selectedDevice != nil {
                 Spacer()
                     .frame(minHeight: 10)
                 AppLinksView(deviceId: selectedDevice?.udn, rows: appLinkRows, handleOpenApp: launchApp)
@@ -1014,7 +1143,7 @@ struct RemoteViewContained: View {
             do {
                 try await ecpSession?.pressButton(button)
             } catch {
-                Self.logger.info("Error sending button to device via ecp: \(error)")
+                Self.logger.info("Error sending button to device via ecp: \(error, privacy: .public)")
             }
         }
     }

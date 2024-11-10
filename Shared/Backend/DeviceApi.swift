@@ -149,7 +149,7 @@ func fetchDeviceInfo(location: String) async -> DeviceInfo? {
             }
         }
     } catch {
-        logger.error("Error getting device info: \(error)")
+        logger.error("Error getting device info: \(error, privacy: .public)")
     }
     return nil
 }

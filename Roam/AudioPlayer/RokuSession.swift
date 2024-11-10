@@ -4,8 +4,6 @@ import Foundation
 import Network
 import os.log
 
-typealias WebSocketStream = AsyncThrowingStream<URLSessionWebSocketTask.Message, any Error>
-
 private let logger = Logger(
     subsystem: Bundle.main.bundleIdentifier!,
     category: "HeadphonesMode"
@@ -69,7 +67,7 @@ func listenContinually(ecpSession: ECPSession, location: String, rtcpPort: UInt1
                 do {
                     try await rtpSession.sendRTCPReceiverReports()
                 } catch {
-                    logger.error("Error sending receiver reports: \(error)")
+                    logger.error("Error sending receiver reports: \(error, privacy: .public)")
                     throw error
                 }
             }
@@ -320,7 +318,7 @@ actor RTPSession {
                 content: RtcpPacket.vdly(delayMs: globalHugeFixedVDLYMS).packet(),
                 completion: .contentProcessed { error in
                     if let error {
-                        Self.logger.warning("Error sending VDLY packet \(error)")
+                        Self.logger.warning("Error sending VDLY packet \(error, privacy: .public)")
                         continuation.resume(throwing: error)
                     } else {
                         Self.logger.debug("VDLY Sent \(globalHugeFixedVDLYMS)")
@@ -353,7 +351,7 @@ actor RTPSession {
                 content: RtcpPacket.cver(clientVersion: 2).packet(),
                 completion: .contentProcessed { error in
                     if let error {
-                        Self.logger.warning("Error sending CVER packet \(error)")
+                        Self.logger.warning("Error sending CVER packet \(error, privacy: .public)")
                         continuation.resume(throwing: error)
                     } else {
                         Self.logger.debug("CVER Sent")
@@ -425,7 +423,7 @@ actor RTPSession {
             do {
                 try await sendRTCPReceiverReport()
             } catch {
-                Self.logger.error("Error sending receiver report \(error)")
+                Self.logger.error("Error sending receiver report \(error, privacy: .public)")
             }
             _ = await timerStream.next()
         }

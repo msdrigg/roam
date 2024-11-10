@@ -97,7 +97,7 @@
                     }
                     WatchConnectivity.logger.info("Successfully sent devices to watch with reply \(reply)")
                 }, errorHandler: { error in
-                    WatchConnectivity.logger.error("Error sending message \(deviceMap). \(error)")
+                    WatchConnectivity.logger.error("Error sending message \(deviceMap, privacy: .public). \(error, privacy: .public)")
                 })
 
                 session.transferUserInfo(deviceMap)

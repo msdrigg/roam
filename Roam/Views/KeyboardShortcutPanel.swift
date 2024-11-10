@@ -70,7 +70,10 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
                 .up: KeyboardShortcut(.upArrow, modifiers: .command),
                 .down: KeyboardShortcut(.downArrow, modifiers: .command),
                 .keyboardShortcuts: KeyboardShortcut(KeyEquivalent("k"), modifiers: .command),
-                .chatWithDeveloper: KeyboardShortcut(KeyEquivalent("j"), modifiers: .command)
+                .chatWithDeveloper: KeyboardShortcut(KeyEquivalent("j"), modifiers: .command),
+                .paste: KeyboardShortcut(KeyEquivalent("v"), modifiers: .command),
+                .cut: KeyboardShortcut(KeyEquivalent("x"), modifiers: .command),
+                .copy: KeyboardShortcut(KeyEquivalent("c"), modifiers: .command)
             ]
         } else {
             items = [
@@ -87,7 +90,10 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
                 .up: KeyboardShortcut(.upArrow, modifiers: []),
                 .down: KeyboardShortcut(.downArrow, modifiers: []),
                 .keyboardShortcuts: KeyboardShortcut(KeyEquivalent("k"), modifiers: .command),
-                .chatWithDeveloper: KeyboardShortcut(KeyEquivalent("j"), modifiers: .command)
+                .chatWithDeveloper: KeyboardShortcut(KeyEquivalent("j"), modifiers: .command),
+                .paste: KeyboardShortcut(KeyEquivalent("v"), modifiers: .command),
+                .cut: KeyboardShortcut(KeyEquivalent("x"), modifiers: .command),
+                .copy: KeyboardShortcut(KeyEquivalent("c"), modifiers: .command)
             ]
         }
         #else
@@ -104,6 +110,9 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
             .right: KeyboardShortcut(.rightArrow, modifiers: .command),
             .up: KeyboardShortcut(.upArrow, modifiers: .command),
             .down: KeyboardShortcut(.downArrow, modifiers: .command),
+            .paste: KeyboardShortcut(KeyEquivalent("v"), modifiers: .command),
+            .cut: KeyboardShortcut(KeyEquivalent("x"), modifiers: .command),
+            .copy: KeyboardShortcut(KeyEquivalent("c"), modifiers: .command),
             .keyboardShortcuts: KeyboardShortcut(KeyEquivalent("k"), modifiers: .command),
             .chatWithDeveloper: KeyboardShortcut(KeyEquivalent("j"), modifiers: .command)
         ]
@@ -176,6 +185,9 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
         case instantReplay = "Instant Replay"
         case fastForward = "Fast Forward"
         case rewind = "Rewind"
+        case paste = "Paste"
+        case copy = "Copy"
+        case cut = ""
 
         var defaultsKey: String {
             return "keyboard-shortcut-\(rawValue)"
@@ -200,7 +212,10 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
             .headphonesMode: String(localized: "Headphones Mode", comment: "Keyboard shortcut to toggle headphones mode"),
             .instantReplay: String(localized: "Instant Replay", comment: "Keyboard shortcut to instant replay"),
             .fastForward: String(localized: "Fast Forward", comment: "Keyboard shortcut to fast forward"),
-            .rewind: String(localized: "Rewind", comment: "Keyboard shortcut to rewind")
+            .rewind: String(localized: "Rewind", comment: "Keyboard shortcut to rewind"),
+            .paste: String(localized: "Paste", comment: "Keyboard shortcut to paste"),
+            .cut: String(localized: "Cut", comment: "Keyboard shortcut to cut"),
+            .copy: String(localized: "Copy", comment: "Keyboard shortcut to copy")
         ]
 
         public var description: String {
@@ -274,9 +289,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
                 return .up
             case .down:
                 return .down
-            case .keyboardShortcuts:
-                return nil
-            case .chatWithDeveloper:
+            case .keyboardShortcuts, .paste, .chatWithDeveloper, .cut, .copy:
                 return nil
             case .options:
                 return .options
@@ -531,6 +544,9 @@ struct AllCustomKeyboardShortcuts: DynamicProperty {
     @KeyboardShortcutStorage(.down) private var downShortcut
     @KeyboardShortcutStorage(.keyboardShortcuts) private var keyboardShortcutsShortcut
     @KeyboardShortcutStorage(.chatWithDeveloper) private var chatWithDeveloperShortcut
+    @KeyboardShortcutStorage(.paste) private var pasteShortcut
+    @KeyboardShortcutStorage(.cut) private var cutShortcut
+    @KeyboardShortcutStorage(.copy) private var copyShortcut
     @KeyboardShortcutStorage(.options) private var optionsShortcut
     @KeyboardShortcutStorage(.headphonesMode) private var headphonesModeShortcut
     @KeyboardShortcutStorage(.instantReplay) private var instantReplayShortcut
@@ -557,8 +573,12 @@ struct AllCustomKeyboardShortcuts: DynamicProperty {
             headphonesModeShortcut,
             instantReplayShortcut,
             fastForwardShortcut,
-            rewindShortcut
-        ].compactMap { $0 }
+            rewindShortcut,
+            pasteShortcut,
+            copyShortcut,
+            cutShortcut
+        ]
+            .compactMap { $0 }
     }
 
     var projectedValue: Binding<[CustomKeyboardShortcut]> {
@@ -583,7 +603,10 @@ struct AllCustomKeyboardShortcuts: DynamicProperty {
                     headphonesModeShortcut,
                     instantReplayShortcut,
                     fastForwardShortcut,
-                    rewindShortcut
+                    rewindShortcut,
+                    pasteShortcut,
+                    cutShortcut,
+                    copyShortcut
                 ].compactMap { $0 }
             },
             set: { newShortcuts in
@@ -608,6 +631,9 @@ struct AllCustomKeyboardShortcuts: DynamicProperty {
                     case .instantReplay: instantReplayShortcut = shortcut
                     case .fastForward: fastForwardShortcut = shortcut
                     case .rewind: rewindShortcut = shortcut
+                    case .paste: pasteShortcut = shortcut
+                    case .cut: cutShortcut = shortcut
+                    case .copy: copyShortcut = shortcut
                     }
                 }
             }

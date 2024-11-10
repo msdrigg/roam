@@ -164,6 +164,7 @@ public func uploadDebugLogs(logs: DebugInfo) async throws {
 
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .iso8601
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
     let jsonData = try encoder.encode(logs)
     request.httpBody = jsonData
 
@@ -177,4 +178,60 @@ public func uploadDebugLogs(logs: DebugInfo) async throws {
         }
         throw URLError(.badServerResponse)
     }
+
+    try await sendMessage(message: getDebugLogMessage(logs), apnsToken: nil)
+}
+
+func getDebugLogMessage(_ debugInfo: DebugInfo) -> String {
+    var message: String = ":ninja:\n\n"
+
+    message += "### Installation Info\n\n"
+    message += "- **User ID**: \(debugInfo.installationInfo.userId)\n"
+    message += "- **Build Version**: \(debugInfo.installationInfo.buildVersion ?? "--")\n"
+    message += "- **OS Platform**: \(debugInfo.installationInfo.osPlatform ?? "--")\n"
+    message += "- **OS Version**: \(debugInfo.installationInfo.osVersion ?? "--")\n"
+    message += "- **Locale**: \(debugInfo.installationInfo.userLocale ?? "--")\n"
+    message += "- **Device Language**: \(debugInfo.language.deviceLanguageCode)\n"
+    message += "- **Translated Language**: \(debugInfo.language.translatedLanguageCode)\n"
+
+    message += "\n### Devices\n\n"
+
+    for device in debugInfo.devices {
+        message += "- \(device.device.name)\n"
+        message += "   - **Location**: \(device.device.location)\n"
+        message += "   - **UDN**: \(device.device.udn)\n"
+        message += "   - **ID**: \(device.device.id)\n"
+        message += "   - **Deleted At**: \(device.device.deletedAt?.ISO8601Format() ?? "--")\n"
+        message += "   - **Ethernet MAC**: \(device.device.ethernetMAC ?? "--")\n"
+        message += "   - **Wifi MAC**: \(device.device.wifiMAC ?? "--")\n"
+        message += "   - **Network Type**: \(device.device.networkType ?? "--")\n"
+        message += "   - **RTCP Port**: \(String(describing: device.device.rtcpPort))\n"
+        message += "   - **Supports Datagram**: \(String(describing: device.device.supportsDatagram))\n"
+        message += "   - **Connectable Now**: \(device.successResponse != nil)\n"
+        message += "   - **Last Online**: \(device.device.lastOnlineAt?.ISO8601Format() ?? "--")\n"
+        message += "   - **Last Scanned**: \(device.device.lastScannedAt?.ISO8601Format() ?? "--")\n"
+        message += "   - **Last Selected**: \(device.device.lastSelectedAt?.ISO8601Format() ?? "--")\n"
+        message += "   - **Last Sent to Watch**: \(device.device.lastSentToWatch?.ISO8601Format() ?? "--")\n"
+    }
+
+    if debugInfo.devices.isEmpty {
+        message += "- No devices found.\n"
+    }
+
+    message += "\n### Interfaces\n\n"
+
+    for interface in debugInfo.interfaces {
+        message += "- \(interface.name)\n"
+        message += "   - **Self Address**: \(interface.address.addressString)\n"
+        message += "   - **Netmask**: \(interface.netmask.addressString)\n"
+        message += "   - **Flags**: \(interface.getFlagList().joined(separator: ", "))\n"
+        message += "   - **Start Scannable**: \(interface.scannableIPV4NetworkRange.first?.addressString ?? "--")\n"
+        message += "   - **End Scannable**: \(interface.scannableIPV4NetworkRange.last?.addressString ?? "--")\n"
+    }
+
+    if debugInfo.interfaces.isEmpty {
+        message += "- No interfacesfound.\n"
+    }
+
+    return message
 }

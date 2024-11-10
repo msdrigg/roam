@@ -7,18 +7,20 @@ hide_table_of_contents: true
 # Upcoming Roam Updates
 
 - Added control widgets: Play, Mute, Change Volume and Select from Control center!
+- Added better text field handling for many roku apps 
+    - Auto-open text field when text edit is available
+    - Copy, Cut, Paste from macOS
+    - Copy, Cut, Paste + Generalized edit on iOS
+- Better reporting around local network permissions and connectivity
+- Connection stability improvements
 
 ## Roadmap
 
--   Update keyboard handling to support ecp-textedit on `KeyboardEntry`
-    -   Show keyboard when textedit is opened
-    -   Hide keyboard when textedit closed
-    -   Ensure that pasting + select/delete into the textedit field works as expected
-    -   Use current modified textfield if ecp-textedit is not supported, use standard textfield if it is
-    -   On macOS, support paste with cmdP, copy/cut with cmdX + cmdC
-    -   If ecp-textedit is not supported, fall back to current behavior of sending keys
-    -   On macOS show a bottom text field when textedit is enabled 
-    -   On macOS allow cmd+v and cmd+c and cmd+x to copy paste from/to the buffer
+-   Current Ongoing
+    -   Can we get rays to spin when connecting (rays.spin?)
+        - Can I have a transparent rays within the text + overlay spinning rays underneath it?
+        - Can I do it with popup instead of menu?
+    -   Fix macOS widgets
 
 -   Add +30 second mute timer with countdown
     -   Hold mute to mute for +30 seconds
@@ -58,9 +60,6 @@ hide_table_of_contents: true
     -   GCKeyboard for one
     -   FocusEnvironment for 2
     -   Ensure that whatever solution gets used for iOS doesn't break text entry in messages/keyboard entry
-
--   Add some event tracking on what actions users are actually doing on their devices (connect to firebase analytics maybe?)
-    -   Track who is using minimalist view, what actions they are doing, etc...
 
 ## Bug Fixes
 
@@ -140,25 +139,10 @@ hide_table_of_contents: true
             -   Link https://roam.msd3.io/manually-add-tv.md and https://support.roku.com/article/115001480188 for more troubleshooting or chat
 -   Add badge for supportsWakeOnWLAN and supportsMute
 
-## ECP textedit notes
-
-Keyboard ECP Session Commands (notes)
-
-```
-- {"request":"request-events","request-id":"4","param-events":"+language-changed,+language-changing,+media-player-state-changed,+plugin-ui-run,+plugin-ui-run-script,+plugin-ui-exit,+screensaver-run,+screensaver-exit,+plugins-changed,+sync-completed,+power-mode-changed,+volume-changed,+tvinput-ui-run,+tvinput-ui-exit,+tv-channel-changed,+textedit-opened,+textedit-changed,+textedit-closed,+textedit-closed,+ecs-microphone-start,+ecs-microphone-stop,+device-name-changed,+device-location-changed,+audio-setting-changed,+audio-settings-invalidated"}
-    - {"notify":"textedit-opened","param-masked":"false","param-max-length":"75","param-selection-end":"0","param-selection-start":"0","param-text":"","param-textedit-id":"12","param-textedit-type":"full","timestamp":"608939.003"}
-- {"request":"query-textedit-state","request-id":"10"}
-    - {"content-data":"eyJ0ZXh0ZWRpdC1zdGF0ZSI6eyJ0ZXh0ZWRpdC1pZCI6Im5vbmUifX0=","content-type":"application/json; charset=\"utf-8\"","response":"query-textedit-state","response-id":"10","status":"200","status-msg":"OK"}
-- {"param-text":"h","param-textedit-id":"12","request":"set-textedit-text","request-id":"20"}
-    - {"response":"set-textedit-text","response-id":"29","status":"200","status-msg":"OK"}
-```
-
 ## To update when dropping support for iOS 17/macOS 14 (Feb 2026)
 
 -   Go around and remove @available(iOS 18) tags
 -   Use preview traits to inject sample data into previews
-    -   How to do this with iOS 17 still being a factor?
-    -   How to use @Previewable in previews with iOS 17 still a factor??
 -   SwiftData
     -   Use new #Index macro for models
     -   Use new #Unique macro for models

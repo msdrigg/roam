@@ -468,7 +468,7 @@ extension DataHandler {
 extension DataHandler {
     func refreshDevice(_ id: PersistentIdentifier) async {
         guard let location = (modelContext.existingDevice(for: id))?.location else {
-            DataHandler.logger.error("Trying to refresh device that doeesn't exist \(String(describing: id))")
+            DataHandler.logger.error("Trying to refresh device that doeesn't exist \(String(describing: id), privacy: .public)")
             return
         }
 
@@ -582,7 +582,7 @@ extension DataHandler {
             do {
                 deviceIcon = try await tryFetchDeviceIcon(location: location)
             } catch {
-                DataHandler.logger.warning("Error getting device icon \(error)")
+                DataHandler.logger.warning("Error getting device icon \(error, privacy: .public)")
             }
         }
 
@@ -694,7 +694,7 @@ extension DataHandler {
 
             return count
         } catch {
-            DataHandler.logger.error("Error refreshing messages \(error)")
+            DataHandler.logger.error("Error refreshing messages \(error, privacy: .public)")
             return 0
         }
     }

@@ -56,5 +56,9 @@
 		<string>audio</string>
 		<string>remote-notification</string>
 	</array>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_preflight_check._tcp</string>
+	</array>
 </dict>
 </plist>

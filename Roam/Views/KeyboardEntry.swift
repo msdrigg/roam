@@ -3,12 +3,36 @@
     import os.log
     import SwiftUI
 
+private struct StrTransformation {
+    let old: String
+    let new: String
+}
+
     @available(iOS, introduced: 17.0)
     struct KeyboardEntry: View {
+        private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "KeyboardEntry")
+
         @Binding var str: String
-        @Binding var showing: Bool
         @State var strSent: String = ""
+        @Binding var showing: Bool
         @FocusState private var keyboardFocused: Bool
+
+        @State private var transformations: [StrTransformation] = []
+
+        @EnvironmentObject var appDelegate: RoamAppDelegate
+
+        var texteditId: String? {
+            appDelegate.ecpSessionState.textEditStatus.texteditId
+        }
+
+        var texteditText: String? {
+            appDelegate.ecpSessionState.textEditStatus.text
+        }
+
+        var ecpSession: ECPSession? {
+            appDelegate.ecpSessionState.ecpSession
+        }
+
         let onKeyPress: (_ press: KeyEquivalent) -> Void
         let leaving: Bool
 
@@ -21,7 +45,7 @@
 
                     showing = false
                 }
-            })
+            }, fullFeatures: texteditId != nil)
             #if !os(tvOS)
             .textSelection(.disabled)
             #endif
@@ -45,19 +69,32 @@
                 }
             #endif
                 .onChange(of: str) { _, str in
-                    if str.count > strSent.count {
-                        if let char = str.unicodeScalars.last {
-                            onKeyPress(KeyEquivalent(Character(char)))
+                    if let texteditId {
+                        Task {
+                            do {
+                                try await ecpSession?.setTextEditText(str, for: texteditId)
+                            } catch {
+                                Self.logger.error("Error setting textedit text \(error, privacy: .public)")
+                            }
+                        }
+                    } else {
+                        if str.count > strSent.count {
+                            if let char = str.unicodeScalars.last {
+                                onKeyPress(KeyEquivalent(Character(char)))
+                            }
                         }
                     }
-
                     strSent = str
+                }
+                .onChange(of: texteditId) {
+                    if texteditId != nil && (texteditText ?? "" != str) {
+                        str = texteditText ?? ""
+                    }
                 }
                 .onChange(of: leaving) { _, leaving in
                     if leaving {
                         withAnimation {
                             keyboardFocused = false
-
                             showing = false
                         }
                     } else {
@@ -66,27 +103,42 @@
                 }
                 .onAppear {
                     keyboardFocused = true
-                    str = ""
-                    strSent = ""
+                    if texteditId == nil {
+                        str = ""
+                        strSent = ""
+                    } else {
+                        str = texteditText ?? ""
+                        strSent = texteditText ?? ""
+                    }
                 }
         }
     }
 
     class EndOnlyTextField: UITextField {
         var didDelete: (() -> Void)?
+        var fullFeatures: Bool?
 
-        override func closestPosition(to _: CGPoint) -> UITextPosition? {
+        override func closestPosition(to point: CGPoint) -> UITextPosition? {
+            if self.fullFeatures == true {
+                return super.closestPosition(to: point)
+            }
+
             let beginning = beginningOfDocument
             let end = position(from: beginning, offset: text?.count ?? 0)
             return end
         }
 
         override func deleteBackward() {
-            didDelete?()
+            if self.fullFeatures != true {
+                didDelete?()
+            }
             super.deleteBackward()
         }
 
         override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+            if self.fullFeatures == true {
+                return super.canPerformAction(action, withSender: sender)
+            }
             // Disable cut, copy, paste, select, selectAll
             if action == #selector(cut(_:)) || action == #selector(copy(_:)) || action == #selector(paste(_:)) ||
                 action == #selector(select(_:)) || action == #selector(selectAll(_:))
@@ -96,12 +148,19 @@
             return super.canPerformAction(action, withSender: sender)
         }
 
-        override func selectionRects(for _: UITextRange) -> [UITextSelectionRect] {
-            // Return empty array to prevent selection
-            []
+        override func selectionRects(for range: UITextRange) -> [UITextSelectionRect] {
+            if self.fullFeatures == true {
+                return super.selectionRects(for: range)
+            } else {
+                // Return empty array to prevent selection
+                return []
+            }
         }
 
         override func caretRect(for position: UITextPosition) -> CGRect {
+            if self.fullFeatures == true {
+                return super.caretRect(for: position)
+            }
             // Force the caret to the end of the text
             guard let endPosition = self.position(from: endOfDocument, offset: 0) else {
                 return super.caretRect(for: position)
@@ -115,17 +174,20 @@
         private var text: Binding<String>
         private var onDelete: () -> Void
         private var onDone: () -> Void
+        private var fullFeatures: Bool
 
         init(
             _ placeholder: String,
             text: Binding<String>,
             onDelete: @escaping () -> Void,
-            onDone: @escaping () -> Void
+            onDone: @escaping () -> Void,
+            fullFeatures: Bool
         ) {
             self.placeholder = placeholder
             self.text = text
             self.onDelete = onDelete
             self.onDone = onDone
+            self.fullFeatures = fullFeatures
         }
 
         func makeCoordinator() -> TextFieldContainer.Coordinator {
@@ -138,6 +200,7 @@
             innertTextField.text = text.wrappedValue
             innertTextField.delegate = context.coordinator
             innertTextField.didDelete = onDelete
+            innertTextField.fullFeatures = fullFeatures
 
             context.coordinator.setup(innertTextField)
 
@@ -146,6 +209,10 @@
 
         func updateUIView(_ uiView: UITextField, context _: UIViewRepresentableContext<TextFieldContainer>) {
             uiView.text = text.wrappedValue
+            if let uiViewEndOnlyTextField = uiView as? EndOnlyTextField {
+                uiViewEndOnlyTextField.fullFeatures = fullFeatures
+                uiViewEndOnlyTextField.didDelete = onDelete
+            }
         }
 
         class Coordinator: NSObject, UITextFieldDelegate {
