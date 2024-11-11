@@ -80,7 +80,7 @@ class ECPSessionState {
 }
 
 let refreshInterval: TimeInterval = 10
-let requestTimeout: TimeInterval = 3
+let requestTimeout: Int = 5
 
 actor ECPSession {
     nonisolated static let logger = Logger(
@@ -130,12 +130,12 @@ actor ECPSession {
 
     private static var websocketParameters: NWParameters {
         let tcpOptions = NWProtocolTCP.Options()
-        tcpOptions.connectionDropTime = 2
-        tcpOptions.connectionTimeout = 2
-        tcpOptions.keepaliveCount = 2
+        tcpOptions.connectionDropTime = requestTimeout
+        tcpOptions.connectionTimeout = requestTimeout
+        tcpOptions.keepaliveCount = requestTimeout
         tcpOptions.enableKeepalive = true
-        tcpOptions.keepaliveInterval = 2
-        tcpOptions.persistTimeout = 2
+        tcpOptions.keepaliveInterval = requestTimeout
+        tcpOptions.persistTimeout = requestTimeout
         let params = NWParameters(tls: nil, tcp: tcpOptions)
 
         let options = NWProtocolWebSocket.Options()
@@ -148,7 +148,6 @@ actor ECPSession {
 
     public init(device: DeviceAppEntity, status: ECPSessionState) throws {
         Self.logger.info("Initing ECP Session with url \(device.location, privacy: .public)")
-        // SAFETY: "http" is always a valid regex
         // swiftlint:disable:next force_try
         guard let url = URL(string: "\(device.location.replacing(try! Regex("^http:"), with: "ws:"))ecp-session") else {
             Self.logger.error("Bad url for location \(device.location)ecp-session")
@@ -278,31 +277,30 @@ actor ECPSession {
     public func configure() async throws {
         if let connection {
             if isMigratingConnection {
+                Self.logger.info("Not reconfiguring because doing it already")
                 return
             }
+            Self.logger.info("Reconfiguring existing connection")
             self.websocketStateUpdated(status: .connecting(.now))
             switch connection.state {
             case NWConnection.State.cancelled, .failed:
                 self.triggerReconnect()
-            case .ready, .waiting, .preparing:
-                break
-            case .setup:
-                Self.logger.info("Updating status to .connecting")
-                self.websocketStateUpdated(status: .connecting(.now))
-
-                do {
-                    try await establishConnectionAndAuthenticate()
-                } catch {
-                    Self.logger.error("Failed to establish connection and authenticate. Cancelling...: \(error, privacy: .public)")
-                    connection.cancel()
-                    throw error
-                }
+                throw ECPError.connectFailed
+            case let NWConnection.State.waiting(waiting):
+                Self.logger.info("Waiting for \(waiting, privacy: .public), so reconnecging...")
+                self.triggerReconnect()
+                throw ECPError.connectFailed
+            case .ready, .preparing, .setup:
+                Self.logger.info("Returning because state is OK (\(String(describing: connection.state), privacy: .public))")
             @unknown default:
                 Self.logger.info("Unknown connection state: \(String(describing: connection.state), privacy: .public)")
             }
-        } else if connection?.state != .ready {
+        } else {
+            Self.logger.info("Reconfiguring new connection")
             self.websocketStateUpdated(status: .connecting(.now))
             let connection = NWConnection(to: endpoint, using: ECPSession.websocketParameters)
+
+            requestIdCounter = 0
 
             connection.stateUpdateHandler = { [weak self] state in
                 Task {
@@ -335,8 +333,6 @@ actor ECPSession {
                 throw error
             }
         }
-
-        requestIdCounter = 0
     }
 
     public func listen() {
@@ -400,6 +396,7 @@ actor ECPSession {
         case .setup, .preparing:
             self.websocketStateUpdated(status: .connecting(.now))
         case .cancelled:
+            isMigratingConnection = false
             self.websocketStateUpdated(status: .disconnected(.now))
             errorWhileWaitingCount = 0
             tearDownConnection(error: nil)
@@ -594,7 +591,6 @@ actor ECPSession {
             encoding: .utf8
         )!
 
-        // SAFETY: We can unwrap because json encoder always encodes to string
         let notifyResponseTask = Task {
             try await self.receive(requestId: notifyRequestId)
         }
@@ -621,8 +617,6 @@ actor ECPSession {
             ),
             encoding: .utf8
         )!
-
-        // SAFETY: We can unwrap because json encoder always encodes to string
 
         try await send(string: textEditQueryRequestData)
 
@@ -744,7 +738,6 @@ actor ECPSession {
     func pingOnce() async throws {
         Self.logger.info("Pinging!")
 
-        // SAFETY: We can unwrap because json encoder always encodes to string
         let requestData = try String(
             data: kebabEncoder.encode(PingRequest(requestId: String(getAndUpdateRequestId()))),
             encoding: .utf8
@@ -797,7 +790,6 @@ actor ECPSession {
                 encoding: .utf8
             )!
 
-            // SAFETY: We can unwrap because json encoder always encodes to string
             let plResponseTask = Task {
                 try await self.receive(requestId: plRequestId)
             }
@@ -853,7 +845,6 @@ actor ECPSession {
     public func openAppOnce(_ app: AppLinkAppEntity) async throws {
         Self.logger.info("Opening app \(app.id)")
 
-        // SAFETY: We can unwrap because json encoder always encodes to string
         let reqId = getAndUpdateRequestId()
         let requestData = try String(
             data: kebabEncoder.encode(AppLaunchRequest(requestId: reqId, channelId: app.id)),
@@ -884,7 +875,6 @@ actor ECPSession {
     private func sendKeypressOnce(_ data: String) async throws {
         Self.logger.trace("Trying to send keypress \(data)")
 
-        // SAFETY: We can unwrap because json encoder always encodes to string
         let requestData = try String(
             data: kebabEncoder.encode(KeyPressRequest(key: data, requestId: String(getAndUpdateRequestId()))),
             encoding: .utf8
@@ -899,8 +889,13 @@ actor ECPSession {
             if connection?.state == .preparing {
                 try await waitForConnectionReady()
             } else {
-                Self.logger.info("WS in down state, reconfiguring.")
-                try await configure()
+                Self.logger.info("WS in down state (\(String(describing: self.connection?.state), privacy: .public)), reconfiguring.")
+                if self.isMigratingConnection {
+                    Self.logger.info("Already migrating, ignoring")
+                    try await waitForConnectionReady()
+                } else {
+                    try await configure()
+                }
             }
         }
     }

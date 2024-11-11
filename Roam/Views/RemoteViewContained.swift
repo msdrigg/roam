@@ -892,22 +892,24 @@ struct RemoteViewContained: View {
 
     @ViewBuilder
     var networkConnectivityBanner: some View {
-        if networkMonitor.networkConnection == .none {
-            NotificationBanner(message: String(
-                localized: "No network connection",
-                comment: "Warning indicator message that there is no network connection")
-            )
-        } else if networkMonitor.networkConnection == .remote || networkMonitor.networkConnection == .other {
-            NotificationBanner(message: String(
-                localized: "No WiFi connection detected",
-                comment: "Warning indicator message that there is no WiFi network connection"
-            ), level: .warning)
+        if self.ecpSessionState.status != .connected {
+            if networkMonitor.networkConnection == .none {
+                NotificationBanner(message: String(
+                    localized: "No network connection",
+                    comment: "Warning indicator message that there is no network connection")
+                )
+            } else if networkMonitor.networkConnection == .remote || networkMonitor.networkConnection == .other {
+                NotificationBanner(message: String(
+                    localized: "No WiFi connection detected",
+                    comment: "Warning indicator message that there is no WiFi network connection"
+                ), level: .warning)
+            }
         }
     }
 
     @ViewBuilder
     var networkPermissionBanner: some View {
-        if self.networkPermissionGranted == false && !self.networkPermissionBannerDismissed {
+        if self.networkPermissionGranted == false && !self.networkPermissionBannerDismissed && self.ecpSessionState.status != .connected {
             #if os(macOS)
             NotificationBanner(message: String(
                 localized: "Local network permission may not be granted. Please open System Settings and navigate to Privacy and Security -> Local Network and enable access for Roam",

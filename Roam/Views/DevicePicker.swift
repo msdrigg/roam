@@ -61,7 +61,7 @@ struct DevicePicker: View {
             case .connected:
                 false
             case let .connecting(date):
-                if currentDate.timeIntervalSince(date) < 1 {
+                if currentDate.timeIntervalSince(date) < 5 {
                     true
                 } else {
                     false
@@ -134,15 +134,18 @@ struct DevicePicker: View {
         } label: {
             Group {
                 if let device = device.wrappedValue {
-                    ((showSpinning ? Text(Image(systemName: "rays")).font(.system(size: circleIconSize))
-                        .foregroundColor(deviceStatusColor)
-                        .baselineOffset(baselineOffset) :
-                    Text(Image(systemName: "circle.fill")).font(.system(size: circleIconSize))
-                        .foregroundColor(deviceStatusColor)
-                        .baselineOffset(baselineOffset)) +
-                    Text("  ", comment: "Empty space") +
-                    Text(device.name) +
-                    Text("  ", comment: "Empty space"))
+                    if showSpinning {
+                        Label(device.name, systemImage: "rays")
+                            .labelStyle(.titleAndIcon)
+                            .symbolEffect(.variableColor)
+                    } else {
+                        Text(Image(systemName: "circle.fill")).font(.system(size: circleIconSize))
+                            .foregroundColor(deviceStatusColor)
+                            .baselineOffset(baselineOffset) +
+                            Text("  ", comment: "Empty space") +
+                            Text(device.name) +
+                            Text("  ", comment: "Empty space")
+                    }
                 } else {
                     if showScanning {
                         Label("Scanning for devices", systemImage: "rays")

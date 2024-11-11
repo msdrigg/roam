@@ -17,12 +17,17 @@ hide_table_of_contents: true
 ## Roadmap
 
 -   Current Ongoing
-    -   Can we get rays to spin when connecting (rays.spin?)
-        - Can I have a transparent rays within the text + overlay spinning rays underneath it?
-        - Can I do it with popup instead of menu?
     -   Fix macOS widgets
+        - Respond to feedback assistant request. Need to get crash log with the widget simulator crashing
+    -   Get iOS released pushed to app store
+    -   Do better testing on iOS and macOS to test that the system reconnects and stays connected in the following scenarios
+        - After waiting a long time
+        - When re-entering from the background
+        - When powering the TV from OFF state
+        - When reconnecting to the internet
+        - When switching devices
 
--   Add +30 second mute timer with countdown
+-   Next: Add +30 second mute timer with countdown
     -   Hold mute to mute for +30 seconds
     -   Click again to unmute and cancel it
     -   Show an indicator below mute button line 
@@ -31,14 +36,19 @@ hide_table_of_contents: true
         -   Show underneath the main button panel so it's close to mute
     -   Make the +30 configurable to 30, 15, 60 second mute options
 
--   Provide an optional Minimalist view on iOS that replicates siri remote's view closely
+-   Future: Provide an optional Minimalist view on iOS that replicates siri remote's view closely
     -   https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
     -   Support visionos gestures as well...
 
 ## General Future Ideas
 
 -   Write a blog post about the discord bot and point to my MessageView
+    - Make messageView more self-contained
 -   Write a blog post about the auto-translation and logic around that
+-   Write a blog post about NWConnection vs URLSession for websockets
+-   Write a blog post about custom keyboard shortcuts
+-   Write a blog post about ECP Textedit API
+-   Write a blog post about control center widgets
 
 -   Make custom menu bar icon
 
@@ -48,7 +58,7 @@ hide_table_of_contents: true
 
 -   Automate Screenshot Capture
 
-    -   Use UITests to get actual screenshots
+    -   Use UITests to get actual screenshots for all device sizes + locales
     -   Use AppScreens https://appscreens.com/user/project/DRxTFSSIQtuU0y9Eew4w to get the screenshots in the frames
     -   Or something else
         -   https://www.figma.com/community/file/886620275115089774
@@ -86,24 +96,9 @@ hide_table_of_contents: true
     -   Refer to swiftdat testingmodelcontainer for modelcontainers
     -   Refer to here https://medium.com/appledeveloperacademy-ufpe/how-to-implement-ui-tests-with-swiftui-a-few-examples-636708ee26ad for how to setup tests
 
-## App Clip
-
--   AppClip
-    -   Add a "getAShareableLinkToThisDevice" button on settings -> device
-        -   Pre-generate all 1.1M app clip codes and encode ring locations (0.5GB)
-        -   Make a button to "Get a shareable link to the device!" with an image preview to the app clip code (roam color)
-        -   Download the code + link and convert to PNG on device when a device location is changed
-        -   Have the code open up the device as a shared link to an image (with preview!)
-    -   Also make the actual device link sharable
-
 ## Improve user messaging around info/status management
 
 -   Update Info/status management to better handle volatile state
-    -   On disconnect, select, button click, move to foreground, app opened -> Restart reconnect loop if disconnected
-    -   Reconnect loop is to exponentially backoff retrying failing connections (0.5s, double, 10s backoff)
-    -   When connected to the device, always disable the network warnings
-    -   When trying to connect to the device, or trying to power on the device, show spinning information icon instead of gray dot
-    -   When powering on the device and succeeding, show an animation on transition from gray -> spinning -> green
     -   When powering on the device with WOL and not connecting after 5 seconds, or when powering on the device and immediately failing, show a warning message underneath the wifi one
         -   “We weren’t able to wake your Roku” (Find out more) (Don’t show again for this device), (X)
         -   Find out more shows some reasons why
@@ -112,18 +107,13 @@ hide_table_of_contents: true
                 -   Your device doesn’t support WWOL and is connected to wifi
                 -   Your device doesn’t support WWOL or WOL
             -   Your network isn’t setup in a way to allow us to send wakeup commands to the device
+    -   On disconnect, select, button click, move to foreground, app opened -> Restart reconnect loop if disconnected
     -   Reconnect loop = Backing off Exponentially attempt to reconnect to reconnect ECP
         -   Reconnect ECP first
-        -   Listen to notify second
-            -   Handle +power-mode-changed,+textedit-opened,+textedit-changed,+textedit-closed,+device-name-changed
-            -   Make sure we can handle each of these requests and their format…
         -   Refresh device state third
         -   Refresh query-textedit-state fourth
             -   Update textedit state
         -   Refresh device icons fifth
-    -   On all changes after reconnecting (through notify or anything)
-        -   Update Device (stored) and DeviceState (voilatile)
-    -   After reconnecting/disconnecting, update online status in remote view
 
 ## Improve user messaging around device capabilities
 
