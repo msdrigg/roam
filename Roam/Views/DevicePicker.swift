@@ -120,14 +120,9 @@ struct DevicePicker: View {
                     Label("Settings", systemImage: "gear")
                         .labelStyle(.titleAndIcon)
                 })
-            #elseif !APPCLIP
+            #else
                 NavigationLink(value: NavigationDestination.settingsDestination(.global)) {
                     Label("Settings", systemImage: "gear")
-                }
-                .labelStyle(.titleAndIcon)
-            #elseif APPCLIP
-            Button(String(localized: "Download the full app", comment: "Text on a button to download the app from the app store"), systemImage: "app.gift") {
-                    openURL(URL(string: "https://apps.apple.com/us/app/roam-a-better-remote-for-roku/id6469834197")!)
                 }
                 .labelStyle(.titleAndIcon)
             #endif

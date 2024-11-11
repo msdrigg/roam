@@ -141,7 +141,7 @@ struct RemoteView: View {
 
         var path = url.pathComponents
         path.removeFirst()
-        guard let dlpath = path.first, dlpath == "deep-link" || dlpath == "appclip" else {
+        guard let dlpath = path.first, dlpath == "deep-link" else {
             Self.logger.error("Getting Invalid URL path")
             return
         }
@@ -153,7 +153,7 @@ struct RemoteView: View {
         }
         Self.logger.info("Getting action \(action)")
 
-        if action == "add-device" || action == "appclip" || action == "scan" {
+        if action == "add-device" || action == "scan" {
             let queryParams = URLComponents(string: url.absoluteString)?.queryItems
             let name = queryParams?.first(where: { $0.name == "name" })?.value ?? "New device"
             // Get location param as location=IP or p=IPV4Hex
@@ -178,21 +178,19 @@ struct RemoteView: View {
                 await createDataHandler()?.addOrReplaceDevice(location: location, friendlyDeviceName: name, udn: udn)
             }
         }
-        #if !APPCLIP
-            if action == "feedback" {
-                Self.logger.info("Attempting to open app debugging")
-                appDelegate.navigationPath.append(NavigationDestination.settingsDestination(.debugging))
-            } else if action == "settings" {
-                Self.logger.info("Attempting to open app settings")
-                appDelegate.navigationPath.append(NavigationDestination.settingsDestination(.global))
-            } else if action == "about" {
-                Self.logger.info("Attempting to open about page")
-                appDelegate.navigationPath.append(NavigationDestination.aboutDestination)
-            } else if action == "messages" {
-                Self.logger.info("Attempting to open messages page")
-                appDelegate.navigationPath.append(NavigationDestination.messageDestination)
-            }
-        #endif
+        if action == "feedback" {
+            Self.logger.info("Attempting to open app debugging")
+            appDelegate.navigationPath.append(NavigationDestination.settingsDestination(.debugging))
+        } else if action == "settings" {
+            Self.logger.info("Attempting to open app settings")
+            appDelegate.navigationPath.append(NavigationDestination.settingsDestination(.global))
+        } else if action == "about" {
+            Self.logger.info("Attempting to open about page")
+            appDelegate.navigationPath.append(NavigationDestination.aboutDestination)
+        } else if action == "messages" {
+            Self.logger.info("Attempting to open messages page")
+            appDelegate.navigationPath.append(NavigationDestination.messageDestination)
+        }
     }
 }
 

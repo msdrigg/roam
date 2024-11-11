@@ -3,7 +3,7 @@ hide_table_of_contents: true
 ---
 
 <head>
-    <meta name="apple-itunes-app" content="app-id=6469834197, app-clip-bundle-id=com.msdrigg.roam.Clip, app-clip-display=card"/>
+    <meta name="apple-itunes-app" content="app-id=6469834197"/>
 </head>
 
 ## About Roam
@@ -48,6 +48,5 @@ If you have any questions or issues, please contact me at: [roam-support@msd3.io
 -   [Core Repository on GitHub](https://github.com/msdrigg/roam)
 -   [Roam Discord](https://discord.gg/FqaTNRccbG)
 -   [Download on the app store](https://apps.apple.com/us/app/roam/6469834197)
--   [Download the app clip](/scan)
 -   [Roadmap](/upcoming-work)
 -   [Roku Devices Tested](/tested-tvs)

@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-#if !os(tvOS) && !APPCLIP
+#if !os(tvOS)
 #if !os(watchOS)
 struct SmallAppView: View {
     let device: DeviceAppEntity?

@@ -9,7 +9,7 @@ import SwiftUI
 import Foundation
 import TipKit
 
-#if os(iOS) && !APPCLIP
+#if os(iOS)
 import WatchConnectivity
 #endif
 
@@ -214,7 +214,7 @@ struct RemoteViewContained: View {
         buttonPresses[key] = (buttonPresses[key] ?? 0) + 1
     }
 
-    #if !os(tvOS) && !APPCLIP
+    #if !os(tvOS)
         func donateButtonIntent(_ key: RemoteButton) {
             switch key {
             case .power:
@@ -334,7 +334,7 @@ struct RemoteViewContained: View {
                     }
                 }
 
-#if os(iOS) && !APPCLIP
+#if os(iOS)
                 .task(id: devices.count, priority: .background) {
                     // Send devices to connected watch
                     WatchConnectivity.shared.transferDevices(WCSession.default, devices: devices.map { $0.toAppEntity() })
@@ -1112,7 +1112,7 @@ struct RemoteViewContained: View {
     }
 
     func launchApp(_ app: AppLinkAppEntity) {
-        #if !os(tvOS) && !APPCLIP
+        #if !os(tvOS)
             donateAppLaunchIntent(app)
         #endif
         incrementButtonPressCount(.inputAV1)
@@ -1133,7 +1133,7 @@ struct RemoteViewContained: View {
         if globalMajorActions.contains(button) {
             handleMajorUserAction()
         }
-        #if !os(tvOS) && !APPCLIP
+        #if !os(tvOS)
             donateButtonIntent(button)
         #endif
         if button == .headphonesMode {
@@ -1157,7 +1157,7 @@ struct RemoteViewContained: View {
             if globalMajorActions.contains(button) {
                 handleMajorUserAction()
             }
-            #if !os(tvOS) && !APPCLIP
+            #if !os(tvOS)
                 donateButtonIntent(button)
             #endif
         }

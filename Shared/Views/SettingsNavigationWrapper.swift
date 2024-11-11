@@ -13,22 +13,16 @@ struct SettingsNavigationWrapper<Content>: View where Content: View {
                 .navigationDestination(for: NavigationDestination.self) { globalDestination in
                     switch globalDestination {
                     case let .settingsDestination(destination):
-                        #if !APPCLIP
-                            SettingsView(path: $path, destination: destination)
-                        #endif
+                        SettingsView(path: $path, destination: destination)
                     case .aboutDestination:
-                        #if !APPCLIP
-                            AboutView()
-                        #endif
+                        AboutView()
                     case let .deviceSettingsDestination(deviceId):
-                        #if !APPCLIP
-                            DeviceDetailView(deviceId: deviceId) {
-                                if path.count > 0 {
-                                    path.removeLast()
-                                }
-                                updater?.update()
+                        DeviceDetailView(deviceId: deviceId) {
+                            if path.count > 0 {
+                                path.removeLast()
                             }
-                        #endif
+                            updater?.update()
+                        }
                     case .keyboardShortcutDestinaion:
                         #if !os(watchOS) && !os(tvOS)
                             KeyboardShortcutPanel()
