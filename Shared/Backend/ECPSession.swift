@@ -227,15 +227,19 @@ actor ECPSession {
     }
 
     nonisolated func websocketStateUpdated(status: ECPSessionStatus) {
-        Self.logger.info("WS Status updated to \(String(describing: status))")
         NotificationCenter.default.post(name: Self.websocketStateUpdatedNotification, object: nil, userInfo: ["websocketState": status])
         let currentStatus = self.status
 
         DispatchQueue.main.async {
-            switch (status, currentStatus.status) {
+            Self.logger.info("WS Status updating to \(String(describing: status), privacy: .public) from \(String(describing: currentStatus.status), privacy: .public)")
+            switch (currentStatus.status, status) {
             case (.disconnected, .disconnected), (.connecting, .connecting):
-                break
+                Self.logger.info("WS Status update ignored")
+            case (.connecting, .disconnected):
+                currentStatus.status = .disconnected(.distantPast)
+                Self.logger.info("WS Status updated to distant past")
             default:
+                Self.logger.info("WS Status updated to new status ")
                 currentStatus.status = status
             }
         }
@@ -340,14 +344,11 @@ actor ECPSession {
             guard let self = self else {
                 return
             }
-            DispatchQueue.main.async {
-                self.status.status = .connected
-            }
-            Self.logger.info("Receiving data \(String(describing: data))")
 
             Task {
                 if let data = data, let context = context {
                     await self.receiveMessage(data: data, context: context)
+                    self.websocketStateUpdated(status: .connected)
                 }
 
                 if let error = error {

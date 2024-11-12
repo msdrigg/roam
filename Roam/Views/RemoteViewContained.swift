@@ -821,7 +821,7 @@ struct RemoteViewContained: View {
                         .disabled(selectedDevice == nil)
                         .font(.headline)
                     }
-                    ToolbarItem(id: "device-picker", placement: .topBarTrailing) {
+                ToolbarItem(id: "device-picker", placement: .topBarTrailing) {
                         DevicePicker(
                             devices: devices,
                             device: Binding(get: {

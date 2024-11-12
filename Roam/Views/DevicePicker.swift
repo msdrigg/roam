@@ -131,15 +131,13 @@ struct DevicePicker: View {
                 if let device = device.wrappedValue {
                     if showSpinning {
                         Label(device.name, systemImage: "rays")
-                            .labelStyle(.titleAndIcon)
+                            .labelStyle(DevicePickerLabelStyle(circleIconSize: circleIconSize))
+                            .foregroundColor(deviceStatusColor)
                             .symbolEffect(.variableColor)
                     } else {
-                        Text(Image(systemName: "circle.fill")).font(.system(size: circleIconSize))
+                        Label(device.name, systemImage: "circle.fill")
+                            .labelStyle(DevicePickerLabelStyle(circleIconSize: circleIconSize))
                             .foregroundColor(deviceStatusColor)
-                            .baselineOffset(baselineOffset) +
-                            Text("  ", comment: "Empty space") +
-                            Text(device.name) +
-                            Text("  ", comment: "Empty space")
                     }
                 } else {
                     if showScanning {
@@ -151,19 +149,51 @@ struct DevicePicker: View {
                     }
                 }
             }
+            #if os(macOS)
                 .multilineTextAlignment(.center)
+            #else
+                .multilineTextAlignment(.trailing)
+            #endif
                 .lineLimit(1)
                 .truncationMode(.tail)
+            #if !os(macOS)
+                .frame(maxWidth: 300)
+                .fixedSize()
+            #endif
             #if os(visionOS)
                 .font(.headline)
             #else
                 .font(.body)
             #endif
         }
+        #if !os(macOS)
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        #endif
         .animation(nil, value: UUID())
         .onReceive(timer) { _ in
             currentDate = .now
         }
         .id(updater?.uuid.uuidString ?? "--")
+    }
+}
+
+struct DevicePickerLabelStyle: LabelStyle {
+    let circleIconSize: CGFloat
+
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(alignment: .center, spacing: 8) {
+            configuration.icon
+                .font(.system(size: circleIconSize))
+
+            configuration.title
+                .font(.body)
+                .padding(.trailing, 4)
+            #if !os(macOS)
+                .foregroundColor(.accentColor)
+            #else
+                .foregroundColor(.primary)
+            #endif
+        }
     }
 }

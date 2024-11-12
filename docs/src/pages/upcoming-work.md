@@ -17,6 +17,7 @@ hide_table_of_contents: true
 ## Coming Soon
 
 -   Current Ongoing
+    -   Make sure text entry on iOS doesn't clip below keyboard (like it's doing rn)
     -   Fix macOS widgets
         - Respond to feedback assistant request. Need to get crash log with the widget simulator crashing
     -   Get iOS released pushed to app store
