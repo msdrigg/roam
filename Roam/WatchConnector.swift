@@ -26,9 +26,9 @@
         func sessionReachabilityDidChange(_ session: WCSession) {
             WatchConnectivity.logger.info("WCSession reachability changed to \(session.isReachable)")
             if session.isReachable {
+                let container = getSharedModelContainer()
                 Task {
                     do {
-                        let container = getSharedModelContainer()
                         let devices = try await DataHandler(modelContainer: container).allDeviceEntities()
                         DispatchQueue.main.async {
                             self.transferDevices(session, devices: devices)
@@ -42,9 +42,9 @@
 
         func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
             WatchConnectivity.logger.info("WCSession got message from watch to \(message). Sending devices")
+            let container = getSharedModelContainer()
             Task {
                 do {
-                    let container = getSharedModelContainer()
                     let devices = try await DataHandler(modelContainer: container).allDeviceEntities()
                     DispatchQueue.main.async {
                         self.transferDevices(session, devices: devices)

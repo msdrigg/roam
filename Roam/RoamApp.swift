@@ -74,24 +74,33 @@ struct RoamApp: App {
                 CommandGroup(replacing: CommandGroupPlacement.pasteboard) {
                     PasteButton(payloadType: String.self, onPaste: { item in
                         Task {
+                            guard let first = item.first else {
+                                logger.info("Failed to paste because no item in pasteboard")
+                                return
+                            }
                             guard let texteditId = appDelegate.ecpSessionState.textEditStatus.texteditId else {
                                 logger.info("Failed to paste because no textedit id")
+
+                                if let (app, params) = parsePastedUrl(first) {
+                                    do {
+                                        try await appDelegate.ecpSessionState.ecpSession?.openApp(app, params: params)
+                                    } catch {
+                                        logger.error("Error opening app from url app=\(app) params=\(params): \(error)")
+                                    }
+                                }
+
                                 return
                             }
 
-                            if let first = item.first {
-                                do {
-                                    try await appDelegate.ecpSessionState.ecpSession?.setTextEditText(first, for: texteditId)
-                                } catch {
-                                    logger.error("Failed to paste: \(error)")
-                                }
-                            } else {
-                                logger.error("Failed to paste, no items in pasteboard")
+                            do {
+                                try await appDelegate.ecpSessionState.ecpSession?.setTextEditText(first, for: texteditId)
+                            } catch {
+                                logger.error("Failed to paste: \(error)")
                             }
                         }
                     })
                     .customKeyboardShortcut(.paste)
-                    .disabled(appDelegate.ecpSessionState.textEditStatus.texteditId == nil || appDelegate.navigationPath.showingSettingsView)
+                    .disabled(appDelegate.navigationPath.showingSettingsView)
 
                     Button("Cut", systemImage: "clipboard", action: {
                         Task {

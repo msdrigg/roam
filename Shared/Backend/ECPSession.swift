@@ -569,7 +569,7 @@ actor ECPSession {
         }
         let context = NWConnection.ContentContext(identifier: "pingContext", metadata: [metadata])
 
-        try await send(data: "ping".data(using: .utf8)!, context: context)
+        try await send(data: Data("ping".utf8), context: context)
     }
 
     private nonisolated func reportTextEditChanged(state: TextEditState) {
@@ -709,7 +709,7 @@ actor ECPSession {
     private func send(data: Data?, context: NWConnection.ContentContext) async throws {
         // Before we send anything, make sure the websocket is up and running
         try await preInitWebsocket()
-        let dataString = String(decoding: data ?? .init(), as: UTF8.self)
+        let dataString = String(data: data ?? .init(), encoding: .utf8) ?? "--BAD UTF8 DATA--"
         Self.logger.info("Sending data \(dataString)")
 
         connection?.send(
@@ -832,23 +832,28 @@ actor ECPSession {
         try await sendKeypress(keypress)
     }
 
-    public func openApp(_ app: AppLinkAppEntity) async throws {
+    public func openApp(_ app: AppLinkAppEntity, params: [String: String]? = nil) async throws {
+        // Try 2x with 0.1 sec delay between
+        try await self.openApp(app.id, params: params)
+    }
+
+    public func openApp(_ appId: String, params: [String: String]? = nil) async throws {
         // Try 2x with 0.1 sec delay between
         do {
-            try await openAppOnce(app)
+            try await openAppOnce(appId, params: params)
         } catch {
             Self.logger.warning("Error opening app the first time--retrying: \(error)")
             try await Task.sleep(duration: 0.1)
-            try await openAppOnce(app)
+            try await openAppOnce(appId, params: params)
         }
     }
 
-    public func openAppOnce(_ app: AppLinkAppEntity) async throws {
-        Self.logger.info("Opening app \(app.id)")
+    public func openAppOnce(_ appId: String, params: [String: String]? = nil) async throws {
+        Self.logger.info("Opening app \(appId)")
 
         let reqId = getAndUpdateRequestId()
         let requestData = try String(
-            data: kebabEncoder.encode(AppLaunchRequest(requestId: reqId, channelId: app.id)),
+            data: kebabEncoder.encode(AppLaunchRequest(requestId: reqId, channelId: appId, params: params)),
             encoding: .utf8
         )!
 
@@ -859,7 +864,7 @@ actor ECPSession {
         try await send(string: requestData)
         _ = try await receiveTask.value
 
-        Self.logger.info("Opened app \(app.id) successfully")
+        Self.logger.info("Opened app \(appId) successfully")
     }
 
     private func sendKeypress(_ data: String) async throws {
@@ -1043,6 +1048,28 @@ private struct AppLaunchRequest: Encodable {
     let request: String = "launch"
     let requestId: String
     let channelId: String
+    let params: [String: String]?
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: Self.CodingKeys.self)
+        try container.encode(request, forKey: .request)
+        try container.encode(requestId, forKey: .requestId)
+        try container.encode(channelId, forKey: .channelId)
+        if let params {
+            let jsonEncoder = JSONEncoder()
+            let paramsString = try jsonEncoder.encode(params)
+
+            let paramsStringString = String(data: paramsString, encoding: .utf8)!
+            try container.encode(paramsStringString, forKey: .params)
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case request
+        case requestId
+        case channelId
+        case params
+    }
 }
 
 private struct PingRequest: Encodable {

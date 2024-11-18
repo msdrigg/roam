@@ -19,8 +19,8 @@ hide_table_of_contents: true
 -   Current Ongoing
     -   Make sure text entry on iOS doesn't clip below keyboard (like it's doing rn)
     -   Fix macOS widgets
-        - Respond to feedback assistant request. Need to get crash log with the widget simulator crashing
     -   Get iOS released pushed to app store
+        - Wait for followup on appeal
     -   Do better testing on iOS and macOS to test that the system reconnects and stays connected in the following scenarios
         - After waiting a long time
         - When re-entering from the background

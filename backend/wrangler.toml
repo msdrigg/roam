@@ -31,3 +31,6 @@ tag = "v2"
 renamed_classes = [
     { from = "APNSDurableObject", to = "InternalDurableObject" },
 ] # Array of rename directives
+
+[observability.logs]
+enabled = true

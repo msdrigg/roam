@@ -144,7 +144,9 @@ func getDebugInfo(container: ModelContainer) async -> DebugInfo {
 
             if let httpResponse = response as? HTTPURLResponse {
                 let statusCode = httpResponse.statusCode
-                let dataString = String(decoding: data, as: UTF8.self)
+                guard let dataString = String(data: data, encoding: .utf8) else {
+                    throw BadResponseError(message: "Nonutf8 response from /query/device-info")
+                }
 
                 var headers: [String: String] = [:]
 
