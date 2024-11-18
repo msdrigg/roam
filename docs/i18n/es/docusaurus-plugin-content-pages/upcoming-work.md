@@ -2,166 +2,127 @@
 hide_table_of_contents: true
 ---
 
-# Trabajo más reciente en Roam 
+# Hoja de ruta de Roam
 
-# Actualizaciones próximas de Roam
+## Trabajo terminado para la próxima actualización
 
-- Se agregaron widgets de control: ¡Reproducir, Silenciar, Cambiar Volumen y Seleccionar desde el Centro de Control!
+- Se agregaron widgets de control: Play, Silencio, Cambiar volumen y Seleccionar desde el centro de control!
+- Se mejoró el manejo de los campos de texto para muchas aplicaciones roku 
+    - Apertura automática del campo de texto cuando la edición de texto esté disponible
+    - Copiar, cortar, pegar desde macOS
+    - Copiar, cortar, pegar + Edición generalizada en iOS
+- Mejor reporting en torno a los permisos y conectividad de la red local
+- Mejoras en la estabilidad de la conexión
 
-## Hoja de ruta
+## Próximamente
 
-- Actualizar el manejo del teclado para dar soporte a ecp-textedit en `KeyboardEntry`
-    - Mostrar el teclado cuando se abre textedit
-    - Ocultar el teclado cuando se cierra textedit
-    - Asegurarse de que el pegado + selección/borrado en el campo textedit funcione como se espera
-    - Usar el campo de texto modificado actual si ecp-textedit no es compatible, usar el campo de texto estándar si lo es
-    - En macOS, soporte para pegar con cmdP, copiar/cortar con cmdX + cmdC
-    - Si ecp-textedit no es compatible, vuelva al comportamiento actual de enviar teclas
-    - En macOS, muestra un campo de texto inferior cuando textedit está habilitado
-    - En macOS, permite cmd+v y cmd+c y cmd+x para copiar y pegar desde/hacia el búfer
+-   En curso
+    -   Asegurarse de que la entrada de texto en iOS no se corte bajo el teclado (como está sucediendo ahora)
+    -   Arreglar los widgets de macOS
+    -   Llevar iOS al lanzamiento en la app store
+        - Esperar el seguimiento del recurso
+    -   Hacer pruebas más exhaustivas en iOS y macOS para comprobar que el sistema se reconecta y permanece conectado en los siguientes escenarios
+        - Después de un largo período de espera
+        - Al volver a entrar desde el fondo
+        - Al encender el televisor desde el estado APAGADO
+        - Al reconectar a internet
+        - Al cambiar de dispositivo
 
-- Agregar temporizador de silencio de +30 segundos con cuenta regresiva
-    - Mantén presionado para silenciar durante +30 segundos
-    - Haz clic de nuevo para desactivar el silencio y cancelarlo
-    - Muestra un indicador debajo de la línea del botón de silencio 
-        - La barra de progreso tiene un indicador de progreso lineal
-        - La barra de progreso tiene dos botones: +30 segundos, cancelar
-        - Muestra debajo del panel de botones principal para estar cerca del botón de silencio
-    - Haz que el +30 sea configurable para opciones de silencio de 30, 15, 60 segundos
+-   Siguiente: Agregar temporizador de silencio de +30 segundos con cuenta atrás
+    -   Mantener el silencio para silenciar durante +30 segundos
+    -   Hacer clic de nuevo para desactivar el silencio y cancelarlo
+    -   Mostrar un indicador bajo la línea del botón de silencio 
+        -   La barra de progreso tiene un indicador de progreso lineal
+        -   La barra de progreso tiene dos botones: +30 segundos, cancelar
+        -   Mostrar debajo del panel principal de botones para que esté cerca del silencio
+    -   Hacer que el +30 sea configurable a 30, 15, 60 opciones de silencio en segundos
 
-- Proporcionar una vista minimalista opcional en iOS que replican de cerca la vista del control remoto de siri
-    - https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
-    - Soportar gestos visionos también...
+-   Futuro: Proporcionar una vista Minimalista opcional en iOS que replique de cerca la vista del mando a distancia de siri
+    -   https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
+    -   Soporta también los gestos de visionos...
 
 ## Ideas generales para el futuro
 
-- Escribir una publicación de blog sobre el bot de discord y apuntar a mi MessageView
-- Escribir una publicación de blog sobre la auto-traducción y la lógica alrededor de eso
+-   Escribir una entrada de blog sobre el bot de discord y apuntar a mi MessageView
+    - Hacer que MessageView sea más autónomo
+-   Escribir una entrada de blog sobre la auto-traducción y la lógica en torno a eso
+-   Escribir una entrada de blog sobre NWConnection vs URLSession para websockets
+-   Escribir una entrada de blog sobre atajos de teclado personalizados
+-   Escribir una entrada de blog sobre ECP Textedit API
+-   Escribir una entrada de blog sobre los widgets del centro de control
 
-- Hacer un icono personalizado para la barra de menú
+-   Hacer un icono de barra de menús personalizado
 
-- ¿Cómo hacer voz-a-texto o comandos de voz generales?
-    - Necesito desarmar el protocolo UDP del control remoto de voz de Roku
-    - ¿O necesito agregar texto-a-voz personalizado con el motor de botón remoto?
+-   ¿Cómo hacer voz-a-texto o comandos de voz en general?
+    - Necesita retroingeniería del protocolo udp del mando a distancia por voz de roku
+    - ¿O necesita añadir texto a voz personalizada con motor de botón remoto?
 
-- Automatizar la captura de capturas de pantalla
+-   Automatizar la captura de capturas de pantalla
 
-    - Usar UITests para obtener capturas de pantalla reales
-    - Usar AppScreens https://appscreens.com/user/project/DRxTFSSIQtuU0y9Eew4w para obtener las capturas de pantalla en los marcos
-    - ¿O algo más?
-        - https://www.figma.com/community/file/886620275115089774
-        - https://www.figma.com/community/file/1071476530354359587/app-store-screenshots?searchSessionId=lxw3ep02-oubp844ov8
-        - https://www.figma.com/community/file/1256854154932829222/free-app-store-screenshot-templates?searchSessionId=lxw3ep02-oubp844ov8
-        - https://www.canva.com/templates/s/iphone/
+    -   Usar UITests para obtener capturas de pantalla reales para todos los tamaños de dispositivo + localizaciones
+    -   Usar AppScreens https://appscreens.com/user/project/DRxTFSSIQtuU0y9Eew4w para obtener las capturas de pantalla en los marcos
+    -   O algo más
+        -   https://www.figma.com/community/file/886620275115089774
+        -   https://www.figma.com/community/file/1071476530354359587/app-store-screenshots?searchSessionId=lxw3ep02-oubp844ov8
+        -   https://www.figma.com/community/file/1256854154932829222/free-app-store-screenshot-templates?searchSessionId=lxw3ep02-oubp844ov8
+        -   https://www.canva.com/templates/s/iphone/
 
-- Realizar más pruebas con los hacks de teclado
-    - GCKeyboard para empezar
-    - FocusEnvironment para 2
-    - Asegúrate de que la solución que se utilice para iOS no rompa la entrada de texto en los mensajes/entrada de teclado
+-   Probar más trucos de teclado para iPad
+    -   GCKeyboard para uno
+    -   FocusEnvironment para 2
+    -   Asegurarse de que cualquier solución que se utilice en iOS no interrumpe la entrada de texto en los mensajes/entrada de teclado
 
-- Añadir un seguimiento de eventos sobre lo que los usuarios están haciendo en sus dispositivos (¿conectar a firebase analytics tal vez?)
-    - Rastrear quién está utilizando la vista minimalista, qué acciones están realizando, etc...
+-   Pruebas UI
+    -   Probar cuando se añade un dispositivo que aparece en el selector de dispositivo y es seleccionado por roam
+    -   Probar que el usuario puede navegar a ajustes -> dispositivos
+    -   Probar que el usuario puede navegar a ajustes -> mensajes
+    -   Probar que el usuario puede navegar a ajustes -> acerca de
+    -   Probar que el usuario puede editar/borrar dispositivos
+    -   Probar que el usuario puede hacer clic en los botones una vez que se añaden los dispositivos
+    -   Probar que el usuario ve el banner para no dispositivos cuando aparece
+    -   Probar que el usuario ve applinks
+    -   Hacer referencia al swiftdat testingmodelcontainer para modelcontainers
+    -   Hacer referencia a aquí https://medium.com/appledeveloperacademy-ufpe/how-to-implement-ui-tests-with-swiftui-a-few-examples-636708ee26ad para saber cómo configurar las pruebas
 
-## Corrección de errores
+## Correcciones de errores
 
-- Determinar si el ciclo de llamadas a `nextPacket` tiene sentido.
-    - En lugar de hacer un bucle cada 10 ms y esperar que el tiempo sea correcto, ¿debería estar pasando por los paquetes recibidos e intentando programarlos en `10ms * globalSequenceNumber + startHostTime` y sampleTime a `sequenceNumber * Int64(lastSampleTime.sampleRate) / packetsPerSec + startSampleTime`
-    - Entonces puedo cambiar de un bucle `for await` sobre el reloj a un bucle `while !Task.isCancelled` con un `Task.sleep` en él.
-    - Okey, así que necesitamos hacer un bucle cada 10 ms e intentar sacar el último paquete y luego programarlo en ese momento
-    - Cada vez que hacemos una sincronización de audio
-        - Tenemos el último tiempo de renderizado + un paquete de sincronización
-        - Estimamos el número de paquetes que deberíamos estar enviando en + el tiempo de sincronización
-            - Tiempo de renderizado + adicional
+-   Determinar si el bucle de llamadas a `nextPacket` tiene sentido.
+    -   En lugar de hacer el bucle cada 10ms y esperar que el tiempo sea correcto, ¿debería yo estar haciendo el bucle de paquetes recibidos y intentando programarlos en el tiempo del host `10ms * globalSequenceNumber + startHostTime` y el tiempo de muestra a `sequenceNumber * Int64(lastSampleTime.sampleRate) / packetsPerSec + startSampleTime`
+    -   Luego puedo cambiar de un bucle `for await` sobre el reloj a un bucle `while !Task.isCancelled` con un `Task.sleep` en él.
+    -   Vale, necesitamos hacer un bucle cada 10 ms e intentar sacar el último paquete y luego programarlo a esa hora
+    -   Siempre que hacemos una sincronización de audio
+        -   Tenemos un último tiempo de renderizado + un paquete de sincronización
+        -   Estimar el número de paquete que deberíamos estar enviando en + el tiempo de sincronización
+            -   Tiempo de renderizado + adicional
 
-## Mejorar las pruebas
+## Mejorar los mensajes al usuario respecto a la gestión de la información/estado/capacidades
 
-- Pruebas de interfaz de usuario
-    - Probar cuando se agrega un dispositivo que aparece en el seleccionador de dispositivos y es seleccionado por Roam
-    - Probar que el usuario puede navegar a configuración -> dispositivos
-    - Probar que el usuario puede navegar a configuración -> mensajes
-    - Probar que el usuario puede navegar a configuración -> acerca de
-    - Probar que el usuario puede editar/borrar dispositivos
-    - Probar que el usuario puede clicar en los botones una vez que se añaden los dispositivos
-    - Probar que el usuario ve la bandera para no dispositivos cuando aparece
-    - Probar que el usuario ve applinks
-    - Consultar el contenedor de pruebas de datamodelcontainer swift para modelcontainers
-    - Consultar aquí https://medium.com/appledeveloperacademy-ufpe/how-to-implement-ui-tests-with-swiftui-a-few-examples-636708ee26ad para saber cómo configurar las pruebas
+-   Al encender el dispositivo con WOL y no conectarse después de 5 segundos, o al encender el dispositivo y fallar inmediatamente, mostrar un mensaje de advertencia debajo del del Wi-Fi.
+    -   "No pudimos despertar tu Roku" (Más información) (No mostrar de nuevo para este dispositivo), (X)
+    -   Más información muestra algunas razones posibles.
+        -   No estás conectado a la misma red (Muestra el último nombre de red del dispositivo. Pregunta si el usuario está conectado a esta red)
+        -   Tu dispositivo está en un sueño profundo (no se ha apagado recientemente) y no puede ser despertado
+            -   Tu dispositivo no soporta WWOL y está conectado a Wi-Fi
+            -   Tu dispositivo no soporta WWOL ni WOL
+        -   Tu red no está configurada de una manera que nos permita enviar comandos de despertar al dispositivo
+-   Al hacer clic en un botón desactivado, se muestra una notificación indicando por qué está desactivado
+    -   ¿Mostrar un indicador de información en el botón para indicar que se puede recibir información cuando se hace clic?
+    -   Modo auriculares desactivado -> porque el dispositivo no soporta el modo auriculares para esta aplicación
+    -   Control de volumen desactivado -> porque el audio se está reproduciendo por HDMI que no soporta controles de volumen?
+-   Al escanear activamente dispositivos y no encontrar nuevos, mostrar un mensaje de advertencia debajo de la lista de dispositivos
+    -   "No pudimos despertar tu Roku" (Descubre por qué), (X)
+    -   Descubre por qué muestra una ventana emergente con algunas razones por las que esto puede estar sucediendo
+        -   Asegúrate de que tu dispositivo esté encendido y conectado a la misma red Wi-Fi que tu aplicación. Si esto sigue sin funcionar, intenta añadir el dispositivo manualmente.
+        -   Enlace https://roam.msd3.io/manually-add-tv.md y https://support.roku.com/article/115001480188 para más solución de problemas o para chatear
+-   Añadir insignia para supportsWakeOnWLAN y supportsMute
 
-## App Clip
+## Para actualizar cuando se deje de soportar iOS 17/macOS 14 (Febrero 2026)
 
-- AppClip
-    - Agregar un botón "getAShareableLinkToThisDevice" en configuración -> dispositivo
-        - Pre-generar todos los 1.1M códigos de app clip y codificar las ubicaciones del anillo (0.5GB)
-        - Hacer un botón para "¡Consigue un enlace compartible al dispositivo!" con una vista previa de la imagen del código de app clip (color roam)
-        - Descargar el código + enlace y convertirlo a PNG en el dispositivo cuando se cambia la ubicación de un dispositivo
-        - Que el código abra el dispositivo como un enlace compartido a una imagen (¡con vista previa!)
-    - También hacer que el enlace del dispositivo sea compartible
-
-## Mejorar los mensajes de usuario acerca de la gestión de información/estado
-
-- Actualizar la gestión de Información/estado para manejar mejor el estado volátil
-    - Al desconectarse, seleccionar, hacer clic en el botón, moverse al primer plano, abrir la aplicación -> Reiniciar el bucle de reconexión si se desconecta
-    - El bucle de reconexión es para retroceder exponencialmente intentando reintentar conexiones fallidas (0.5s, doble, 10s de retroceso)
-    - Al conectarse al dispositivo, siempre desactivar las advertencias de red
-    - Al intentar conectarse al dispositivo, o intentar encender el dispositivo, mostrar el icono de información giratorio en lugar de un punto gris
-    - Al encender el dispositivo y tener éxito, mostrar una animación al pasar de gris -> giratorio -> verde
-    - Al encender el dispositivo con WOL y no conectarse después de 5 segundos, o al encender el dispositivo e inmediatamente fallar, mostrar un mensaje de advertencia debajo del de wifi
-        - “No pudimos despertar tu Roku” (Descubre más) (No mostrar más para este dispositivo), (X)
-        - Descubre más muestra algunas razones por las que
-            - No estás conectado a la misma red (Muestra el último nombre de red del dispositivo. Pregunta si el usuario está conectado a esta red)
-            - Tu dispositivo tiene un sueño profundo (no se apagó recientemente) y no puede ser despertado
-                - Tu dispositivo no soporta WWOL y está conectado al wifi
-                - Tu dispositivo no soporta WWOL o WOL
-            - Tu red no está configurada de una manera que nos permita enviar comandos de despertar al dispositivo
-    - Bucle de reconexión = Retrocediendo exponencialmente tratar de reconectar a reconectar ECP
-        - Reconectar ECP primero
-        - Escuchar a notificar segundo
-            - Gestionar +cambio modo de alimentación, +apertura de textedit, +cambio de textedit, +cierre de textedit, +cambio del nombre del dispositivo
-            - Asegurarse de que podemos manejar cada una de estas solicitudes y su formato…
-        - Refrescar el estado del dispositivo tercero
-        - Refrescar la consulta-textedit-estado cuarto
-            - Actualizar el estado de textedit
-        - Refrescar los iconos del dispositivo quinto
-    - En todos los cambios después de la reconexión (a través de la notificación o cualquier cosa)
-        - Actualizar Dispositivo (almacenado) y Estado del dispositivo (volátil)
-    - Después de conectar/desconectar, actualizar el estado en línea en la vista remota
-
-## Mejorar los mensajes de usuario acerca de las capacidades del dispositivo
-
-- Actualizar el envío de mensajes al usuario cuando pueden ocurrir errores
-    - Al hacer clic en un botón deshabilitado, abrir un popover para mostrar por qué está deshabilitado
-        - Muestra un indicador de información en el botón para indicar que se puede recibir información si se hace clic en él?
-        - Modo de auriculares deshabilitado -> porque el dispositivo no admite el modo de auriculares en esta aplicación
-        - Control de volumen deshabilitado -> porque el audio se está reproduciendo a través de HDMI que no soporta controles de volumen?
-    - Cuando se está buscando activamente dispositivos y no se encuentran nuevos, mostrar un mensaje de advertencia debajo de la lista de dispositivos
-        - "No pudimos despertar su Roku" (Descubre por qué), (X)
-        - Descubre más muestra un popup con algunas razones por las que esto puede estar ocurriendo
-            - Asegúrate de que tu dispositivo está encendido y conectado a la misma red wifi que tu aplicación. Si esto aún no funciona, intenta añadir el dispositivo manualmente.
-            - Enlace https://roam.msd3.io/manually-add-tv.md y https://support.roku.com/article/115001480188 para más solución de problemas o chat
-- Añadir insignia para soportaWakeOnWLAN y soportaMute
-
-## Notas de textedit de ECP
-
-Comandos de sesión de ECP de teclado (notas)
-
-```
-- {"request":"request-events","request-id":"4","param-events":"+language-changed,+language-changing,+media-player-state-changed,+plugin-ui-run,+plugin-ui-run-script,+plugin-ui-exit,+screensaver-run,+screensaver-exit,+plugins-changed,+sync-completed,+power-mode-changed,+volume-changed,+tvinput-ui-run,+tvinput-ui-exit,+tv-channel-changed,+textedit-opened,+textedit-changed,+textedit-closed,+textedit-closed,+ecs-microphone-start,+ecs-microphone-stop,+device-name-changed,+device-location-changed,+audio-setting-changed,+audio-settings-invalidated"}
-    - {"notify":"textedit-opened","param-masked":"false","param-max-length":"75","param-selection-end":"0","param-selection-start":"0","param-text":"","param-textedit-id":"12","param-textedit-type":"full","timestamp":"608939.003"}
-- {"request":"query-textedit-state","request-id":"10"}
-    - {"content-data":"eyJ0ZXh0ZWRpdC1zdGF0ZSI6eyJ0ZXh0ZWRpdC1pZCI6Im5vbmUifX0=","content-type":"application/json; charset=\"utf-8\"","response":"query-textedit-state","response-id":"10","status":"200","status-msg":"OK"}
-- {"param-text":"h","param-textedit-id":"12","request":"set-textedit-text","request-id":"20"}
-    - {"response":"set-textedit-text","response-id":"29","status":"200","status-msg":"OK"}
-```
-
-## Para actualizar cuando se deje de dar soporte a iOS 17/macOS 14 (Feb 2026)
-
--   Ir alrededor y remover las etiquetas @available(iOS 18)
+-   Rodear y eliminar las etiquetas @available(iOS 18)
 -   Usar traits de vista previa para inyectar datos de muestra en las vistas previas
-    -   ¿Cómo hacer esto con iOS 17 todavía siendo un factor?
-    -   ¿Cómo utilizar @Previewable en las vistas previas con iOS 17 todavía siendo un factor??
 -   SwiftData
-    -   Usar la nueva macro #Index para los modelos
-    -   Usar la nueva macro #Unique para los modelos
-    -   Usar la eliminación por lotes
+    -   Utilizar el nuevo macro #Index para modelos
+    -   Utilizar el nuevo macro #Unique para modelos
+    -   Usar la eliminación en batch
 -   TipKit
     -   Usar CloudkitContainer https://developer.apple.com/videos/play/wwdc2024/10070/?time=698

@@ -2,166 +2,127 @@
 hide_table_of_contents: true
 ---
 
-# Công việc Roam gần đây nhất
+# Lộ Trình Roam
 
-# Cập nhật Roam sắp tới
+## Công Việc Đã Hoàn Thành cho Bản Cập Nhật Tiếp Theo
 
-- Thêm các widget kiểm soát: Phát, Tắt tiếng, Thay đổi âm lượng và Chọn từ Trung tâm kiểm soát!
+- Thêm các widget điều khiển: Phát, Tắt tiếng, Thay đổi âm lượng và Chọn từ Trung tâm điều khiển!
+- Cải thiện xử lý trường văn bản cho nhiều ứng dụng roku 
+    - Tự động mở trường text khi có chế độ chỉnh sửa text
+    - Sao chép, Cắt, Dán từ macOS
+    - Sao chép, Cắt, Dán + Chỉnh sửa tổng quát trên iOS
+- Báo cáo tốt hơn về quyền truy cập và kết nối mạng cục bộ
+- Cải thiện ổn định kết nối
 
-## Lộ trình
+## Sắp Ra Mắt
 
--   Cập nhật xử lý bàn phím để hỗ trợ ecp-textedit trên `KeyboardEntry`
-    -   Hiển thị bàn phím khi mở textedit
-    -   Ẩn bàn phím khi đóng textedit
-    -   Đảm bảo rằng việc dán + chọn/xoá vào trường textedit hoạt động như mong đợi
-    -   Sử dụng trường văn bản đã chỉnh sửa hiện tại nếu ecp-textedit không được hỗ trợ, sử dụng trường văn bản chuẩn nếu được hỗ trợ
-    -   Trên macOS, hỗ trợ dán bằng cmdP, sao chép/cắt bằng cmdX + cmdC
-    -   Nếu ecp-textedit không được hỗ trợ, quay lại hành vi gửi phím hiện tại
-    -   Trên macOS, hiển thị một field text dưới cùng khi textedit được kích hoạt 
-    -   Trên macOS, cho phép cmd+v và cmd+c và cmd+x để sao chép dán từ/bên ngoài bộ đệm
+-   Đang Tiếp Diễn
+    -   Đảm bảo việc nhập văn bản trên iOS không bị cắt bên dưới bàn phím (như hiện tại)
+    -   Sửa các widget macOS
+    -   Đưa phiên bản iOS ra mắt trên app store
+        - Đợi phản hồi về việc kháng cáo
+    -   Thực hiện kiểm tra tốt hơn trên iOS và macOS để kiểm tra xem hệ thống có kết nối lại và duy trì kết nối trong các trường hợp sau đây không
+        - Sau khi đợi một thời gian dài
+        - Khi quay lại từ nền
+        - Khi khởi động TV từ trạng thái TẮT
+        - Khi kết nối lại với internet
+        - Khi chuyển thiết bị
 
--   Thêm bộ hẹn giờ tắt tiếng 30 giây kèm theo đếm ngược
-    -   Giữ tắt tiếng để tắt tiếng trong vòng +30 giây
-    -   Nhấp lại để bỏ tắt tiếng và hủy bỏ nó
-    -   Hiển thị một chỉ báo dưới dòng button tắt tiếng 
-        -   Than cầu tiến trình có chỉ báo tiến trình tuyến tính
+-   Tiếp theo: Thêm hẹn giờ tắt tiếng +30 giây với bộ đếm ngược
+    -   Giữ mute để tắt tiếng trong +30 giây
+    -   Nhấn lại để hủy tắt tiếng và hủy bỏ điều này
+    -   Hiển thị một chỉ báo dưới dòng nút tắt tiếng 
+        -   Thanh tiến trình có chỉ báo tiến trình tuyến tính
         -   Thanh tiến trình có hai nút: +30 giây, hủy bỏ
-        -   Hiển thị bên dưới bảng nút chính vì nó gần với nút tắt tiếng
-    -   Đặt +30 có thể cài đặt thành 30, 15, 60 giây tùy chọn tắt tiếng
+        -   Hiển thị dưới bảng nút chính để dễ dàng tiếp cận với nút tắt tiếng
+    -   Cấu hình +30 thành các tùy chọn tắt tiếng 30, 15, 60 giây
 
--   Cung cấp một giao diện Tối giản tùy chọn trên iOS mô phỏng gần như hoàn toàn giao diện điều khiển siri
+-   Tương lai: Cung cấp một giao diện Minimalist tùy chọn trên iOS mô phỏng gần như remote của siri
     -   https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
-    -   Hỗ trợ cử chỉ visionos cũng như...
+    -   Hỗ trợ cả cử chỉ của visionos...
 
-## Ý tưởng chung cho tương lai
+## Ý Tưởng Tương Lai Chung
 
--   Viết một bài viết blog về bot discord và đưa tới MessageView của tôi
--   Viết một bài viết blog về việc tự dịch và logic xung quanh điều đó
+-   Viết một bài viết blog về bot discord và trỏ đến MessageView của tôi
+    - Tạo MessageView được tự chứa hơn
+-   Viết bài blog về dịch tự động và logic xung quanh nó
+-   Viết bài blog về NWConnection so với URLSession cho websockets
+-   Viết một bài viết blog về phím tắt bàn phím tùy chỉnh
+-   Viết bài viết blog về ECP Textedit API
+-   Viết bài viết blog về widget trung tâm điều khiển
 
 -   Tạo biểu tượng thanh menu tùy chỉnh
 
--   Làm thế nào để thực hiện chuyển đổi giọng nói thành văn bản hoặc các lệnh giọng nói chung?
+-   Làm thế nào để sử dụng văn bản-để-văn bản hoặc các lệnh giọng nói thông thường?
     - Cần đảo ngược giao thức udp của remote giọng nói roku
-    - Hoặc cần thêm chuyển đổi văn bản thành giọng nói tùy chỉnh với engine button remote?
+    - Hoặc cần thêm văn bản tùy chỉnh-để-phát biểu với máy chủ nút từ xa?
 
--   Tự động chụp ảnh màn hình
+-   Tự động Chụp Ảnh Màn hình
 
-    -   Sử dụng UITests để nhận ảnh chụp màn hình thực
-    -   Sử dụng AppScreens https://appscreens.com/user/project/DRxTFSSIQtuU0y9Eew4w để màn hình chụp ảnh vào các khung ảnh
-    -   Hoặc cái gì đó khác
+    -   Sử dụng UITests để lấy ảnh chụp màn hình thực tế cho tất cả các kích thước thiết bị + địa phương
+    -   Sử dụng AppScreens https://appscreens.com/user/project/DRxTFSSIQtuU0y9Eew4w để lấy ảnh chụp màn hình trong các khung
+    -   Hoặc một cái gì đó khác
         -   https://www.figma.com/community/file/886620275115089774
         -   https://www.figma.com/community/file/1071476530354359587/app-store-screenshots?searchSessionId=lxw3ep02-oubp844ov8
         -   https://www.figma.com/community/file/1256854154932829222/free-app-store-screenshot-templates?searchSessionId=lxw3ep02-oubp844ov8
         -   https://www.canva.com/templates/s/iphone/
 
--   Thử nghiệm thêm bàn phím
+-   Thử nghiệm thêm cho bàn phím iPad
     -   GCKeyboard cho một
     -   FocusEnvironment cho 2
-    -   Đảm bảo rằng bất kể phương pháp nào được sử dụng cho iOS không làm hỏng khả năng nhập văn bản trong tin nhắn/nhập bàn phím
-
--   Thêm tracking sự kiện thông qua hành vi người dùng thực sự đang làm trên thiết bị của họ (kết nối với phân tích firebase có lẽ?)
-    -   Theo dõi ai đang sử dụng giao diện tối giản, họ đang thực hiện những hành động gì, v.v...
-
-## Sửa lỗi
-
--   Xác định xem vòng lặp các cuộc gọi đến `nextPacket` có cần thiết không.
-    -   Thay vì lặp sau mỗi 10ms và hy vọng thời gian là chính xác, tôi có nên lặp qua các gói tin nhận được và cố gắng lên lịch chúng vào thời điểm máy chủ `10ms * globalSequenceNumber + startHostTime` và sampleTime đến `sequenceNumber * Int64(lastSampleTime.sampleRate) / packetsPerSec + startSampleTime`
-    -   Sau đó, tôi có thể chuyển từ một vòng lặp `for await` là dòng h trên bộ đếm giờ đến một vòng lặp `while !Task.isCancelled` với một `Task.sleep` trong đó.
-    -   Okay vậy cần phải lặp sau mỗi 10 ms và cố gắng kéo gói cuối cùng và lên lịch nó tại thời điểm đó
-    -   Bất cứ khi nào ta làm một audio sync
-        -   Chúng ta có lastRenderTime + một gói sync
-        -   Ước lượng số gói mà chúng ta nên gửi ra lúc + thời gian đồng bộ
-            -   Thời gian Render + bổ sung
-
-## Cải thiện việc kiểm tra
+    -   Đảm bảo rằng giải pháp được sử dụng cho iOS không làm hỏng việc nhập văn bản trong thông điệp/đầu vào bàn phím
 
 -   UI Tests
-    -   Kiểm tra khi thiết bị được thêm nó xuất hiện trong chọn thiết bị và được chọn bởi roam
-    -   Kiểm tra người dùng có thể điều hướng tới cài đặt -> thiết bị
-    -   Kiểm tra người dùng có thể điều hướng tới cài đặt -> tin nhắn
-    -   Kiểm tra người dùng có thể điều hướng tới cài đặt -> về
-    -   Kiểm tra người dùng có thể chỉnh sửa/xóa thiết bị
-    -   Kiểm tra người dùng có thể nhấn nút sau khi thiết bị được thêm
-    -   Kiểm tra người dùng nhìn thấy banner cho không có thiết bị khi nó xuất hiện
-    -   Kiểm tra người dùng nhìn thấy applinks
-    -   Xem swiftdat testingmodelcontainer cho modelcontainers
-    -   Xem tại đây https://medium.com/appledeveloperacademy-ufpe/how-to-implement-ui-tests-with-swiftui-a-few-examples-636708ee26ad để cách thiết lập các bài kiểm tra
+    -   Kiểm tra khi thiết bị được thêm vào thì nó xuất hiện tại chọn thiết bị và được chọn bởi roam
+    -   Kiểm tra xem người dùng có thể điều hướng tới thiết lập -> thiết bị không
+    -   Kiểm tra xem người dùng có thể điều hướng tới thiết lập -> tin nhắn không
+    -   Kiểm tra xem người dùng có thể điều hướng tới thiết lập -> về không
+    -   Kiểm tra xem người dùng có thể chỉnh sửa/xóa thiết bị không
+    -   Kiểm tra xem người dùng có thể bấm nút sau khi thêm thiết bị không
+    -   Kiểm tra xem người dùng có thể thấy biểu ngữ không có thiết bị khi nó xuất hiện không
+    -   Kiểm tra xem người dùng có thấy applinks không
+    -   Tham khảo modelcontainers của swiftdat testingmodelcontainer
+    -   Tham khảo tại đây https://medium.com/appledeveloperacademy-ufpe/how-to-implement-ui-tests-with-swiftui-a-few-examples-636708ee26ad để cài đặt kiểm tra
 
-## App Clip
+## Sửa Lỗi
 
--   AppClip
-    -   Thêm nút "getAShareableLinkToThisDevice" trên cài đặt -> thiết bị
-        -   Tạo sẵn tất cả 1.1M mã AppClip và mã hóa vị trí nhẫn (0.5GB)
-        -   Làm một nút "Lấy link chia sẻ cho thiết bị này!" với một xem trước ảnh để mã AppClip (màu Roam)
-        -   Tải mã + liên kết và chuyển đổi thành PNG trên thiết bị khi vị trí thiết bị thay đổi
-        -   Giữ chuẩn mã mở thiết bị như một link chia sẻ hình ảnh (với mã xem trước!)
-    -   Cũng làm cho liên kết thiết bị thực sự có thể chia sẻ
+-   Tìm hiểu xem vòng lặp các cuộc gọi tới `nextPacket` có hợp lý không.
+    -   Thay vì lập mỗi 10ms và hy vọng việc tính thời gian là đúng, liệu tôi có nên lập qua các gói đã nhận và cố gắng lịch chúng tại thời gian máy chủ `10ms * globalSequenceNumber + startHostTime` và thời gian mẫu tại `sequenceNumber * Int64(lastSampleTime.sampleRate) / packetsPerSec + startSampleTime` không
+    -   Sau đó tôi có thể chuyển từ vòng lặp `for await` qua đồng hồ sang một vòng lặp `while !Task.isCancelled` với `Task.sleep` ở trong nó.
+    -   Okay vậy chúng ta cần lập mỗi 10 ms và cố gắng kéo gói cuối cùng ra sau đó lịch nó tại thời điểm đó
+    -   Mỗi khi chúng tôi thực hiện đồng bộ audio
+        -   Chúng tôi có lastRenderTime + gói đồng bộ
+        -   Ước tính số gói chúng tôi nên gửi đi tại + thời gian đồng bộ
+            -   Thời gian hiển thị + bổ sung
 
-## Cải thiện thông điệp người dùng xung quanh quản lý thông tin/trạng thái
+## Cải Thiện Thông Điệp Người Dùng Quanh Quản Lý Thông Tin/Tình Trạng/Khả Năng 
 
--   Cập nhật Quản lý thông tin/trạng thái để xử lý tốt hơn trạng thái không ổn định
-    -   Khi ngắt kết nối, chọn, nhấp nút, chuyển sang chế độ foreground, mở ứng dụng -> Khởi động lại vòng lặp kết nối lại nếu bị ngắt kết nối
-    -   Vòng lặp kết nối lại là để quay lại cố gắng kết nối thất bại (0.5s, double, 10s hiệp định)
-    -   Khi kết nối với thiết bị, luôn vô hiệu hóa các cảnh báo mạng
-    -   Khi cố gắng kết nối với thiết bị, hoặc cố gắng bật thiết bị, hiển thị biểu tượng thông tin đang xoay thay vì dấu chấm màu xám
-    -   Khi bật thiết bị và thành công, hiển thị một hoạt ảnh khi chuyển đổi từ màu xám -> xoay -> màu xanh
-    -   Khi bật thiết bị với WOL và không kết nối sau 5 giây, hoặc khi bật thiết bị và ngay lập tức thất bại, hiển thị một thông điệp cảnh báo dưới cầu thông tin wifi
-        -   “Chúng tôi không thể đánh thức Roku” (Tìm hiểu thêm) (Không hiển thị lại với thiết bị này), (X)
-        -   Tìm hiểu thêm hiển thị một số lý do tại sao
-            -   Bạn không được kết nối với cùng một mạng (Hiển thị tên mạng thiết bị cuối cùng. Hỏi xem người dùng đã kết nối với mạng này chưa)
-            -   Thiết bị của bạn đang trong giấc ngủ sâu (không được tắt gần đây) và không thể được đánh thức
-                -   Thiết bị của bạn không hỗ trợ WWOL và được kết nối với wifi
-                -   Thiết bị của bạn không hỗ trợ WWOL hoặc WOL
-            -   Mạng của bạn không được thiết lập theo cách cho phép chúng tôi gửi lệnh đánh thức tới thiết bị
-    -   Vòng lặp kết nối lại = Thử lại Exponentially cố gắng kết nối lại ECP
-        -   Kết nối lại ECP đầu tiên
-        -   Nghe notify thứ hai
-            -   Xử lý +power-mode-changed,+textedit-opened,+textedit-changed,+textedit-closed,+device-name-changed
-            -   Đảm bảo chúng ta có thể xử lý từng yêu cầu này và định dạng của chúng…
-        -   Làm mới trạng thái thiết bị thứ ba
-        -   Làm mới query-textedit-state thứ tư
-            -   Cập nhật trạng thái textedit
-        -   Làm mới biểu tượng thiết bị thứ năm
-    -   Trên tất cả thay đổi sau khi kết nối lại (thông qua notify hoặc bất cứ gì)
-        -   Cập nhật Thiết bị (được lưu trữ) và DeviceState (voilatile)
-    -   Sau khi kết nối lại/ngắt kết nối, cập nhật trạng thái trực tuyến trong giao diện remote
-
-## Cải thiện thông điệp người dùng xung quanh khả năng của thiết bị
-
--   Cập nhật thông điệp người dùng khi có thể xảy ra lỗi
-    -   Khi nhấp vào một nút bị vô hiệu hóa, mở popover để hiển thị tại sao nó bị vô hiệu hóa
-        -   Hiển thị một chỉ báo thông tin trên nút để chỉ ra rằng thông tin có thể nhận được khi nó được nhấp?
-        -   Chế độ tai nghe bị vô hiệu hóa -> vì thiết bị không hỗ trợ chế độ tai nghe để ứng dụng này
-        -   Kiểm soát âm lượng bị vô hiệu hóa -> vì âm thanh được xuất ra qua HDMI, không hỗ trợ kiểm soát âm lượng?
-    -   Khi đang quét thiết bị một cách chủ động và không tìm thấy thiết bị mới nào, hiển thị một thông điệp cảnh báo phía dưới danh sách thiết bị
-        -   “Chúng tôi không thể đánh thức Roku” (Tìm hiểu vì sao), (X)
-        -   Tìm hiểu thêm hiển thị một hộp thoại với một số lý do tại sao điều này có thể xảy ra
-            -   Đảm bảo thiết bị của bạn được kích hoạt và kết nối với cùng một mạng wifi với ứng dụng của bạn. Nếu vẫn không hoạt động, hãy thử thêm thiết bị bằng tay.
-            -   Liên kết https://roam.msd3.io/manually-add-tv.md và https://support.roku.com/article/115001480188 cho thêm bước khắc phục sự cố hoặc trò chuyện
+-   Khi bật thiết bị với WOL và không kết nối sau 5 giây, hoặc khi khởi động thiết bị và ngay lập tức thất bại, hiển thị tin nhắn cảnh báo dưới wifi
+    -   “Chúng tôi không thể đánh thức Roku của bạn” (Tìm hiểu thêm) (Không hiển thị lại cho thiết bị này), (X)
+    -   Tìm hiểu thêm hiển thị một số lý do tại sao
+        -   Bạn không kết nối cùng một mạng (Hiển thị tên mạng thiết bị cuối cùng. Hỏi xem người dùng có đang kết nối với mạng này không)
+        -   Thiết bị của bạn đang trong trạng thái chờ sâu (không được tắt gần đây) và không thể được đánh thức
+            -   Thiết bị của bạn không hỗ trợ WWOL và kết nối với wifi
+            -   Thiết bị của bạn không hỗ trợ WWOL hoặc WOL
+        -   Mạng của bạn không được thiết lập để cho phép chúng tôi gửi lệnh đánh thức tới thiết bị
+-   Khi nhấp vào một nút đã tắt, hiển thị thông báo cho biết vì sao nó bị tắt
+    -   Hiển thị chỉ số thông tin trên nút để chỉ ra rằng thông tin có thể được nhận khi nó được nhấp?
+    -   Chế độ Tai nghe đã được tắt -> vì thiết bị không hỗ trợ chế độ tai nghe để ứng dụng này
+    -   Kiểm soát âm lượng đã tắt -> vì âm thanh đang xuất qua HDMI không hỗ trợ kiểm soát âm lượng?
+-   Khi đang quét chủ động thiết bị và không tìm thấy thiết bị mới nào, hiển thị một tin nhắn cảnh báo dưới danh sách thiết bị
+    -   "Chúng tôi không thể đánh thức Roku của bạn" (Tìm ra vì sao), (X)
+    -   Find out more hiển thị một cửa sổ popup với một số lý do tại sao điều này có thể xảy ra
+        -   Đảm bảo rằng thiết bị của bạn đang được bật và kết nối với mạng wifi giống như ứng dụng của bạn. Nếu việc này vẫn không hoạt động, hãy thử thêm thiết bị một cách thủ công.
+        -   Liên kết https://roam.msd3.io/manually-add-tv.md và https://support.roku.com/article/115001480188 để giải quyết sự cố hoặc trò chuyện thêm
 -   Thêm huy hiệu cho supportsWakeOnWLAN và supportsMute
 
-## Ghi chú textedit ECP
+## Để cập nhật khi ngừng hỗ trợ iOS 17/macOS 14 (Tháng 2 2026)
 
-Keyboard ECP Session Commands (notes)
-
-```
-- {"request":"request-events","request-id":"4","param-events":"+language-changed,+language-changing,+media-player-state-changed,+plugin-ui-run,+plugin-ui-run-script,+plugin-ui-exit,+screensaver-run,+screensaver-exit,+plugins-changed,+sync-completed,+power-mode-changed,+volume-changed,+tvinput-ui-run,+tvinput-ui-exit,+tv-channel-changed,+textedit-opened,+textedit-changed,+textedit-closed,+textedit-closed,+ecs-microphone-start,+ecs-microphone-stop,+device-name-changed,+device-location-changed,+audio-setting-changed,+audio-settings-invalidated"}
-    - {"notify":"textedit-opened","param-masked":"false","param-max-length":"75","param-selection-end":"0","param-selection-start":"0","param-text":"","param-textedit-id":"12","param-textedit-type":"full","timestamp":"608939.003"}
-- {"request":"query-textedit-state","request-id":"10"}
-    - {"content-data":"eyJ0ZXh0ZWRpdC1zdGF0ZSI6eyJ0ZXh0ZWRpdC1pZCI6Im5vbmUifX0=","content-type":"application/json; charset=\"utf-8\"","response":"query-textedit-state","response-id":"10","status":"200","status-msg":"OK"}
-- {"param-text":"h","param-textedit-id":"12","request":"set-textedit-text","request-id":"20"}
-    - {"response":"set-textedit-text","response-id":"29","status":"200","status-msg":"OK"}
-```
-
-## Cập nhật khi ngừng hỗ trợ cho iOS 17/macOS 14 (Feb 2026)
-
--   Đi xung quanh và loại bỏ các thẻ @available(iOS 18)
--   Sử dụng tính chất xem trước để chèn dữ liệu mẫu vào xem trước
-    -   Làm thế nào để làm điều này với iOS 17 vẫn là yếu tố?
-    -   Làm thế nào để sử dụng @Previewable trong xem trước với iOS 17 vẫn là yếu tố??
+-   Đi xung quanh và xóa các thẻ @available(iOS 18)
+-   Sử dụng tính năng xem trước để tiêm dữ liệu mẫu vào các bản xem trước
 -   SwiftData
-    -   Sử dụng #Index macro mới cho models
-    -   Sử dụng #Unique macro mới cho models
-    -   Sử dụng xoá hàng loạt
+    -   Sử dụng #Index macro mới cho các mô hình
+    -   Sử dụng #Unique macro mới cho các mô hình
+    -   Sử dụng xóa theo lô
 -   TipKit
     -   Sử dụng CloudkitContainer https://developer.apple.com/videos/play/wwdc2024/10070/?time=698

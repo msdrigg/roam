@@ -651,7 +651,7 @@ struct RemoteViewContained: View {
 #if !os(macOS)
                     if showKeyboardEntry {
                         Spacer()
-                            .frame(minHeight: 200)
+                            .frame(minHeight: 80, maxHeight: 80)
                     }
 #endif
                 }
@@ -996,7 +996,11 @@ struct RemoteViewContained: View {
                 .sensoryFeedback(SensoryFeedback.impact, trigger: buttonPressCount(.inputAV1))
                 #endif
             } else {
-                Spacer()
+                if !isHorizontal {
+                    Spacer()
+                    Spacer()
+                    Spacer()
+                }
             }
             Spacer()
         }
@@ -1069,8 +1073,12 @@ struct RemoteViewContained: View {
             TopBar(pressCounter: buttonPressCount, action: pressButton)
                 .matchedGeometryEffect(id: "topBar", in: animation)
 
-            Spacer()
+            if !showKeyboardEntry {
+                Spacer()
                     .frame(minHeight: 10)
+            } else {
+                Spacer()
+            }
 
             // Center Controller with directional buttons
             CenterController(pressCounter: buttonPressCount, action: pressButton)
@@ -1103,9 +1111,6 @@ struct RemoteViewContained: View {
                 Spacer()
             } else {
                 Spacer()
-                    .frame(minHeight: 20)
-                Spacer()
-                    .frame(minHeight: 20)
             }
             Spacer()
         }

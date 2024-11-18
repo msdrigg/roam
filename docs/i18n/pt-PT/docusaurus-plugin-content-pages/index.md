@@ -3,51 +3,50 @@ hide_table_of_contents: true
 ---
 
 <head>
-    <meta name="apple-itunes-app" content="app-id=6469834197, app-clip-bundle-id=com.msdrigg.roam.Clip, app-clip-display=card"/>
+    <meta name="apple-itunes-app" content="app-id=6469834197"/>
 </head>
 
-## Sobre o Roam
+## Sobre Roam
 
-O Roam oferece tudo o que desejas e nada que não desejas
+Roam oferece tudo que você quer e nada que não quer
 
--   Disponível para Mac, iPhone, iPad, Apple Watch, Vision Pro ou Apple TV!
--   Integração inteligente com atalhos de teclado no Mac, usando botões de volume de hardware para controlar o volume da TV no iOS
--   Utiliza atalhos e widgets para controlar a tua TV sem nunca abrir a aplicação!
--   Modo auriculares (também conhecido como audição privada) suportado em Mac, iPad, iPhone, VisionOS e Apple TV (reproduz o áudio da sua TV através do teu dispositivo)
--   Detecta dispositivos na tua rede local assim que abres a aplicação
+-   Funciona em Mac, iPhone, iPad, Apple Watch, Vision Pro ou Apple TV!
+-   Integração inteligente com a plataforma com atalhos de teclado no Mac, usando botões de volume hardware para controlar o volume da TV no iOS
+-   Use atalhos e widgets para controlar sua TV sem nunca abrir o app!
+-   Modo de fones de ouvido (também conhecido como escuta privada) suportado no Mac, iPad, iPhone, VisionOS e Apple TV (reproduz o áudio da sua TV através do seu dispositivo)
+-   Descubra dispositivos na sua rede local assim que abrir o app
 -   Design intuitivo com o sistema de design nativo SwiftUI da Apple
--   Rápido e leve, menos de 8 MB em todos os dispositivos e abre em menos de meio segundo!
+-   Rápido e leve, com menos de 8 MB em todos os dispositivos e abre em menos de meio segundo!
 -   Código aberto (https://github.com/msdrigg/roam)
 
 ## Problemas Comuns
 
--   O que posso fazer se o Roam não descobre automaticamente a minha TV
+-   O que posso fazer se o Roam não descobrir automaticamente a minha TV
     -   [Veja aqui](/manually-add-tv)
--   Por que é que o modo auriculares (também conhecido como audição privada) não funciona na minha TV?
-    -   Atualmente, o modo auriculares não está a funcionar em algumas TVs. Se o modo auriculares não funcionar com o Roam, mas funcionar com a aplicação oficial da Roku, por favor partilha o nome do modelo da tua Roku e qualquer outra informação relevante num email para [roam-support@msd3.io](mailto:roam-support@msd3.io). O teu relatório ajudar-me-á a perceber onde procurar ao tentar corrigir este bug.
--   E se tiver outro problema ou apenas quiser dar feedback?
-    -   Se for um bug, o melhor será iniciar um relatório de feedback a partir da aplicação
-        -   Vai à aplicação Roam e abre a página de configurações
-        -   Clica em "Enviar Feedback". Isto irá gerar um relatório de diagnóstico que pode ser partilhado com o suporte do Roam (roam-support@msd3.io)
-        -   Se a tua aplicação está a falhar, certifica-te também que os teus dados analíticos estão ativados em Definições -> Privacidade & Segurança -> Análises & Melhorias
-            -   Ativa "Partilhar Análises do iPhone & Watch" e depois ativa "Partilhar com Desenvolvedores de Aplicações" para que a Apple me possa notificar quando a tua aplicação falhar
-    -   Se for um pedido de uma nova funcionalidade, podes enviar um email diretamente (roam-support@msd3.io) ou conversar comigo diretamente na aplicação Roam (Definições -> Conversar com o Desenvolvedor)
--   Porquê que as teclas de seta às vezes não funcionam no iPad?
-    -   Isto deve-se ao facto de o iPadOS por vezes assumir o controlo das teclas de seta e utiliza-las para navegar pelos botões do ecrã antes de nós conseguirmos detectá-los
-    -   Podes contornar isto indo a Definições -> Acessibilidade -> Teclados e desativando o "Acesso completo ao teclado" ou alternativamente indo a Definições -> Acessibilidade -> Teclados -> Acesso completo ao teclado -> Comandos -> Básicos e desativando os comandos "Mover para cima", "Mover para baixo", "Mover para a esquerda" e "Mover para a direita"
--   Porquê que o que é digitado no meu teclado não aparece na TV
-    -   Em algumas apps Roku, a aplicação ignora a entrada do teclado de hardware. Podes testar se isto é um bug do Roam ou um bug da aplicação tentando usar a funcionalidade de entrada de teclado na aplicação oficial da Roku e verificar se isto funciona
-    -   Apps com bugs conhecidos
+-   Por que o modo de fones de ouvido (também conhecido como escuta privada) não funciona na minha TV?
+    -   O modo de fones de ouvido atualmente não está funcionando em algumas TVs. Se o modo de fones de ouvido não funcionar com o Roam, mas funcionar com o aplicativo Roku oficial, por favor, compartilhe o nome do modelo do seu Roku e qualquer outra informação relevante em um email para [roam-support@msd3.io](mailto:roam-support@msd3.io). O seu relatório me ajudará a descobrir onde procurar ao tentar corrigir este bug.
+-   E se eu tiver outro problema ou apenas quiser dar feedback?
+    -   Se for um bug, será melhor iniciar um relatório de feedback a partir do aplicativo
+        -   Entre no aplicativo Roam e abra a página de configurações
+        -   Clique em "Enviar feedback". Isso gerará um relatório de diagnóstico que pode ser compartilhado com o suporte do Roam (roam-support@msd3.io)
+        -   Se o seu aplicativo estiver a crashar, certifique-se também que as suas análises estão ativadas em Configurações -> Privacidade e Segurança -> Análises e Melhorias
+            -   Ative "Partilhar Análise do iPhone & Watch" e depois ative "Partilhar com os Desenvolvedores de Apps" para que a Apple me relate quando a sua aplicação crashar
+    -   Se for um pedido para uma nova funcionalidade, você pode enviar um email direto (roam-support@msd3.io) ou conversar diretamente comigo no aplicativo Roam (Configurações -> Chat com o Desenvolvedor)
+-   Por que às vezes as teclas de seta não funcionam no iPad?
+    -   Isso ocorre porque o iPadOS às vezes assume o controle das teclas de seta e as usa para navegar pelos botões de tela antes que possamos detectá-las
+    -   Você pode contornar isso acessando Configurações -> Acessibilidade -> Teclados e desativando "Acesso Total com Teclado" ou alternativamente indo para Configurações -> Acessibilidade -> Teclados -> Acesso Total com Teclado -> Comandos -> Básico e desativando os comandos "Mover para Cima", "Mover para Baixo", "Mover para a Esquerda" e "Mover para a Direita"
+-   Por que a digitação no meu teclado não aparece na TV
+    -   Em alguns aplicativos Roku, o aplicativo ignora a entrada do teclado hardware. Você pode testar se isso é um bug do Roam ou um bug no aplicativo tentando usar a funcionalidade de entrada do teclado no aplicativo Roku oficial e verificar se isso funciona
+    -   Aplicativos com bugs conhecidos
         -    Prime Video
 
 ## Outros Recursos
 
-Se tiveres alguma dúvida ou problema, por favor contacta-me em: [roam-support@msd3.io](mailto:roam-support@msd3.io). Também podes conversar comigo diretamente na aplicação Roam (Definições -> Conversar com o Desenvolvedor).
+Se você tem alguma pergunta ou problema, por favor contacte-me em: [roam-support@msd3.io](mailto:roam-support@msd3.io). Você também pode conversar diretamente comigo no aplicativo Roam (Configurações -> Chat com o Desenvolvedor).
 
 -   [Política de Privacidade](/privacy)
--   [Repositório Core no GitHub](https://github.com/msdrigg/roam)
--   [Roam Discord](https://discord.gg/FqaTNRccbG)
--   [Download na app store](https://apps.apple.com/us/app/roam/6469834197)
--   [Download do clip da app](/scan)
+-   [Repositório Principal no GitHub](https://github.com/msdrigg/roam)
+-   [Discord do Roam](https://discord.gg/FqaTNRccbG)
+-   [Download na App Store](https://apps.apple.com/us/app/roam/6469834197)
 -   [Roadmap](/upcoming-work)
--   [Equipamentos Roku Testados](/tested-tvs)
+-   [Dispositivos Roku Testados](/tested-tvs)
