@@ -9,33 +9,22 @@ hide_table_of_contents: true
 - Added control widgets: Play, Mute, Change Volume and Select from Control center!
 - Added better text field handling for many roku apps 
     - Auto-open text field when text edit is available
-    - Copy, Cut, Paste from macOS
+    - Copy, Cut, Paste from macOS (with keyboard)
     - Copy, Cut, Paste + Generalized edit on iOS
 - Better reporting around local network permissions and connectivity
 - Connection stability improvements
 
 ## Coming Soon
 
--   Current Ongoing
-    -   Make sure text entry on iOS doesn't clip below keyboard (like it's doing rn)
-    -   Fix macOS widgets
-    -   Get iOS released pushed to app store
-        - Wait for followup on appeal
-    -   Do better testing on iOS and macOS to test that the system reconnects and stays connected in the following scenarios
-        - After waiting a long time
-        - When re-entering from the background
-        - When powering the TV from OFF state
-        - When reconnecting to the internet
-        - When switching devices
-
--   Next: Add +30 second mute timer with countdown
-    -   Hold mute to mute for +30 seconds
-    -   Click again to unmute and cancel it
-    -   Show an indicator below mute button line 
-        -   Progress bar has a linear progress indicator
-        -   Progress bar has two buttons: +30 seconds, cancel
-        -   Show underneath the main button panel so it's close to mute
-    -   Make the +30 configurable to 30, 15, 60 second mute options
+-   Add long-press options to keys
+    - Long-press right arrow to ff
+    - Long-press left arrow to rr
+    - Long-press mute to long-mute
+        -   Make the +30 configurable to 30, 15, 60 second mute options
+        - Show banner with +30 sec, x to cancel, background linear progress indicator
+            -   Show underneath the main button panel so it's close to mute
+        - Cancels when muting again (and also does api call)
+-   Fix macOS widgets
 
 -   Future: Provide an optional Minimalist view on iOS that replicates siri remote's view closely
     -   https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos

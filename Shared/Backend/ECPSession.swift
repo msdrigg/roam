@@ -708,9 +708,11 @@ actor ECPSession {
 
     private func send(data: Data?, context: NWConnection.ContentContext) async throws {
         // Before we send anything, make sure the websocket is up and running
-        try await preInitWebsocket()
-        let dataString = String(data: data ?? .init(), encoding: .utf8) ?? "--BAD UTF8 DATA--"
-        Self.logger.info("Sending data \(dataString)")
+        try await withTimeout(delay: 2) {
+            try await self.preInitWebsocket()
+            let dataString = String(data: data ?? .init(), encoding: .utf8) ?? "--BAD UTF8 DATA--"
+            Self.logger.info("Sending data \(dataString)")
+        }
 
         connection?.send(
             content: data,

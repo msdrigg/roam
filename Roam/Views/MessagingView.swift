@@ -329,7 +329,7 @@ struct SendDiagnosticsButton: View {
         if sharingDiagnostics {
             "rays"
         } else {
-            "paperclip"
+            "magnifyingglass"
         }
     }
 

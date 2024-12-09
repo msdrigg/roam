@@ -8,10 +8,13 @@ private let logger = Logger(
 )
 
 @discardableResult
-func wakeOnLAN(macAddress: String) async -> Bool {
+func wakeOnLAN(macAddress: String, interface: NWInterface?) async -> Bool {
     let host = NWEndpoint.Host("255.255.255.255")
     let port = NWEndpoint.Port(rawValue: 9)!
     let parameters = NWParameters.udp
+    if let interface {
+        parameters.requiredInterface = interface
+    }
     let connection = NWConnection(host: host, port: port, using: parameters)
 
     let packet: Data? = {
@@ -109,10 +112,22 @@ public func powerToggleDeviceStateless(location: String, macs: [String]) async -
         timeout: 1.1
     )
     if !toggleResult {
-        logger.debug("API toggle failed, trying to WOL to macs \(String(describing: macs), privacy: .public)")
+        let interfaces = await allAddressedInterfaces().filter{ iface in
+            return (iface.flags & UInt32(IFF_UP) != 0) && (iface.flags & UInt32(IFF_RUNNING) != 0) && iface.nwInterface != nil
+        }
+        let interfaceNames = interfaces.map(\.name)
+
+        logger.debug("API toggle failed, trying to WOL to macs \(String(describing: macs), privacy: .public) on interfaces \(interfaceNames, privacy: .public)")
+
         for mac in macs {
-            logger.debug("Sending wol packet to \(mac, privacy: .public)")
-            await wakeOnLAN(macAddress: mac)
+            for iface in interfaces {
+                logger.debug("Sending wol packet to \(mac, privacy: .public) with interface \(iface.name, privacy: .public)")
+                await wakeOnLAN(macAddress: mac, interface: iface.nwInterface)
+            }
+            if interfaces.count == 0 {
+                logger.debug("Sending wol packet to \(mac, privacy: .public) with no interface")
+                await wakeOnLAN(macAddress: mac, interface: nil)
+            }
         }
         return true
     } else {
