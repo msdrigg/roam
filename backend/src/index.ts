@@ -130,9 +130,9 @@ async function checkAlerts(env: Env) {
 		}
 
 		let messages = (await discordClient.getMessagesInThread(thread.id, latestMessageId))
-			.filter((message) => message.content && message.type in [0, 19, 20, 21] && !message.content.startsWith("!HiddenMessage"));
+			.filter((message) => message.type in [0, 19, 20, 21] && !isHidden(message) && !suppressNotification(message));
 
-		console.log(`Found ${messages.length} messages in thread ${thread.id} since ${latestMessageId}. Last Message Ids: ${messages.map(message => message.id)}`);
+		console.log(`Found ${messages.length} notifiable messages in thread ${thread.id} since ${latestMessageId}. Last Message Ids: ${messages.map(message => message.id)}`);
 
 		for (let message of messages) {
 			if (pushesSent >= 5) {
@@ -324,6 +324,10 @@ export default {
 } satisfies ExportedHandler<Env>;
 
 const allowedMessages = new Set([0, 19, 20, 21]);
+
+function suppressNotification(message: DiscordMessage): boolean {
+	return message.content.startsWith(":cold:")
+}
 
 function isHidden(message: DiscordMessage): boolean {
 	return !message.content || message.content.startsWith("!HiddenMessage") || message.content.startsWith(":ninja:") || !allowedMessages.has(message.type)

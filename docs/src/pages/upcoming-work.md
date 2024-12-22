@@ -12,6 +12,7 @@ hide_table_of_contents: true
     - Copy, Cut, Paste from macOS (with keyboard)
     - Copy, Cut, Paste + Generalized edit on iOS
 - Better reporting around local network permissions and connectivity
+- Improved keyboard functionality
 - Connection stability improvements
 
 ## Coming Soon

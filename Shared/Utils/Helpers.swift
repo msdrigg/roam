@@ -1,4 +1,5 @@
 import OSLog
+import SwiftUI
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "Helpers")
 extension String {
@@ -22,6 +23,33 @@ struct AnyKey: CodingKey {
         self.intValue = intValue
     }
 }
+
+#if !os(watchOS)
+public func getModifiedCharacter(_ key: KeyEquivalent, modifiers: EventModifiers) -> Character {
+    let scalarValue = key.character
+
+    if modifiers.contains(.shift) || modifiers.contains(.capsLock) {
+        let symbolMapping: [Character: Character] = [
+            "1": "!", "2": "@", "3": "#", "4": "$", "5": "%",
+            "6": "^", "7": "&", "8": "*", "9": "(", "0": ")",
+            "`": "~", "-": "_", "=": "+", "[": "{", "]": "}",
+            "\\": "|", ";": ":", "'": "\"", ",": "<", ".": ">", "/": "?"
+        ]
+
+        if let mappedSymbol = symbolMapping[scalarValue] {
+            return mappedSymbol
+        }
+
+        // Uppercase alphabetic characters
+        if scalarValue.isLowercase {
+            return scalarValue.uppercased().first!
+        }
+    }
+
+    // Return the original character if no mapping applies
+    return scalarValue
+}
+#endif
 
 public func kebabify(_ input: String) -> String {
     let split = input.replacingOccurrences(of: "([a-z])([A-Z])", with: "$1-$2", options: .regularExpression)

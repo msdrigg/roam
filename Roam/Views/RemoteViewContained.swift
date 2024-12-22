@@ -443,13 +443,17 @@ struct RemoteViewContained: View {
                     }
                 )
                 .onPreferenceChange(IsHorizontalKey.self) { value in
-                    withAnimation {
-                        isHorizontal = value
+                    DispatchQueue.main.async {
+                        withAnimation {
+                            isHorizontal = value
+                        }
                     }
                 }
                 .onPreferenceChange(IsSmallWidth.self) { value in
-                    withAnimation {
-                        isSmallWidth = value
+                    DispatchQueue.main.async {
+                        withAnimation {
+                            isSmallWidth = value
+                        }
                     }
                 }
 
@@ -568,7 +572,7 @@ struct RemoteViewContained: View {
                                 }
                             }
 
-                            pressKey(ke.key)
+                            pressKey(ke.key, modifiers: ke.modifiers)
                             return .handled
                         }
                         .controlSize(.large)
@@ -706,7 +710,7 @@ struct RemoteViewContained: View {
                                         showKeyboardEntryManual = newVal
                                     }),
                                     onKeyPress: { char in
-                                        pressKey(char)
+                                        pressKey(char, modifiers: EventModifiers())
                                     },
                                     leaving: keyboardLeaving
                                 )
@@ -811,7 +815,7 @@ struct RemoteViewContained: View {
                                 }
                             }
 
-                            pressKey(ke.key)
+                            pressKey(ke.key, modifiers: ke.modifiers)
                             return .handled
                         }
                         .controlSize(.large)
@@ -878,7 +882,7 @@ struct RemoteViewContained: View {
         }
 
         #if os(macOS)
-        .onKeyDown({ key in pressKey(key.key) }, enabled: true)
+        .onKeyDown({ key in pressKey(key.key, modifiers: key.modifiers) }, enabled: true)
         #endif
         .font(.title2)
         .fontDesign(.rounded)
@@ -1155,9 +1159,10 @@ struct RemoteViewContained: View {
         }
     }
 
-    func pressKey(_ key: KeyEquivalent) {
-        Self.logger.trace("Getting keyboard press \(key.character)")
-        if let button = RemoteButton.fromCharacter(character: key.character) {
+    func pressKey(_ key: KeyEquivalent, modifiers: EventModifiers) {
+        let character = key.character
+        Self.logger.trace("Getting keyboard press \(character)")
+        if let button = RemoteButton.fromCharacter(character: character) {
             incrementButtonPressCount(button)
             if globalMajorActions.contains(button) {
                 handleMajorUserAction()
@@ -1171,7 +1176,7 @@ struct RemoteViewContained: View {
             Self.logger.info("Getting ecp session to send data to")
             Task {
                 do {
-                    try await ecpSession.pressCharacter(key.character)
+                    try await ecpSession.pressCharacter(getModifiedCharacter(key, modifiers: modifiers))
                 } catch {
                     Self.logger.error("Error pressing character \(key.character) on device \(error)")
                 }
