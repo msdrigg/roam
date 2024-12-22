@@ -1573,7 +1573,7 @@
       }
     },
     "App Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1987,7 +1987,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -14510,7 +14510,7 @@
       }
     },
     "Roku Apps" : {
-      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
+      "comment" : "Siri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -14593,7 +14593,7 @@
       }
     },
     "Roku Controls" : {
-      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
+      "comment" : "Siri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

@@ -3,7 +3,7 @@ import SwiftUI
 
 struct ButtonGrid: View {
     let pressCounter: (RemoteButton) -> Int
-    let action: (RemoteButton) -> Void
+    let action: (RemoteButton, _: Bool) -> Void
     let enabled: Set<RemoteButton>
     let disabled: Set<RemoteButton>
 
@@ -14,18 +14,18 @@ struct ButtonGrid: View {
     @ViewBuilder
     func maybeTipButton(_ button: (String, String, RemoteButton, CustomKeyboardShortcut.Key)) -> some View {
         let view = Button(action: {
-            #if !os(watchOS)
-            if button.2 == .headphonesMode {
-                HeadphonesModeTip.toggledHeadphonesMode.sendDonation()
-            }
-            if button.2 == .mute || button.2 == .playPause {
-                HeadphonesModeTip.toggledMuteOrPlayPause.sendDonation()
-            }
-            #endif
-            action(button.2)
+            print("Ignoring inner button press")
         }, label: {
             Label(button.0, systemImage: button.1)
                 .frame(width: buttonWidth, height: buttonHeight)
+        })
+        .simultaneousGesture(LongPressGesture().onEnded { _ in
+            print("Secret Long Press Action!")
+            action(button.2, true)
+        })
+        .simultaneousGesture(TapGesture().onEnded {
+            print("Boring regular tap")
+            action(button.2, false)
         })
 
         if button.2 == .headphonesMode && !disabled.contains(button.2){

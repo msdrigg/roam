@@ -3,7 +3,7 @@ import SwiftUI
 
 struct TopBar: View {
     let pressCounter: (RemoteButton) -> Int
-    let action: (RemoteButton) -> Void
+    let action: (RemoteButton, _: Bool) -> Void
 
     @ScaledMetric var buttonWidth = globalButtonWidth
     @ScaledMetric var buttonHeight = globalButtonHeight
@@ -11,7 +11,7 @@ struct TopBar: View {
 
     var body: some View {
         HStack(spacing: buttonSpacing * 2) {
-            Button(action: { action(.back) }, label: {
+            Button(action: { action(.back, false) }, label: {
                 Label("Back", systemImage: "arrow.left")
                     .frame(width: buttonWidth, height: buttonHeight)
             })
@@ -27,7 +27,7 @@ struct TopBar: View {
             #endif
             .symbolEffect(.bounce, value: pressCounter(.back))
 
-            Button("Power On/Off", systemImage: "power", role: .destructive, action: { action(.power) })
+            Button("Power On/Off", systemImage: "power", role: .destructive, action: { action(.power, false) })
                 .font(.title)
                 .foregroundStyle(.red)
                 .buttonStyle(.plain)
@@ -39,7 +39,7 @@ struct TopBar: View {
                 .customKeyboardShortcut(.power)
             #endif
 
-            Button(action: { action(.home) }, label: {
+            Button(action: { action(.home, false) }, label: {
                 Label("Home", systemImage: "house")
                     .frame(width: buttonWidth, height: buttonHeight)
             })

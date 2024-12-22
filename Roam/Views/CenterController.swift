@@ -10,7 +10,7 @@ import SwiftUI
 
 struct CenterController: View {
     let pressCounter: (RemoteButton) -> Int
-    let action: (RemoteButton) -> Void
+    let action: (RemoteButton, _: Bool) -> Void
     @State private var pressCount: [RemoteButton: Int] = [:]
 
     @ScaledMetric var buttonWidth = globalButtonWidth
@@ -31,11 +31,18 @@ struct CenterController: View {
                     GridRow {
                         ForEach(0 ..< 3) { col in
                             if let button = buttons[row * 3 + col] {
-                                Button(action: { action(button.1) }, label: {
+                                Button(action: { print("Inner action (none)") }, label: {
                                     if let systemImage = button.0 {
                                         Label(button.2, systemImage: systemImage)
                                             .frame(width: buttonWidth, height: buttonHeight)
                                             .symbolEffect(.bounce, value: pressCounter(button.1))
+                                            .simultaneousGesture(LongPressGesture().onChanged { _ in
+                                                print("Secret Long Press Action Started!")
+                                            })
+                                            .simultaneousGesture(LongPressGesture().onEnded { _ in
+                                                print("Secret Long Press Action!")
+                                                action(button.1, true)
+                                            })
                                     } else {
                                         Text(button.2)
                                             .frame(width: buttonWidth, height: buttonHeight)
@@ -52,8 +59,19 @@ struct CenterController: View {
                                                     pressCount[button.1] = newValue
                                                 }
                                             }
+                                            .simultaneousGesture(LongPressGesture().onChanged { _ in
+                                                print("Secret Long Press Action Started!")
+                                            })
+                                            .simultaneousGesture(LongPressGesture().onEnded { _ in
+                                                print("Secret Long Press Action!")
+                                                action(button.1, true)
+                                            })
                                     }
                                 })
+//                                .simultaneousGesture(TapGesture().onEnded {
+//                                    print("Boring regular tap")
+//                                    action(button.1, false)
+//                                })
                                 #if !os(tvOS) && !os(watchOS)
                                 .customKeyboardShortcut(button.3)
                                 #endif

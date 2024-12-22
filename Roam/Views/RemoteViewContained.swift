@@ -555,7 +555,7 @@ struct RemoteViewContained: View {
                                     let title = shortcut.title
                                     Self.logger.info("Not handling key press because found shortcut with title \(title)")
                                     if let rb = title.matchingRemoteButton {
-                                        pressButton(rb)
+                                        pressButton(rb, longPress: false)
                                         return .handled
                                     }
 
@@ -676,7 +676,7 @@ struct RemoteViewContained: View {
                                 .info(
                                     "Pressing button \(String(describing: key)) with volume \(volume) after volume event \(String(describing: volumeEvent))"
                                 )
-                            pressButton(key)
+                            pressButton(key, longPress: false)
                         }.id("VolumeOverlay")
                             .frame(maxWidth: 1)
                     }
@@ -763,7 +763,7 @@ struct RemoteViewContained: View {
                                     let title = shortcut.title
                                     Self.logger.info("Not handling key press because found shortcut with title \(title)")
                                     if let rb = title.matchingRemoteButton {
-                                        pressButton(rb)
+                                        pressButton(rb, longPress: false)
                                         return .handled
                                     }
 
@@ -1137,7 +1137,7 @@ struct RemoteViewContained: View {
         }
     }
 
-    func pressButton(_ button: RemoteButton) {
+    func pressButton(_ button: RemoteButton, longPress: Bool) {
         incrementButtonPressCount(button)
         if globalMajorActions.contains(button) {
             handleMajorUserAction()
@@ -1146,8 +1146,23 @@ struct RemoteViewContained: View {
             donateButtonIntent(button)
         #endif
         if button == .headphonesMode {
+            #if !os(watchOS)
+            if button == .headphonesMode {
+                HeadphonesModeTip.toggledHeadphonesMode.sendDonation()
+            }
+            if button == .mute || button == .playPause {
+                HeadphonesModeTip.toggledMuteOrPlayPause.sendDonation()
+            }
+            #endif
+
             headphonesModeEnabled.toggle()
             return
+        }
+
+        if button == .right && longPress {
+            return pressButton(.fastForward, longPress: false)
+        } else if button == .left && longPress {
+            return pressButton(.rewind, longPress: false)
         }
 
         Task {
