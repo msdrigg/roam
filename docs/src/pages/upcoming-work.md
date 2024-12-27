@@ -6,25 +6,25 @@ hide_table_of_contents: true
 
 ## Completed Work for Next Update
 
-- Added control widgets: Play, Mute, Change Volume and Select from Control center!
-- Added better text field handling for many roku apps 
-    - Auto-open text field when text edit is available
-    - Copy, Cut, Paste from macOS (with keyboard)
-    - Copy, Cut, Paste + Generalized edit on iOS
-- Better reporting around local network permissions and connectivity
-- Improved keyboard functionality
-- Connection stability improvements
+-   Added control widgets: Play, Mute, Change Volume and Select from Control center!
+-   Added better text field handling for many roku apps
+    -   Auto-open text field when text edit is available
+    -   Copy, Cut, Paste from macOS (with keyboard)
+    -   Copy, Cut, Paste + Generalized edit on iOS
+-   Better reporting around local network permissions and connectivity
+-   Improved keyboard functionality
+-   Connection stability improvements
 
 ## Coming Soon
 
 -   Add long-press options to keys
-    - Long-press right arrow to ff
-    - Long-press left arrow to rr
-    - Long-press mute to long-mute
+    -   Long-press right arrow to ff
+    -   Long-press left arrow to rr
+    -   Long-press mute to long-mute
         -   Make the +30 configurable to 30, 15, 60 second mute options
-        - Show banner with +30 sec, x to cancel, background linear progress indicator
+        -   Show banner with +30 sec, x to cancel, background linear progress indicator
             -   Show underneath the main button panel so it's close to mute
-        - Cancels when muting again (and also does api call)
+        -   Cancels when muting again (and also does api call)
 -   Fix macOS widgets
 
 -   Future: Provide an optional Minimalist view on iOS that replicates siri remote's view closely
@@ -33,8 +33,7 @@ hide_table_of_contents: true
 
 ## General Future Ideas
 
--   Write a blog post about the discord bot and point to my MessageView
-    - Make messageView more self-contained
+-   Finish the blog post about my MessageView and backend
 -   Write a blog post about the auto-translation and logic around that
 -   Write a blog post about NWConnection vs URLSession for websockets
 -   Write a blog post about custom keyboard shortcuts
@@ -44,8 +43,9 @@ hide_table_of_contents: true
 -   Make custom menu bar icon
 
 -   How to do voice-to-text or general voice commands?
-    - Need to reverse-engineer the roku voice remote udp protocol
-    - Or need to add custom text-to-speech with remote button engine?
+
+    -   Need to reverse-engineer the roku voice remote udp protocol
+    -   Or need to add custom text-to-speech with remote button engine?
 
 -   Automate Screenshot Capture
 
@@ -58,6 +58,7 @@ hide_table_of_contents: true
         -   https://www.canva.com/templates/s/iphone/
 
 -   Try more keyboard hacks for iPad
+
     -   GCKeyboard for one
     -   FocusEnvironment for 2
     -   Ensure that whatever solution gets used for iOS doesn't break text entry in messages/keyboard entry

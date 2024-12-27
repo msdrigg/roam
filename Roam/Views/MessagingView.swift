@@ -44,7 +44,7 @@ func getNotificationSettings() {
 
 @MainActor
 // swiftlint:disable:next line_length force_try
-let connectRegex = try! Regex("\\bconnect\\b|\\badd\\b|\\bfind my tv\\b|\\bscan\\b|\\bconnexion\\b|\\bconnecter\\b|\\btrouver ma télé\\b|\\bconectar\\b|\\bconexión\\b|\\bconecta\\b|\\bno puedo\\b|\\b无法连接\\b|\\b连接\\b|\\bconexão\\b|\\bconectar\\b|\\bnão consigo\\b|\\bkết nối\\b|\\bلا أستطيع\\b|\\bالاتصال\\b|\\bਕਨੈਕਟ\\b|\\bਹੋ ਨਹੀਂ ਸਕਦਾ\\b|\\bmaghanap ng tv\\b|\\bmagkonekta\\b|\\bverbinden\\b|\\bconnettere\\b|\\btrovare la tv\\b").ignoresCase()
+let connectRegex = try! Regex("\\bconnect|\\badd|\\bfind my tv\\b|\\bscan\\b|\\bconnexion\\b|\\bconnecter\\b|\\btrouver ma télé\\b|\\bconectar\\b|\\bconexión\\b|\\bconecta\\b|\\bno puedo\\b|\\b无法连接\\b|\\b连接\\b|\\bconexão\\b|\\bconectar\\b|\\bnão consigo\\b|\\bkết nối\\b|\\bلا أستطيع\\b|\\bالاتصال\\b|\\bਕਨੈਕਟ\\b|\\bਹੋ ਨਹੀਂ ਸਕਦਾ\\b|\\bmaghanap ng tv\\b|\\bmagkonekta\\b|\\bverbinden\\b|\\bconnettere\\b|\\btrovare la tv\\b").ignoresCase()
 
 struct MessageView: View {
     @State private var messageText = ""
