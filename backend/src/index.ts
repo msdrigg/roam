@@ -130,7 +130,8 @@ async function checkAlerts(env: Env) {
 		}
 
 		let messages = (await discordClient.getMessagesInThread(thread.id, latestMessageId))
-			.filter((message) => message.type in [0, 19, 20, 21] && !isHidden(message) && !suppressNotification(message));
+			.filter((message) => message.type in [0, 19, 20, 21] && !isHidden(message) && !suppressNotification(message))
+			.map((m) => normalizeMessage(m))
 
 		console.log(`Found ${messages.length} notifiable messages in thread ${thread.id} since ${latestMessageId}. Last Message Ids: ${messages.map(message => message.id)}`);
 
@@ -263,7 +264,8 @@ export default {
 			}
 
 			let messages = (await discordClient.getMessagesInThread(threadId, after))
-				.filter((message) => !isHidden(message));
+				.filter((message) => !isHidden(message))
+				.map((m) => normalizeMessage(m))
 
 			return new Response(JSON.stringify(messages), { status: 200 });
 		}
@@ -331,4 +333,12 @@ function suppressNotification(message: DiscordMessage): boolean {
 
 function isHidden(message: DiscordMessage): boolean {
 	return !message.content || message.content.startsWith("!HiddenMessage") || message.content.startsWith(":ninja:") || !allowedMessages.has(message.type)
+}
+
+function normalizeMessage(message: DiscordMessage): DiscordMessage {
+	if (message.content.startsWith(":cold:")) {
+		message.content = message.content.slice(6);
+	}
+
+	return message;
 }
