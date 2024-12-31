@@ -179,6 +179,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
         case up = "Up"
         case down = "Down"
         case keyboardShortcuts = "Keyboard Shortcuts"
+        case refreshMessages = "Refresh Messages"
         case chatWithDeveloper = "Chat with the Developer"
         case options = "Options"
         case headphonesMode = "Headphones Mode"
@@ -208,6 +209,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
             .down: String(localized: "Down", comment: "Keyboard shortcut to move down"),
             .keyboardShortcuts: String(localized: "Keyboard Shortcuts", comment: "Keyboard shortcut to open the keyboard shortcut panel"),
             .chatWithDeveloper: String(localized: "Chat with the Developer", comment: "Keyboard shortcut to open the chat window"),
+            .refreshMessages: String(localized: "Refresh messages", comment: "Keyboard shortcut to refresh developer messages"),
             .options: String(localized: "Options", comment: "Keyboard shortcut to open the options menu"),
             .headphonesMode: String(localized: "Headphones Mode", comment: "Keyboard shortcut to toggle headphones mode"),
             .instantReplay: String(localized: "Instant Replay", comment: "Keyboard shortcut to instant replay"),
@@ -289,7 +291,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
                 return .up
             case .down:
                 return .down
-            case .keyboardShortcuts, .paste, .chatWithDeveloper, .cut, .copy:
+            case .keyboardShortcuts, .paste, .chatWithDeveloper, .cut, .copy, .refreshMessages:
                 return nil
             case .options:
                 return .options
@@ -552,6 +554,7 @@ struct AllCustomKeyboardShortcuts: DynamicProperty {
     @KeyboardShortcutStorage(.instantReplay) private var instantReplayShortcut
     @KeyboardShortcutStorage(.fastForward) private var fastForwardShortcut
     @KeyboardShortcutStorage(.rewind) private var rewindShortcut
+    @KeyboardShortcutStorage(.refreshMessages) private var refreshMessagesShortcut
 
     var wrappedValue: [CustomKeyboardShortcut] {
         [
@@ -606,7 +609,8 @@ struct AllCustomKeyboardShortcuts: DynamicProperty {
                     rewindShortcut,
                     pasteShortcut,
                     cutShortcut,
-                    copyShortcut
+                    copyShortcut,
+                    refreshMessagesShortcut
                 ].compactMap { $0 }
             },
             set: { newShortcuts in
@@ -634,6 +638,7 @@ struct AllCustomKeyboardShortcuts: DynamicProperty {
                     case .paste: pasteShortcut = shortcut
                     case .cut: cutShortcut = shortcut
                     case .copy: copyShortcut = shortcut
+                    case .refreshMessages: refreshMessagesShortcut = shortcut
                     }
                 }
             }

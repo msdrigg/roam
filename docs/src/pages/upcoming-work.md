@@ -33,13 +33,6 @@ hide_table_of_contents: true
 
 ## General Future Ideas
 
--   Finish the blog post about my MessageView and backend
--   Write a blog post about the auto-translation and logic around that
--   Write a blog post about NWConnection vs URLSession for websockets
--   Write a blog post about custom keyboard shortcuts
--   Write a blog post about ECP Textedit API
--   Write a blog post about control center widgets
-
 -   Make custom menu bar icon
 
 -   How to do voice-to-text or general voice commands?
@@ -57,7 +50,7 @@ hide_table_of_contents: true
         -   https://www.figma.com/community/file/1256854154932829222/free-app-store-screenshot-templates?searchSessionId=lxw3ep02-oubp844ov8
         -   https://www.canva.com/templates/s/iphone/
 
--   Try more keyboard hacks for iPad
+-   Try more keyboard hacks on iPad
 
     -   GCKeyboard for one
     -   FocusEnvironment for 2
@@ -105,7 +98,7 @@ hide_table_of_contents: true
     -   Find out more shows a popup with some reasons why this may be happening
         -   Make sure your device is powered on and connected to the same wifi network as your app. If this still doesn't work, try adding the device manually.
         -   Link https://roam.msd3.io/manually-add-tv.md and https://support.roku.com/article/115001480188 for more troubleshooting or chat
--   Add badge for supportsWakeOnWLAN and supportsMute
+-   Add badge for supportsWakeOnWLAN and supportsAudioControls
 
 ## To update when dropping support for iOS 17/macOS 14 (Feb 2026)
 

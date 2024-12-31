@@ -6,6 +6,7 @@ final class NavigationManager {
     var navigationPath: [NavigationDestination] = []
     var messagingWindowOpenTrigger: UUID?
     var showingSettingsView: Bool = false
+    var showingMessagesView: Bool = false
 
     var last: NavigationDestination? {
         navigationPath.last

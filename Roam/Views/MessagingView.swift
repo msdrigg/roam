@@ -59,6 +59,10 @@ struct MessageView: View {
 
     @Environment(\.createDataHandler) private var createDataHandler
 
+#if !os(watchOS)
+    @EnvironmentObject private var appDelegate: RoamAppDelegate
+#endif
+
     var roboMessage: Message? {
 
         if messageText.firstMatch(of: connectRegex) != nil {
@@ -222,6 +226,15 @@ struct MessageView: View {
                 UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
             }
             #endif
+#if !os(watchOS)
+            .onAppear {
+                appDelegate.navigationPath.showingMessagesView = true
+            }
+            .onDisappear {
+                appDelegate.navigationPath.showingMessagesView = false
+            }
+#endif
+
         }
         .task(id: hasSentFirstMessage) {
             if !hasSentFirstMessage {
