@@ -23,7 +23,6 @@ export interface Env {
 }
 
 type MessageRequest = {
-	title: string;
 	content: string;
 	userId: string;
 	apnsToken: string | null;
@@ -65,7 +64,6 @@ async function maybeSendDeviceInfo(env: Env, userId: string, threadId: string, i
 }
 
 async function sendMessage(message: {
-	title?: string,
 	content?: string,
 	attachment?: DiscordFile,
 },
@@ -75,10 +73,10 @@ async function sendMessage(message: {
 		installationInfo?: InstallationInfo,
 	},
 	env: Env, discordClient: DiscordClient): Promise<void> {
-	const { title, content, attachment: attachment } = message;
+	const { content, attachment: attachment } = message;
 	const { apnsToken, userId, installationInfo } = userInfo;
 
-	console.log("Handling new message request", title, content, apnsToken, userId);
+	console.log("Handling new message request", content, content, apnsToken, userId);
 
 	let stub = env.APNS_DURABLE_OBJECT.get(env.APNS_DURABLE_OBJECT.idFromName("apns"));
 	let threadId = await stub.getOrCreateThreadIdForUser(userId);
@@ -283,7 +281,6 @@ export default {
 		if (pathSegments[0] === "new-message") {
 			let messageRequest = await request.json() as MessageRequest;
 			let {
-				title,
 				content,
 				apnsToken,
 				userId,
@@ -294,7 +291,7 @@ export default {
 				return new Response("Bad request", { status: 400 });
 			}
 
-			await sendMessage({ title, content }, { apnsToken, userId, installationInfo }, env, discordClient);
+			await sendMessage({ content }, { apnsToken, userId, installationInfo }, env, discordClient);
 
 			return new Response("OK", { status: 200 });
 		}

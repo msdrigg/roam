@@ -68,7 +68,7 @@ class DiscordClient {
         }
     }
 
-    async sendMessage(threadId: string, content: string, attachments?: [DiscordFile]): Promise<string> {
+    async sendMessage(threadId: string, content: string): Promise<string> {
         const url = `${this.baseUrl}/channels/${threadId}/messages`;
         const body = {
             content: content
@@ -118,6 +118,17 @@ class DiscordClient {
             }
 
             const responseData = await response.json() as DiscordMessage;
+
+            let rateLimitInfo = {
+                limit: response.headers.get('X-RateLimit-Limit'),
+                remaining: response.headers.get('X-RateLimit-Remaining'),
+                reset: response.headers.get('X-RateLimit-Reset'),
+                resetAfter: response.headers.get('X-RateLimit-Reset-After'),
+                bucket: response.headers.get('X-RateLimit-Bucket')
+            }
+
+            console.log(`Rate limit info: ${JSON.stringify(rateLimitInfo)}`);
+
             return responseData.id;  // Return the ID of the newly created message
         } catch (error) {
             console.error(`Error sending message with attachment: ${error}`);
