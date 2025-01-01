@@ -55,6 +55,16 @@ class DiscordClient {
                 }
             });
 
+            let rateLimitInfo = {
+                limit: response.headers.get('X-RateLimit-Limit'),
+                remaining: response.headers.get('X-RateLimit-Remaining'),
+                reset: response.headers.get('X-RateLimit-Reset'),
+                resetAfter: response.headers.get('X-RateLimit-Reset-After'),
+                bucket: response.headers.get('X-RateLimit-Bucket')
+            }
+
+            console.log(`Rate limit info: ${JSON.stringify(rateLimitInfo)}`);
+
             if (!response.ok) {
                 const errorData = await response.json() as ApiError;
                 throw new Error(`Failed to fetch messages: ${errorData.message}`);
@@ -84,6 +94,17 @@ class DiscordClient {
                 body: JSON.stringify(body)
             });
 
+
+            let rateLimitInfo = {
+                limit: response.headers.get('X-RateLimit-Limit'),
+                remaining: response.headers.get('X-RateLimit-Remaining'),
+                reset: response.headers.get('X-RateLimit-Reset'),
+                resetAfter: response.headers.get('X-RateLimit-Reset-After'),
+                bucket: response.headers.get('X-RateLimit-Bucket')
+            }
+
+            console.log(`Rate limit info: ${JSON.stringify(rateLimitInfo)}`);
+
             if (!response.ok) {
                 const errorData = await response.json() as ApiError;
                 throw new Error(`Failed to send message: ${errorData.message}`);
@@ -112,12 +133,6 @@ class DiscordClient {
                 body: formData
             });
 
-            if (!response.ok) {
-                const errorData = await response.json() as ApiError;
-                throw new Error(`Failed to send message: ${errorData.message}`);
-            }
-
-            const responseData = await response.json() as DiscordMessage;
 
             let rateLimitInfo = {
                 limit: response.headers.get('X-RateLimit-Limit'),
@@ -128,6 +143,13 @@ class DiscordClient {
             }
 
             console.log(`Rate limit info: ${JSON.stringify(rateLimitInfo)}`);
+
+            if (!response.ok) {
+                const errorData = await response.json() as ApiError;
+                throw new Error(`Failed to send message: ${errorData.message}`);
+            }
+
+            const responseData = await response.json() as DiscordMessage;
 
             return responseData.id;  // Return the ID of the newly created message
         } catch (error) {
@@ -145,6 +167,16 @@ class DiscordClient {
                     'Authorization': `Bot ${this.botToken}`
                 }
             });
+
+            let rateLimitInfo = {
+                limit: response.headers.get('X-RateLimit-Limit'),
+                remaining: response.headers.get('X-RateLimit-Remaining'),
+                reset: response.headers.get('X-RateLimit-Reset'),
+                resetAfter: response.headers.get('X-RateLimit-Reset-After'),
+                bucket: response.headers.get('X-RateLimit-Bucket')
+            }
+
+            console.log(`Rate limit info: ${JSON.stringify(rateLimitInfo)}`);
 
             if (!response.ok) {
                 const errorData = await response.json() as ApiError;
@@ -188,6 +220,16 @@ class DiscordClient {
                 },
                 body: JSON.stringify(body)
             });
+
+            let rateLimitInfo = {
+                limit: response.headers.get('X-RateLimit-Limit'),
+                remaining: response.headers.get('X-RateLimit-Remaining'),
+                reset: response.headers.get('X-RateLimit-Reset'),
+                resetAfter: response.headers.get('X-RateLimit-Reset-After'),
+                bucket: response.headers.get('X-RateLimit-Bucket')
+            }
+
+            console.log(`Rate limit info: ${JSON.stringify(rateLimitInfo)}`);
 
             if (!response.ok) {
                 const errorData = await response.json() as ApiError;
