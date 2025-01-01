@@ -171,7 +171,13 @@ export class InternalDurableObject extends DurableObject {
 		return apnsToken;
 	}
 
+	async getApnsTokenForUser(userId: string): Promise<string | null> {
+		let apnsToken = this.tryGetCachedKey(`apnsToken:${userId}`, undefined);
+		return apnsToken;
+	}
+
 	async storeApnsToken(threadId: string, userId: string, apnsToken: string): Promise<void> {
+		console.log(`Storing APNS token ${apnsToken} for thread ${threadId} and user ${userId}`);
 		await this.ctx.storage.put(`apnsToken:${threadId}`, apnsToken);
 		await this.ctx.storage.put(`apnsToken:${userId}`, apnsToken);
 	}
@@ -334,6 +340,7 @@ export default {
 			if (threadId) {
 				apnsToken = await stub.getApnsTokenForThread(threadId);
 			}
+			let userApns = await stub.getApnsTokenForUser(userId);
 
 			let queryParams = new URL(request.url).searchParams;
 			let after = queryParams.get("after") || null;
@@ -345,7 +352,7 @@ export default {
 					.map((m) => normalizeMessage(m))
 			}
 
-			return new Response(JSON.stringify({ messages, threadId, apnsToken, userId }), { status: 200 });
+			return new Response(JSON.stringify({ messages, threadId, apnsToken, userId, userApns }), { status: 200 });
 		}
 
 		if (pathSegments[0] === "thread-info") {
