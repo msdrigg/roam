@@ -19,6 +19,13 @@ If Roam still can't control your Roku, please try the following steps
 -   Make sure your iOS device is connected to the same WiFi network as your Roku TV
 -   Make sure your TV is turned on
 -   Make sure Local Network Permissions is enabled for Roam (or disable and re-enable it if it is already enabled)
-    - On macOS: Go to System Settings -> Privacy and Security -> Local Network -> Roam
-    - On iOS: Go to Settings -> Apps -> Roam -> Local Network
+    -   On macOS: Go to System Settings -> Privacy and Security -> Local Network -> Roam
+    -   On iOS: Go to Settings -> Apps -> Roam -> Local Network
 -   See additional possibilities here [https://support.roku.com/article/115001480188](https://support.roku.com/article/115001480188)
+
+## What if I have a complicated network/VPN setup? What protocols does this app use?
+
+-   Roam uses two different protocols to communicate with the TV
+    -   TCP (HTTP/Websockets) on port 8060 for sending commands to the TV
+    -   WOL magic packet (UDP multicast to address 255.255.255.255) to wake up the TV from deep sleep
+-   All Roku TV's use port 8060 and there is no way to change this on the TV side. But if you have some kind of port forwarding setup and want to use a different outgoing port from Roam, it is possible. You just need to enter `<IP>:<Port>` into the "Ip Address" field instead of just `<IP>`. E.g. enter `192.168.8.242:8061` and the chosen port will be used.

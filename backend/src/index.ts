@@ -167,19 +167,8 @@ export class InternalDurableObject extends DurableObject {
 	}
 
 	async getApnsTokenForThread(threadId: string): Promise<string | null> {
-		let apnsToken = await this.ctx.storage.get(`apnsToken:${threadId}`);
-		console.log(`Existing APNS token: ${apnsToken}`)
-
-		if (apnsToken) {
-			return apnsToken as string;
-		}
-		let newApnsToken = await this.ROAM_KV.get(`apnsToken:${threadId}`);
-		if (!newApnsToken) {
-			return null;
-		}
-
-		await this.ctx.storage.put(`apnsToken:${threadId}`, newApnsToken);
-		return newApnsToken;
+		let apnsToken = this.tryGetCachedKey(`apnsToken:${threadId}`, undefined);
+		return apnsToken;
 	}
 
 	async storeApnsToken(threadId: string, userId: string, apnsToken: string): Promise<void> {
@@ -187,36 +176,50 @@ export class InternalDurableObject extends DurableObject {
 		await this.ctx.storage.put(`apnsToken:${userId}`, apnsToken);
 	}
 
-	async getThreadIdForUser(userId: string): Promise<string | null> {
-		let threadId = await this.ctx.storage.get(`threadId:${userId}`);
-		console.log(`Existing thread ID: ${threadId}`)
-
-		if (threadId) {
-			return threadId as string;
+	async tryGetCachedKey(key: string, txn: DurableObjectTransaction | undefined): Promise<string | null> {
+		if (txn) {
+			let cachedValue = await txn.get(key);
+			if (cachedValue) {
+				return cachedValue as string;
+			}
+			let kvValue = await this.ROAM_KV.get(key);
+			console.log(`Caching ${key} not found in DO storage with value ${kvValue}`);
+			await txn.put(key, kvValue);
+			return (kvValue as string) || null;
+		} else {
+			return await this.ctx.storage.transaction(async (txn) => {
+				let cachedValue = await txn.get(key);
+				if (cachedValue) {
+					return cachedValue as string;
+				}
+				let kvValue = await this.ROAM_KV.get(key);
+				console.log(`Caching ${key} not found in DO storage with value ${kvValue}`);
+				await txn.put(key, kvValue);
+				return (kvValue as string) || null;
+			})
 		}
-		let newThreadId = await this.ROAM_KV.get(`threadId:${userId}`);
-		if (!newThreadId) {
-			return null;
-		}
+	}
 
-		await this.ctx.storage.put(`threadId:${userId}`, newThreadId);
-		return newThreadId;
+	async getThreadIdForUser(userId: string, txn?: DurableObjectTransaction): Promise<string | null> {
+		let tid = await this.tryGetCachedKey(`threadId:${userId}`, txn);
+		console.log(`Found existing thread ID: ${tid} for user ${userId}`)
+		return tid || null
 	}
 
 	async getOrCreateThreadIdForUser(userId: string): Promise<string> {
-		let threadId = await this.ctx.storage.get(`threadId:${userId}`);
-		console.log(`Existing thread ID: ${threadId}`)
+		let result = await this.ctx.storage.transaction(async (txn) => {
+			let threadId = await this.getThreadIdForUser(userId);
 
-		if (threadId) {
-			return threadId as string;
-		}
-		let newThreadId = await this.ROAM_KV.get(`threadId:${userId}`);
-		if (!newThreadId) {
-			newThreadId = await this.discordClient.createThread(`New message from ${userId}`, ":ninja:");
-		}
+			if (!threadId) {
+				let newThreadId = await this.discordClient.createThread(`New message from ${userId}`, ":ninja:");
+				await this.ctx.storage.put(`threadId:${userId}`, newThreadId);
+				return newThreadId;
+			} else {
+				return threadId;
+			}
+		});
 
-		await this.ctx.storage.put(`threadId:${userId}`, newThreadId);
-		return newThreadId;
+		return result;
 	}
 
 	async consumeMessagesForApns(): Promise<{ threads: Thread[], latestMessageId: string }> {
@@ -254,6 +257,7 @@ export default {
 			}
 
 			let stub = env.APNS_DURABLE_OBJECT.get(env.APNS_DURABLE_OBJECT.idFromName("apns"));
+
 			let threadId = await stub.getThreadIdForUser(userId);
 
 			let queryParams = new URL(request.url).searchParams;
@@ -314,6 +318,61 @@ export default {
 		if (pathSegments[0] === "alert") {
 			await checkAlerts(env);
 			return new Response("OK", { status: 200 });
+		}
+
+		if (pathSegments[0] === "user-info") {
+			let userId = pathSegments[1];
+			if (!userId) {
+				return new Response("Bad request", { status: 400 });
+			}
+
+
+			let stub = env.APNS_DURABLE_OBJECT.get(env.APNS_DURABLE_OBJECT.idFromName("apns"));
+
+			let threadId = await stub.getThreadIdForUser(userId);
+			let apnsToken: string | null = null
+			if (threadId) {
+				apnsToken = await stub.getApnsTokenForThread(threadId);
+			}
+
+			let queryParams = new URL(request.url).searchParams;
+			let after = queryParams.get("after") || null;
+
+			let messages: DiscordMessage[] | null = null;
+			if (threadId) {
+				messages = (await discordClient.getMessagesInThread(threadId, after))
+					.filter((message) => !isHidden(message))
+					.map((m) => normalizeMessage(m))
+			}
+
+			return new Response(JSON.stringify({ messages, threadId, apnsToken, userId }), { status: 200 });
+		}
+
+		if (pathSegments[0] === "thread-info") {
+			let threadId = pathSegments[1];
+			if (!threadId) {
+				return new Response("Bad request", { status: 400 });
+			}
+
+
+			let stub = env.APNS_DURABLE_OBJECT.get(env.APNS_DURABLE_OBJECT.idFromName("apns"));
+
+			let apnsToken: string | null = null
+			if (threadId) {
+				apnsToken = await stub.getApnsTokenForThread(threadId);
+			}
+
+			let queryParams = new URL(request.url).searchParams;
+			let after = queryParams.get("after") || null;
+
+			let messages: DiscordMessage[] | null = null;
+			if (threadId) {
+				messages = (await discordClient.getMessagesInThread(threadId, after))
+					.filter((message) => !isHidden(message))
+					.map((m) => normalizeMessage(m))
+			}
+
+			return new Response(JSON.stringify({ messages, threadId, apnsToken }), { status: 200 });
 		}
 
 		return new Response("Not found", { status: 404 });

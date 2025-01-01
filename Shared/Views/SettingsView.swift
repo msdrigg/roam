@@ -534,7 +534,7 @@ struct DeviceListItem: View {
                         verticalSpacing: 12,
                         fitContentWidth: true
                     ) {
-                        Text(getHost(from: device.location)).foregroundStyle(Color.secondary).lineLimit(1)
+                        Text(getHostPortDisplay(from: device.location)).foregroundStyle(Color.secondary).lineLimit(1)
 #if !os(watchOS)
                         if device.supportsDatagram == true {
                             Label(String(localized: "Supported", comment: "Label indicating headphones mode is supported"), systemImage: "headphones").labelStyle(.badge(.green))
@@ -812,16 +812,17 @@ struct DeviceDetailView: View {
         }
         .onChange(of: device?.location) { _, new in
             if let new = new {
-                let host = getHost(from: new)
+                let host = getHostPortDisplay(from: new)
                 Self.logger.info("Seeing host \(host) in change")
                 deviceIP = host
             }
         }
         .onAppear {
             deviceName = device?.name ?? "New device"
-            let host = getHost(from: device?.location ?? "192.168.0.1")
-            Self.logger.info("Seeing host \(host) in appear")
+            let deviceUrl = device?.location ?? "192.168.0.1"
+            let host = getHostPortDisplay(from: deviceUrl)
 
+            Self.logger.info("Seeing host \(host)")
             deviceIP = host
         }
         .onDisappear {

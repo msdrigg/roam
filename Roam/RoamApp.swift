@@ -142,10 +142,9 @@ struct RoamApp: App {
                 if appDelegate.navigationPath.showingMessagesView {
                     CommandGroup(after: .appSettings) {
                         Divider()
-                        Button("Refresh Support Messages", systemImage: "arrow.clockwise.circle") {
+                        Button("Refresh Chat Messages", systemImage: "arrow.clockwise.circle") {
                             appDelegate.refreshMessages()
                         }
-                        .customKeyboardShortcut(.refreshMessages)
                     }
                 }
 
