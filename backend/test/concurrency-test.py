@@ -44,29 +44,30 @@ def main():
     api_key = os.environ.get("API_KEY", None)
     user_id = "abc-tet-124"
 
-    # Define the messages
-    message1 = "msg1"
-    message2 = "msg2"
-    message3 = "msg3"
-
     # Create threads
     thread1 = threading.Thread(
-        target=send_request, args=(message1, url, api_key, user_id)
+        target=send_request, args=("message1", url, api_key, user_id)
     )
     thread2 = threading.Thread(
-        target=send_request, args=(message2, url, api_key, user_id)
+        target=send_request, args=("message2", url, api_key, user_id)
     )
     thread3 = threading.Thread(
-        target=send_request, args=(message3, url, api_key, user_id)
+        target=send_request, args=("message3", url, api_key, user_id)
     )
     thread4 = threading.Thread(
-        target=send_request, args=(message1, url, api_key, user_id)
+        target=send_request, args=("message4", url, api_key, user_id)
     )
     thread5 = threading.Thread(
-        target=send_request, args=(message2, url, api_key, user_id)
+        target=send_request, args=("message5", url, api_key, user_id)
     )
     thread6 = threading.Thread(
-        target=send_request, args=(message3, url, api_key, user_id)
+        target=send_request, args=("message6", url, api_key, user_id)
+    )
+    thread7 = threading.Thread(
+        target=send_request, args=("message7", url, api_key, user_id)
+    )
+    thread8 = threading.Thread(
+        target=send_request, args=("message8", url, api_key, user_id)
     )
 
     # Start threads
@@ -76,6 +77,8 @@ def main():
     thread4.start()
     thread5.start()
     thread6.start()
+    thread7.start()
+    thread8.start()
 
     # Wait for threads to finish
     thread1.join()
@@ -84,6 +87,8 @@ def main():
     thread4.join()
     thread5.join()
     thread6.join()
+    thread7.join()
+    thread8.join()
 
 
 if __name__ == "__main__":

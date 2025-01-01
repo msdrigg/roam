@@ -123,9 +123,33 @@ export class InternalDurableObject extends DurableObject {
 
 	/// MARK: Discord Wrapper
 
+	async incrementAndCheckSemaphore() {
+		let semaphore = await this.ctx.storage.get("semaphore") as number | null;
+		if (!semaphore) {
+			semaphore = 0;
+		}
+
+		if (semaphore >= 5) {
+			throw new Error(`Semaphore limit reached for discord API ${semaphore}`);
+		}
+
+		await this.ctx.storage.put("semaphore", semaphore + 1);
+	}
+
+	async decrementSemaphore() {
+		let semaphore = await this.ctx.storage.get("semaphore") as number | null;
+		if (semaphore) {
+			await this.ctx.storage.put("semaphore", semaphore - 1);
+		}
+	}
+
 	async getMessagesInThread(threadId: string, after: string | null): Promise<DiscordMessage[]> {
-		let messages = await this.discordClient.getMessagesInThread(threadId, after);
-		return messages;
+		try {
+			await this.incrementAndCheckSemaphore();
+			return await this.discordClient.getMessagesInThread(threadId, after);
+		} finally {
+			await this.decrementSemaphore();
+		}
 	}
 
 	async sendMessage(message: { content?: string, attachment?: DiscordFile }, userInfo: { apnsToken: string | null, userId: string, installationInfo?: InstallationInfo }): Promise<void> {
@@ -140,20 +164,25 @@ export class InternalDurableObject extends DurableObject {
 			await this.storeApnsToken(threadId, userId, apnsToken);
 		}
 
-		if (content) {
-			await this.discordClient.sendMessage(threadId, content)
-		}
+		try {
+			await this.incrementAndCheckSemaphore();
+			if (content) {
+				await this.discordClient.sendMessage(threadId, content)
+			}
 
-		if (attachment) {
-			await this.discordClient.sendAttachment(threadId, attachment)
+			if (attachment) {
+				await this.discordClient.sendAttachment(threadId, attachment)
+			}
+		} finally {
+			await this.decrementSemaphore();
 		}
 
 		if (content || attachment) {
-			await this.maybeSendDeviceInfo(userId, threadId, installationInfo, this.discordClient);
+			await this.maybeSendDeviceInfo(userId, threadId, installationInfo);
 		}
 	}
 
-	private async maybeSendDeviceInfo(userId: string, threadId: string, installationInfo: InstallationInfo | undefined, discordClient: DiscordClient) {
+	private async maybeSendDeviceInfo(userId: string, threadId: string, installationInfo: InstallationInfo | undefined) {
 		if (!installationInfo) {
 			console.log("No installation info found");
 			return;
@@ -174,14 +203,24 @@ export class InternalDurableObject extends DurableObject {
 			console.log("Installation info changed, (re)sending");
 
 			let { userId, buildVersion, osPlatform, osVersion, userLocale } = installationInfo;
-			await discordClient.sendMessage(threadId, `:ninja:\n\n### Device info\n\n- **User ID**: ${userId}\n- **Build version**: ${buildVersion}\n- **OS platform**: ${osPlatform}\n- **OS version**: ${osVersion}\n- **User Locale**: ${userLocale}`);
+			try {
+				await this.incrementAndCheckSemaphore();
+				await this.discordClient.sendMessage(threadId, `:ninja:\n\n### Device info\n\n- **User ID**: ${userId}\n- **Build version**: ${buildVersion}\n- **OS platform**: ${osPlatform}\n- **OS version**: ${osVersion}\n- **User Locale**: ${userLocale}`);
+			} finally {
+				await this.decrementSemaphore();
+			}
 			await this.ctx.storage.put(`deviceInfoSent:${userId}`, JSON.stringify(installationInfo));
 		}
 	}
 
 
 	async sendAttachment(threadId: string, attachment: DiscordFile): Promise<void> {
-		await this.discordClient.sendAttachment(threadId, attachment);
+		try {
+			await this.incrementAndCheckSemaphore();
+			await this.discordClient.sendAttachment(threadId, attachment);
+		} finally {
+			await this.decrementSemaphore();
+		}
 	}
 
 
@@ -223,7 +262,13 @@ export class InternalDurableObject extends DurableObject {
 			let threadId = await this.getThreadIdForUser(userId, txn);
 
 			if (!threadId) {
-				let newThreadId = await this.discordClient.createThread(`New message from ${userId}`, ":ninja:");
+				let newThreadId: string | null = null;
+				try {
+					await this.incrementAndCheckSemaphore();
+					newThreadId = await this.discordClient.createThread(`New message from ${userId}`, ":ninja:");
+				} finally {
+					await this.decrementSemaphore();
+				}
 				await txn.put(`threadId:${userId}`, newThreadId);
 				return newThreadId;
 			} else {
@@ -237,7 +282,13 @@ export class InternalDurableObject extends DurableObject {
 	async consumeMessagesForApns(): Promise<{ threads: Thread[], latestMessageId: string }> {
 		let latestMessageId = await this.ctx.storage.get("latestMessageId") as string ?? null;
 
-		let threads = await this.discordClient.getActiveThreadsUpdatedSince(latestMessageId ? String(latestMessageId) : null);
+		let threads: Thread[] = [];
+		try {
+			await this.incrementAndCheckSemaphore();
+			threads = await this.discordClient.getActiveThreadsUpdatedSince(latestMessageId ? String(latestMessageId) : null);
+		} finally {
+			await this.decrementSemaphore()
+		}
 
 		let latestOverallMessageId = [latestMessageId, ...threads.map(thread => thread.lastMessageId)]
 			.reduce((max, current) => max.localeCompare(current) > 0 ? max : current);
