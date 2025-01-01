@@ -212,7 +212,7 @@ export class InternalDurableObject extends DurableObject {
 
 	async getOrCreateThreadIdForUser(userId: string): Promise<string> {
 		let result = await this.ctx.storage.transaction(async (txn) => {
-			let threadId = await this.getThreadIdForUser(userId);
+			let threadId = await this.getThreadIdForUser(userId, txn);
 
 			if (!threadId) {
 				let newThreadId = await this.discordClient.createThread(`New message from ${userId}`, ":ninja:");
