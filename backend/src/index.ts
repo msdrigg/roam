@@ -96,7 +96,7 @@ async function checkAlerts(env: Env) {
 /// MARK: Durable Object
 
 export class InternalDurableObject extends DurableObject {
-	discordClient: DiscordClient;
+	private discordClient: DiscordClient;
 	ROAM_KV: KVNamespace;
 
 	constructor(state: DurableObjectState, env: Env) {
@@ -188,8 +188,8 @@ export class InternalDurableObject extends DurableObject {
 	private async tryGetCachedKey(key: string, txn: DurableObjectTransaction | undefined): Promise<string | null> {
 		if (txn) {
 			let cachedValue = await txn.get(key);
-			if (cachedValue) {
-				return cachedValue as string;
+			if (cachedValue || cachedValue === "" || cachedValue === null) {
+				return cachedValue as string | null;
 			}
 			let kvValue = await this.ROAM_KV.get(key);
 			console.log(`Caching ${key} not found in DO storage with value ${kvValue}`);

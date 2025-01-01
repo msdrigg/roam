@@ -175,7 +175,7 @@ class DiscordClient {
         if (this.retryAt && this.retryAt > Date.now()) {
             let waitTime = this.retryAt - Date.now();
             console.log(`Rate limited. Waiting ${waitTime / 1000} seconds before retrying.`);
-            return new Promise((resolve) => setTimeout(resolve, waitTime));
+            throw new Error(`Rate limited. Waiting ${waitTime / 1000} seconds before retrying.`);
         }
     }
 
