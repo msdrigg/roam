@@ -216,7 +216,7 @@ export class InternalDurableObject extends DurableObject {
 
 			if (!threadId) {
 				let newThreadId = await this.discordClient.createThread(`New message from ${userId}`, ":ninja:");
-				await this.ctx.storage.put(`threadId:${userId}`, newThreadId);
+				await txn.put(`threadId:${userId}`, newThreadId);
 				return newThreadId;
 			} else {
 				return threadId;
