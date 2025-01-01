@@ -5,7 +5,7 @@ import DiscordClient, { DiscordFile, DiscordMessage, Thread } from "./discord";
 const DEFAULT_DURABLE_OBJECT_NAME = "apns";
 export interface Env {
 	ROAM_KV: KVNamespace;
-	INTERNAL_DURABLE_OBJECT: DurableObjectNamespace<InternalDurableObject>;
+	APNS_DURABLE_OBJECT: DurableObjectNamespace<InternalDurableObject>;
 
 	// Secrets
 	DISCORD_TOKEN: string;
@@ -41,8 +41,8 @@ type InstallationInfo = {
 async function checkAlerts(env: Env) {
 	console.log("Checking alerts");
 
-	let id = env.INTERNAL_DURABLE_OBJECT.idFromName("apns");
-	let stub = env.INTERNAL_DURABLE_OBJECT.get(id);
+	let id = env.APNS_DURABLE_OBJECT.idFromName("apns");
+	let stub = env.APNS_DURABLE_OBJECT.get(id);
 
 	let { threads, latestMessageId } = await stub.consumeMessagesForApns();
 
@@ -57,7 +57,7 @@ async function checkAlerts(env: Env) {
 	let pushesSent = 0;
 
 	for (let thread of threads) {
-		let stub = env.INTERNAL_DURABLE_OBJECT.get(env.INTERNAL_DURABLE_OBJECT.idFromName("apns"));
+		let stub = env.APNS_DURABLE_OBJECT.get(env.APNS_DURABLE_OBJECT.idFromName("apns"));
 		let apnsToken = await stub.getApnsTokenForThread(thread.id);
 		if (!apnsToken) {
 			console.log(`No APNS token found for thread ${thread.id}`);
@@ -260,7 +260,7 @@ export default {
 			return new Response("Hello, world!", { status: 200 });
 		}
 
-		let stub = env.INTERNAL_DURABLE_OBJECT.get(env.INTERNAL_DURABLE_OBJECT.idFromName(DEFAULT_DURABLE_OBJECT_NAME));
+		let stub = env.APNS_DURABLE_OBJECT.get(env.APNS_DURABLE_OBJECT.idFromName(DEFAULT_DURABLE_OBJECT_NAME));
 
 		if (pathSegments[0] === "messages") {
 			let userId = pathSegments[1];
@@ -336,7 +336,7 @@ export default {
 			}
 
 
-			let stub = env.INTERNAL_DURABLE_OBJECT.get(env.INTERNAL_DURABLE_OBJECT.idFromName("apns"));
+			let stub = env.APNS_DURABLE_OBJECT.get(env.APNS_DURABLE_OBJECT.idFromName("apns"));
 
 			let threadId = await stub.getThreadIdForUser(userId);
 			let apnsToken: string | null = null
@@ -365,7 +365,7 @@ export default {
 			}
 
 
-			let stub = env.INTERNAL_DURABLE_OBJECT.get(env.INTERNAL_DURABLE_OBJECT.idFromName("apns"));
+			let stub = env.APNS_DURABLE_OBJECT.get(env.APNS_DURABLE_OBJECT.idFromName("apns"));
 
 			let apnsToken: string | null = null
 			if (threadId) {
