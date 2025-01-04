@@ -152,8 +152,8 @@ export class InternalDurableObject extends DurableObject {
 		}
 	}
 
-	async sendMessage(message: { content?: string, attachment?: DiscordFile }, userInfo: { apnsToken: string | null, userId: string, installationInfo?: InstallationInfo }): Promise<void> {
-		const { content, attachment } = message;
+	async sendMessage(message: { content: string }, userInfo: { apnsToken: string | null, userId: string, installationInfo?: InstallationInfo }): Promise<void> {
+		const { content } = message;
 		const { apnsToken, userId, installationInfo } = userInfo;
 
 		console.log("Handling new message request", content, content, apnsToken, userId);
@@ -166,20 +166,12 @@ export class InternalDurableObject extends DurableObject {
 
 		try {
 			await this.incrementAndCheckSemaphore();
-			if (content) {
-				await this.discordClient.sendMessage(threadId, content)
-			}
-
-			if (attachment) {
-				await this.discordClient.sendAttachment(threadId, attachment)
-			}
+			await this.discordClient.sendMessage(threadId, content)
 		} finally {
 			await this.decrementSemaphore();
 		}
 
-		if (content || attachment) {
-			await this.maybeSendDeviceInfo(userId, threadId, installationInfo);
-		}
+		await this.maybeSendDeviceInfo(userId, threadId, installationInfo);
 	}
 
 	private async maybeSendDeviceInfo(userId: string, threadId: string, installationInfo: InstallationInfo | undefined) {
@@ -212,17 +204,6 @@ export class InternalDurableObject extends DurableObject {
 			await this.ctx.storage.put(`deviceInfoSent:${userId}`, JSON.stringify(installationInfo));
 		}
 	}
-
-
-	async sendAttachment(threadId: string, attachment: DiscordFile): Promise<void> {
-		try {
-			await this.incrementAndCheckSemaphore();
-			await this.discordClient.sendAttachment(threadId, attachment);
-		} finally {
-			await this.decrementSemaphore();
-		}
-	}
-
 
 	private async tryGetCachedKey(key: string, txn: DurableObjectTransaction | undefined): Promise<string | null> {
 		if (txn) {
@@ -364,13 +345,14 @@ export default {
 
 			let data = await request.arrayBuffer();
 
-			await stub.sendMessage({
-				attachment: {
-					name: "diagnostics.json",
-					data,
-					contentType: "application/json",
-				}
-			}, { apnsToken: null, userId });
+			let threadId = await stub.getOrCreateThreadIdForUser(userId);
+
+			let discordClient = new DiscordClient(env.DISCORD_TOKEN, env.DISCORD_HELP_CHANNEL, env.DISCORD_GUILD_ID);
+			await discordClient.sendAttachment(threadId, {
+				name: "diagnostics.json",
+				data,
+				contentType: "application/json",
+			});
 
 			return new Response("OK", { status: 200 });
 		}
