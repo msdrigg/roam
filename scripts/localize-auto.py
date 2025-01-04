@@ -13,6 +13,8 @@ client = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
 )
 
+skipped_files = ["upcoming-work.md"]
+
 
 def get_text_message(text, language, context=None):
     if context is not None:
@@ -283,6 +285,11 @@ def localize_docusaurus(docs_dir: str):
             if file.endswith(".md") or file.endswith(".mdx"):
                 file_path = os.path.join(root, file)
                 relative_file_path = os.path.relpath(file_path, pages_dir)
+                if relative_file_path in skipped_files:
+                    print(f"Skipping {relative_file_path}")
+                    continue
+                else:
+                    print(f"Processing {relative_file_path}")
                 with open(file_path, "r", encoding="utf-8") as file_data:
                     data = file_data.read()
                     # Hash the data with sha256

@@ -4,18 +4,6 @@ hide_table_of_contents: true
 
 # Roam Roadmap
 
-## Completed Work for Next Update
-
--   Added control widgets: Play, Mute, Change Volume and Select from Control center!
--   Added better text field handling for many roku apps
-    -   Auto-open text field when text edit is available
-    -   Copy, Cut, Paste from macOS (with keyboard)
-    -   Copy, Cut, Paste + Generalized edit on iOS
--   Better reporting around local network permissions and connectivity
--   Improved keyboard functionality
--   Connection stability improvements
--   Fixed widgets and shortcuts on macOS 15
-
 ## Coming Soon
 
 -   Add long-press options to keys
@@ -26,6 +14,10 @@ hide_table_of_contents: true
         -   Show banner with +30 sec, x to cancel, background linear progress indicator
             -   Show underneath the main button panel so it's close to mute
         -   Cancels when muting again (and also does api call)
+
+-   Fix bug in nextPacket loop
+
+-   Automate screenshot capture and update screenshots for macOS
 
 -   Future: Provide an optional Minimalist view on iOS that replicates siri remote's view closely
     -   https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
