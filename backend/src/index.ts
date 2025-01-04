@@ -156,7 +156,7 @@ export class InternalDurableObject extends DurableObject {
 		const { content } = message;
 		const { apnsToken, userId, installationInfo } = userInfo;
 
-		console.log("Handling new message request", content, content, apnsToken, userId);
+		console.log("Handling new message request", content, apnsToken, userId);
 
 		let threadId = await this.getOrCreateThreadIdForUser(userId);
 
@@ -326,10 +326,15 @@ export default {
 			} = messageRequest;
 
 			if (!userId) {
-				return new Response("Bad request", { status: 400 });
+				return new Response("Bad request: no user id", { status: 400 });
+			}
+			if (!content) {
+				return new Response("Bad request: no content", { status: 400 });
 			}
 
-			await stub.sendMessage({ content }, { apnsToken, userId, installationInfo });
+			if (content) {
+				await stub.sendMessage({ content }, { apnsToken, userId, installationInfo });
+			}
 
 			return new Response("OK", { status: 200 });
 		}
@@ -343,10 +348,13 @@ export default {
 			// User ids are of the form "xxx-xxx-xxx"
 			let userId = diagnosticKey.slice(0, 11);
 
+			console.log(`Uploading diagnostics for user ${userId}`);
 			let data = await request.arrayBuffer();
 
 			let threadId = await stub.getOrCreateThreadIdForUser(userId);
 
+			// Can't send more than 1MB in a single message to a stub, so we need to upload directly to discord here. This will bypass a semaphore but it's fine for now.
+			console.log(`Uploading diagnostics for user ${userId} to thread ${threadId} with size ${data.byteLength}`);
 			let discordClient = new DiscordClient(env.DISCORD_TOKEN, env.DISCORD_HELP_CHANNEL, env.DISCORD_GUILD_ID);
 			await discordClient.sendAttachment(threadId, {
 				name: "diagnostics.json",
