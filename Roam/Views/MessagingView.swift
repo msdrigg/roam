@@ -177,7 +177,7 @@ struct MessageView: View {
 #if os(macOS)
                             .padding(.bottom, 3)
 #elseif os(iOS)
-                            .padding(.bottom, 6)
+                            .padding(.bottom, 4)
 #elseif os(visionOS)
                             .padding(.bottom, 12)
 #endif
@@ -376,24 +376,23 @@ struct SendDiagnosticsButton: View {
                     .labelStyle(.iconOnly)
 #endif
             } else {
-#if os(macOS)
-                Image(systemName: "plus.circle.fill")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 20, height: 20)
-                    .foregroundColor(Color.gray)
+                Label {
+                    Text("Add Attachment")
+                } icon: {
+                    Image(systemName: "plus.circle.fill")
+                        .resizable()
+                    #if os(macOS)
+                        .frame(width: 20, height: 20)
 #else
-                Label("Add Attachment", systemImage: "plus.circle.fill")
-                    .labelStyle(.iconOnly)
-#endif
+                        .frame(width: 26, height: 26)
+                    #endif
+                        .foregroundColor(Color.gray)
+                }
+                .labelStyle(.iconOnly)
             }
         }
         .menuStyle(.button)
-        #if os(macOS)
         .buttonStyle(.plain)
-        #else
-        .buttonStyle(.borderless)
-        #endif
         .foregroundColor(Color.gray)
         .disabled(sharingDiagnostics)
         .symbolEffect(.variableColor, isActive: sharingDiagnostics)

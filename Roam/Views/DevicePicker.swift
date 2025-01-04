@@ -156,8 +156,11 @@ struct DevicePicker: View {
             #endif
                 .lineLimit(1)
                 .truncationMode(.tail)
-            #if !os(macOS)
+            #if os(iOS)
                 .frame(maxWidth: 300)
+                .fixedSize()
+            #elseif os(visionOS)
+                .frame(maxWidth: 250)
                 .fixedSize()
             #endif
             #if os(visionOS)
@@ -166,7 +169,7 @@ struct DevicePicker: View {
                 .font(.body)
             #endif
         }
-        #if !os(macOS)
+        #if os(iOS)
         .menuStyle(.button)
         .buttonStyle(.plain)
         #endif

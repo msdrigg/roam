@@ -542,7 +542,7 @@ struct RemoteViewContained: View {
                         Button(action: {
                             keyboardLeaving = showKeyboardEntry
                             withAnimation {
-                                showKeyboardEntry = !showKeyboardEntry
+                                showKeyboardEntryManual = !showKeyboardEntry
                             }
                         }, label: {
                             Label(String(localized: "Keyboard", comment: "Label on a button to open the keyboard"), systemImage: "keyboard")
@@ -615,8 +615,8 @@ struct RemoteViewContained: View {
                                 ecpSessionState: ecpSessionState,
                                 showScanning: true
                             )
-                            .buttonStyle(PaddedBorderlessButtonStyle())
                             .menuStyle(.button)
+                            .buttonStyle(PaddedBorderlessButtonStyle())
                             .glowing(enabled: selectedDevice == nil)
 
                             Spacer()

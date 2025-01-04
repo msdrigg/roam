@@ -1,5 +1,7 @@
 import AppIntents
+#if !os(visionOS)
 import WidgetKit
+#endif
 import Foundation
 import SwiftData
 import SwiftUI
