@@ -25,9 +25,15 @@ A Roku remote that puts users first
 
 -   Download on the app store [here](https://apps.apple.com/us/app/roam/6469834197)
 
+## Read More
+
+-   Blog post announcing Roam [here](https://scottdriggers.com/blog/roam-roku-remote)
+-   Blog post going into some implementation details and decisions [here](https://scottdriggers.com/blog/how-i-built-roam/)
+-   Blog post about the developer-messaging functionality [here](https://scottdriggers.com/blog/discord-based-in-app-messaging)
+
 ## License
 
-&copy; 2024 Scott Driggers.
+&copy; 2025 Scott Driggers.
 
 This project is licensed under either of
 

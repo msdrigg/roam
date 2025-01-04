@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 import { APNSAuthKey, sendPushNotification } from "./apns";
 import DiscordClient, { DiscordFile, DiscordMessage, Thread } from "./discord";
 
+const DEFAULT_DURABLE_OBJECT_NAME = "apns";
 export interface Env {
 	ROAM_KV: KVNamespace;
 	APNS_DURABLE_OBJECT: DurableObjectNamespace<InternalDurableObject>;
@@ -23,7 +24,6 @@ export interface Env {
 }
 
 type MessageRequest = {
-	title: string;
 	content: string;
 	userId: string;
 	apnsToken: string | null;
@@ -38,71 +38,8 @@ type InstallationInfo = {
 	userLocale?: string | null;
 }
 
-async function maybeSendDeviceInfo(env: Env, userId: string, threadId: string, installationInfo: InstallationInfo | undefined, discordClient: DiscordClient) {
-	if (!installationInfo) {
-		console.log("No installation info found");
-		return;
-	}
-
-	let lastInstallationInfoSentText = await env.ROAM_KV.get(`deviceInfoSent:${userId}`);
-	let lastInstallationInfoSent: InstallationInfo | null = null;
-	try {
-		if (lastInstallationInfoSentText) {
-			lastInstallationInfoSent = JSON.parse(lastInstallationInfoSentText);
-		}
-	} catch (e) {
-		console.error(`Error parsing installation info: ${e}`);
-	}
-
-	console.log(`Maybe sending device info: alreadySent=${!!lastInstallationInfoSent} blank=${!installationInfo}`);
-	if (lastInstallationInfoSent?.buildVersion !== installationInfo.buildVersion || lastInstallationInfoSent?.osVersion !== installationInfo.osVersion || lastInstallationInfoSent?.osPlatform !== installationInfo.osPlatform || lastInstallationInfoSent?.userLocale !== installationInfo.userLocale) {
-		console.log("Installation info changed, (re)sending");
-
-		let { userId, buildVersion, osPlatform, osVersion, userLocale } = installationInfo;
-		await discordClient.sendMessage(threadId, `:ninja:\n\n### Device info\n\n- **User ID**: ${userId}\n- **Build version**: ${buildVersion}\n- **OS platform**: ${osPlatform}\n- **OS version**: ${osVersion}\n- **User Locale**: ${userLocale}`);
-		await env.ROAM_KV.put(`deviceInfoSent:${userId}`, JSON.stringify(installationInfo));
-	}
-}
-
-async function sendMessage(message: {
-	title?: string,
-	content?: string,
-	attachment?: DiscordFile,
-},
-	userInfo: {
-		apnsToken: string | null,
-		userId: string,
-		installationInfo?: InstallationInfo,
-	},
-	env: Env, discordClient: DiscordClient): Promise<void> {
-	const { title, content, attachment: attachment } = message;
-	const { apnsToken, userId, installationInfo } = userInfo;
-
-	console.log("Handling new message request", title, content, apnsToken, userId);
-
-	let stub = env.APNS_DURABLE_OBJECT.get(env.APNS_DURABLE_OBJECT.idFromName("apns"));
-	let threadId = await stub.getOrCreateThreadIdForUser(userId);
-
-	if (apnsToken) {
-		await stub.storeApnsToken(threadId, userId, apnsToken);
-	}
-
-	if (content) {
-		await discordClient.sendMessage(threadId, content)
-	}
-
-	if (attachment) {
-		await discordClient.sendAttachment(threadId, attachment)
-	}
-
-	if (content || attachment) {
-		await maybeSendDeviceInfo(env, userId, threadId, installationInfo, discordClient);
-	}
-}
-
 async function checkAlerts(env: Env) {
 	console.log("Checking alerts");
-	let discordClient = new DiscordClient(env.DISCORD_TOKEN, env.DISCORD_HELP_CHANNEL, env.DISCORD_GUILD_ID);
 
 	let id = env.APNS_DURABLE_OBJECT.idFromName("apns");
 	let stub = env.APNS_DURABLE_OBJECT.get(id);
@@ -129,8 +66,9 @@ async function checkAlerts(env: Env) {
 			console.log(`APNS token ${apnsToken} found for thread ${thread.id}`);
 		}
 
-		let messages = (await discordClient.getMessagesInThread(thread.id, latestMessageId))
-			.filter((message) => message.type in [0, 19, 20, 21] && !isHidden(message) && !suppressNotification(message));
+		let messages = (await stub.getMessagesInThread(thread.id, latestMessageId))
+			.filter((message) => message.type in [0, 19, 20, 21] && !isHidden(message) && !suppressNotification(message))
+			.map((m) => normalizeMessage(m))
 
 		console.log(`Found ${messages.length} notifiable messages in thread ${thread.id} since ${latestMessageId}. Last Message Ids: ${messages.map(message => message.id)}`);
 
@@ -155,8 +93,10 @@ async function checkAlerts(env: Env) {
 	}
 }
 
+/// MARK: Durable Object
+
 export class InternalDurableObject extends DurableObject {
-	discordClient: DiscordClient;
+	private discordClient: DiscordClient;
 	ROAM_KV: KVNamespace;
 
 	constructor(state: DurableObjectState, env: Env) {
@@ -166,62 +106,189 @@ export class InternalDurableObject extends DurableObject {
 	}
 
 	async getApnsTokenForThread(threadId: string): Promise<string | null> {
-		let apnsToken = await this.ctx.storage.get(`apnsToken:${threadId}`);
-		console.log(`Existing APNS token: ${apnsToken}`)
+		let apnsToken = this.tryGetCachedKey(`apnsToken:${threadId}`, undefined);
+		return apnsToken;
+	}
 
-		if (apnsToken) {
-			return apnsToken as string;
-		}
-		let newApnsToken = await this.ROAM_KV.get(`apnsToken:${threadId}`);
-		if (!newApnsToken) {
-			return null;
-		}
-
-		await this.ctx.storage.put(`apnsToken:${threadId}`, newApnsToken);
-		return newApnsToken;
+	async getApnsTokenForUser(userId: string): Promise<string | null> {
+		let apnsToken = this.tryGetCachedKey(`apnsToken:${userId}`, undefined);
+		return apnsToken;
 	}
 
 	async storeApnsToken(threadId: string, userId: string, apnsToken: string): Promise<void> {
+		console.log(`Storing APNS token ${apnsToken} for thread ${threadId} and user ${userId}`);
 		await this.ctx.storage.put(`apnsToken:${threadId}`, apnsToken);
 		await this.ctx.storage.put(`apnsToken:${userId}`, apnsToken);
 	}
 
-	async getThreadIdForUser(userId: string): Promise<string | null> {
-		let threadId = await this.ctx.storage.get(`threadId:${userId}`);
-		console.log(`Existing thread ID: ${threadId}`)
+	/// MARK: Discord Wrapper
 
-		if (threadId) {
-			return threadId as string;
-		}
-		let newThreadId = await this.ROAM_KV.get(`threadId:${userId}`);
-		if (!newThreadId) {
-			return null;
+	async incrementAndCheckSemaphore() {
+		let semaphore = await this.ctx.storage.get("semaphore") as number | null;
+		if (!semaphore) {
+			semaphore = 0;
 		}
 
-		await this.ctx.storage.put(`threadId:${userId}`, newThreadId);
-		return newThreadId;
+		if (semaphore >= 5) {
+			throw new Error(`Semaphore limit reached for discord API ${semaphore}`);
+		}
+
+		await this.ctx.storage.put("semaphore", semaphore + 1);
+	}
+
+	async decrementSemaphore() {
+		let semaphore = await this.ctx.storage.get("semaphore") as number | null;
+		if (semaphore) {
+			await this.ctx.storage.put("semaphore", semaphore - 1);
+		}
+	}
+
+	async getMessagesInThread(threadId: string, after: string | null): Promise<DiscordMessage[]> {
+		try {
+			await this.incrementAndCheckSemaphore();
+			return await this.discordClient.getMessagesInThread(threadId, after);
+		} finally {
+			await this.decrementSemaphore();
+		}
+	}
+
+	async sendMessage(message: { content?: string, attachment?: DiscordFile }, userInfo: { apnsToken: string | null, userId: string, installationInfo?: InstallationInfo }): Promise<void> {
+		const { content, attachment } = message;
+		const { apnsToken, userId, installationInfo } = userInfo;
+
+		console.log("Handling new message request", content, content, apnsToken, userId);
+
+		let threadId = await this.getOrCreateThreadIdForUser(userId);
+
+		if (apnsToken) {
+			await this.storeApnsToken(threadId, userId, apnsToken);
+		}
+
+		try {
+			await this.incrementAndCheckSemaphore();
+			if (content) {
+				await this.discordClient.sendMessage(threadId, content)
+			}
+
+			if (attachment) {
+				await this.discordClient.sendAttachment(threadId, attachment)
+			}
+		} finally {
+			await this.decrementSemaphore();
+		}
+
+		if (content || attachment) {
+			await this.maybeSendDeviceInfo(userId, threadId, installationInfo);
+		}
+	}
+
+	private async maybeSendDeviceInfo(userId: string, threadId: string, installationInfo: InstallationInfo | undefined) {
+		if (!installationInfo) {
+			console.log("No installation info found");
+			return;
+		}
+
+		let lastInstallationInfoSentText = await this.tryGetCachedKey(`deviceInfoSent:${userId}`, undefined);
+		let lastInstallationInfoSent: InstallationInfo | null = null;
+		try {
+			if (lastInstallationInfoSentText) {
+				lastInstallationInfoSent = JSON.parse(lastInstallationInfoSentText);
+			}
+		} catch (e) {
+			console.error(`Error parsing installation info: ${e}`);
+		}
+
+		console.log(`Maybe sending device info: alreadySent=${!!lastInstallationInfoSent} blank=${!installationInfo}`);
+		if (lastInstallationInfoSent?.buildVersion !== installationInfo.buildVersion || lastInstallationInfoSent?.osVersion !== installationInfo.osVersion || lastInstallationInfoSent?.osPlatform !== installationInfo.osPlatform || lastInstallationInfoSent?.userLocale !== installationInfo.userLocale) {
+			console.log("Installation info changed, (re)sending");
+
+			let { userId, buildVersion, osPlatform, osVersion, userLocale } = installationInfo;
+			try {
+				await this.incrementAndCheckSemaphore();
+				await this.discordClient.sendMessage(threadId, `:ninja:\n\n### Device info\n\n- **User ID**: ${userId}\n- **Build version**: ${buildVersion}\n- **OS platform**: ${osPlatform}\n- **OS version**: ${osVersion}\n- **User Locale**: ${userLocale}`);
+			} finally {
+				await this.decrementSemaphore();
+			}
+			await this.ctx.storage.put(`deviceInfoSent:${userId}`, JSON.stringify(installationInfo));
+		}
+	}
+
+
+	async sendAttachment(threadId: string, attachment: DiscordFile): Promise<void> {
+		try {
+			await this.incrementAndCheckSemaphore();
+			await this.discordClient.sendAttachment(threadId, attachment);
+		} finally {
+			await this.decrementSemaphore();
+		}
+	}
+
+
+	private async tryGetCachedKey(key: string, txn: DurableObjectTransaction | undefined): Promise<string | null> {
+		if (txn) {
+			let cachedValue = await txn.get(key);
+			if (cachedValue || cachedValue === "" || cachedValue === null) {
+				return cachedValue as string | null;
+			}
+			let kvValue = await this.ROAM_KV.get(key);
+			console.log(`Caching ${key} not found in DO storage with value ${kvValue}`);
+			await txn.put(key, kvValue);
+			return (kvValue as string) || null;
+		} else {
+			return await this.ctx.storage.transaction(async (txn) => {
+				let cachedValue = await txn.get(key);
+				if (cachedValue) {
+					return cachedValue as string;
+				}
+				let kvValue = await this.ROAM_KV.get(key);
+				console.log(`Caching ${key} not found in DO storage with value ${kvValue}`);
+				await txn.put(key, kvValue);
+				return (kvValue as string) || null;
+			})
+		}
+	}
+
+
+	/// MARK: External Functions
+
+	async getThreadIdForUser(userId: string, txn?: DurableObjectTransaction): Promise<string | null> {
+		let tid = await this.tryGetCachedKey(`threadId:${userId}`, txn);
+		console.log(`Found existing thread ID: ${tid} for user ${userId}`)
+		return tid || null
 	}
 
 	async getOrCreateThreadIdForUser(userId: string): Promise<string> {
-		let threadId = await this.ctx.storage.get(`threadId:${userId}`);
-		console.log(`Existing thread ID: ${threadId}`)
+		let result = await this.ctx.storage.transaction(async (txn) => {
+			let threadId = await this.getThreadIdForUser(userId, txn);
 
-		if (threadId) {
-			return threadId as string;
-		}
-		let newThreadId = await this.ROAM_KV.get(`threadId:${userId}`);
-		if (!newThreadId) {
-			newThreadId = await this.discordClient.createThread(`New message from ${userId}`, ":ninja:");
-		}
+			if (!threadId) {
+				let newThreadId: string | null = null;
+				try {
+					await this.incrementAndCheckSemaphore();
+					newThreadId = await this.discordClient.createThread(`New message from ${userId}`, ":ninja:");
+				} finally {
+					await this.decrementSemaphore();
+				}
+				await txn.put(`threadId:${userId}`, newThreadId);
+				return newThreadId;
+			} else {
+				return threadId;
+			}
+		});
 
-		await this.ctx.storage.put(`threadId:${userId}`, newThreadId);
-		return newThreadId;
+		return result;
 	}
 
 	async consumeMessagesForApns(): Promise<{ threads: Thread[], latestMessageId: string }> {
 		let latestMessageId = await this.ctx.storage.get("latestMessageId") as string ?? null;
 
-		let threads = await this.discordClient.getActiveThreadsUpdatedSince(latestMessageId ? String(latestMessageId) : null);
+		let threads: Thread[] = [];
+		try {
+			await this.incrementAndCheckSemaphore();
+			threads = await this.discordClient.getActiveThreadsUpdatedSince(latestMessageId ? String(latestMessageId) : null);
+		} finally {
+			await this.decrementSemaphore()
+		}
 
 		let latestOverallMessageId = [latestMessageId, ...threads.map(thread => thread.lastMessageId)]
 			.reduce((max, current) => max.localeCompare(current) > 0 ? max : current);
@@ -240,11 +307,11 @@ export default {
 			return new Response("Unauthorized", { status: 401 });
 		}
 
-		let discordClient = new DiscordClient(env.DISCORD_TOKEN, env.DISCORD_HELP_CHANNEL, env.DISCORD_GUILD_ID);
-
 		if (pathSegments.length === 0) {
 			return new Response("Hello, world!", { status: 200 });
 		}
+
+		let stub = env.APNS_DURABLE_OBJECT.get(env.APNS_DURABLE_OBJECT.idFromName(DEFAULT_DURABLE_OBJECT_NAME));
 
 		if (pathSegments[0] === "messages") {
 			let userId = pathSegments[1];
@@ -252,7 +319,6 @@ export default {
 				return new Response("Bad request", { status: 400 });
 			}
 
-			let stub = env.APNS_DURABLE_OBJECT.get(env.APNS_DURABLE_OBJECT.idFromName("apns"));
 			let threadId = await stub.getThreadIdForUser(userId);
 
 			let queryParams = new URL(request.url).searchParams;
@@ -262,8 +328,9 @@ export default {
 				return new Response("Not found", { status: 404 });
 			}
 
-			let messages = (await discordClient.getMessagesInThread(threadId, after))
-				.filter((message) => !isHidden(message));
+			let messages = (await stub.getMessagesInThread(threadId, after))
+				.filter((message) => !isHidden(message))
+				.map((m) => normalizeMessage(m))
 
 			return new Response(JSON.stringify(messages), { status: 200 });
 		}
@@ -271,7 +338,6 @@ export default {
 		if (pathSegments[0] === "new-message") {
 			let messageRequest = await request.json() as MessageRequest;
 			let {
-				title,
 				content,
 				apnsToken,
 				userId,
@@ -282,7 +348,7 @@ export default {
 				return new Response("Bad request", { status: 400 });
 			}
 
-			await sendMessage({ title, content }, { apnsToken, userId, installationInfo }, env, discordClient);
+			await stub.sendMessage({ content }, { apnsToken, userId, installationInfo });
 
 			return new Response("OK", { status: 200 });
 		}
@@ -298,13 +364,13 @@ export default {
 
 			let data = await request.arrayBuffer();
 
-			await sendMessage({
+			await stub.sendMessage({
 				attachment: {
 					name: "diagnostics.json",
 					data,
-					contentType: "application/json"
+					contentType: "application/json",
 				}
-			}, { apnsToken: null, userId }, env, discordClient);
+			}, { apnsToken: null, userId });
 
 			return new Response("OK", { status: 200 });
 		}
@@ -312,6 +378,62 @@ export default {
 		if (pathSegments[0] === "alert") {
 			await checkAlerts(env);
 			return new Response("OK", { status: 200 });
+		}
+
+		if (pathSegments[0] === "user-info") {
+			let userId = pathSegments[1];
+			if (!userId) {
+				return new Response("Bad request", { status: 400 });
+			}
+
+
+			let stub = env.APNS_DURABLE_OBJECT.get(env.APNS_DURABLE_OBJECT.idFromName("apns"));
+
+			let threadId = await stub.getThreadIdForUser(userId);
+			let apnsToken: string | null = null
+			if (threadId) {
+				apnsToken = await stub.getApnsTokenForThread(threadId);
+			}
+			let userApns = await stub.getApnsTokenForUser(userId);
+
+			let queryParams = new URL(request.url).searchParams;
+			let after = queryParams.get("after") || null;
+
+			let messages: DiscordMessage[] | null = null;
+			if (threadId) {
+				messages = (await stub.getMessagesInThread(threadId, after))
+					.filter((message) => !isHidden(message))
+					.map((m) => normalizeMessage(m))
+			}
+
+			return new Response(JSON.stringify({ messages, threadId, apnsToken, userId, userApns }), { status: 200 });
+		}
+
+		if (pathSegments[0] === "thread-info") {
+			let threadId = pathSegments[1];
+			if (!threadId) {
+				return new Response("Bad request", { status: 400 });
+			}
+
+
+			let stub = env.APNS_DURABLE_OBJECT.get(env.APNS_DURABLE_OBJECT.idFromName("apns"));
+
+			let apnsToken: string | null = null
+			if (threadId) {
+				apnsToken = await stub.getApnsTokenForThread(threadId);
+			}
+
+			let queryParams = new URL(request.url).searchParams;
+			let after = queryParams.get("after") || null;
+
+			let messages: DiscordMessage[] | null = null;
+			if (threadId) {
+				messages = (await stub.getMessagesInThread(threadId, after))
+					.filter((message) => !isHidden(message))
+					.map((m) => normalizeMessage(m))
+			}
+
+			return new Response(JSON.stringify({ messages, threadId, apnsToken }), { status: 200 });
 		}
 
 		return new Response("Not found", { status: 404 });
@@ -323,6 +445,8 @@ export default {
 	},
 } satisfies ExportedHandler<Env>;
 
+/// MARK: Helpers
+
 const allowedMessages = new Set([0, 19, 20, 21]);
 
 function suppressNotification(message: DiscordMessage): boolean {
@@ -331,4 +455,12 @@ function suppressNotification(message: DiscordMessage): boolean {
 
 function isHidden(message: DiscordMessage): boolean {
 	return !message.content || message.content.startsWith("!HiddenMessage") || message.content.startsWith(":ninja:") || !allowedMessages.has(message.type)
+}
+
+function normalizeMessage(message: DiscordMessage): DiscordMessage {
+	if (message.content.startsWith(":cold:")) {
+		message.content = message.content.slice(6);
+	}
+
+	return message;
 }

@@ -29,6 +29,8 @@ type ApiError = {
 class DiscordClient {
     private baseUrl: string = 'https://discord.com/api/v10';
 
+    private retryAt: number | null = null;
+
     private botToken: string;
     private channelId: string;
     private guildId: string;
@@ -55,20 +57,22 @@ class DiscordClient {
                 }
             });
 
-            if (!response.ok) {
-                const errorData = await response.json() as ApiError;
-                throw new Error(`Failed to fetch messages: ${errorData.message}`);
-            }
+            this.updateRateLimit(response.headers)
 
-            const messages = await response.json() as DiscordMessage[];
-            return messages;
+            if (!response.ok) {
+                await this.handleErrorResponse(response);
+                throw new Error(`Failed to fetch messages: ${response.status}`);
+            } else {
+                const messages = await response.json() as DiscordMessage[];
+                return messages;
+            }
         } catch (error) {
             console.error(`Error fetching messages in thread: ${error}`);
             throw error;
         }
     }
 
-    async sendMessage(threadId: string, content: string, attachments?: [DiscordFile]): Promise<string> {
+    async sendMessage(threadId: string, content: string): Promise<string> {
         const url = `${this.baseUrl}/channels/${threadId}/messages`;
         const body = {
             content: content
@@ -84,9 +88,11 @@ class DiscordClient {
                 body: JSON.stringify(body)
             });
 
+            this.updateRateLimit(response.headers)
+
             if (!response.ok) {
-                const errorData = await response.json() as ApiError;
-                throw new Error(`Failed to send message: ${errorData.message}`);
+                await this.handleErrorResponse(response);
+                throw new Error(`Failed to create thread: ${response.status}`);
             }
 
             const responseData = await response.json() as { id: string };
@@ -112,12 +118,16 @@ class DiscordClient {
                 body: formData
             });
 
+
+            this.updateRateLimit(response.headers)
+
             if (!response.ok) {
-                const errorData = await response.json() as ApiError;
-                throw new Error(`Failed to send message: ${errorData.message}`);
+                await this.handleErrorResponse(response);
+                throw new Error(`Failed to create thread: ${response.status}`);
             }
 
             const responseData = await response.json() as DiscordMessage;
+
             return responseData.id;  // Return the ID of the newly created message
         } catch (error) {
             console.error(`Error sending message with attachment: ${error}`);
@@ -135,9 +145,11 @@ class DiscordClient {
                 }
             });
 
+            this.updateRateLimit(response.headers)
+
             if (!response.ok) {
-                const errorData = await response.json() as ApiError;
-                throw new Error(`Failed to fetch active threads: ${errorData.message} (${errorData.code})`);
+                await this.handleErrorResponse(response);
+                throw new Error(`Failed to create thread: ${response.status}`);
             }
 
             const data = await response.json() as {
@@ -158,6 +170,48 @@ class DiscordClient {
         }
     }
 
+    checkRateLimit() {
+        // If we are rate limited, wait until the retryAt time
+        if (this.retryAt && this.retryAt > Date.now()) {
+            let waitTime = this.retryAt - Date.now();
+            console.log(`Rate limited. Waiting ${waitTime / 1000} seconds before retrying.`);
+            throw new Error(`Rate limited. Waiting ${waitTime / 1000} seconds before retrying.`);
+        }
+    }
+
+    async handleErrorResponse(response: Response) {
+        if (response.status === 429) {
+            const rateLimitData = await response.json() as {
+                message: string;
+                retry_after: number;
+            };
+            this.retryAt = Date.now() + rateLimitData.retry_after * 1000;
+
+            throw new Error(`Rate limited: ${rateLimitData.message}`);
+        }
+        const errorData = await response.json() as ApiError;
+        throw new Error(`Failed to fetch messages: ${errorData.message}`);
+    }
+
+    updateRateLimit(headers: Headers) {
+        let rateLimitInfo = {
+            limit: headers.get('X-RateLimit-Limit'),
+            remaining: headers.get('X-RateLimit-Remaining'),
+            reset: headers.get('X-RateLimit-Reset'),
+            resetAfter: headers.get('X-RateLimit-Reset-After'),
+            bucket: headers.get('X-RateLimit-Bucket')
+        }
+
+        console.log(`Discord rate limit info: ${JSON.stringify(rateLimitInfo)}`);
+
+        if (rateLimitInfo.remaining && parseInt(rateLimitInfo.remaining) === 0) {
+            let resetAfter = rateLimitInfo.resetAfter ? parseFloat(rateLimitInfo.resetAfter) : 1;
+
+            this.retryAt = Date.now() + resetAfter * 1000;
+            console.log(`Rate limit exceeded. Resetting in ${rateLimitInfo.resetAfter} seconds (${this.retryAt}).`);
+        }
+    }
+
     async createThread(title: string, message: string, autoArchiveDuration: number = 10080): Promise<string> {
         const url = `${this.baseUrl}/channels/${this.channelId}/threads`;
         const body = {
@@ -169,6 +223,8 @@ class DiscordClient {
         };
 
         try {
+            this.checkRateLimit();
+
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -178,9 +234,11 @@ class DiscordClient {
                 body: JSON.stringify(body)
             });
 
+            this.updateRateLimit(response.headers)
+
             if (!response.ok) {
-                const errorData = await response.json() as ApiError;
-                throw new Error(`Failed to create thread: ${errorData.message} (${errorData.code})`);
+                await this.handleErrorResponse(response);
+                throw new Error(`Failed to create thread: ${response.status}`);
             } else {
                 const data = await response.json() as {
                     id: string;
@@ -188,7 +246,6 @@ class DiscordClient {
                 console.log(`Thread ${data.id} created successfully!`);
                 return data.id;
             }
-
         } catch (error) {
             console.error(`Error creating thread: ${error}`);
             throw error;

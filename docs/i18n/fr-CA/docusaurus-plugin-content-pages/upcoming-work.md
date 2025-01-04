@@ -2,64 +2,47 @@
 hide_table_of_contents: true
 ---
 
-# Plan d'action de Roam
+# Plan de route Roam
 
-## Travail terminé pour la prochaine mise à jour
+## Travaux terminés pour la prochaine mise à jour
 
-- Ajout de widgets de contrôle : Jouer, Muet, Changer le volume et Sélectionner depuis le centre de contrôle!
-- Amélioration de la gestion des champs de texte pour de nombreuses applications roku 
-    - Ouverture automatique du champ de texte lorsque l'édition de texte est disponible
-    - Copier, Couper, Coller à partir de macOS
-    - Copier, Couper, Coller + Édition généralisée sur iOS
-- Amélioration des rapports sur les permissions du réseau local et la connectivité
-- Améliorations de la stabilité de la connexion
+-   Ajout de widgets de contrôle : Lecture, Muet, Changer le volume et Sélection depuis le centre de contrôle !
+-   Amélioration du traitement du champ de texte pour de nombreuses applications roku
+    -   Ouverture automatique du champ de texte lorsque l'édition du texte est disponile
+    -   Copier, Couper, Coller depuis macOS (avec le clavier)
+    -   Copier, Couper, Coller + Édition généralisée sur iOS
+-   Meilleur reporting autour des autorisations de réseau local et de la connectivité
+-   Amélioration de la fonctionnalité du clavier
+-   Améliorations de la stabilité de la connexion
 
-## À venir
+## À venir bientôt
 
--   En cours
-    -   Assurez-vous que la saisie de texte sur iOS ne coupe pas en dessous du clavier (comme c'est le cas actuellement)
-    -   Corrigez les widgets macOS
-    -   Faire publier la version iOS sur l'App Store
-        - Attendre le suivi de l'appel
-    -   Faire des tests plus poussés sur iOS et macOS pour tester que le système se reconnecte et reste connecté dans les scénarios suivants
-        - Après avoir attendu longtemps
-        - Lorsqu'on revient du fond
-        - Lorsque la TV est allumée depuis l'état OFF
-        - Lors de la reconnexion à Internet
-        - Lors du changement de dispositifs
+-   Ajout d'options de pression longue aux touches
+    -   Appui long sur la flèche droite pour avancer rapide
+    -   Appui long sur la flèche gauche pour reculer rapide
+    -   Appui long sur la touche mute pour un mute longue durée
+        -   Rendre le +30 configurable à 30, 15, 60 options de mute de secondes
+        -   Afficher une bannière avec +30 sec, x pour annuler, indicateur de progression linéaire en arrière-plan
+            -   Montrer sous le panneau principal de bouton afin qu'il soit proche du mute
+        -   Annule lors de la mise en sourdine à nouveau (et effectue également un appel api)
+-   Syx macOS widgets
 
--   Prochaine étape : ajouter un minuteur de mise en sourdine de +30 secondes avec compte à rebours
-    -   Maintenez Mute pour mettre en sourdine pendant +30 secondes
-    -   Cliquez à nouveau pour désactiver le mode muet et l'annuler
-    -   Afficher un indicateur sous la ligne du bouton de mise en sourdine 
-        -   La barre de progression a un indicateur de progression linéaire
-        -   La barre de progression a deux boutons : +30 secondes, annuler
-        -   Afficher sous le panel principal des boutons pour qu'il soit proche de mute
-    -   Rendre le +30 configurable pour des options de mise en sourdine de 30, 15, 60 secondes
-
--   Futur: Fournir une vue optionnelle minimaliste sur iOS qui reproduit de près la vue de la télécommande siri
+-   Futur : fournir une vue minimaliste optionnelle sur iOS qui reproduit de près la vue de la télécommande siri 
     -   https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
-    -   Supporter les gestes visionos également...
+    -   Support visionos gestures as well...
 
 ## Idées générales pour le futur
 
--   Rédiger un article de blog sur le bot discord et pointer vers mon MessageView
-    - Rendre messageView plus autonome
--   Rédiger un article de blog sur l'auto-traduction et la logique qui l'accompagne
--   Rédiger un article de blog sur NWConnection vs URLSession pour websockets
--   Rédiger un blog sur les raccourcis de clavier personnalisés
--   Rédiger un blog sur l'API ECP Textedit
--   Rédiger un blog sur les widgets du centre de contrôle
+-   Créer une icône de barre de menu personnalisée
 
--   Créer une icône personnalisée pour la barre de menu
+-   Comment faire de la voix au texte ou des commandes vocales générales ?
 
--   Comment faire de la voix-à-texte ou des commandes vocales générales?
-    - Besoin de rétroconcevoir le protocole udp de la télécommande vocale roku
-    - Ou besoin d'ajouter du texte personnalisé à la parole avec le moteur de bouton de télécommande?
+    -   Besoin d'ingénierie inverse du protocole udp de la télécommande vocale roku
+    -   Ou besoin d'ajouter un texte personnalisé à la parole avec le moteur de bouton de télécommande ?
 
 -   Automatiser la capture d'écran
 
-    -   Utiliser UITests pour obtenir réellement des captures d'écran pour toutes les tailles de dispositifs + locales
+    -   Utiliser UITests pour obtenir de véritables captures d'écran pour toutes les tailles d'appareils + locales
     -   Utiliser AppScreens https://appscreens.com/user/project/DRxTFSSIQtuU0y9Eew4w pour obtenir les captures d'écran dans les cadres
     -   Ou autre chose
         -   https://www.figma.com/community/file/886620275115089774
@@ -67,62 +50,63 @@ hide_table_of_contents: true
         -   https://www.figma.com/community/file/1256854154932829222/free-app-store-screenshot-templates?searchSessionId=lxw3ep02-oubp844ov8
         -   https://www.canva.com/templates/s/iphone/
 
--   Essayez plus de hacks de clavier pour iPad
+-   Essayer plus de hacks de clavier sur iPad
+
     -   GCKeyboard pour un
-    -   FocusEnvironment pour 2
-    -   S'assurer que la solution utilisée pour iOS ne casse pas la saisie de texte dans les messages/saisie de clavier
+    -   FocusEnvironment pour deux
+    -   S'assurer que la solution utilisée pour iOS ne brise pas l'entrée de texte dans les messages/entrée de clavier
 
--   Tests d'IU
-    -   Testez lorsqu'un dispositif est ajouté qu'il apparaisse dans le sélecteur de dispositifs et est sélectionné par roam
-    -   Testez que l'utilisateur peut naviguer vers les paramètres -> dispositifs
-    -   Testez que l'utilisateur peut naviguer vers les paramètres -> messages
-    -   Testez que l'utilisateur peut naviguer vers les paramètres -> à propos
-    -   Testez que l'utilisateur peut éditer/supprimer des dispositifs
-    -   Testez que l'utilisateur peut cliquer sur les boutons une fois que les dispositifs sont ajoutés
-    -   Testez que l'utilisateur voit la bannière pour aucun dispositif quand elle apparaît
-    -   Testez que l'utilisateur voit les applinks
-    -   Référez-vous au testingmodelcontainer swiftdat pour modelcontainers
-    -   Référez-vous ici https://medium.com/appledeveloperacademy-ufpe/how-to-implement-ui-tests-with-swiftui-a-few-examples-636708ee26ad pour savoir comment configurer les tests
+-   Tests d'interface utilisateur
+    -   Tester lorsqu'un appareil est ajouté qu'il apparaît dans le choix d'appareil et est sélectionné par roam
+    -   Tester que l'utilisateur peut accéder aux paramètres -> appareils
+    -   Tester que l'utilisateur peut accéder à paramètres -> messages
+    -   Tester que l'utilisateur peut accéder aux paramètres -> à propos
+    -   Tester que l'utilisateur peut modifier/supprimer des appareils
+    -   Tester que l'utilisateur peut cliquer sur des boutons une fois que les appareils sont ajoutés
+    -   Tester que l'utilisateur voit une bannière pour aucun appareil lorsqu'elle apparaît
+    -   Tester que l'utilisateur voit des liens applicatifs
+    -   Se référer à la swiftdat testingmodelcontainer for modelcontainers
+    -   Se référer ici pour savoir comment configurer les tests https://medium.com/appledeveloperacademy-ufpe/how-to-implement-ui-tests-with-swiftui-a-few-examples-636708ee26ad 
 
-## Correctifs
+## Corrections de bugs
 
--   Découvrez si la boucle d'appels à `nextPacket` a du sens.
-    -   Au lieu de boucler toutes les 10 ms et d'espérer que le timing est correct, devrais-je plutôt parcourir les paquets reçus et essayer de les planifier à l'heure hôte `10ms * globalSequenceNumber + startHostTime` et sampleTime à `sequenceNumber * Int64(lastSampleTime.sampleRate) / packetsPerSec + startSampleTime`
-    -   Ensuite, je peux passer d'une boucle `for await` sur l'horloge à une boucle `while !Task.isCancelled` avec un `Task.sleep` dedans.
-    -   D'accord, nous avons besoin de boucler toutes les 10 ms et d'essayer de retirer le dernier paquet et ensuite de le planifier à ce moment-là
+-   Vérifier si la boucle d'appels à `nextPacket` est logique.
+    -   Au lieu de boucler toutes les 10ms et espérer que le timing soit correct, devrais-je plutôt boucler sur les paquets reçus et essayer de les programmer à l'heure de l'hôte `10ms * globalSequenceNumber + startHostTime` et sampleTime à `sequenceNumber * Int64(lastSampleTime.sampleRate) / packetsPerSec + startSampleTime`
+    -   Alors je peux passer d'une boucle `for await` sur l'horloge à une boucle `while !Task.isCancelled` avec un `Task.sleep` dedans.
+    -   Donc, nous avons besoin de boucler toutes les 10 ms et d'essayer de sortir le dernier paquet puis de le programmer à ce moment-là
     -   Chaque fois que nous faisons une synchronisation audio
         -   Nous avons lastRenderTime + un paquet de synchronisation
-        -   Estimez le numéro de paquet que nous devrions envoyer à + l'heure de synchronisation
-            -   Heure de rendu + supplémentaire
+        -   Estimer le numéro de paquet que nous devrions envoyer à + l'heure de synchronisation
+            -   Render Time + additional
 
-## Améliorer les messages d'information de l'utilisateur autour de la gestion de l'information/du statut/des capacités
+## Améliorer la communication de l'utilisateur autour de la gestion de l'information/du statut/des capacités
 
--   Lors de l'allumage de l'appareil avec WOL et de la non connexion après 5 secondes, ou lors de l'allumage de l'appareil et de l'échec immédiat, afficher un message d'avertissement sous celui du wifi
+-   Lors de la mise sous tension de l'appareil avec WOL et non connecté après 5 secondes, ou lors de la mise sous tension de l'appareil et de l'échec immédiat, afficher un message d'avertissement sous le wifi un
     -   “Nous n'avons pas pu réveiller votre Roku” (En savoir plus) (Ne plus afficher pour cet appareil), (X)
-    -   En savoir plus montre quelques raisons pour lesquelles
+    -   En savoir plus montre certaines raisons pour lesquelles
         -   Vous n'êtes pas connecté au même réseau (Afficher le dernier nom de réseau de l'appareil. Demander à l'utilisateur s'il est connecté à ce réseau)
-        -   Votre appareil est en veille prolongée (n'a pas été éteint récemment) et ne peut pas être réveillé
+        -   Votre appareil est en veille profonde (n'a pas été éteint récemment) et ne peut pas être réveillé
             -   Votre appareil ne supporte pas le WWOL et est connecté au wifi
-            -   Votre appareil ne supporte pas le WWOL ou le WOL
+            -   Votre appareil ne supporte ni le WWOL ni le WOL
         -   Votre réseau n'est pas configuré de manière à nous permettre d'envoyer des commandes de réveil à l'appareil
--   Lorsque vous cliquez sur un bouton désactivé, affichez une notification indiquant pourquoi il est désactivé
-    -   Afficher un indicateur d'information sur le bouton pour indiquer que des informations peuvent être reçues lorsqu'on clique dessus ?
-    -   Mode écouteur désactivé -> parce que l'appareil ne supporte pas le mode écouteur pour cette application
-    -   Contrôle du volume désactivé -> parce que l'audio est diffusé sur HDMI qui ne supporte pas les contrôles du volume ?
--   Lorsque vous scannez activement des appareils et que vous n'en trouvez pas de nouveaux, affichez un message d'avertissement sous la liste des appareils
-    -   “Nous n'avons pas pu réveiller votre Roku” (Savoir pourquoi), (X)
-    -   En savoir plus montre une popup avec quelques raisons pour lesquelles cela peut se produire
+-   Lors de l'appui sur un bouton désactivé, afficher une notification indiquant pourquoi il est désactivé
+    -   Afficher un indicateur d'information sur le bouton pour indiquer que des informations peuvent être reçues lorsqu'il est cliqué ?
+    -   Mode écouteurs désactivé -> car l'appareil n'accepte pas le mode écouteurs pour cette application
+    -   Contrôle du volume désactivé -> car l'audio est transmis par HDMI qui ne supporte pas les contrôles de volume ?
+-   Lors de la recherche active d'appareils et qu'aucun nouveau n'est trouvé, afficher un message d'avertissement sous la liste d'appareils
+    -   “Nous n'avons pas pu réveiller votre Roku” (Découvrez pourquoi), (X)
+    -   En savoir plus montre une popup avec quelques raisons pour lesquelles ceci pourrait se produire
         -   Assurez-vous que votre appareil est allumé et connecté au même réseau wifi que votre application. Si cela ne fonctionne toujours pas, essayez d'ajouter l'appareil manuellement.
         -   Lien https://roam.msd3.io/manually-add-tv.md et https://support.roku.com/article/115001480188 pour plus de dépannage ou de chat
--   Ajouter un badge pour supportsWakeOnWLAN et supportsMute
+-   Ajouter un badge pour supportsWakeOnWLAN et supportsAudioControls
 
-## À mettre à jour lorsque le support pour iOS 17/macOS 14 sera abandonné (Février 2026)
+## À mettre à jour lorsque l'on abandonne le support pour iOS 17/macOS 14 (février 2026)
 
--   Faire le tour et enlever les balises @available(iOS 18)
--   Utiliser les caractéristiques de prévisualisation pour injecter des données d'échantillon dans les prévisualisations
+-   Parcourir et supprimer les tags @available(iOS 18)
+-   Utiliser les traits de prévisualisation pour injecter des données d'exemple dans les prévisualisations
 -   SwiftData
     -   Utiliser le nouveau macro #Index pour les modèles
     -   Utiliser le nouveau macro #Unique pour les modèles
-    -   Utiliser la suppression par lots
+    -   Utiliser une suppression par lots
 -   TipKit
-    -   Utilisez CloudkitContainer https://developer.apple.com/videos/play/wwdc2024/10070/?time=698
+    -   Utiliser CloudkitContainer https://developer.apple.com/videos/play/wwdc2024/10070/?time=698

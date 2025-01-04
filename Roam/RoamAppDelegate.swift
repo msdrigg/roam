@@ -188,6 +188,7 @@ func sendDeviceTokenToServer(_ token: String) async {
     class RoamAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject, Sendable {
         @Published var navigationPath: NavigationManager = NavigationManager()
         @Published var showingSettingsView: Bool = false
+        @Published var showingMessagesView: Bool = false
         @Published var ecpSessionState: ECPSessionState = ECPSessionState()
 
         private var cancellables: Set<AnyCancellable> = []

@@ -4,28 +4,20 @@ hide_table_of_contents: true
 
 # Roam Roadmap
 
-## Completed Work for Next Update
-
-- Added control widgets: Play, Mute, Change Volume and Select from Control center!
-- Added better text field handling for many roku apps 
-    - Auto-open text field when text edit is available
-    - Copy, Cut, Paste from macOS (with keyboard)
-    - Copy, Cut, Paste + Generalized edit on iOS
-- Better reporting around local network permissions and connectivity
-- Improved keyboard functionality
-- Connection stability improvements
-
 ## Coming Soon
 
 -   Add long-press options to keys
-    - Long-press right arrow to ff
-    - Long-press left arrow to rr
-    - Long-press mute to long-mute
+    -   Long-press right arrow to ff
+    -   Long-press left arrow to rr
+    -   Long-press mute to long-mute
         -   Make the +30 configurable to 30, 15, 60 second mute options
-        - Show banner with +30 sec, x to cancel, background linear progress indicator
+        -   Show banner with +30 sec, x to cancel, background linear progress indicator
             -   Show underneath the main button panel so it's close to mute
-        - Cancels when muting again (and also does api call)
--   Fix macOS widgets
+        -   Cancels when muting again (and also does api call)
+
+-   Fix bug in nextPacket loop
+
+-   Automate screenshot capture and update screenshots for macOS
 
 -   Future: Provide an optional Minimalist view on iOS that replicates siri remote's view closely
     -   https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
@@ -33,19 +25,12 @@ hide_table_of_contents: true
 
 ## General Future Ideas
 
--   Write a blog post about the discord bot and point to my MessageView
-    - Make messageView more self-contained
--   Write a blog post about the auto-translation and logic around that
--   Write a blog post about NWConnection vs URLSession for websockets
--   Write a blog post about custom keyboard shortcuts
--   Write a blog post about ECP Textedit API
--   Write a blog post about control center widgets
-
 -   Make custom menu bar icon
 
 -   How to do voice-to-text or general voice commands?
-    - Need to reverse-engineer the roku voice remote udp protocol
-    - Or need to add custom text-to-speech with remote button engine?
+
+    -   Need to reverse-engineer the roku voice remote udp protocol
+    -   Or need to add custom text-to-speech with remote button engine?
 
 -   Automate Screenshot Capture
 
@@ -57,7 +42,8 @@ hide_table_of_contents: true
         -   https://www.figma.com/community/file/1256854154932829222/free-app-store-screenshot-templates?searchSessionId=lxw3ep02-oubp844ov8
         -   https://www.canva.com/templates/s/iphone/
 
--   Try more keyboard hacks for iPad
+-   Try more keyboard hacks on iPad
+
     -   GCKeyboard for one
     -   FocusEnvironment for 2
     -   Ensure that whatever solution gets used for iOS doesn't break text entry in messages/keyboard entry
@@ -104,7 +90,7 @@ hide_table_of_contents: true
     -   Find out more shows a popup with some reasons why this may be happening
         -   Make sure your device is powered on and connected to the same wifi network as your app. If this still doesn't work, try adding the device manually.
         -   Link https://roam.msd3.io/manually-add-tv.md and https://support.roku.com/article/115001480188 for more troubleshooting or chat
--   Add badge for supportsWakeOnWLAN and supportsMute
+-   Add badge for supportsWakeOnWLAN and supportsAudioControls
 
 ## To update when dropping support for iOS 17/macOS 14 (Feb 2026)
 

@@ -71,71 +71,81 @@ struct RoamApp: App {
                     })
                 }
 
-                CommandGroup(replacing: CommandGroupPlacement.pasteboard) {
-                    PasteButton(payloadType: String.self, onPaste: { item in
-                        Task {
-                            guard let first = item.first else {
-                                logger.info("Failed to paste because no item in pasteboard")
-                                return
-                            }
-                            guard let texteditId = appDelegate.ecpSessionState.textEditStatus.texteditId else {
-                                logger.info("Failed to paste because no textedit id")
+                if !appDelegate.navigationPath.showingSettingsView {
+                    CommandGroup(replacing: CommandGroupPlacement.pasteboard) {
+                        PasteButton(payloadType: String.self, onPaste: { item in
+                            Task {
+                                guard let first = item.first else {
+                                    logger.info("Failed to paste because no item in pasteboard")
+                                    return
+                                }
+                                guard let texteditId = appDelegate.ecpSessionState.textEditStatus.texteditId else {
+                                    logger.info("Failed to paste because no textedit id")
 
-                                if let (app, params) = parsePastedUrl(first) {
-                                    do {
-                                        try await appDelegate.ecpSessionState.ecpSession?.openApp(app, params: params)
-                                    } catch {
-                                        logger.error("Error opening app from url app=\(app) params=\(params): \(error)")
+                                    if let (app, params) = parsePastedUrl(first) {
+                                        do {
+                                            try await appDelegate.ecpSessionState.ecpSession?.openApp(app, params: params)
+                                        } catch {
+                                            logger.error("Error opening app from url app=\(app) params=\(params): \(error)")
+                                        }
                                     }
+
+                                    return
                                 }
 
-                                return
+                                do {
+                                    try await appDelegate.ecpSessionState.ecpSession?.setTextEditText(first, for: texteditId)
+                                } catch {
+                                    logger.error("Failed to paste: \(error)")
+                                }
                             }
+                        })
+                        .customKeyboardShortcut(.paste)
 
-                            do {
-                                try await appDelegate.ecpSessionState.ecpSession?.setTextEditText(first, for: texteditId)
-                            } catch {
-                                logger.error("Failed to paste: \(error)")
+                        Button("Cut", systemImage: "clipboard", action: {
+                            Task {
+                                guard let texteditId = appDelegate.ecpSessionState.textEditStatus.texteditId else {
+                                    logger.info("Failed to paste because no textedit id")
+                                    return
+                                }
+
+                                if let texteditText = appDelegate.ecpSessionState.textEditStatus.text {
+                                    logger.info("Cutting text \(texteditText)")
+                                    NSPasteboard.general.clearContents()
+                                    NSPasteboard.general.setString(texteditText, forType: .string)
+                                }
+
+                                do {
+                                    try await appDelegate.ecpSessionState.ecpSession?.setTextEditText("", for: texteditId)
+                                } catch {
+                                    logger.error("Failed to paste: \(error)")
+                                }
                             }
+                        })
+                        .customKeyboardShortcut(.cut)
+                        .disabled(appDelegate.ecpSessionState.textEditStatus.texteditId == nil)
+
+                        Button("Copy", systemImage: "clipboard", action: {
+                            Task {
+                                if let texteditText = appDelegate.ecpSessionState.textEditStatus.text {
+                                    logger.info("Copying text \(texteditText)")
+                                    NSPasteboard.general.clearContents()
+                                    NSPasteboard.general.setString(texteditText, forType: .string)
+                                }
+                            }
+                        })
+                        .customKeyboardShortcut(.copy)
+                        .disabled(appDelegate.ecpSessionState.textEditStatus.texteditId == nil)
+                    }
+                }
+
+                if appDelegate.navigationPath.showingMessagesView {
+                    CommandGroup(after: .appSettings) {
+                        Divider()
+                        Button("Refresh Chat Messages", systemImage: "arrow.clockwise.circle") {
+                            appDelegate.refreshMessages()
                         }
-                    })
-                    .customKeyboardShortcut(.paste)
-                    .disabled(appDelegate.navigationPath.showingSettingsView)
-
-                    Button("Cut", systemImage: "clipboard", action: {
-                        Task {
-                            guard let texteditId = appDelegate.ecpSessionState.textEditStatus.texteditId else {
-                                logger.info("Failed to paste because no textedit id")
-                                return
-                            }
-
-                            if let texteditText = appDelegate.ecpSessionState.textEditStatus.text {
-                                logger.info("Cutting text \(texteditText)")
-                                NSPasteboard.general.clearContents()
-                                NSPasteboard.general.setString(texteditText, forType: .string)
-                            }
-
-                            do {
-                                try await appDelegate.ecpSessionState.ecpSession?.setTextEditText("", for: texteditId)
-                            } catch {
-                                logger.error("Failed to paste: \(error)")
-                            }
-                        }
-                    })
-                    .customKeyboardShortcut(.cut)
-                    .disabled(appDelegate.ecpSessionState.textEditStatus.texteditId == nil || appDelegate.navigationPath.showingSettingsView)
-
-                    Button("Copy", systemImage: "clipboard", action: {
-                        Task {
-                            if let texteditText = appDelegate.ecpSessionState.textEditStatus.text {
-                                logger.info("Copying text \(texteditText)")
-                                NSPasteboard.general.clearContents()
-                                NSPasteboard.general.setString(texteditText, forType: .string)
-                            }
-                        }
-                    })
-                    .customKeyboardShortcut(.copy)
-                    .disabled(appDelegate.ecpSessionState.textEditStatus.texteditId == nil || appDelegate.navigationPath.showingSettingsView)
+                    }
                 }
 
                 CommandGroup(replacing: .help) {
