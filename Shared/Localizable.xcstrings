@@ -1075,6 +1075,88 @@
                 }
             }
         },
+        "Add Attachment": {
+            "localizations": {
+                "ar": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "أضف مرفق"
+                    }
+                },
+                "de": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Anhang hinzufügen"
+                    }
+                },
+                "es": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Agregar adjunto"
+                    }
+                },
+                "es-419": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Agregar adjunto"
+                    }
+                },
+                "fil": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Magdagdag ng Attachment"
+                    }
+                },
+                "fr": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Ajouter une pièce jointe"
+                    }
+                },
+                "fr-CA": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Ajouter une pièce jointe"
+                    }
+                },
+                "it": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Aggiungi allegato"
+                    }
+                },
+                "pa": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "ਅਟੈਚਮੈਂਟ ਜੋੜੋ"
+                    }
+                },
+                "pt-BR": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Adicionar Anexo"
+                    }
+                },
+                "pt-PT": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Adicionar Anexo"
+                    }
+                },
+                "vi": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Thêm tệp đính kèm"
+                    }
+                },
+                "zh-Hans": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "添加附件"
+                    }
+                }
+            }
+        },
         "App": {
             "comment": "Description on a configuration field\nPlaceholder label for an app",
             "localizations": {
@@ -1573,7 +1655,7 @@
             }
         },
         "App Version": {
-            "comment": "Version label in About page for the app\nVersion label in about page for the app",
+            "comment": "Version label in about page for the app",
             "localizations": {
                 "ar": {
                     "stringUnit": {
@@ -1987,7 +2069,7 @@
             }
         },
         "Build Version": {
-            "comment": "Version label in About page for the app\nVersion label in about page for the app",
+            "comment": "Version label in about page for the app",
             "localizations": {
                 "ar": {
                     "stringUnit": {
@@ -14592,7 +14674,7 @@
             }
         },
         "Roku Apps": {
-            "comment": "Siri spotlight recommendation",
+            "comment": "Label on a widget for interactions with my application\nSiri spotlight recommendation",
             "localizations": {
                 "ar": {
                     "stringUnit": {
@@ -14675,7 +14757,7 @@
             }
         },
         "Roku Controls": {
-            "comment": "Siri spotlight recommendation",
+            "comment": "Label on a widget for interactions with my application\nSiri spotlight recommendation",
             "localizations": {
                 "ar": {
                     "stringUnit": {
@@ -15664,6 +15746,89 @@
                     "stringUnit": {
                         "state": "translated",
                         "value": "发送消息"
+                    }
+                }
+            }
+        },
+        "Sending...": {
+            "comment": "Label on a button to send a message",
+            "localizations": {
+                "ar": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "جار الإرسال..."
+                    }
+                },
+                "de": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Senden..."
+                    }
+                },
+                "es": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Enviando..."
+                    }
+                },
+                "es-419": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Enviando..."
+                    }
+                },
+                "fil": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Nagpapadala..."
+                    }
+                },
+                "fr": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Envoi en cours..."
+                    }
+                },
+                "fr-CA": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Envoi en cours..."
+                    }
+                },
+                "it": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Inviando..."
+                    }
+                },
+                "pa": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "ਭੇਜ ਰਹੇ ਹਾਂ..."
+                    }
+                },
+                "pt-BR": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Enviando..."
+                    }
+                },
+                "pt-PT": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "A enviar..."
+                    }
+                },
+                "vi": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Đang gửi..."
+                    }
+                },
+                "zh-Hans": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "正在发送..."
                     }
                 }
             }

@@ -175,7 +175,7 @@ struct MessageView: View {
                     HStack(alignment: .bottom, spacing: 10) {
                         SendDiagnosticsButton(shareDiagnostics: {reportDebugLogs()}, sharingDiagnostics: reportingDebugLogs)
 #if os(macOS)
-                            .padding(.bottom, 2)
+                            .padding(.bottom, 3)
 #elseif os(iOS)
                             .padding(.bottom, 6)
 #elseif os(visionOS)
@@ -342,37 +342,61 @@ struct SendDiagnosticsButton: View {
         if sharingDiagnostics {
             "rays"
         } else {
-            "magnifyingglass"
+            "latch.2.case"
         }
     }
 
     var body: some View {
-        Button(action: {
-            shareDiagnostics()
-            pressCounter += 1
-        }, label: {
-#if os(macOS)
-            Image(systemName: imageName)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 24, height: 24)
-#else
-            Label(String(localized: "Share Diagnostics", comment: "Label on a button"), systemImage: imageName)
-                .labelStyle(.iconOnly)
-#endif
-        })
-        .symbolEffect(.bounce, value: pressCounter)
+        Menu {
+            Button(action: {
+                shareDiagnostics()
+                pressCounter += 1
+            }, label: {
+                Label(String(localized: "Share Diagnostics", comment: "Label on a button"), systemImage: imageName)
+            })
+            .symbolEffect(.bounce, value: pressCounter)
 #if !os(visionOS)
-        .sensoryFeedback(.impact, trigger: pressCounter)
+            .sensoryFeedback(.impact, trigger: pressCounter)
 #endif
-        .symbolEffect(.variableColor, isActive: sharingDiagnostics)
-        .foregroundColor(Color.gray)
+            .symbolEffect(.variableColor, isActive: sharingDiagnostics)
+            .help(
+                sharingDiagnostics ? "Sharing diagnostics..." :
+                    "Share diagnostics"
+            )
+        } label: {
+            if sharingDiagnostics {
+#if os(macOS)
+                Image(systemName: "rays")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(Color.gray)
+#else
+                Label(String(localized: "Sending...", comment: "Label on a button to send a message"), systemImage: "rays")
+                    .labelStyle(.iconOnly)
+#endif
+            } else {
+#if os(macOS)
+                Image(systemName: "plus.circle.fill")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(Color.gray)
+#else
+                Label("Add Attachment", systemImage: "plus.circle.fill")
+                    .labelStyle(.iconOnly)
+#endif
+            }
+        }
+        .menuStyle(.button)
+        #if os(macOS)
         .buttonStyle(.plain)
-        .help(
-            sharingDiagnostics ? "Sharing diagnostics..." :
-            "Share diagnostics"
-        )
-
+        #else
+        .buttonStyle(.borderless)
+        #endif
+        .foregroundColor(Color.gray)
+        .disabled(sharingDiagnostics)
+        .symbolEffect(.variableColor, isActive: sharingDiagnostics)
     }
 }
 
