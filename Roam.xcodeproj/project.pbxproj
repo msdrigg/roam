@@ -378,9 +378,7 @@
 		AF20ACFB2AE017B600D371C7 /* RemoteButtonAppEnum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteButtonAppEnum.swift; sourceTree = "<group>"; };
 		AF2480572BDB42F600EF47AE /* TestData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestData.swift; sourceTree = "<group>"; };
 		AF24805C2BDB475A00EF47AE /* DebugImages.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = DebugImages.xcassets; sourceTree = "<group>"; };
-		AF2480632BDB4D8300EF47AE /* RoamWidgetsRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RoamWidgetsRelease.entitlements; sourceTree = "<group>"; };
 		AF2480642BDB4D9F00EF47AE /* RoamWatchRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RoamWatchRelease.entitlements; sourceTree = "<group>"; };
-		AF2480652BDB4DA500EF47AE /* RoamRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RoamRelease.entitlements; sourceTree = "<group>"; };
 		AF27400B2AE02C25007C6208 /* RoamWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RoamWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF27400F2AE02C25007C6208 /* RoamWidgetsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamWidgetsApp.swift; sourceTree = "<group>"; };
 		AF2740172AE02C26007C6208 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -388,6 +386,7 @@
 		AF2F54EE2BCE58EF00BAE156 /* WorkersBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkersBackend.swift; sourceTree = "<group>"; };
 		AF35ACEA2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyboardMonitorUIKit.swift; sourceTree = "<group>"; };
 		AF35ACF12BA3D21F00CC8B36 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		AF38A1802D29E3EC00980D41 /* RoamWidgetsMacOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RoamWidgetsMacOS.entitlements; sourceTree = "<group>"; };
 		AF3AD5522AE28F7400E2D780 /* ButtonGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonGrid.swift; sourceTree = "<group>"; };
 		AF3AD5542AE2910B00E2D780 /* CenterController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CenterController.swift; sourceTree = "<group>"; };
 		AF3AD5562AE2928600E2D780 /* TopBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopBar.swift; sourceTree = "<group>"; };
@@ -638,7 +637,6 @@
 		AF27400E2AE02C25007C6208 /* RoamWidgets */ = {
 			isa = PBXGroup;
 			children = (
-				AF2480632BDB4D8300EF47AE /* RoamWidgetsRelease.entitlements */,
 				AFD9C4E02AE9802200C4079C /* SmallRemoteView.swift */,
 				AF1899FC2C1CE2E5001EDA78 /* AccessoryGroupRemoteView.swift */,
 				AF95B7192ADF340A005FC338 /* WidgetHelpers.swift */,
@@ -649,6 +647,7 @@
 				AF27400F2AE02C25007C6208 /* RoamWidgetsApp.swift */,
 				AF2740172AE02C26007C6208 /* Info.plist */,
 				AF2740182AE02C26007C6208 /* RoamWidgets.entitlements */,
+				AF38A1802D29E3EC00980D41 /* RoamWidgetsMacOS.entitlements */,
 			);
 			path = RoamWidgets;
 			sourceTree = "<group>";
@@ -877,7 +876,6 @@
 		AFC24EFD2AD0E5A1002AB66C /* Roam */ = {
 			isa = PBXGroup;
 			children = (
-				AF2480652BDB4DA500EF47AE /* RoamRelease.entitlements */,
 				AF91C6FF2CD33117008BF5AB /* RoamMacOS.entitlements */,
 				AFC24F092AD0E5A2002AB66C /* Roam.entitlements */,
 				AF35ACF12BA3D21F00CC8B36 /* PrivacyInfo.xcprivacy */,
@@ -1570,6 +1568,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = RoamWidgets/RoamWidgets.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = RoamWidgets/RoamWidgetsMacOS.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";
@@ -1614,7 +1613,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = RoamWidgets/RoamWidgetsRelease.entitlements;
+				CODE_SIGN_ENTITLEMENTS = RoamWidgets/RoamWidgets.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = RoamWidgets/RoamWidgetsMacOS.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(CURRENT_PROJECT_VERSION)";

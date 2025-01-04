@@ -14,6 +14,7 @@ hide_table_of_contents: true
 -   Better reporting around local network permissions and connectivity
 -   Improved keyboard functionality
 -   Connection stability improvements
+-   Fixed widgets and shortcuts on macOS 15
 
 ## Coming Soon
 
@@ -25,7 +26,6 @@ hide_table_of_contents: true
         -   Show banner with +30 sec, x to cancel, background linear progress indicator
             -   Show underneath the main button panel so it's close to mute
         -   Cancels when muting again (and also does api call)
--   Fix macOS widgets
 
 -   Future: Provide an optional Minimalist view on iOS that replicates siri remote's view closely
     -   https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos

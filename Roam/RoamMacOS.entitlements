@@ -18,8 +18,8 @@
 	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>2865NTZ7H3.com.msdrigg.roam.models</string>
 		<string>group.com.msdrigg.roam.models</string>
+		<string>2865NTZ7H3.com.msdrigg.roam.models</string>
 		<string>2865NTZ7H3.com.msdrigg.roam.tips</string>
 		<string>2865NTZ7H3.com.msdrigg.roam.load</string>
 	</array>
