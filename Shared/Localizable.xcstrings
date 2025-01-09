@@ -1157,6 +1157,89 @@
                 }
             }
         },
+        "Additinoally, WatchOS prevents us from discovering TV's on the local network.": {
+            "comment": "WatchOS indicator showing that watchOS can't auto-discover TV's due to network restrictions",
+            "localizations": {
+                "ar": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "بالإضافة إلى ذلك، يمنعنا ووتش أو إس من اكتشاف التلفزيونات على الشبكة المحلية."
+                    }
+                },
+                "de": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Zusätzlich verhindert WatchOS, dass wir Fernseher im lokalen Netzwerk entdecken."
+                    }
+                },
+                "es": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Además, WatchOS nos impide descubrir televisores en la red local."
+                    }
+                },
+                "es-419": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Además, WatchOS nos impide descubrir televisores en la red local."
+                    }
+                },
+                "fil": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Karagdagang, pinipigilan kami ng WatchOS sa pagtuklas ng mga TV sa lokal na network."
+                    }
+                },
+                "fr": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "De plus, WatchOS nous empêche de découvrir des téléviseurs sur le réseau local."
+                    }
+                },
+                "fr-CA": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "De plus, WatchOS nous empêche de découvrir les téléviseurs sur le réseau local."
+                    }
+                },
+                "it": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Inoltre, WatchOS ci impedisce di scoprire le TV sulla rete locale."
+                    }
+                },
+                "pa": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "ਇਸ ਤੋਂ ਇਲਾਵਾ, WatchOS ਸਾਨੂੰ ਸਥਾਨਕ ਨੈੱਟਵਰਕ 'ਤੇ ਟੀਵੀ ਖੋਜਣ ਤੋਂ ਰੋਕਦਾ ਹੈ."
+                    }
+                },
+                "pt-BR": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Adicionalmente, o WatchOS nos impede de descobrir TVs na rede local."
+                    }
+                },
+                "pt-PT": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Adicionalmente, o WatchOS impede-nos de descobrir TVs na rede local."
+                    }
+                },
+                "vi": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Thêm vào đó, WatchOS ngăn chúng tôi khám phá ra các TV trên mạng cục bộ."
+                    }
+                },
+                "zh-Hans": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "此外，WatchOS阻止我们在本地网络上发现电视。"
+                    }
+                }
+            }
+        },
         "App": {
             "comment": "Description on a configuration field\nPlaceholder label for an app",
             "localizations": {
@@ -4797,6 +4880,89 @@
                     "stringUnit": {
                         "state": "translated",
                         "value": "下载完整应用"
+                    }
+                }
+            }
+        },
+        "Due to WatchOS limitations, you may need to enable \"Permissive\" Network Access on your Roku TV. You can do this by going to Settings -> System -> Advanced System Settings -> Control by mobile apps": {
+            "comment": "WatchOS indicator showing that watchOS can't auto-discover TV's due to network restrictions",
+            "localizations": {
+                "ar": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "بسبب القيود الموجودة في WatchOS، قد تحتاج إلى تفعيل \"الوصول الشامل\" للشبكة على تلفزيون Roku الخاص بك. يمكنك القيام بذلك من خلال الذهاب إلى الإعدادات -> النظام -> الإعدادات المتقدمة للنظام -> التحكم من خلال التطبيقات المحمولة"
+                    }
+                },
+                "de": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Aufgrund von WatchOS-Beschränkungen müssen Sie möglicherweise den \"Permissiven\" Netzwerkzugriff auf Ihrem Roku-TV aktivieren. Sie können dies tun, indem Sie zu Einstellungen -> System -> Erweiterte Systemeinstellungen -> Steuerung durch mobile Apps gehen."
+                    }
+                },
+                "es": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Debido a las limitaciones de WatchOS, es posible que debas habilitar el \"Acceso a la red permisivo\" en tu Roku TV. Puedes hacerlo yendo a Configuración -> Sistema -> Configuración avanzada del sistema -> Control por aplicaciones móviles."
+                    }
+                },
+                "es-419": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Debido a las limitaciones de WatchOS, es posible que debas habilitar el \"Acceso a la Red Permisivo\" en tu Roku TV. Puedes hacer esto yendo a Configuración -> Sistema -> Configuraciones avanzadas del sistema -> Control por aplicaciones móviles."
+                    }
+                },
+                "fil": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Dahil sa mga limitasyon ng WatchOS, maaaring kailanganin mo na paganahin ang \"Permissive\" Network Access sa iyong Roku TV. Maaari mong gawin ito sa pamamagitan ng pagpunta sa Settings -> System -> Advanced System Settings -> Control by mobile apps"
+                    }
+                },
+                "fr": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "En raison des limitations de WatchOS, vous devrez peut-être activer l'Accès au réseau \"Permissif\" sur votre Roku TV. Vous pouvez le faire en allant à Paramètres -> Système -> Paramètres système avancés -> Contrôle par applications mobiles"
+                    }
+                },
+                "fr-CA": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "En raison des limitations de WatchOS, vous devrez peut-être activer l'accès réseau \"Permissive\" sur votre téléviseur Roku. Vous pouvez le faire en allant dans Paramètres -> Système -> Paramètres système avancés -> Contrôle par applications mobiles"
+                    }
+                },
+                "it": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "A causa delle limitazioni di WatchOS, potrebbe essere necessario abilitare l'accesso alla rete \"Permissivo\" sulla tua TV Roku. Puoi farlo andando in Impostazioni -> Sistema -> Impostazioni avanzate del sistema -> Controllo tramite app mobili."
+                    }
+                },
+                "pa": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "WatchOS ਦੀਆਂ ਸੀਮਾਵਾਂ ਕਾਰਨ, ਤੁਹਾਨੂੰ ਆਪਣੇ Roku TV 'ਤੇ \"Permissive\" ਨੈਟਵਰਕ ਐਕਸੈਸ ਯੋਗ ਕਰਨ ਦੀ ਜ਼ਰੂਰਤ ਹੋ ਸਕਦੀ ਹੈ। ਤੁਸੀਂ ਇਸ ਨੂੰ ਸੈਟਿੰਗਜ਼ -> ਸਿਸਟਮ -> ਅਗੇਤਰ ਸਿਸਟਮ ਸੈਟਿੰਗਜ਼ -> ਮੋਬਾਈਲ ਐਪਸ ਦੁਆਰਾ ਕੰਟਰੋਲ ਜਾ ਕੇ ਕਰ ਸਕਦੇ ਹੋ।"
+                    }
+                },
+                "pt-BR": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Devido às limitações do WatchOS, você pode precisar habilitar o \"Acesso à Rede Permissivo\" na sua TV Roku. Você pode fazer isso indo em Configurações -> Sistema -> Configurações avançadas do sistema -> Controle por aplicativos móveis"
+                    }
+                },
+                "pt-PT": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Devido às limitações do WatchOS, pode ser necessário ativar o \"Acesso à Rede Permissivo\" na sua Roku TV. Pode fazer isso indo a Configurações -> Sistema -> Configurações avançadas do sistema -> Controle por aplicativos móveis."
+                    }
+                },
+                "vi": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Do đặc điểm hạn chế của WatchOS, bạn có thể cần kích hoạt \"Truy cập mạng Linh hoạt\" trên Roku TV của bạn. Bạn có thể làm điều này bằng cách vào Cài đặt -> Hệ thống -> Cài đặt hệ thống nâng cao -> Kiểm soát bởi ứng dụng di động"
+                    }
+                },
+                "zh-Hans": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "由于WatchOS的限制，您可能需要在您的Roku TV上启用\"Permissive\"网络访问。您可以通过进入设置->系统->高级系统设置->由移动应用控制来完成此操作。"
                     }
                 }
             }
@@ -17741,6 +17907,7 @@
         },
         "Unfortunately, WatchOS prevents us from discovering TV's on the local network.": {
             "comment": "WatchOS indicator showing that watchOS can't auto-discover TV's due to network restrictions",
+            "extractionState": "stale",
             "localizations": {
                 "ar": {
                     "stringUnit": {

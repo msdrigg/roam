@@ -1,6 +1,12 @@
 import AppIntents
 import Foundation
 import SwiftData
+import OSLog
+
+private nonisolated let logger = Logger(
+    subsystem: Bundle.main.bundleIdentifier!,
+    category: "AppLinkAppEntity"
+)
 
 @available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
 public struct AppLinkAppEntity: Identifiable, Equatable, Hashable, Encodable, Sendable {
@@ -88,11 +94,38 @@ public func launchApp(app: AppLinkAppEntity, device: DeviceAppEntity?) async thr
     }
 
     if let targetDevice {
+        #if os(watchOS)
         do {
             try await openApp(location: targetDevice.location, app: app.id)
         } catch {
+            logger.error("Error opening app: \(error, privacy: .public)")
             throw ApiError.deviceNotConnectable
         }
+        #else
+        do {
+            try await withTimeout(delay: 5) {
+                let ecpSession: ECPSession?
+                let ecpSessionState: ECPSessionState = await ECPSessionState()
+                do {
+                    ecpSession = try ECPSession(device: targetDevice, status: ecpSessionState)
+                    defer {
+                        Task {
+                            await ecpSession?.close()
+                        }
+                    }
+
+                    try await ecpSession?.configure()
+                    try await ecpSession?.openApp(app)
+                } catch {
+                    logger.error("Error creating ECPSession or opening app: \(error, privacy: .public)")
+                    throw ApiError.deviceNotConnectable
+                }
+            }
+        } catch is TimeoutError {
+            logger.warning("Timeout opening app from intent")
+            throw ApiError.deviceNotConnectable
+        }
+        #endif
     } else {
         throw ApiError.noSavedDevices
     }

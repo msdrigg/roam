@@ -2,16 +2,11 @@
 hide_table_of_contents: true
 ---
 
-# Roadmap di Roam
+# Roam RoadMap
 
-## Aggiornamenti Recenti
+## Atualizações Recentes
 
--   Aggiunti widget di controllo: Play, Mute, Cambia Volume e Seleziona dal Centro di controllo!
--   Migliorata la gestione dei campi di testo per molte applicazioni roku
-    -   Apertura automatica del campo di testo quando è disponibile la modifica del testo
-    -   Copia, Taglia, Incolla da macOS (con la tastiera)
-    -   Copia, Taglia, Incolla + Modifica generalizzata su iOS
--   Migliore segnalazione intorno ai permessi della rete locale e alla connettività
--   Migliorata la funzionalità della tastiera
--   Miglioramenti alla stabilità della connessione
--   Risolti i problemi con i widget e le scorciatoie su macOS 15
+-   Correções de erro para dispositivos no Modelo Limitado
+-   Correções de erro para widgets
+-   Correções de erro para a barra de menu causando travamento
+-   Melhorias no controle de volume

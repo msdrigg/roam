@@ -262,7 +262,13 @@ struct SettingsView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(
-                                "Unfortunately, WatchOS prevents us from discovering TV's on the local network.",
+                                // swiftlint:disable:next line_length
+                                "Due to WatchOS limitations, you may need to enable \"Permissive\" Network Access on your Roku TV. You can do this by going to Settings -> System -> Advanced System Settings -> Control by mobile apps",
+                                comment: "WatchOS indicator showing that watchOS can't auto-discover TV's due to network restrictions"
+                            )
+                            .font(.caption).foregroundStyle(.secondary)
+                            Text(
+                                "Additinoally, WatchOS prevents us from discovering TV's on the local network.",
                                 comment: "WatchOS indicator showing that watchOS can't auto-discover TV's due to network restrictions"
                             )
                             .font(.caption).foregroundStyle(.secondary)

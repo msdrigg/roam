@@ -39,6 +39,8 @@ Roam offers everything you want and nothing you don't
     -   On some Roku Apps the app ignores hardware keyboard entry. You can test if this is a Roam bug or a bug in the app by trying to use the keyboard entry feature in the official Roku App and checking if this works
     -   Apps with known bugs
         -    Prime Video
+-   Why does Roam work on my iPhone and mac app work but not on my Apple Watch?
+    -   The WatchOS app connects to the TV through the TV's ECP API, which must be enabled on some Roku TV's. To Enable it, go to **Settings -> System -> Advanced System Settings -> Control by mobile apps** and make sure "Network Access" is set to "Permissive"
 
 ## Other Resources
 

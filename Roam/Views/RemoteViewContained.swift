@@ -401,6 +401,14 @@ struct RemoteViewContained: View {
                 }
                 .task(id: "\(headphonesModeEnabled),\(selectedDevice?.location ?? "--")") {
                     if !headphonesModeEnabled {
+                        #if os(iOS)
+                        do {
+                        try AVAudioSession.sharedInstance().setCategory(.ambient)
+                        try AVAudioSession.sharedInstance().setActive(false)
+                        } catch {
+                            Self.logger.info("Unable to set AVAudioSession category to background")
+                        }
+                        #endif
                         return
                     }
                     defer {

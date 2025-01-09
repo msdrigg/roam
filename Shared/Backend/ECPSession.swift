@@ -179,7 +179,7 @@ actor ECPSession {
                 guard let self else { return }
                 Task { await self.ping() }
             }
-          .store(in: &self.cancellables)
+                      .store(in: &self.cancellables)
 
         NotificationCenter.default
             .publisher(for: Self.messageReceivedNotification)
@@ -427,7 +427,7 @@ actor ECPSession {
 
     private func reportErrorOrDisconnection(_ error: any Error) {
         self.websocketStateUpdated(status: .disconnected(.now))
-        Self.logger.error("Error from websocket \(error)")
+        Self.logger.error("Error from websocket \(error, privacy: .public)")
     }
 
     private nonisolated func waitForConnectionReady() async throws {
@@ -706,9 +706,9 @@ actor ECPSession {
         try await send(data: data, context: context)
     }
 
-    private func send(data: Data?, context: NWConnection.ContentContext) async throws {
+    private func send(data: Data?, context: NWConnection.ContentContext, delay: TimeInterval = 2) async throws {
         // Before we send anything, make sure the websocket is up and running
-        try await withTimeout(delay: 2) {
+        try await withTimeout(delay: delay) {
             try await self.preInitWebsocket()
             let dataString = String(data: data ?? .init(), encoding: .utf8) ?? "--BAD UTF8 DATA--"
             Self.logger.info("Sending data \(dataString)")
@@ -758,11 +758,36 @@ actor ECPSession {
 
     }
 
+    #if !os(watchOS)
     public func powerToggleDevice() async throws {
-        Self.logger.debug("Toggling power for device \(self.device.location)")
+        Self.logger.debug("Toggling power for device \(self.device.location, privacy: .public)")
 
-        await powerToggleDeviceStateless(location: device.location, macs: device.macs())
+        // Attempt checking the device power mode
+        let canConnect = await canConnectTCP(location: self.device.location, timeout: 0.5)
+        do {
+            if canConnect {
+                Self.logger.debug("Attempting to power toggle device with api first")
+                try await self.sendKeypress(RemoteButton.power.apiValue!, delay: 1.1)
+           } else {
+               Self.logger.debug("Power toggle not toggled via api, toggling via wol")
+               await sendWolToDevice(location: device.location, macs: device.macs())
+            }
+        } catch {
+            Self.logger.warning("Error toggling power")
+        }
     }
+    #else
+    public func powerToggleDevice() async throws {
+        Self.logger.debug("Toggling power for device \(self.device.location, privacy: .public)")
+
+        // Attempt checking the device power mode
+        do {
+            try await self.sendKeypress(RemoteButton.power.apiValue!, delay: 1.1)
+        } catch {
+            Self.logger.warning("Error toggling power")
+        }
+    }
+    #endif
 
     #if !os(watchOS)
         public func requestHeadphonesMode() async throws {
@@ -844,50 +869,62 @@ actor ECPSession {
         do {
             try await openAppOnce(appId, params: params)
         } catch {
-            Self.logger.warning("Error opening app the first time--retrying: \(error)")
+            Self.logger.warning("Error opening app the first time-retrying: \(error)")
             try await Task.sleep(duration: 0.1)
             try await openAppOnce(appId, params: params)
         }
     }
 
-    public func openAppOnce(_ appId: String, params: [String: String]? = nil) async throws {
+    public func openAppOnce(_ appId: String, params: [String: String]? = nil, delay: TimeInterval = 5) async throws {
         Self.logger.info("Opening app \(appId)")
 
-        let reqId = getAndUpdateRequestId()
+        let reqId = self.getAndUpdateRequestId()
         let requestData = try String(
             data: kebabEncoder.encode(AppLaunchRequest(requestId: reqId, channelId: appId, params: params)),
             encoding: .utf8
         )!
 
-        let receiveTask = Task {
-            try await self.receive(requestId: reqId)
-        }
+        try await withTimeout(delay: delay) {
+            let receiveTask = Task {
+                try await self.receive(requestId: reqId)
+            }
 
-        try await send(string: requestData)
-        _ = try await receiveTask.value
+            try await self.send(string: requestData)
+            _ = try await receiveTask.value
+        }
 
         Self.logger.info("Opened app \(appId) successfully")
     }
 
-    private func sendKeypress(_ data: String) async throws {
+    private func sendKeypress(_ data: String, delay: TimeInterval = 5) async throws {
         // Try 2x with 0.1 sec delay between
         do {
-            try await sendKeypressOnce(data)
+            try await sendKeypressOnce(data, delay: delay)
         } catch {
             Self.logger.warning("Error sending keypress the first time--retrying: \(error, privacy: .public)")
             try await Task.sleep(duration: 0.1)
-            try await sendKeypressOnce(data)
+            try await sendKeypressOnce(data, delay: delay)
         }
     }
 
-    private func sendKeypressOnce(_ data: String) async throws {
+    private func sendKeypressOnce(_ data: String, delay: TimeInterval = 5) async throws {
         Self.logger.trace("Trying to send keypress \(data)")
 
+        let reqId = getAndUpdateRequestId()
         let requestData = try String(
-            data: kebabEncoder.encode(KeyPressRequest(key: data, requestId: String(getAndUpdateRequestId()))),
+            data: kebabEncoder.encode(KeyPressRequest(key: data, requestId: String(reqId))),
             encoding: .utf8
         )!
-        try await send(string: requestData)
+
+        try await withTimeout(delay: delay) {
+            let receiveTask = Task {
+                try await self.receive(requestId: reqId)
+            }
+
+            try await self.send(string: requestData)
+            _ = try await receiveTask.value
+        }
+
         Self.logger.info("Sent key \(data) successfully")
     }
 

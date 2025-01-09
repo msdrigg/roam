@@ -9,14 +9,6 @@ private let logger = Logger(
     category: "HeadphonesMode"
 )
 
-let globalHostRTPPort: UInt16 = 6970
-let globalHostRTCPPort: UInt16 = 6971
-let globalDefaultRemoteRTCPPort: UInt16 = 5150
-let globalRTPPayloadType = 97
-let globalClockRate = 48000
-let globalPacketSizeMS: Int64 = 10
-let globalHugeFixedVDLYMS: UInt32 = 1200
-
 enum HeadphonesModeError: Error, LocalizedError {
     case badURL
     case audioStreamingTimeout
