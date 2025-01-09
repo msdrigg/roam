@@ -171,7 +171,6 @@ struct DevicePicker: View {
         }
         #if os(iOS)
         .menuStyle(.button)
-        .buttonStyle(.plain)
         #endif
         .animation(nil, value: UUID())
         .onReceive(timer) { _ in

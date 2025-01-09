@@ -88,3 +88,13 @@ extension View {
     .glowing()
     .padding(100)
 }
+
+#Preview("PaddedButton") {
+    Button(action: {
+        print("Button Pressed")
+    }, label: {
+        Text("Glowing")
+    })
+    .buttonStyle(PaddedBorderlessButtonStyle())
+    .glowing()
+}

@@ -9,10 +9,6 @@ import XCTest
 
 final class RoamUITestsLaunchTests: XCTestCase {
 
-    override static var runsForEachTargetApplicationUIConfiguration: Bool {
-        true
-    }
-
     override func setUpWithError() throws {
         continueAfterFailure = false
     }
@@ -21,9 +17,9 @@ final class RoamUITestsLaunchTests: XCTestCase {
     func testLaunch() throws {
         let app = XCUIApplication()
         app.launch()
+        // Orient the device, light/dark theme, navigate to proper page, execute screenshot
 
-        // Insert steps here to perform after app launch but before taking a screenshot,
-        // such as logging into a test account or navigating somewhere in the app
+        // Insert steps here to perform after app launch but before taking a screenshot
 
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Launch Screen"

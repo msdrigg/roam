@@ -1,0 +1,1 @@
+-   Mga pag-aayos ng bug at pagpapabuti

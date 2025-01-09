@@ -601,8 +601,8 @@ struct RemoteViewContained: View {
                             ecpSessionState: ecpSessionState,
                             showScanning: true
                         )
-                        .menuStyle(.button)
                         .buttonStyle(PaddedBorderlessButtonStyle())
+                        .menuStyle(.button)
                         .controlSize(.extraLarge)
                         .hoverEffect(.highlight)
                         .cornerRadius(buttonRadius)
@@ -623,7 +623,6 @@ struct RemoteViewContained: View {
                                 ecpSessionState: ecpSessionState,
                                 showScanning: true
                             )
-                            .menuStyle(.button)
                             .buttonStyle(PaddedBorderlessButtonStyle())
                             .glowing(enabled: selectedDevice == nil)
 
@@ -843,6 +842,9 @@ struct RemoteViewContained: View {
                             }),
                             ecpSessionState: ecpSessionState
                         )
+                        #if os(iOS)
+                        .buttonStyle(.plain)
+                        #endif
                         .frame(idealWidth: 100, maxWidth: 350)
                         .disabled(selectedDevice == nil)
                     }
