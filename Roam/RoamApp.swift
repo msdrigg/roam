@@ -195,6 +195,7 @@ struct RoamApp: App {
                     .modelContainer(sharedModelContainer)
                     .environment(\.createDataHandler, dataHandlerCreator())
                     .environment(\.uuidUpdater, uuidUpdater)
+                    .environmentObject(appDelegate)
             }
             .menuBarExtraStyle(.window)
 

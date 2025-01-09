@@ -100,6 +100,28 @@ public func openApp(location: String, app: String) async throws {
 }
 
 @discardableResult
+public func sendWolToDevice(location: String, macs: [String]) async -> Bool {
+    let interfaces = await allAddressedInterfaces().filter{ iface in
+        return (iface.flags & UInt32(IFF_UP) != 0) && (iface.flags & UInt32(IFF_RUNNING) != 0) && iface.nwInterface != nil
+    }
+    let interfaceNames = interfaces.map(\.name)
+
+    logger.debug("API toggle failed, trying to WOL to macs \(String(describing: macs), privacy: .public) on interfaces \(interfaceNames, privacy: .public)")
+
+    for mac in macs {
+        for iface in interfaces {
+            logger.debug("Sending wol packet to \(mac, privacy: .public) with interface \(iface.name, privacy: .public)")
+            await wakeOnLAN(macAddress: mac, interface: iface.nwInterface)
+        }
+        if interfaces.count == 0 {
+            logger.debug("Sending wol packet to \(mac, privacy: .public) with no interface")
+            await wakeOnLAN(macAddress: mac, interface: nil)
+        }
+    }
+    return true
+}
+
+@discardableResult
 public func powerToggleDeviceStateless(location: String, macs: [String]) async -> Bool {
     logger.debug("Toggling power for device \(location, privacy: .public)")
 

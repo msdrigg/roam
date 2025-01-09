@@ -220,6 +220,7 @@ public struct OpenDeviceIntent: OpenIntent {
             throw ApiError.noSavedDevices
         }
 
+        #if os(watchOS)
         if let deviceKey = button.apiValue {
             let success = await sendKeyToDeviceRawNotRecommended(
                 location: targetDevice.location,
@@ -231,5 +232,17 @@ public struct OpenDeviceIntent: OpenIntent {
                 throw ApiError.deviceNotConnectable
             }
         }
+        #else
+        let ecpSession: ECPSession?
+        let ecpSessionState: ECPSessionState = await ECPSessionState()
+        do {
+            ecpSession = try ECPSession(device: targetDevice, status: ecpSessionState)
+            try await ecpSession?.configure()
+            try await ecpSession?.pressButton(button)
+        } catch {
+            logger.error("Error creating ECPSession or pressing button: \(error, privacy: .public)")
+            throw ApiError.deviceNotConnectable
+        }
+        #endif
     }
 #endif

@@ -182,6 +182,8 @@
 		AFC4A6602AE8AF3F005DAC6C /* DataImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC4A65E2AE8AF3F005DAC6C /* DataImage.swift */; };
 		AFCF22DE2B2A52190048FFD9 /* NotificationBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCF22DD2B2A52190048FFD9 /* NotificationBanner.swift */; };
 		AFCF22E02B2A6A720048FFD9 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCF22DF2B2A6A720048FFD9 /* NetworkMonitor.swift */; };
+		AFD395012D2F85D40017B2A0 /* ECPSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C828F2AEBF2A200CBE7F8 /* ECPSession.swift */; };
+		AFD395042D2F9C710017B2A0 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = AFD395032D2F9C710017B2A0 /* AsyncAlgorithms */; };
 		AFD590D02AEC673C00189620 /* WatchConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590CF2AEC673C00189620 /* WatchConnector.swift */; };
 		AFD590D22AEC692700189620 /* IPhoneConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D12AEC692700189620 /* IPhoneConnector.swift */; };
 		AFD590D62AEC787700189620 /* ModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D52AEC787700189620 /* ModelContainer.swift */; };
@@ -530,6 +532,7 @@
 				AF19CA3A2AE6BF9D00A42DFF /* XMLCoder in Frameworks */,
 				AF27400D2AE02C25007C6208 /* SwiftUI.framework in Frameworks */,
 				AF27400C2AE02C25007C6208 /* WidgetKit.framework in Frameworks */,
+				AFD395042D2F9C710017B2A0 /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -961,6 +964,7 @@
 			packageProductDependencies = (
 				AF19CA392AE6BF9D00A42DFF /* XMLCoder */,
 				AF3503932BB499FA004F4337 /* libwebp */,
+				AFD395032D2F9C710017B2A0 /* AsyncAlgorithms */,
 			);
 			productName = BetterRemoteWidgetsExtension;
 			productReference = AF27400B2AE02C25007C6208 /* RoamWidgets.appex */;
@@ -1288,6 +1292,7 @@
 				AF19CA3D2AE6BFDF00A42DFF /* DeviceApi.swift in Sources */,
 				AF205B282AE02D0100041CDF /* AppLink.swift in Sources */,
 				AF0D09F02CDE5C410098122E /* Helpers.swift in Sources */,
+				AFD395012D2F85D40017B2A0 /* ECPSession.swift in Sources */,
 				AF205B2A2AE02D1C00041CDF /* RemoteButtonAppEnum.swift in Sources */,
 				AF205B212AE02CAF00041CDF /* SmallRemoteWidget.swift in Sources */,
 				AF1899FD2C1CE2E5001EDA78 /* AccessoryGroupRemoteView.swift in Sources */,
@@ -2178,6 +2183,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AF0042812AEAA3ED0051BB1E /* XCRemoteSwiftPackageReference "libwebp-Xcode" */;
 			productName = libwebp;
+		};
+		AFD395032D2F9C710017B2A0 /* AsyncAlgorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AF19CA192AE44B1900A42DFF /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
+			productName = AsyncAlgorithms;
 		};
 		AFD9C4F42AE9830100C4079C /* XMLCoder */ = {
 			isa = XCSwiftPackageProductDependency;
