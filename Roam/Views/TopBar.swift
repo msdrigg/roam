@@ -9,6 +9,18 @@ struct TopBar: View {
     @ScaledMetric var buttonHeight = globalButtonHeight
     @ScaledMetric var buttonSpacing = globalButtonSpacing
 
+    @Environment(\.colorScheme) var colorScheme
+
+    #if os(macOS)
+    var macTintColor: Color {
+        if colorScheme == .dark {
+            return Color.secondary
+        } else {
+            return Color.white
+        }
+    }
+    #endif
+
     var body: some View {
         HStack(spacing: buttonSpacing * 2) {
             Button(action: { action(.back) }, label: {
@@ -20,7 +32,7 @@ struct TopBar: View {
             #endif
             #if os(macOS)
             .buttonStyle(.borderedProminent)
-            .tint(Color.secondary)
+            .tint(macTintColor)
             #endif
             #if !os(visionOS)
             .sensoryFeedback(.impact, trigger: pressCounter(.back))
@@ -45,7 +57,7 @@ struct TopBar: View {
             })
             #if os(macOS)
             .buttonStyle(.borderedProminent)
-            .tint(Color.secondary)
+            .tint(macTintColor)
             #endif
             #if !os(tvOS) && !os(watchOS)
             .customKeyboardShortcut(.home)

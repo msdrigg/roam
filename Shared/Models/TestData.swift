@@ -8,25 +8,30 @@
     #endif
 
     func getTestingDevices() -> [Device] {
-        [
+        let devices = [
             Device(
-                name: "Living Room TV",
+                name: String(localized: "Living Room TV"),
                 location: "http://192.168.0.1:8060/",
                 lastSelectedAt: Date(timeIntervalSince1970: 1_696_767_580.0),
                 udn: "TD1"
             ),
             Device(
-                name: "2nd Living Room",
+                name: String(localized: "Mom's TV"),
                 location: "http://192.168.0.2:8060/",
                 lastSelectedAt: Date(timeIntervalSince1970: 1_696_767_580.0 - 24 * 60 * 60),
                 udn: "TD2"
             ),
         ]
+
+        devices[0].supportsDatagram = true
+        devices[1].supportsDatagram = false
+
+        return devices
     }
 
-    public let testingContainer: ModelContainer = {
+    @MainActor
+    public func getTestingContainer() -> ModelContainer {
         do {
-
             let schema = Schema(
                 versionedSchema: SchemaV2.self
             )
@@ -42,36 +47,23 @@
                 configurations: [modelConfiguration]
             )
 
-            Task { @MainActor in
-                let context = container.mainContext
-                container.deleteAllData()
-
-                let (models, appLinks) = getLoadTestingData()
-                for model in models {
-                    context.insert(model)
-                }
-
-                for appLink in appLinks {
-                    context.insert(appLink)
-                }
-
-                let messages = getTestingMessages()
-                for message in messages {
-                    context.insert(message)
-                }
-                try context.save()
-            }
             return container
         } catch {
             fatalError("Failed to create container with error: \(error.localizedDescription)")
         }
-    }()
+    }
 
+    @MainActor
     public let previewContainer: ModelContainer = {
         do {
+            let schema = Schema(versionedSchema: SchemaV2.self)
             let container = try ModelContainer(
-                for: Schema(versionedSchema: SchemaV2.self),
-                configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+                for: schema,
+                migrationPlan: RoamSchemaMigrationPlan.self,
+                configurations: [ModelConfiguration(
+                    schema: schema,
+                    isStoredInMemoryOnly: true
+                )]
             )
 
             Task { @MainActor in
@@ -98,17 +90,40 @@
         }
     }()
 
-    func getTestingAppLinks() -> [AppLink] {
-        [
-            AppLink(id: "1", type: "appl", name: "Netflix", icon: nil, deviceUid: nil),
-            AppLink(id: "5", type: "appl", name: "Hulu", icon: nil, deviceUid: nil),
-            AppLink(id: "3", type: "appl", name: "Spotify with test long name", icon: nil, deviceUid: nil),
-            AppLink(id: "2", type: "appl", name: "Showtime (no icon)"),
-            AppLink(id: "4", type: "appl", name: "Disney another sweet long name", icon: nil, deviceUid: nil),
-            AppLink(id: "6", type: "appl", name: "Disney another sweet long name", icon: nil, deviceUid: nil),
-            AppLink(id: "7", type: "appl", name: "Disney another sweet long name", icon: nil, deviceUid: nil),
-            AppLink(id: "7", type: "appl2", name: "Disney another", icon: nil, deviceUid: nil),
+    func getTestingAppLinks(deviceUid: String? = nil) -> [AppLink] {
+        let appNames = [
+            "Netflix", "Hulu", "Max",
+            "YouTube", "Apple TV",
+            "The Roku Channel", "Peacock TV",
+            "Disney Plus", "YouTube TV",
+            "Prime Video", "SHOWTIME",
+            "Tubi - Free Movies & TV",
+            "Paramount Plus", "Backdrops",
+            "Lifetime Movie Club", "Lifetime",
+            "WIS News 10", "Nintendo Switch"
         ]
+
+        var links: [AppLink] = []
+        for (idx, name) in appNames.enumerated() {
+            let imageName = name
+            #if os(macOS)
+                let image = NSImage(named: imageName)
+                var data: Data?
+
+                if let tiffData = image?.tiffRepresentation,
+                   let bitmapImage = NSBitmapImageRep(data: tiffData)
+                {
+                    data = bitmapImage.representation(using: .png, properties: [:])
+                }
+            #else
+                let image = UIImage(named: imageName, in: Bundle.main, with: nil)
+                let data = image?.pngData()
+            #endif
+            let link = AppLink(id: String(idx), type: "appl", name: name, icon: data, deviceUid: deviceUid)
+            link.lastSelected = Date().addingTimeInterval(-Double(idx))
+            links.append(link)
+        }
+        return links
     }
 
     func getTestingMessages() -> [Message] {

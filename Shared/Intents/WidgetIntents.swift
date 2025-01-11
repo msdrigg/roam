@@ -17,7 +17,7 @@ public struct OpenDeviceIntent: OpenIntent {
 
         @MainActor
         public func perform() async throws -> some IntentResult {
-            await dataHandlerCreator()().setSelectedDevice(target.modelId)
+            await DataHandler(modelContainer: getSharedModelContainer()).setSelectedDevice(target.modelId)
             return .result()
         }
     }
@@ -206,7 +206,7 @@ public struct OpenDeviceIntent: OpenIntent {
 
     public func clickButton(button: RemoteButton, device: DeviceAppEntity?) async throws {
         logger.debug("Pressing widget button \(button.apiValue ?? "nil") on device \(device?.name ?? "nil")")
-        let modelContainer = getSharedModelContainer()
+        let modelContainer = await getSharedModelContainer()
 
         let dataHandler = DataHandler(modelContainer: modelContainer)
 

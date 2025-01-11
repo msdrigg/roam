@@ -531,13 +531,13 @@ actor ECPSession {
     }
 
     private nonisolated func webSocketDidReceiveMessage(string: String) {
-        Self.logger.info("Received message: \(string)")
+        Self.logger.info("Received ws message: \(string, privacy: .public)")
 
         if let data = string.data(using: .utf8) {
             do {
                 let response = try kebabDecoder.decode(ResponseIdDecoder.self, from: data)
                 var userInfo: [String: Any] = ["data": data]
-                Self.logger.info("Received response id \(String(describing: response.responseId)) or message")
+                Self.logger.info("Received response id \(String(describing: response.responseId), privacy: .public) or message")
                 if let responseId = response.responseId {
                     userInfo["requestId"] = responseId
                 }
@@ -798,7 +798,7 @@ actor ECPSession {
 
             let localInterfaces = await allAddressedInterfaces()
             guard let localNWInterface = localInterfaces
-                .first(where: { connectingInterface.name == $0.name && $0.isIPV4 })
+                .first(where: { connectingInterface.name == $0.name && $0.isIPv4 })
             else {
                 Self.logger
                     .error(

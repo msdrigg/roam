@@ -17,6 +17,8 @@ struct CenterController: View {
     @ScaledMetric var buttonHeight = globalButtonHeight
     @ScaledMetric var buttonSpacing = globalButtonSpacing
 
+    @Environment(\.layoutDirection) var layoutDirection
+
     var body: some View {
         let buttons: [(String?, RemoteButton, String, CustomKeyboardShortcut.Key)?] = [
             nil, ("chevron.up", .up, "Up", .up), nil,
@@ -52,6 +54,7 @@ struct CenterController: View {
                                                     pressCount[button.1] = newValue
                                                 }
                                             }
+                                            .environment(\.layoutDirection, layoutDirection)
                                     }
                                 })
                                 #if !os(tvOS) && !os(watchOS)
@@ -59,7 +62,7 @@ struct CenterController: View {
                                 #endif
                                 .buttonStyle(.borderedProminent)
                                 #if !os(visionOS)
-                                    .sensoryFeedback(.impact, trigger: pressCounter(button.1))
+                                .sensoryFeedback(.impact, trigger: pressCounter(button.1))
                                 #endif
                             } else {
                                 Spacer().frame(maxWidth: buttonWidth, maxHeight: buttonHeight)

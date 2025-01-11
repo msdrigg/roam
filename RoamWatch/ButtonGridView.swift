@@ -11,6 +11,8 @@ struct ButtonGridView: View {
     let device: DeviceAppEntity?
     let controls: [[RemoteButton?]]
 
+    @Environment(\.layoutDirection) var layoutDirection
+
     @State var buttonPresses: [RemoteButton: Int] = [:]
     func buttonPressCount(_ key: RemoteButton) -> Int {
         buttonPresses[key] ?? 0
@@ -43,6 +45,7 @@ struct ButtonGridView: View {
                                         .lineLimit(1)
                                         .minimumScaleFactor(0.8)
                                         .foregroundStyle(.red)
+                                        .environment(\.layoutDirection, layoutDirection)
                                 })
                                 .buttonStyle(.plain)
                                 .sensoryFeedback(.impact, trigger: buttonPressCount(button))
@@ -89,6 +92,7 @@ struct ButtonGridView: View {
         .buttonStyle(.bordered)
         .controlSize(.small)
         .labelStyle(.iconOnly)
+        .environment(\.layoutDirection, .leftToRight)
         .tint(Color("AccentColor"))
     }
 }

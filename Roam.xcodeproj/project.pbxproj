@@ -76,6 +76,8 @@
 		AF205B2C2AE02D1C00041CDF /* WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF607892AE0037900A7D657 /* WidgetIntents.swift */; };
 		AF205B2D2AE02D1C00041CDF /* DeviceAppEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6872ADDDE110036EC90 /* DeviceAppEntity.swift */; };
 		AF205B2E2AE02D1C00041CDF /* AppLinkAppEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E68D2ADDE2BC0036EC90 /* AppLinkAppEntity.swift */; };
+		AF207FFC2D31C1EE00E541AD /* DebugImages.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AF24805C2BDB475A00EF47AE /* DebugImages.xcassets */; };
+		AF207FFD2D31C1EE00E541AD /* DebugImages.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AF24805C2BDB475A00EF47AE /* DebugImages.xcassets */; };
 		AF20AD0C2AE01E9100D371C7 /* AppLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF56E3B02AD97AB100F5E6E0 /* AppLink.swift */; };
 		AF20AD0D2AE01E9100D371C7 /* Device.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF11D36C2AD2D41100527AF6 /* Device.swift */; };
 		AF20AD142AE01ED100D371C7 /* NetworkHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF95B74F2ADF43FD005FC338 /* NetworkHelpers.swift */; };
@@ -148,27 +150,9 @@
 		AFA079DF2AE0263F003E2754 /* Shortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6B72ADE28C80036EC90 /* Shortcuts.swift */; };
 		AFA165C02AE92F92003F45ED /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA165BF2AE92F92003F45ED /* AboutView.swift */; };
 		AFA21D342C2C7C83008EF24A /* RoamWatchUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D332C2C7C83008EF24A /* RoamWatchUITests.swift */; };
-		AFA21D362C2C7C83008EF24A /* RoamWatchUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D352C2C7C83008EF24A /* RoamWatchUITestsLaunchTests.swift */; };
+		AFA21D362C2C7C83008EF24A /* RoamWatchScreenshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D352C2C7C83008EF24A /* RoamWatchScreenshotTests.swift */; };
 		AFA21D432C2C7CB6008EF24A /* RoamUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D422C2C7CB6008EF24A /* RoamUITests.swift */; };
-		AFA21D452C2C7CB6008EF24A /* RoamUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D442C2C7CB6008EF24A /* RoamUITestsLaunchTests.swift */; };
-		AFA21D942C2C7D00008EF24A /* ViewToNSImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8D2C2C7D00008EF24A /* ViewToNSImage.swift */; };
-		AFA21D952C2C7D00008EF24A /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8B2C2C7D00008EF24A /* Localization.swift */; };
-		AFA21D962C2C7D00008EF24A /* TitleAlignment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8C2C2C7D00008EF24A /* TitleAlignment.swift */; };
-		AFA21D972C2C7D00008EF24A /* ImageBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8A2C2C7D00008EF24A /* ImageBackground.swift */; };
-		AFA21D982C2C7D00008EF24A /* CapturingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D902C2C7D00008EF24A /* CapturingView.swift */; };
-		AFA21D992C2C7D00008EF24A /* ExportSize.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D892C2C7D00008EF24A /* ExportSize.swift */; };
-		AFA21D9A2C2C7D00008EF24A /* ExportMarketingImageToURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D882C2C7D00008EF24A /* ExportMarketingImageToURL.swift */; };
-		AFA21D9B2C2C7D00008EF24A /* ViewToUIImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8E2C2C7D00008EF24A /* ViewToUIImage.swift */; };
-		AFA21D9C2C2C7D00008EF24A /* ScreenshotWithTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D912C2C7D00008EF24A /* ScreenshotWithTitle.swift */; };
-		AFA21D9D2C2C7D00008EF24A /* ViewToNSImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8D2C2C7D00008EF24A /* ViewToNSImage.swift */; };
-		AFA21D9E2C2C7D00008EF24A /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8B2C2C7D00008EF24A /* Localization.swift */; };
-		AFA21D9F2C2C7D00008EF24A /* TitleAlignment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8C2C2C7D00008EF24A /* TitleAlignment.swift */; };
-		AFA21DA02C2C7D00008EF24A /* ImageBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8A2C2C7D00008EF24A /* ImageBackground.swift */; };
-		AFA21DA12C2C7D00008EF24A /* CapturingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D902C2C7D00008EF24A /* CapturingView.swift */; };
-		AFA21DA22C2C7D00008EF24A /* ExportSize.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D892C2C7D00008EF24A /* ExportSize.swift */; };
-		AFA21DA32C2C7D00008EF24A /* ExportMarketingImageToURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D882C2C7D00008EF24A /* ExportMarketingImageToURL.swift */; };
-		AFA21DA42C2C7D00008EF24A /* ViewToUIImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D8E2C2C7D00008EF24A /* ViewToUIImage.swift */; };
-		AFA21DA52C2C7D00008EF24A /* ScreenshotWithTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D912C2C7D00008EF24A /* ScreenshotWithTitle.swift */; };
+		AFA21D452C2C7CB6008EF24A /* RoamScreenshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA21D442C2C7CB6008EF24A /* RoamScreenshotTests.swift */; };
 		AFA9F8972B1B878600829B7C /* Shortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6B72ADE28C80036EC90 /* Shortcuts.swift */; };
 		AFA9F8992B1D29E000829B7C /* KeyboardShortcutPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */; };
 		AFBBE16F2C764564002B7F68 /* RemoteViewContained.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBBE16D2C76455E002B7F68 /* RemoteViewContained.swift */; };
@@ -437,19 +421,10 @@
 		AFA165C32AE93FE1003F45ED /* AppIcons */ = {isa = PBXFileReference; lastKnownFileType = folder; path = AppIcons; sourceTree = "<group>"; };
 		AFA21D312C2C7C83008EF24A /* RoamWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RoamWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AFA21D332C2C7C83008EF24A /* RoamWatchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamWatchUITests.swift; sourceTree = "<group>"; };
-		AFA21D352C2C7C83008EF24A /* RoamWatchUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamWatchUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		AFA21D352C2C7C83008EF24A /* RoamWatchScreenshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamWatchScreenshotTests.swift; sourceTree = "<group>"; };
 		AFA21D402C2C7CB6008EF24A /* RoamUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RoamUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AFA21D422C2C7CB6008EF24A /* RoamUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamUITests.swift; sourceTree = "<group>"; };
-		AFA21D442C2C7CB6008EF24A /* RoamUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamUITestsLaunchTests.swift; sourceTree = "<group>"; };
-		AFA21D882C2C7D00008EF24A /* ExportMarketingImageToURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportMarketingImageToURL.swift; sourceTree = "<group>"; };
-		AFA21D892C2C7D00008EF24A /* ExportSize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportSize.swift; sourceTree = "<group>"; };
-		AFA21D8A2C2C7D00008EF24A /* ImageBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageBackground.swift; sourceTree = "<group>"; };
-		AFA21D8B2C2C7D00008EF24A /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
-		AFA21D8C2C2C7D00008EF24A /* TitleAlignment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleAlignment.swift; sourceTree = "<group>"; };
-		AFA21D8D2C2C7D00008EF24A /* ViewToNSImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewToNSImage.swift; sourceTree = "<group>"; };
-		AFA21D8E2C2C7D00008EF24A /* ViewToUIImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewToUIImage.swift; sourceTree = "<group>"; };
-		AFA21D902C2C7D00008EF24A /* CapturingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturingView.swift; sourceTree = "<group>"; };
-		AFA21D912C2C7D00008EF24A /* ScreenshotWithTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotWithTitle.swift; sourceTree = "<group>"; };
+		AFA21D442C2C7CB6008EF24A /* RoamScreenshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamScreenshotTests.swift; sourceTree = "<group>"; };
 		AFA68FE32BD06424005A102E /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = backend/src; sourceTree = "<group>"; };
 		AFA68FE72BD06474005A102E /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = docs/src; sourceTree = "<group>"; };
 		AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutPanel.swift; sourceTree = "<group>"; };
@@ -768,7 +743,7 @@
 			isa = PBXGroup;
 			children = (
 				AFA21D332C2C7C83008EF24A /* RoamWatchUITests.swift */,
-				AFA21D352C2C7C83008EF24A /* RoamWatchUITestsLaunchTests.swift */,
+				AFA21D352C2C7C83008EF24A /* RoamWatchScreenshotTests.swift */,
 			);
 			path = RoamWatchUITests;
 			sourceTree = "<group>";
@@ -777,41 +752,9 @@
 			isa = PBXGroup;
 			children = (
 				AFA21D422C2C7CB6008EF24A /* RoamUITests.swift */,
-				AFA21D442C2C7CB6008EF24A /* RoamUITestsLaunchTests.swift */,
+				AFA21D442C2C7CB6008EF24A /* RoamScreenshotTests.swift */,
 			);
 			path = RoamUITests;
-			sourceTree = "<group>";
-		};
-		AFA21D8F2C2C7D00008EF24A /* Helpers */ = {
-			isa = PBXGroup;
-			children = (
-				AFA21D882C2C7D00008EF24A /* ExportMarketingImageToURL.swift */,
-				AFA21D892C2C7D00008EF24A /* ExportSize.swift */,
-				AFA21D8A2C2C7D00008EF24A /* ImageBackground.swift */,
-				AFA21D8B2C2C7D00008EF24A /* Localization.swift */,
-				AFA21D8C2C2C7D00008EF24A /* TitleAlignment.swift */,
-				AFA21D8D2C2C7D00008EF24A /* ViewToNSImage.swift */,
-				AFA21D8E2C2C7D00008EF24A /* ViewToUIImage.swift */,
-			);
-			path = Helpers;
-			sourceTree = "<group>";
-		};
-		AFA21D922C2C7D00008EF24A /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				AFA21D902C2C7D00008EF24A /* CapturingView.swift */,
-				AFA21D912C2C7D00008EF24A /* ScreenshotWithTitle.swift */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
-		AFA21D932C2C7D00008EF24A /* RoamTests */ = {
-			isa = PBXGroup;
-			children = (
-				AFA21D8F2C2C7D00008EF24A /* Helpers */,
-				AFA21D922C2C7D00008EF24A /* Views */,
-			);
-			path = RoamTests;
 			sourceTree = "<group>";
 		};
 		AFA68FE02BD063DD005A102E /* External */ = {
@@ -854,7 +797,6 @@
 				AF95B7372ADF3F9E005FC338 /* Shared */,
 				AF27400E2AE02C25007C6208 /* RoamWidgets */,
 				AF15C2472AE8672700B79FD9 /* RoamWatch */,
-				AFA21D932C2C7D00008EF24A /* RoamTests */,
 				AFA21D322C2C7C83008EF24A /* RoamWatchUITests */,
 				AFA21D412C2C7CB6008EF24A /* RoamUITests */,
 				AFEDCDF52CD1331E0001D959 /* RoamSwiftTests */,
@@ -1143,6 +1085,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AF35ACF32BA3D6B300CC8B36 /* PrivacyInfo.xcprivacy in Resources */,
+				AF207FFD2D31C1EE00E541AD /* DebugImages.xcassets in Resources */,
 				AFDB19A62C0D8E7900C4DAB7 /* InfoPlist.xcstrings in Resources */,
 				AFC4A6582AE867A3005DAC6C /* AppIcon.xcassets in Resources */,
 				AF94AEF42C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */,
@@ -1180,6 +1123,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AF35ACF22BA3D6B200CC8B36 /* PrivacyInfo.xcprivacy in Resources */,
+				AF207FFC2D31C1EE00E541AD /* DebugImages.xcassets in Resources */,
 				AFDB19A22C0D8D4E00C4DAB7 /* InfoPlist.xcstrings in Resources */,
 				AF0C82882AEB44C000CBE7F8 /* AccentColor.xcassets in Resources */,
 				AF94AEF32C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */,
@@ -1330,17 +1274,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AFA21D942C2C7D00008EF24A /* ViewToNSImage.swift in Sources */,
-				AFA21D952C2C7D00008EF24A /* Localization.swift in Sources */,
-				AFA21D962C2C7D00008EF24A /* TitleAlignment.swift in Sources */,
-				AFA21D972C2C7D00008EF24A /* ImageBackground.swift in Sources */,
-				AFA21D982C2C7D00008EF24A /* CapturingView.swift in Sources */,
-				AFA21D992C2C7D00008EF24A /* ExportSize.swift in Sources */,
-				AFA21D9A2C2C7D00008EF24A /* ExportMarketingImageToURL.swift in Sources */,
-				AFA21D9B2C2C7D00008EF24A /* ViewToUIImage.swift in Sources */,
-				AFA21D9C2C2C7D00008EF24A /* ScreenshotWithTitle.swift in Sources */,
 				AFA21D342C2C7C83008EF24A /* RoamWatchUITests.swift in Sources */,
-				AFA21D362C2C7C83008EF24A /* RoamWatchUITestsLaunchTests.swift in Sources */,
+				AFA21D362C2C7C83008EF24A /* RoamWatchScreenshotTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1348,17 +1283,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AFA21D9D2C2C7D00008EF24A /* ViewToNSImage.swift in Sources */,
-				AFA21D9E2C2C7D00008EF24A /* Localization.swift in Sources */,
-				AFA21D9F2C2C7D00008EF24A /* TitleAlignment.swift in Sources */,
-				AFA21DA02C2C7D00008EF24A /* ImageBackground.swift in Sources */,
-				AFA21DA12C2C7D00008EF24A /* CapturingView.swift in Sources */,
-				AFA21DA22C2C7D00008EF24A /* ExportSize.swift in Sources */,
-				AFA21DA32C2C7D00008EF24A /* ExportMarketingImageToURL.swift in Sources */,
-				AFA21DA42C2C7D00008EF24A /* ViewToUIImage.swift in Sources */,
-				AFA21DA52C2C7D00008EF24A /* ScreenshotWithTitle.swift in Sources */,
 				AFA21D432C2C7CB6008EF24A /* RoamUITests.swift in Sources */,
-				AFA21D452C2C7CB6008EF24A /* RoamUITestsLaunchTests.swift in Sources */,
+				AFA21D452C2C7CB6008EF24A /* RoamScreenshotTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1668,7 +1594,7 @@
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.37;
+				MARKETING_VERSION = 1.38;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamWatchUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -1688,7 +1614,7 @@
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.37;
+				MARKETING_VERSION = 1.38;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamWatchUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -1710,7 +1636,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.37;
+				MARKETING_VERSION = 1.38;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1735,7 +1661,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.37;
+				MARKETING_VERSION = 1.38;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1789,7 +1715,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20250109.5448819.0;
+				CURRENT_PROJECT_VERSION = 20250109.9545509.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;
@@ -1813,7 +1739,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.37;
+				MARKETING_VERSION = 1.38;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1871,7 +1797,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20250109.5448819.0;
+				CURRENT_PROJECT_VERSION = 20250109.9545509.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;
@@ -1889,7 +1815,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.37;
+				MARKETING_VERSION = 1.38;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = auto;
@@ -1930,6 +1856,7 @@
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
 				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				ENABLE_PREVIEWS = YES;
+				EXCLUDED_SOURCE_FILE_NAMES = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Roam/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Roam;
@@ -1979,6 +1906,7 @@
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
 				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				ENABLE_PREVIEWS = YES;
+				EXCLUDED_SOURCE_FILE_NAMES = Shared/DebugImages.xcassets;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Roam/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Roam;
@@ -2017,7 +1945,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
-				MARKETING_VERSION = 1.37;
+				MARKETING_VERSION = 1.38;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamSwiftTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2037,7 +1965,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
-				MARKETING_VERSION = 1.37;
+				MARKETING_VERSION = 1.38;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamSwiftTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;

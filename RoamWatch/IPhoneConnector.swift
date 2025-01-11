@@ -57,7 +57,7 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
         if let deviceMap = devices as? [String: [String: String]] {
             WatchConnectivity.logger.info("Trying to add devices \(deviceMap)")
             Task {
-                let modelContainer = getSharedModelContainer()
+                let modelContainer = await getSharedModelContainer()
                 let dataHandler = DataHandler(modelContainer: modelContainer)
                 for device in deviceMap {
                     if let existingDevice = await dataHandler.deviceEntityForUdn(udn: device.key) {
@@ -76,7 +76,7 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
                         continue
                     }
                     if let location = device.value["location"] {
-                        let name = device.value["name"] ?? "New device"
+                        let name = device.value["name"] ?? String(localized: "New device")
                         if let pid = await dataHandler.addOrReplaceDevice(
                             location: location,
                             friendlyDeviceName: name,

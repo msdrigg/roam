@@ -23,7 +23,7 @@ private func deviceFetchDescriptor() -> FetchDescriptor<Device> {
         predicate: #Predicate {
             $0.deletedAt == nil
         },
-        sortBy: [SortDescriptor(\Device.name, order: .reverse)]
+        sortBy: [SortDescriptor(\Device.name)]
     )
     fd.relationshipKeyPathsForPrefetching = []
     fd.propertiesToFetch = [\.udn, \.location, \.name, \.lastOnlineAt, \.lastSelectedAt, \.lastScannedAt]
@@ -56,7 +56,6 @@ struct RemoteViewContained: View {
     #if !os(tvOS)
     @Environment(\.openWindow) var openWindow
     #endif
-    @Environment(\.createDataHandler) var createDataHandler
 
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 
@@ -136,12 +135,11 @@ struct RemoteViewContained: View {
 #endif
     }
 
-    @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanIpAutomatically: Bool = true
     @AppStorage(UserDefaultKeys.shouldDisableAllAutoScanning) private var disableAllScanning: Bool = false
     @AppStorage(UserDefaultKeys.shouldControlVolumeWithHWButtons) private var controlVolumeWithHWButtons: Bool = true
 
     var scanSSDP: Bool {
-        scanIpAutomatically || !disableAllScanning
+        !disableAllScanning
     }
 
     @Environment(\.verticalSizeClass) var verticalSizeClass
@@ -323,17 +321,19 @@ struct RemoteViewContained: View {
                 }
                 .task {
                     while !Task.isCancelled {
-                        let createDataHandler = createDataHandler
-                        Task.detached {
-                            guard let ownedDataHandler = await createDataHandler() else {
-                                return
-                            }
-                            await ownedDataHandler.refreshMessagesIfExpectingNewMessages()
-                        }
+                        await DataHandler(modelContainer: getSharedModelContainer()).refreshMessagesIfExpectingNewMessages()
                         try? await Task.sleep(nanoseconds: 1000 * 1000 * 1000 * 3600)
                     }
                 }
-
+                .task {
+                    if loadTestingData() {
+                        // swiftlint:disable:next force_try
+                        try! await DataHandler(modelContainer: getSharedModelContainer()).loadTestData()
+                    } else if usingTestingDataContainer() {
+                        // swiftlint:disable:next force_try
+                        try! await DataHandler(modelContainer: getSharedModelContainer()).clearData()
+                    }
+                }
 #if os(iOS)
                 .task(id: devices.count, priority: .background) {
                     // Send devices to connected watch
@@ -363,13 +363,19 @@ struct RemoteViewContained: View {
                 .onDisappear {
                     networkMonitor.stopMonitoring()
                 }
-                .task(id: scanningActor != nil && scanSSDP) {
-                    if scanSSDP {
+                .onAppear {
+                    Self.logger.info("Showing view")
+                }
+                .onDisappear {
+                    Self.logger.info("Closing view")
+                }
+                .task(id: scanningActor != nil && !disableAllScanning) {
+                    if !disableAllScanning {
                         await scanningActor?.scanSSDPContinually()
                     }
                 }
-                .task(id: scanningActor != nil && scanIpAutomatically) {
-                    if scanIpAutomatically {
+                .task(id: scanningActor != nil && !disableAllScanning && selectedDevice == nil) {
+                    if !disableAllScanning && selectedDevice == nil {
                         await scanningActor?.scanIPV4Once()
                     }
                 }
@@ -484,6 +490,7 @@ struct RemoteViewContained: View {
                                 }, label: {
                                     Label("Keyboard", systemImage: "keyboard")
                                 })
+                                .accessibilityIdentifier("KeyboardButton")
                                 .labelStyle(.iconOnly)
                                 .disabled(selectedDevice == nil)
                                 .font(.headline)
@@ -500,7 +507,8 @@ struct RemoteViewContained: View {
                                         manuallySelectedDevice = $0
                                     }),
                                     ecpSessionState: ecpSessionState
-                                )
+                                )                        .accessibilityIdentifier("DevicePickerTop")
+
                             }
                             .focusSection()
                         }
@@ -520,6 +528,7 @@ struct RemoteViewContained: View {
                             ecpSessionState: ecpSessionState,
                             showScanning: true
                         )
+                        .accessibilityIdentifier("DevicePickerTop")
                         .buttonStyle(PaddedBorderlessButtonStyleWithChevron())
                         .menuStyle(.button)
                         .controlSize(.extraLarge)
@@ -555,6 +564,7 @@ struct RemoteViewContained: View {
                         }, label: {
                             Label(String(localized: "Keyboard", comment: "Label on a button to open the keyboard"), systemImage: "keyboard")
                         })
+                        .accessibilityIdentifier("KeyboardButton")
                         .focusable(true, interactions: [.activate, .edit])
                         .focused($focusKeyboardMonitor, equals: .monitor)
                         .onKeyPress { ke in
@@ -601,6 +611,7 @@ struct RemoteViewContained: View {
                             ecpSessionState: ecpSessionState,
                             showScanning: true
                         )
+                        .accessibilityIdentifier("DevicePickerCenter")
                         .buttonStyle(PaddedBorderlessButtonStyle())
                         .menuStyle(.button)
                         .controlSize(.extraLarge)
@@ -623,6 +634,7 @@ struct RemoteViewContained: View {
                                 ecpSessionState: ecpSessionState,
                                 showScanning: true
                             )
+                            .accessibilityIdentifier("DevicePickerCenter")
                             .buttonStyle(PaddedBorderlessButtonStyle())
                             .glowing(enabled: selectedDevice == nil)
 
@@ -762,6 +774,7 @@ struct RemoteViewContained: View {
                         }, label: {
                             Label(String(localized: "Keyboard", comment: "Label on a button to open the keyboard"), systemImage: "keyboard")
                         })
+                        .accessibilityIdentifier("KeyboardButton")
                         .focusable(true, interactions: [.activate, .edit])
                         .focused($focusKeyboardMonitor, equals: .monitor)
                         .onKeyPress { ke in
@@ -842,6 +855,7 @@ struct RemoteViewContained: View {
                             }),
                             ecpSessionState: ecpSessionState
                         )
+                        .accessibilityIdentifier("DevicePickerTop")
                         #if os(iOS)
                         .buttonStyle(.plain)
                         #endif
@@ -862,6 +876,8 @@ struct RemoteViewContained: View {
                             }),
                             ecpSessionState: ecpSessionState
                         )
+                        .accessibilityIdentifier("DevicePickerTop")
+
                     }
                 }
                 #endif
@@ -1010,11 +1026,7 @@ struct RemoteViewContained: View {
                 .sensoryFeedback(SensoryFeedback.impact, trigger: buttonPressCount(.inputAV1))
                 #endif
             } else {
-                if !isHorizontal {
-                    Spacer()
-                    Spacer()
-                    Spacer()
-                }
+                Spacer()
             }
             Spacer()
         }
@@ -1125,6 +1137,11 @@ struct RemoteViewContained: View {
                 Spacer()
             } else {
                 Spacer()
+                #if os(macOS)
+                Spacer()
+                Spacer()
+                    .frame(minHeight: 50)
+                #endif
             }
             Spacer()
         }
@@ -1143,7 +1160,7 @@ struct RemoteViewContained: View {
             }
         }
         Task.detached {
-            await createDataHandler()?.setSelectedApp(app.modelId)
+            await DataHandler(modelContainer: getSharedModelContainer()).setSelectedApp(app.modelId)
         }
     }
 

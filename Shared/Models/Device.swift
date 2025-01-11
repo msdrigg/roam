@@ -31,7 +31,7 @@ public extension Device {
             predicate: #Predicate {
                 $0.deletedAt == nil
             },
-            sortBy: [SortDescriptor(\Device.name, order: .reverse)]
+            sortBy: [SortDescriptor(\Device.name)]
         )
         fd.relationshipKeyPathsForPrefetching = []
         fd.propertiesToFetch = [\.udn, \.location, \.name, \.lastOnlineAt, \.lastSelectedAt, \.lastScannedAt]

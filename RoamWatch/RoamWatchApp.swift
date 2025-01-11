@@ -26,7 +26,6 @@ struct RoamWatch: App {
             WatchAppView()
         }
         .modelContainer(sharedModelContainer)
-        .environment(\.createDataHandler, dataHandlerCreator())
     }
 }
 
@@ -59,7 +58,7 @@ private let deviceFetchDescriptor: FetchDescriptor<Device> = {
         predicate: #Predicate {
             $0.deletedAt == nil
         },
-        sortBy: [SortDescriptor(\Device.name, order: .reverse)]
+        sortBy: [SortDescriptor(\Device.name)]
     )
     fd.propertiesToFetch = [\.udn, \.location, \.name, \.lastOnlineAt, \.lastSelectedAt, \.lastScannedAt]
 
@@ -122,7 +121,8 @@ struct WatchAppView: View {
                     AppListViewWrapper(device: device.toAppEntity())
                 }
             }
-            .navigationTitle(selectedDevice?.name ?? "No device")
+            .accessibilityIdentifier("MainTabView")
+            .navigationTitle(selectedDevice?.name ?? String(localized: "No device"))
             .toolbar(id: "watch") {
                 ToolbarItem(id: "device-picker", placement: .topBarLeading) {
                     DevicePicker(
@@ -154,6 +154,15 @@ struct WatchAppView: View {
                 .task(id: selectedDevice?.persistentModelID, priority: .medium) {
                     if let devId = selectedDevice?.persistentModelID {
                         await scanningActor.refreshSelectedDeviceContinually(id: devId)
+                    }
+                }
+                .task {
+                    if loadTestingData() {
+                        // swiftlint:disable:next force_try
+                        try! await DataHandler(modelContainer: getSharedModelContainer()).loadTestData()
+                    } else if usingTestingDataContainer() {
+                        // swiftlint:disable:next force_try
+                        try! await DataHandler(modelContainer: getSharedModelContainer()).clearData()
                     }
                 }
         }
@@ -206,8 +215,6 @@ struct AppListViewWrapper: View {
 #if DEBUG
 #Preview {
     WatchAppView()
-        .modelContainer(testingContainer)
-        .environment(\.createDataHandler, dataHandlerCreator())
-
+        .modelContainer(getTestingContainer())
 }
 #endif

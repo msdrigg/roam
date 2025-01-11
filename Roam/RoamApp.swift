@@ -28,6 +28,7 @@ struct RoamApp: App {
 
     var sharedModelContainer: ModelContainer
     init() {
+        logger.info("Starting Roam")
         sharedModelContainer = getSharedModelContainer()
 
         try? Tips.configure([
@@ -56,7 +57,7 @@ struct RoamApp: App {
                     }
             }
             .enableBackgroundDragging()
-            .defaultSize(width: 400, height: 1000)
+            .defaultSize(width: macOSWidth, height: macOSHeigth)
             .trailingPosition()
             .windowToolbarStyle(.unifiedCompact(showsTitle: false))
             .commands {
@@ -188,12 +189,10 @@ struct RoamApp: App {
                 }
             }
             .modelContainer(sharedModelContainer)
-            .environment(\.createDataHandler, dataHandlerCreator())
 
             MenuBarExtra("Roam Menu Bar", systemImage: "appletvremote.gen3", isInserted: self.$showMenuBar) {
                 RemoteViewContained(isInMenuBar: true)
                     .modelContainer(sharedModelContainer)
-                    .environment(\.createDataHandler, dataHandlerCreator())
                     .environment(\.uuidUpdater, uuidUpdater)
                     .environmentObject(appDelegate)
             }
@@ -227,10 +226,9 @@ struct RoamApp: App {
             }
             #if os(visionOS)
             .windowResizability(.contentMinSize)
-            .defaultSize(width: 400, height: 1000)
+            .defaultSize(width: visionOSWidth, height: 1000)
             #endif
             .modelContainer(sharedModelContainer)
-            .environment(\.createDataHandler, dataHandlerCreator())
         #endif
 
         #if os(macOS)
@@ -252,7 +250,6 @@ struct RoamApp: App {
             }
             .windowResizability(.contentSize)
             .modelContainer(sharedModelContainer)
-            .environment(\.createDataHandler, dataHandlerCreator())
 
             Window("Roam Keyboard Shortcuts", id: "keyboard-shortcuts") {
                 KeyboardShortcutPanel()
@@ -269,7 +266,6 @@ struct RoamApp: App {
             }
             .windowResizability(.contentSize)
             .modelContainer(sharedModelContainer)
-            .environment(\.createDataHandler, dataHandlerCreator())
         #endif
 
         #if os(macOS)
@@ -291,10 +287,33 @@ struct RoamApp: App {
                     }
             }
             .modelContainer(sharedModelContainer)
-            .environment(\.createDataHandler, dataHandlerCreator())
             .windowToolbarStyle(.unifiedCompact(showsTitle: false))
             .defaultSize(width: 500, height: 600)
             .windowResizability(.contentSize)
         #endif
+    }
+
+    var visionOSWidth: CGFloat {
+        if CommandLine.arguments.contains("-WindowStyleVertical") {
+            return 400
+        } else {
+            return 1500
+        }
+    }
+
+    var macOSWidth: CGFloat {
+        if CommandLine.arguments.contains("-WindowStyleVertical") {
+            return 400
+        } else {
+            return 1200
+        }
+    }
+
+    var macOSHeigth: CGFloat {
+        if CommandLine.arguments.contains("-WindowStyleVertical") {
+            return 1000
+        } else {
+            return 800
+        }
     }
 }

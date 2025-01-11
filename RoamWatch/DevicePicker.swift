@@ -15,7 +15,11 @@ struct DevicePicker: View {
         category: String(describing: DevicePicker.self)
     )
 
-    @Environment(\.createDataHandler) private var createDataHandler
+    @Environment(\.layoutDirection) var layoutDirection
+
+    var offset: CGFloat {
+        layoutDirection == .rightToLeft ? 10 : 0
+    }
 
     let devices: [Device]
     @Binding var device: Device?
@@ -26,11 +30,27 @@ struct DevicePicker: View {
         device?.isOnline() ?? false ? Color.green : Color.secondary
     }
 
+    var mainButton: some View {
+        if #available(watchOS 11.0, *) {
+            return AnyView(Button(action: { showingPicker.toggle() }, label: {
+                Label("Devices", systemImage: "list.bullet")
+                    .labelStyle(.iconOnly)
+                    .accessibilityIdentifier("DevicePickerLabel")
+            })
+            .handGestureShortcut(.primaryAction, isEnabled: inScreenshotTestingContext()))
+        } else {
+            // Fallback on earlier versions
+            return AnyView(Button(action: { showingPicker.toggle() }, label: {
+                Label("Devices", systemImage: "list.bullet")
+                    .labelStyle(.iconOnly)
+                    .accessibilityIdentifier("DevicePickerLabel")
+            }))
+        }
+    }
+
     var body: some View {
-        Button(action: { showingPicker.toggle() }, label: {
-            Label("Devices", systemImage: "list.bullet")
-                .labelStyle(.iconOnly)
-        })
+        mainButton
+        .accessibilityIdentifier("DevicePicker")
         .sheet(isPresented: $showingPicker) {
             SettingsNavigationWrapper(path: $navPath) {
                 List {
@@ -41,10 +61,9 @@ struct DevicePicker: View {
                                     dev.id == listItemDevice.id
                                 }) {
                                     Self.logger.debug("Setting last selected at")
-                                    let createDataHandler = createDataHandler
                                     let id = chosenDevice.persistentModelID
                                     Task.detached {
-                                        await createDataHandler()?.setSelectedDevice(id)
+                                        await DataHandler(modelContainer: getSharedModelContainer()).setSelectedDevice(id)
                                     }
                                 }
                                 showingPicker = false
@@ -61,7 +80,7 @@ struct DevicePicker: View {
                                     let pid = listItemDevice.persistentModelID
                                     Task.detached {
                                         do {
-                                            try await createDataHandler()?.delete(pid)
+                                            try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
                                         } catch {
                                             Self.logger.error("Error deleting device \(error)")
                                         }
@@ -81,7 +100,7 @@ struct DevicePicker: View {
                                     let pid = model.persistentModelID
                                     Task.detached {
                                         do {
-                                            try await createDataHandler()?.delete(pid)
+                                            try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
                                         } catch {
                                             Self.logger.error("Error deleting device \(error)")
                                         }
@@ -100,6 +119,7 @@ struct DevicePicker: View {
                         Label("Settings", systemImage: "gear")
                     }
                     .labelStyle(.titleAndIcon)
+                    .accessibilityIdentifier("SettingsButton")
                 }
             }
         }

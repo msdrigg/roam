@@ -89,7 +89,7 @@ public enum SchemaV1: VersionedSchema {
     }
 
     public static var models: [any PersistentModel.Type] {
-        [Device.self, AppLink.self, Message.self]
+        [Self.Device.self, Self.AppLink.self, Self.Message.self]
     }
 }
 
@@ -184,7 +184,7 @@ public enum SchemaV2: VersionedSchema {
     }
 
     public static var models: [any PersistentModel.Type] {
-        [Device.self, AppLink.self, Message.self]
+        [Self.Device.self, Self.AppLink.self, Self.Message.self]
     }
 }
 

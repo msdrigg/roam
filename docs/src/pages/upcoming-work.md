@@ -6,6 +6,13 @@ hide_table_of_contents: true
 
 ## Coming Soon
 
+-   Add more tips
+    -   Add macOS tip for pasting links from youtube, max, ...
+    -   Add macOS tip for keyboard entry
+    -   Add tip for keyboard Shortcuts
+
+-   Stop using fetchDeviceInfo for getting device info -- switch to ECP Websockets API
+
 -   Add long-press options to keys
     -   Long-press right arrow to ff
     -   Long-press left arrow to rr

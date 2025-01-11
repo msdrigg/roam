@@ -22,8 +22,7 @@ struct SimpleRemoteControlProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: DeviceChoiceIntent, in _: Context) async -> DeviceChoiceTimelineEntity {
-        print("Getting snapshot for \(configuration) with model container \(mainAppGroup)")
-        let modelContainer = getSharedModelContainer()
+        let modelContainer = await getSharedModelContainer()
         let dataHandler = DataHandler(modelContainer: modelContainer)
 
         var targetDevice = configuration.selectedDevice
@@ -42,7 +41,7 @@ struct SimpleRemoteControlProvider: AppIntentTimelineProvider {
     }
 
     func timeline(for configuration: DeviceChoiceIntent, in ctx: Context) async -> Timeline<DeviceChoiceTimelineEntity> {
-        let modelContainer = getSharedModelContainer()
+        let modelContainer = await getSharedModelContainer()
         let dataHandler = DataHandler(modelContainer: modelContainer)
 
         var targetDevice = configuration.selectedDevice
@@ -76,7 +75,7 @@ struct AppChoiceRemoteControlProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: DeviceAndAppChoiceIntent, in _: Context) async -> DeviceChoiceTimelineEntity {
-        let modelContainer = getSharedModelContainer()
+        let modelContainer = await getSharedModelContainer()
         let dataHandler = DataHandler(modelContainer: modelContainer)
 
         var targetDevice = configuration.selectedDevice
@@ -113,7 +112,7 @@ struct AppChoiceRemoteControlProvider: AppIntentTimelineProvider {
     func timeline(for configuration: DeviceAndAppChoiceIntent,
                   in _: Context) async -> Timeline<DeviceChoiceTimelineEntity>
     {
-        let modelContainer = getSharedModelContainer()
+        let modelContainer = await getSharedModelContainer()
         let dataHandler = DataHandler(modelContainer: modelContainer)
 
         var targetDevice = configuration.selectedDevice

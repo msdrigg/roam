@@ -35,7 +35,7 @@ private let deviceFetchDescriptor: FetchDescriptor<Device> = {
         predicate: #Predicate {
             $0.deletedAt == nil
         },
-        sortBy: [SortDescriptor(\Device.name, order: .reverse)]
+        sortBy: [SortDescriptor(\Device.name)]
     )
     fd.propertiesToFetch = [\.udn, \.location, \.name, \.lastOnlineAt, \.lastSelectedAt, \.lastScannedAt, \.deviceIcon]
     return fd
@@ -61,7 +61,6 @@ struct SettingsView: View {
     @State private var showWatchOSNote = false
     @Environment(\.uuidUpdater) private var updater
 
-    @Environment(\.createDataHandler) private var createDataHandler
 #if !os(watchOS)
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 #endif
@@ -124,8 +123,9 @@ struct SettingsView: View {
                     Text("No devices", comment: "Placeholder for a device selector when there aren't any devices")
                         .foregroundStyle(Color.secondary)
                 } else {
-                    ForEach(devices, id: \.displayHash) { device in
+                    ForEach(Array(devices.enumerated()), id: \.element.displayHash) { idx, device in
                         DeviceListItem(device: device)
+                            .accessibilityIdentifier("DeviceItem_\(idx)")
 #if !os(watchOS)
                             .contextMenu {
                                 Button(role: .destructive) {
@@ -133,7 +133,7 @@ struct SettingsView: View {
                                     Task.detached {
                                         do {
                                             Self.logger.error("HI")
-                                            try await createDataHandler()?.delete(pid)
+                                            try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
                                             Self.logger
                                                 .info(
                                                     "Deleted device with id \(String(describing: pid))"
@@ -157,7 +157,7 @@ struct SettingsView: View {
                                     let pid = device.persistentModelID
                                     Task.detached {
                                         do {
-                                            try await createDataHandler()?.delete(pid)
+                                            try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
                                             self.triggerUpdate()
                                         } catch {
                                             Self.logger.error("Error deleting device \(error)")
@@ -176,7 +176,7 @@ struct SettingsView: View {
                                 let pid = model.persistentModelID
                                 Task.detached {
                                     do {
-                                        try await createDataHandler()?.delete(pid)
+                                        try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
                                         self.triggerUpdate()
                                     } catch {
                                         Self.logger.error("Error deleting device \(error)")
@@ -309,10 +309,6 @@ struct SettingsView: View {
                         }
                     })
                 )
-
-                if !scanIpAutomatically {
-                    Toggle(String(localized: "Disable all scanning even in the background", comment: "Label on a settings toggle"), isOn: $disableAllScanning)
-                }
             }
 #endif
 
@@ -443,8 +439,15 @@ struct SettingsView: View {
                 reportDebugLogs()
             }
         }
+        .onAppear {
+            Self.logger.info("Showing view")
+        }
+        .onDisappear {
+            Self.logger.info("Closing view")
+        }
 #if !os(watchOS)
         .onAppear {
+            Self.logger.info("")
             appDelegate.navigationPath.showingSettingsView = true
         }
         .onDisappear {
@@ -496,15 +499,9 @@ struct SettingsView: View {
     var addDeviceButton: some View {
         Button(String(localized: "Add a device manually", comment: "Label on a button to add a device"), systemImage: "plus") {
             Task.detached {
-                let persistentId = await createDataHandler()?.addOrReplaceDevice(location: "http://192.168.0.1:8060/", friendlyDeviceName: "New device", udn: "roam:newdevice-\(UUID().uuidString)"
+                let persistentId = await DataHandler(modelContainer: getSharedModelContainer()).addOrReplaceDevice(location: "http://192.168.0.1:8060/", friendlyDeviceName: String(localized: "New device"), udn: "roam:newdevice-\(UUID().uuidString)"
                 )
-
-                await MainActor.run {
-                    Self.logger.info("Added new empty device \(String(describing: persistentId))")
-                    if let id = persistentId {
-                        path.append(NavigationDestination.deviceSettingsDestination(id))
-                    }
-                }
+                Self.logger.info("Added empty device with persistent ID \(String(describing: persistentId), privacy: .public)")
             }
         }
     }
@@ -530,7 +527,7 @@ struct DeviceListItem: View {
                 VStack(alignment: .leading) {
                     HStack(alignment: .center, spacing: 8) {
                         Circle()
-                            .foregroundColor(device.isOnline() ? Color.green : Color.gray)
+                            .foregroundColor(device.isOnline() || inScreenshotTestingContext() ? Color.green : Color.gray)
                             .frame(width: circleSize, height: circleSize)
                         Text(device.name).lineLimit(1)
                     }
@@ -575,10 +572,8 @@ struct DeviceDetailView: View {
 
     @State private var scanningActor: DeviceDiscoveryActor!
 
-    @Environment(\.createDataHandler) private var createDataHandler
-
     var deviceId: PersistentIdentifier
-    @State var deviceName: String = "New device"
+    @State var deviceName: String = String(localized: "New device")
     @State var deviceIP: String = "192.168.0.1"
 
     @State var showHeadphonesModeDescription: Bool = false
@@ -646,6 +641,7 @@ struct DeviceDetailView: View {
                     HStack {
                         TextField(String(localized: "IP Address", comment: "Settings field label for the device's IP address"), text: $deviceIP)
                             .frame(maxWidth: .infinity)
+                        #if !os(watchOS)
                         Spacer()
                             .frame(maxWidth: 10)
 
@@ -654,6 +650,7 @@ struct DeviceDetailView: View {
                                 .labelStyle(.iconOnly)
                         }
                         .foregroundStyle(Color.secondary)
+                        #endif
                     }
 
                     if let addressValidation {
@@ -664,26 +661,9 @@ struct DeviceDetailView: View {
                 }
 #if os(tvOS)
                 Button(String(localized: "Save", comment: "Text on a button to save the device settings"), systemImage: "checkmark", action: {
-                    if let device = device {
-                        let pid = device.persistentModelID
-                        let udn = device.udn
-                        Task.detached {
-                            DispatchQueue.main.async {
-                                dismiss()
-                            }
-                            await saveDevice(
-                                existingDeviceId: pid,
-                                existingUDN: udn,
-                                newIP: deviceIP,
-                                newDeviceName: deviceName,
-                                dataHandler: DataHandler(
-                                    modelContainer: getSharedModelContainer()
-                                )
-                            )
-                            DispatchQueue.main.async {
-                                updater?.update()
-                            }
-                        }
+                    save()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        dismiss()
                     }
                 })
                     .disabled(nameValidation != nil || addressValidation != nil)
@@ -693,7 +673,7 @@ struct DeviceDetailView: View {
                     Self.logger.info("Deleting device")
                     Task.detached {
                         do {
-                            try await createDataHandler()?.delete(deviceId)
+                            try await DataHandler(modelContainer: getSharedModelContainer()).delete(deviceId)
                             self.triggerUpdate()
 
                             Self.logger
@@ -808,7 +788,13 @@ struct DeviceDetailView: View {
             if nameValidation != nil || addressValidation != nil {
                 return
             }
-            dismiss()
+
+            save()
+            #if !os(watchOS)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                dismiss()
+            }
+            #endif
         }
         .formStyle(.grouped)
         .onChange(of: device?.name) { _, new in
@@ -824,7 +810,7 @@ struct DeviceDetailView: View {
             }
         }
         .onAppear {
-            deviceName = device?.name ?? "New device"
+            deviceName = device?.name ?? String(localized: "New device")
             let deviceUrl = device?.location ?? "192.168.0.1"
             let host = getHostPortDisplay(from: deviceUrl)
 
@@ -840,27 +826,9 @@ struct DeviceDetailView: View {
         .toolbar(id: "settings-detail") {
             ToolbarItem(id: "save-device", placement: .primaryAction) {
                 Button(String(localized: "Save", comment: "Text on a button to save the device settings"), systemImage: "checkmark", action: {
-                    if let device = device {
-                        let pid = device.persistentModelID
-                        let udn = device.udn
-                        Task.detached {
-                            DispatchQueue.main.async {
-                                dismiss()
-                            }
-                            await saveDevice(
-                                existingDeviceId: pid,
-                                existingUDN: udn,
-                                newIP: deviceIP,
-                                newDeviceName: deviceName,
-                                dataHandler: DataHandler(
-                                    modelContainer: getSharedModelContainer()
-                                )
-                            )
-
-                            DispatchQueue.main.async {
-                                updater?.update()
-                            }
-                        }
+                    save()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        dismiss()
                     }
                 })
             }
@@ -875,7 +843,7 @@ struct DeviceDetailView: View {
                             dismiss()
                         }
                         do {
-                            try await createDataHandler()?.delete(deviceId)
+                            try await DataHandler(modelContainer: getSharedModelContainer()).delete(deviceId)
 
                             Self.logger.info("Deleted device with id \(String(describing: deviceId))")
                         } catch {
@@ -899,6 +867,28 @@ struct DeviceDetailView: View {
 #if os(macOS)
         .padding()
 #endif
+    }
+
+    func save() {
+        if let device = device {
+            let pid = device.persistentModelID
+            let udn = device.udn
+            Task.detached {
+                await saveDevice(
+                    existingDeviceId: pid,
+                    existingUDN: udn,
+                    newIP: deviceIP,
+                    newDeviceName: deviceName,
+                    dataHandler: DataHandler(
+                        modelContainer: getSharedModelContainer()
+                    )
+                )
+
+                DispatchQueue.main.async {
+                    updater?.update()
+                }
+            }
+        }
     }
 }
 

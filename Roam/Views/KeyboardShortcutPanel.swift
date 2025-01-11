@@ -845,6 +845,12 @@ struct KeyboardShortcutPanel: View {
                 }
             }
         }
+        .onAppear {
+            logger.info("Showing view")
+        }
+        .onDisappear {
+            logger.info("Closing view")
+        }
         #if os(macOS)
         .onAppear {
             GlobalKeyboardShortcutTip.viewedKeyboardShortcuts.sendDonation()

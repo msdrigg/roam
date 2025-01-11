@@ -54,19 +54,45 @@ struct Addressed4NetworkInterface: Encodable {
     let nwInterface: NWInterface?
 
     var isEthernetLike: Bool {
-        nwInterface?.type == .wifi || nwInterface?.type == .wifi
+        nwInterface?.type == .wifi || nwInterface?.type == .wiredEthernet
     }
 
-    var isIPV4: Bool {
+    var isIPv4: Bool {
         family == AF_INET
     }
 
-    var isRunning: Bool {
-        (flags & UInt32(IFF_RUNNING)) != 0
+    var familyDescription: String {
+        switch family {
+           case AF_INET:
+               return "IPv4"
+           case AF_INET6:
+               return "IPv6"
+           case AF_LINK:
+               return "Link Layer"
+           case AF_UTUN:
+               return "UTUN"
+           case AF_UNIX:
+               return "Unix Domain"
+           case AF_UNSPEC:
+               return "Unspecified"
+           default:
+               return "Unknown"
+           }
     }
 
-    var isLoopback: Bool {
-        (flags & UInt32(IFF_LOOPBACK)) != 0
+    var interfaceType: String {
+        if let ifaceType = nwInterface?.type {
+            switch ifaceType {
+            case .wifi: return "Wifi"
+            case .wiredEthernet: return "Ethernet"
+            case .cellular: return "Cellular"
+            case .loopback: return "Loopback"
+            case .other: return "Other"
+            default: return "Missing Case"
+            }
+        } else {
+            return "Unknown"
+        }
     }
 
     var scannableIPV4NetworkRange: Range<IP4Address> {
@@ -92,10 +118,9 @@ struct Addressed4NetworkInterface: Encodable {
         try container.encode(address, forKey: .address)
         try container.encode(netmask, forKey: .netmask)
         try container.encode(flags, forKey: .flags)
-        try container.encode(isRunning, forKey: .isRunning)
-        try container.encode(isLoopback, forKey: .isLoopback)
-        try container.encode(isIPV4, forKey: .isIPv4)
+        try container.encode(familyDescription, forKey: .familyDescription)
         try container.encode(getFlagList(), forKey: .flagList)
+        try container.encode(interfaceType, forKey: .interfaceType)
     }
 
     func getFlagList() -> [String] {
@@ -125,20 +150,19 @@ struct Addressed4NetworkInterface: Encodable {
             flagStrings.append(flag)
         }
 
-        return flagStrings
+        return flagStrings.sorted()
     }
 
     // Custom coding keys
     private enum CodingKeys: String, CodingKey {
         case name
         case family
+        case familyDescription
         case address
         case netmask
         case flags
-        case isRunning
-        case isLoopback
-        case isIPv4
         case flagList
+        case interfaceType
     }
 }
 

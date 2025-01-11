@@ -81,7 +81,7 @@ func sendDeviceTokenToServer(_ token: String) async {
 
         func refreshMessages() {
             Task {
-                let dataHandler = DataHandler(modelContainer: getSharedModelContainer())
+                let dataHandler = await DataHandler(modelContainer: getSharedModelContainer())
                 await dataHandler.refreshMessagesIfExpectingNewMessages()
             }
         }

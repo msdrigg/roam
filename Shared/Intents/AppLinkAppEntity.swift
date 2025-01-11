@@ -53,17 +53,17 @@ extension AppLinkAppEntity: IndexedEntity {}
             public init() {}
 
             public func entities(for identifiers: [AppLinkAppEntity.ID]) async throws -> [AppLinkAppEntity] {
-                let appLinkActor = DataHandler(modelContainer: getSharedModelContainer())
+                let appLinkActor = DataHandler(modelContainer: await getSharedModelContainer())
                 return try await appLinkActor.appEntities(for: identifiers, deviceUid: launchAppIntent?.device.udn)
             }
 
             func entities(matching string: String) async throws -> [AppLinkAppEntity] {
-                let appLinkActor = DataHandler(modelContainer: getSharedModelContainer())
+                let appLinkActor = DataHandler(modelContainer: await getSharedModelContainer())
                 return try await appLinkActor.appEntities(matching: string, deviceUid: launchAppIntent?.device.udn)
             }
 
             public func suggestedEntities() async throws -> [AppLinkAppEntity] {
-                let appLinkActor = DataHandler(modelContainer: getSharedModelContainer())
+                let appLinkActor = DataHandler(modelContainer: await getSharedModelContainer())
                 return try await appLinkActor.appEntities(deviceUid: launchAppIntent?.device.udn)
             }
         }
@@ -85,7 +85,7 @@ public extension AppLink {
 }
 
 public func launchApp(app: AppLinkAppEntity, device: DeviceAppEntity?) async throws {
-    let modelContainer = getSharedModelContainer()
+    let modelContainer = await getSharedModelContainer()
     let dataHandler = DataHandler(modelContainer: modelContainer)
 
     var targetDevice = device

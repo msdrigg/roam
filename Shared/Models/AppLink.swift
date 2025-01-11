@@ -21,7 +21,7 @@ extension AppLink: Decodable {
             predicate: #Predicate<AppLink> { _ in
                 true
             },
-            sortBy: [SortDescriptor(\AppLink.id, order: .reverse)]
+            sortBy: [SortDescriptor(\AppLink.id)]
         )
         fd.relationshipKeyPathsForPrefetching = []
         fd.propertiesToFetch = [\.id, \.type, \.name, \.lastSelected, \.deviceUid, \.icon]

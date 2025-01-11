@@ -20,7 +20,6 @@ struct DevicePicker: View {
     @ScaledMetric var circleIconSize = globalCircleIconSize
 
     @Environment(\.openURL) private var openURL
-    @Environment(\.createDataHandler) private var createDataHandler
     @Environment(\.uuidUpdater) private var updater
 #if os(macOS)
     @Environment(\.openSettings) private var openSettings
@@ -37,6 +36,9 @@ struct DevicePicker: View {
     @State private var currentDate: Date = .now
 
     var deviceStatusColor: Color {
+        if inScreenshotTestingContext() {
+            return .green
+        }
         return if let ecpSessionState {
             switch ecpSessionState.status {
             case .connected:
@@ -56,7 +58,7 @@ struct DevicePicker: View {
     }
 
     var showSpinning: Bool {
-        return if let ecpSessionState {
+        return if let ecpSessionState, !inScreenshotTestingContext() {
             switch ecpSessionState.status {
             case .connected:
                 false
@@ -93,7 +95,7 @@ struct DevicePicker: View {
                         if let pid = $0?.persistentModelID {
                             Task.detached {
                                 try? await Task.sleep(duration: 0.5)
-                                await createDataHandler()?.setSelectedDevice(pid)
+                                await DataHandler(modelContainer: getSharedModelContainer()).setSelectedDevice(pid)
                             }
                         }
                     }
@@ -120,11 +122,13 @@ struct DevicePicker: View {
                     Label("Settings", systemImage: "gear")
                         .labelStyle(.titleAndIcon)
                 })
+                .accessibilityIdentifier("SettingsButton")
             #else
                 NavigationLink(value: NavigationDestination.settingsDestination(.global)) {
                     Label("Settings", systemImage: "gear")
                 }
                 .labelStyle(.titleAndIcon)
+                .accessibilityIdentifier("SettingsButton")
             #endif
         } label: {
             Group {

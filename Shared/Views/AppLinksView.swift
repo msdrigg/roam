@@ -23,7 +23,15 @@ struct AppLinksView: View {
 
     @ScaledMetric var gridWidth: CGFloat = globalGridWidth
     @ScaledMetric var gridSpacing: CGFloat = globalGridSpacing
-    @ScaledMetric var gridHeight: CGFloat = globalGridHeight
+    @ScaledMetric var gridHeightScaled: CGFloat = globalGridHeight
+
+    var gridHeight: CGFloat {
+        if cachedAppLinks.isEmpty {
+            return 1
+        } else {
+            return gridHeightScaled
+        }
+    }
 
     var appIdsIconsHashed: Int {
         var appLinkPairs: Set<String> = Set()
@@ -59,7 +67,7 @@ struct AppLinksView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     Spacer()
                     LazyHGrid(rows: Array(repeating:
-                        GridItem(.fixed(CGFloat(gridWidth))), count: rows), spacing: gridSpacing)
+                                            GridItem(.fixed(CGFloat(gridWidth))), count: rows), spacing: gridSpacing)
                     {
                         ForEach(Array(cachedAppLinks.enumerated()), id: \.element.id) { _, app in
                             AppLinkButton(app: app, action: handleOpenApp)
@@ -75,25 +83,25 @@ struct AppLinksView: View {
                         minWidth: geometry.frame(in: .global).width,
                         minHeight: geometry.frame(in: .global).height
                     )
-                    #if os(macOS)
+#if os(macOS)
                     .captureVerticalScrollWheel()
-                    #endif
+#endif
                     Spacer()
                 }
                 .scrollClipDisabled()
                 .safeAreaPadding(.horizontal, 4)
             }
         }
-        .frame(height: gridHeight * CGFloat(rows))
-        .fixedSize(horizontal: false, vertical: true)
-        .onAppear {
-            cachedAppLinks = appLinks
-        }
-        .onChange(of: appIdsIconsHashed) {
-            withAnimation(.interpolatingSpring) {
+            .frame(height: gridHeight * CGFloat(rows))
+            .fixedSize(horizontal: false, vertical: true)
+            .onAppear {
                 cachedAppLinks = appLinks
             }
-        }
+            .onChange(of: appIdsIconsHashed) {
+                withAnimation(.interpolatingSpring) {
+                    cachedAppLinks = appLinks
+                }
+            }
     }
 }
 

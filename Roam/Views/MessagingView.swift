@@ -57,8 +57,6 @@ struct MessageView: View {
     @AppStorage("lastApnsRequestTime") private var lastApnsRequestTime: Double = -1
     @Environment(\.colorScheme) var colorScheme
 
-    @Environment(\.createDataHandler) private var createDataHandler
-
 #if !os(watchOS)
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 #endif
@@ -236,6 +234,12 @@ struct MessageView: View {
 #endif
 
         }
+        .onAppear {
+            logger.info("Showing view")
+        }
+        .onDisappear {
+            logger.info("Closing view")
+        }
         .task(id: hasSentFirstMessage) {
             if !hasSentFirstMessage {
                 return
@@ -270,12 +274,11 @@ struct MessageView: View {
             let latestMessageId = messages.last { $0.fetchedBackend == true }?.id
 
             if latestMessageId != nil {
-                let createDataHandler = self.createDataHandler
                 let result = await Task.detached {
-                    return await createDataHandler()?.refreshMessages(
+                    return await DataHandler(modelContainer: getSharedModelContainer()).refreshMessages(
                         latestMessageId: latestMessageId,
                         viewed: true
-                    ) ?? 0
+                    )
                 }.value
                 logger.info("Got results \(result)")
 
@@ -297,7 +300,6 @@ struct MessageView: View {
     func sendMessageText(messageText: String) {
         logger.info("Sending message \"\(messageText)\"")
         let messageCopy = messageText
-        let createDataHandler = self.createDataHandler
         let latestMessageId = messages.last { $0.fetchedBackend == true }?.id
         Task {
             do {
@@ -306,10 +308,10 @@ struct MessageView: View {
                 }.value
 
                 let result = await Task.detached {
-                    return await createDataHandler()?.refreshMessages(
+                    return await DataHandler(modelContainer: getSharedModelContainer()).refreshMessages(
                         latestMessageId: latestMessageId,
                         viewed: true
-                    ) ?? 0
+                    )
                 }.value
 
                 if result > 0 {

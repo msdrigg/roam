@@ -311,6 +311,32 @@ extension DataHandler {
         return links.map { $0.toAppEntity() }
     }
 
+    public func loadTestData() throws {
+        #if DEBUG
+        try self.clearData()
+
+        for device in getTestingDevices() {
+            modelContext.insert(device)
+            for app in getTestingAppLinks(deviceUid: device.udn) {
+                modelContext.insert(app)
+            }
+        }
+
+        for message in getTestingMessages() {
+            message.viewed = true
+
+            modelContext.insert(message)
+        }
+
+        try modelContext.save()
+        #endif
+    }
+
+    public func clearData() throws {
+        try modelContext.delete(model: Device.self)
+        try modelContext.delete(model: AppLink.self)
+        try modelContext.delete(model: Message.self)
+    }
 }
 
 public extension ModelContext {
@@ -395,18 +421,6 @@ extension PersistentIdentifier {
 
 public struct DataHandlerKey: EnvironmentKey {
   public static let defaultValue: @Sendable () async -> DataHandler? = { nil }
-}
-
-extension EnvironmentValues {
-  public var createDataHandler: @Sendable () async -> DataHandler? {
-    get { self[DataHandlerKey.self] }
-    set { self[DataHandlerKey.self] = newValue }
-  }
-}
-
-public func dataHandlerCreator() -> @Sendable () async -> DataHandler {
-  let container = getSharedModelContainer()
-  return { DataHandler(modelContainer: container) }
 }
 
 extension DataHandler {
@@ -510,7 +524,7 @@ extension DataHandler {
             device.wifiMAC = deviceInfo.wifiMac
             device.networkType = deviceInfo.networkType
             device.powerMode = deviceInfo.powerMode
-            if device.name == "New device" {
+            if device.name == String(localized: "New device") {
                 if let newName = deviceInfo.friendlyDeviceName {
                     device.name = newName
                 }

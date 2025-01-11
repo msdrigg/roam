@@ -40,6 +40,18 @@ struct ButtonGrid: View {
         }
     }
 
+    @Environment(\.colorScheme) var colorScheme
+
+    #if os(macOS)
+    var macTintColor: Color {
+        if colorScheme == .dark {
+            return Color.secondary
+        } else {
+            return Color.white
+        }
+    }
+    #endif
+
     var body: some View {
         let buttonRows: [[(String, String, RemoteButton, CustomKeyboardShortcut.Key)]] = [
             [("Replay", "arrow.uturn.backward", .instantReplay, .instantReplay),
@@ -61,7 +73,7 @@ struct ButtonGrid: View {
                             .breatheEffect(enabled.contains(button.2))
                             .symbolEffect(.bounce, value: pressCounter(button.2))
 #if os(macOS)
-                            .tint(Color.secondary)
+                            .tint(macTintColor)
                             .buttonStyle(.borderedProminent)
 #endif
 #if !os(visionOS)

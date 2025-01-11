@@ -15,7 +15,7 @@ private func deviceFetchDescriptor() -> FetchDescriptor<Device> {
         predicate: #Predicate {
             $0.deletedAt == nil
         },
-        sortBy: [SortDescriptor(\Device.name, order: .reverse)]
+        sortBy: [SortDescriptor(\Device.name)]
     )
     fd.relationshipKeyPathsForPrefetching = []
     fd.propertiesToFetch = [\.udn, \.location, \.name, \.lastOnlineAt, \.lastSelectedAt, \.lastScannedAt]
@@ -43,7 +43,6 @@ struct RemoteView: View {
     #if !os(tvOS)
     @Environment(\.openWindow) var openWindow
     #endif
-    @Environment(\.createDataHandler) var createDataHandler
 
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 
@@ -155,7 +154,7 @@ struct RemoteView: View {
 
         if action == "add-device" || action == "scan" {
             let queryParams = URLComponents(string: url.absoluteString)?.queryItems
-            let name = queryParams?.first(where: { $0.name == "name" })?.value ?? "New device"
+            let name = queryParams?.first(where: { $0.name == "name" })?.value ?? String(localized: "New device")
             // Get location param as location=IP or p=IPV4Hex
             guard let location = queryParams?.first(where: { $0.name == "location" })?.value ??
                 queryParams?.first(where: { $0.name == "p" })?.value.flatMap({ hex in
@@ -172,10 +171,9 @@ struct RemoteView: View {
                 return
             }
 
-            let createDataHandler = createDataHandler
             Task.detached {
                 let udn = queryParams?.first(where: { $0.name == "udn" })?.value ?? "roam:newdevice-\(UUID().uuidString)"
-                await createDataHandler()?.addOrReplaceDevice(location: location, friendlyDeviceName: name, udn: udn)
+                await DataHandler(modelContainer: getSharedModelContainer()).addOrReplaceDevice(location: location, friendlyDeviceName: name, udn: udn)
             }
         }
         if action == "feedback" {
