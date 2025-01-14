@@ -196,7 +196,7 @@ func getDebugInfo(container: ModelContainer) async -> DebugInfo {
 
 private func getLogEntries(limit: Int = 50000) throws -> [LogEntry] {
     let logStore = try OSLogStore(scope: .currentProcessIdentifier)
-    let date = Date.now
+    let date = Date.now.addingTimeInterval(2)
     let position = logStore.position(date: date)
 
     var logEntries: [LogEntry] = []

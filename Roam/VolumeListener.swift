@@ -33,7 +33,7 @@
                 try session.setActive(true, options: .notifyOthersOnDeactivation)
                 lastVolume = session.outputVolume
             } catch {
-                Self.logger.error("Cannot activate audiosession to listen to volume: \(error)")
+                Self.logger.error("Cannot activate audiosession to listen to volume: \(error, privacy: .public)")
                 throw error
             }
             Self.logger.info("Starting volume observations")

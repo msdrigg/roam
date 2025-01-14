@@ -30,7 +30,7 @@ public func tryConnectTCP(
     timeout: TimeInterval,
     interface: NWInterface? = nil
 ) async -> NWInterface? {
-    checkConnectLogger.debug("Checking can connect to url (\(host):\(port)) with interface \(interface?.name ?? "--")")
+    checkConnectLogger.debug("Checking can connect to url (\(host, privacy: .public):\(port, privacy: .public)) with interface \(interface?.name ?? "--", privacy: .public)")
     let tcpParams = NWProtocolTCP.Options()
     let params = NWParameters(tls: nil, tcp: tcpParams)
     if let interface {

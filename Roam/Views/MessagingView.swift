@@ -101,7 +101,7 @@ struct MessageView: View {
             }
             logger.info("Starting to send logs")
             let logs = await getDebugInfo(container: getSharedModelContainer())
-            logger.info("Sending logs \(logs.installationInfo.userId)")
+            logger.info("Sending logs \(logs.installationInfo.userId, privacy: .public)")
 
             do {
                 try await uploadDebugLogs(logs: logs)
@@ -112,7 +112,7 @@ struct MessageView: View {
 
                 logger.info("Upload successful")
             } catch {
-                logger.error("Failed to upload logs: \(error)")
+                logger.error("Failed to upload logs: \(error, privacy: .public)")
             }
         }
     }
@@ -280,7 +280,7 @@ struct MessageView: View {
                         viewed: true
                     )
                 }.value
-                logger.info("Got results \(result)")
+                logger.info("Got results \(result, privacy: .public)")
 
                 if result > 0 {
                     refreshInterval = 10
@@ -291,14 +291,14 @@ struct MessageView: View {
                 }
             }
 
-            logger.info("Sleeping for \(refreshInterval)s")
+            logger.info("Sleeping for \(refreshInterval, privacy: .public)s")
             try? await Task.sleep(nanoseconds: UInt64(refreshInterval * 1_000_000_000))
             logger.info("Done sleeping")
         }
     }
 
     func sendMessageText(messageText: String) {
-        logger.info("Sending message \"\(messageText)\"")
+        logger.info("Sending message \"\(messageText, privacy: .public)\"")
         let messageCopy = messageText
         let latestMessageId = messages.last { $0.fetchedBackend == true }?.id
         Task {

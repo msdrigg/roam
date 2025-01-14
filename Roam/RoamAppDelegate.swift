@@ -97,7 +97,7 @@ func sendDeviceTokenToServer(_ token: String) async {
         }
 
         func application(_: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {
-            logger.error("Failed to register with Error \(error)")
+            logger.error("Failed to register with Error \(error, privacy: .public)")
         }
     }
 #else
@@ -207,6 +207,10 @@ func sendDeviceTokenToServer(_ token: String) async {
             requestMessages(fetchCompletionHandler: completionHandler)
         }
 
+        func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
+            logger.warning("Received memory warning")
+        }
+
         func application(_: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
             let tokenParts = deviceToken.map { data -> String in
                 String(format: "%02.2hhx", data)
@@ -274,7 +278,7 @@ func sendDeviceTokenToServer(_ token: String) async {
         }
 
         func application(_: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {
-            logger.error("Failed to register for remote notifications with Error \(error)")
+            logger.error("Failed to register for remote notifications with Error \(error, privacy: .public)")
         }
     }
 #endif

@@ -152,7 +152,7 @@ export class InternalDurableObject extends DurableObject {
 		}
 	}
 
-	async sendMessage(message: { content: string }, userInfo: { apnsToken: string | null, userId: string, installationInfo?: InstallationInfo }): Promise<void> {
+	async sendMessage(message: { content: string | null }, userInfo: { apnsToken: string | null, userId: string, installationInfo?: InstallationInfo }): Promise<void> {
 		const { content } = message;
 		const { apnsToken, userId, installationInfo } = userInfo;
 
@@ -162,6 +162,10 @@ export class InternalDurableObject extends DurableObject {
 
 		if (apnsToken) {
 			await this.storeApnsToken(threadId, userId, apnsToken);
+		}
+
+		if (!content) {
+			return;
 		}
 
 		try {
@@ -328,7 +332,7 @@ export default {
 			if (!userId) {
 				return new Response("Bad request: no user id", { status: 400 });
 			}
-			if (!content) {
+			if (!content && !apnsToken) {
 				return new Response("Bad request: no content", { status: 400 });
 			}
 

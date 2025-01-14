@@ -37,7 +37,7 @@ struct AppListView: View {
                         do {
                             try await launchApp(app: app.toAppEntity(), device: device)
                         } catch {
-                            Self.logger.error("Error opening app \(app.id): \(error)")
+                            Self.logger.error("Error opening app \(app.id, privacy: .public): \(error, privacy: .public)")
                         }
                     }
                 }, label: {

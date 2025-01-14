@@ -37,6 +37,18 @@ struct RoamApp: App {
         ])
     }
 
+    var windowResizability: WindowResizability {
+        if inScreenshotTestingContext() {
+            return .contentSize
+        } else {
+#if os(visionOS)
+            return .contentMinSize
+#else
+            return .automatic
+#endif
+        }
+    }
+
     var body: some Scene {
         #if os(macOS)
             Window("Roam", id: "main") {
@@ -55,9 +67,14 @@ struct RoamApp: App {
                             NSApp.setActivationPolicy(.accessory)
                         }
                     }
+                    .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+                        logger.info("Shutting down from willTerminate")
+                    }
+                    .frame(width: inScreenshotTestingContext() ? macOSWidth : nil, height: inScreenshotTestingContext() ? macOSHeigth : nil)
             }
             .enableBackgroundDragging()
             .defaultSize(width: macOSWidth, height: macOSHeigth)
+            .windowResizability(windowResizability)
             .trailingPosition()
             .windowToolbarStyle(.unifiedCompact(showsTitle: false))
             .commands {
@@ -87,7 +104,7 @@ struct RoamApp: App {
                                         do {
                                             try await appDelegate.ecpSessionState.ecpSession?.openApp(app, params: params)
                                         } catch {
-                                            logger.error("Error opening app from url app=\(app) params=\(params): \(error)")
+                                            logger.error("Error opening app from url app=\(app, privacy: .public) params=\(params, privacy: .public): \(error, privacy: .public)")
                                         }
                                     }
 
@@ -97,7 +114,7 @@ struct RoamApp: App {
                                 do {
                                     try await appDelegate.ecpSessionState.ecpSession?.setTextEditText(first, for: texteditId)
                                 } catch {
-                                    logger.error("Failed to paste: \(error)")
+                                    logger.error("Failed to paste: \(error, privacy: .public)")
                                 }
                             }
                         })
@@ -111,7 +128,7 @@ struct RoamApp: App {
                                 }
 
                                 if let texteditText = appDelegate.ecpSessionState.textEditStatus.text {
-                                    logger.info("Cutting text \(texteditText)")
+                                    logger.info("Cutting text \(texteditText, privacy: .public)")
                                     NSPasteboard.general.clearContents()
                                     NSPasteboard.general.setString(texteditText, forType: .string)
                                 }
@@ -119,7 +136,7 @@ struct RoamApp: App {
                                 do {
                                     try await appDelegate.ecpSessionState.ecpSession?.setTextEditText("", for: texteditId)
                                 } catch {
-                                    logger.error("Failed to paste: \(error)")
+                                    logger.error("Failed to paste: \(error, privacy: .public)")
                                 }
                             }
                         })
@@ -129,7 +146,7 @@ struct RoamApp: App {
                         Button("Copy", systemImage: "clipboard", action: {
                             Task {
                                 if let texteditText = appDelegate.ecpSessionState.textEditStatus.text {
-                                    logger.info("Copying text \(texteditText)")
+                                    logger.info("Copying text \(texteditText, privacy: .public)")
                                     NSPasteboard.general.clearContents()
                                     NSPasteboard.general.setString(texteditText, forType: .string)
                                 }
@@ -195,6 +212,9 @@ struct RoamApp: App {
                     .modelContainer(sharedModelContainer)
                     .environment(\.uuidUpdater, uuidUpdater)
                     .environmentObject(appDelegate)
+                    .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+                        logger.info("Shutting down from willTerminate")
+                    }
             }
             .menuBarExtraStyle(.window)
 
@@ -220,12 +240,16 @@ struct RoamApp: App {
             WindowGroup {
                     RemoteView()
 #if os(visionOS)
+                        .frame(width: inScreenshotTestingContext() ? macOSWidth : nil, height: inScreenshotTestingContext() ? macOSHeigth : nil)
                         .frame(minWidth: 400, minHeight: 950)
 #endif
                         .environment(\.uuidUpdater, uuidUpdater)
+                        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
+                            logger.info("Shutting down from willTerminate")
+                        }
             }
             #if os(visionOS)
-            .windowResizability(.contentMinSize)
+            .windowResizability(windowResizability)
             .defaultSize(width: visionOSWidth, height: 1000)
             #endif
             .modelContainer(sharedModelContainer)

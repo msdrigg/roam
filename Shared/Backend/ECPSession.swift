@@ -91,7 +91,8 @@ actor ECPSession {
     static let messageReceivedNotification: NSNotification.Name = .init("com.msdrigg.ECPSession.messageReceived")
     static let websocketStateUpdatedNotification: NSNotification.Name = .init("com.msdrigg.ECPSession.websocketStateUpdated")
 
-    let device: DeviceAppEntity
+    let location: String
+    let macs: [String]
     let status: ECPSessionState
 
     private var connection: NWConnection?
@@ -125,6 +126,7 @@ actor ECPSession {
         case plStartFailed
         case badKepress
         case badTexteditId
+        case notImplemented
         case responseRejection(code: String)
     }
 
@@ -146,18 +148,38 @@ actor ECPSession {
         return params
     }
 
-    public init(device: DeviceAppEntity, status: ECPSessionState) throws {
-        Self.logger.info("Initing ECP Session with url \(device.location, privacy: .public)")
+    public init(location: String, macs: [String], status: ECPSessionState) throws {
+        Self.logger.info("Initing ECP Session with url \(location, privacy: .public)")
         // swiftlint:disable:next force_try
-        guard let url = URL(string: "\(device.location.replacing(try! Regex("^http:"), with: "ws:"))ecp-session") else {
-            Self.logger.error("Bad url for location \(device.location)ecp-session")
+        guard let url = URL(string: "\(location.replacing(try! Regex("^http:"), with: "ws:"))ecp-session") else {
+            Self.logger.error("Bad url for location \(location, privacy: .public)ecp-session")
             throw ECPError.badURL
         }
         self.url = url
         self.endpoint = NWEndpoint.url(url)
 
         self.status = status
-        self.device = device
+        self.macs = macs
+        self.location = location
+
+        Task {
+            await self.initObservers()
+        }
+    }
+
+    public init(device: DeviceAppEntity, status: ECPSessionState) throws {
+        Self.logger.info("Initing ECP Session with url \(device.location, privacy: .public)")
+        // swiftlint:disable:next force_try
+        guard let url = URL(string: "\(device.location.replacing(try! Regex("^http:"), with: "ws:"))ecp-session") else {
+            Self.logger.error("Bad url for location \(device.location, privacy: .public)ecp-session")
+            throw ECPError.badURL
+        }
+        self.url = url
+        self.endpoint = NWEndpoint.url(url)
+
+        self.status = status
+        self.location = device.location
+        self.macs = device.macs()
 
         Task {
             await self.initObservers()
@@ -210,7 +232,7 @@ actor ECPSession {
                     let response = try self.kebabDecoder.decode(TextEditState.self, from: data)
                     self.reportTextEditChanged(state: response)
                 } catch {
-                    Self.logger.error("Error getting response from notify: \(error)")
+                    Self.logger.error("Error getting response from notify: \(error, privacy: .public)")
                 }
             }
             .store(in: &self.cancellables)
@@ -239,7 +261,6 @@ actor ECPSession {
                 currentStatus.status = .disconnected(.distantPast)
                 Self.logger.info("WS Status updated to distant past")
             default:
-                Self.logger.info("WS Status updated to new status ")
                 currentStatus.status = status
             }
         }
@@ -416,7 +437,7 @@ actor ECPSession {
     }
 
     func viabilityDidChange(isViable: Bool) {
-        Self.logger.info("Network viability changed \(isViable)")
+        Self.logger.info("Network viability changed \(isViable, privacy: .public)")
     }
 
     private func reportDisconnection(closeCode: NWProtocolWebSocket.CloseCode, reason: Data?) {
@@ -442,7 +463,7 @@ actor ECPSession {
             cancellable = NotificationCenter.default
                 .publisher(for: Self.messageReceivedNotification)
                 .sink { notification in
-                    Self.logger.info("Received notification \(String(describing: notification.name))")
+                    Self.logger.info("Received notification \(String(describing: notification.name), privacy: .public)")
                     guard let websocketState = notification.userInfo?["websocketState"] as? ECPSessionStatus else {
                         Self.logger.error("Received bad ECPSession notification")
                         return
@@ -582,6 +603,32 @@ actor ECPSession {
         }
     }
 
+    func getDeviceAppIcon(_ appId: String) async throws -> Data {
+        throw Self.ECPError.notImplemented
+    }
+
+    func getDeviceIcon() async throws -> Data {
+        throw Self.ECPError.notImplemented
+    }
+
+    func getDeviceInfo() async throws -> DeviceInfo {
+        throw Self.ECPError.notImplemented
+//        {"request":"query-device-info","request-id":"2"}
+//        {"content-data":"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiID8+CjxkZXZpY2UtaW5mbz4KCTx1ZG4+MjgwMDEyNDAtMDAwMC0xMDAwLTgwMDAtODBjYmJjOTg3OTBhPC91ZG4+Cgk8dmlydHVhbC1kZXZpY2UtaWQ+UzBBMzYxOUdOOFVZPC92aXJ0dWFsLWRldmljZS1pZD4KCTxzZXJpYWwtbnVtYmVyPlgwMTkwMFNHTjhVWTwvc2VyaWFsLW51bWJlcj4KCTxkZXZpY2UtaWQ+UzBBMzYxOUdOOFVZPC9kZXZpY2UtaWQ+Cgk8YWR2ZXJ0aXNpbmctaWQ+OWVlYmYxNTEtZTUxOS01NzRiLThkZTItOWUwODUzOTBjNDFkPC9hZHZlcnRpc2luZy1pZD4KCTx2ZW5kb3ItbmFtZT5IaXNlbnNlPC92ZW5kb3ItbmFtZT4KCTxtb2RlbC1uYW1lPjZTZXJpZXMtNTA8L21vZGVsLW5hbWU+Cgk8bW9kZWwtbnVtYmVyPkcyMThYPC9tb2RlbC1udW1iZXI+Cgk8bW9kZWwtcmVnaW9uPlVTPC9tb2RlbC1yZWdpb24+Cgk8aXMtdHY+dHJ1ZTwvaXMtdHY+Cgk8aXMtc3RpY2s+ZmFsc2U8L2lzLXN0aWNrPgoJPHNjcmVlbi1zaXplPjUwPC9zY3JlZW4tc2l6ZT4KCTxwYW5lbC1pZD43PC9wYW5lbC1pZD4KCTxtb2JpbGUtaGFzLWxpdmUtdHY+dHJ1ZTwvbW9iaWxlLWhhcy1saXZlLXR2PgoJPHVpLXJlc29sdXRpb24+MTA4MHA8L3VpLXJlc29sdXRpb24+Cgk8dHVuZXItdHlwZT5BVFNDPC90dW5lci10eXBlPgoJPHN1cHBvcnRzLWV0aGVybmV0PnRydWU8L3N1cHBvcnRzLWV0aGVybmV0PgoJPHdpZmktbWFjPjgwOmNiOmJjOjk4Ojc5OjBhPC93aWZpLW1hYz4KCTx3aWZpLWRyaXZlcj5yZWFsdGVrPC93aWZpLWRyaXZlcj4KCTxoYXMtd2lmaS01Ry1zdXBwb3J0PnRydWU8L2hhcy13aWZpLTVHLXN1cHBvcnQ+Cgk8ZXRoZXJuZXQtbWFjPmEwOjYyOmZiOjc4OjI5OmVlPC9ldGhlcm5ldC1tYWM+Cgk8bmV0d29yay10eXBlPmV0aGVybmV0PC9uZXR3b3JrLXR5cGU+Cgk8ZnJpZW5kbHktZGV2aWNlLW5hbWU+SGlzZW5zZeKAolJva3UgVFYgLSBYMDE5MDBTR044VVk8L2ZyaWVuZGx5LWRldmljZS1uYW1lPgoJPGZyaWVuZGx5LW1vZGVsLW5hbWU+SGlzZW5zZeKAolJva3UgVFY8L2ZyaWVuZGx5LW1vZGVsLW5hbWU+Cgk8ZGVmYXVsdC1kZXZpY2UtbmFtZT5IaXNlbnNl4oCiUm9rdSBUViAtIFgwMTkwMFNHTjhVWTwvZGVmYXVsdC1kZXZpY2UtbmFtZT4KCTx1c2VyLWRldmljZS1uYW1lIC8+Cgk8dXNlci1kZXZpY2UtbG9jYXRpb24gLz4KCTxidWlsZC1udW1iZXI+Q0hELjUwRTA0MTc2QTwvYnVpbGQtbnVtYmVyPgoJPHNvZnR3YXJlLXZlcnNpb24+MTIuNS4wPC9zb2Z0d2FyZS12ZXJzaW9uPgoJPHNvZnR3YXJlLWJ1aWxkPjQxNzY8L3NvZnR3YXJlLWJ1aWxkPgoJPGxpZ2h0bmluZy1iYXNlLWJ1aWxkLW51bWJlciAvPgoJPHVpLWJ1aWxkLW51bWJlcj5DSEQuNTBFMDQxNzZBPC91aS1idWlsZC1udW1iZXI+Cgk8dWktc29mdHdhcmUtdmVyc2lvbj4xMi41LjA8L3VpLXNvZnR3YXJlLXZlcnNpb24+Cgk8dWktc29mdHdhcmUtYnVpbGQ+NDE3NjwvdWktc29mdHdhcmUtYnVpbGQ+Cgk8c2VjdXJlLWRldmljZT50cnVlPC9zZWN1cmUtZGV2aWNlPgoJPGxhbmd1YWdlPmVuPC9sYW5ndWFnZT4KCTxjb3VudHJ5PlVTPC9jb3VudHJ5PgoJPGxvY2FsZT5lbl9VUzwvbG9jYWxlPgoJPHRpbWUtem9uZS1hdXRvPnRydWU8L3RpbWUtem9uZS1hdXRvPgoJPHRpbWUtem9uZT5VUy9FYXN0ZXJuPC90aW1lLXpvbmU+Cgk8dGltZS16b25lLW5hbWU+VW5pdGVkIFN0YXRlcy9FYXN0ZXJuPC90aW1lLXpvbmUtbmFtZT4KCTx0aW1lLXpvbmUtdHo+QW1lcmljYS9OZXdfWW9yazwvdGltZS16b25lLXR6PgoJPHRpbWUtem9uZS1vZmZzZXQ+LTMwMDwvdGltZS16b25lLW9mZnNldD4KCTxjbG9jay1mb3JtYXQ+MTItaG91cjwvY2xvY2stZm9ybWF0PgoJPHVwdGltZT4yOTM0OTg1PC91cHRpbWU+Cgk8cG93ZXItbW9kZT5Qb3dlck9uPC9wb3dlci1tb2RlPgoJPHN1cHBvcnRzLXN1c3BlbmQ+dHJ1ZTwvc3VwcG9ydHMtc3VzcGVuZD4KCTxzdXBwb3J0cy1maW5kLXJlbW90ZT5mYWxzZTwvc3VwcG9ydHMtZmluZC1yZW1vdGU+Cgk8c3VwcG9ydHMtYXVkaW8tZ3VpZGU+dHJ1ZTwvc3VwcG9ydHMtYXVkaW8tZ3VpZGU+Cgk8c3VwcG9ydHMtcnZhPnRydWU8L3N1cHBvcnRzLXJ2YT4KCTxoYXMtaGFuZHMtZnJlZS12b2ljZS1yZW1vdGU+ZmFsc2U8L2hhcy1oYW5kcy1mcmVlLXZvaWNlLXJlbW90ZT4KCTxkZXZlbG9wZXItZW5hYmxlZD5mYWxzZTwvZGV2ZWxvcGVyLWVuYWJsZWQ+Cgk8a2V5ZWQtZGV2ZWxvcGVyLWlkIC8+Cgk8c2VhcmNoLWVuYWJsZWQ+dHJ1ZTwvc2VhcmNoLWVuYWJsZWQ+Cgk8c2VhcmNoLWNoYW5uZWxzLWVuYWJsZWQ+dHJ1ZTwvc2VhcmNoLWNoYW5uZWxzLWVuYWJsZWQ+Cgk8dm9pY2Utc2VhcmNoLWVuYWJsZWQ+dHJ1ZTwvdm9pY2Utc2VhcmNoLWVuYWJsZWQ+Cgk8c3VwcG9ydHMtcHJpdmF0ZS1saXN0ZW5pbmc+dHJ1ZTwvc3VwcG9ydHMtcHJpdmF0ZS1saXN0ZW5pbmc+Cgk8c3VwcG9ydHMtcHJpdmF0ZS1saXN0ZW5pbmctZHR2PnRydWU8L3N1cHBvcnRzLXByaXZhdGUtbGlzdGVuaW5nLWR0dj4KCTxzdXBwb3J0cy13YXJtLXN0YW5kYnk+dHJ1ZTwvc3VwcG9ydHMtd2FybS1zdGFuZGJ5PgoJPGhlYWRwaG9uZXMtY29ubmVjdGVkPmZhbHNlPC9oZWFkcGhvbmVzLWNvbm5lY3RlZD4KCTxzdXBwb3J0cy1hdWRpby1zZXR0aW5ncz5mYWxzZTwvc3VwcG9ydHMtYXVkaW8tc2V0dGluZ3M+Cgk8ZXhwZXJ0LXBxLWVuYWJsZWQ+MS4wPC9leHBlcnQtcHEtZW5hYmxlZD4KCTxzdXBwb3J0cy1lY3MtdGV4dGVkaXQ+dHJ1ZTwvc3VwcG9ydHMtZWNzLXRleHRlZGl0PgoJPHN1cHBvcnRzLWVjcy1taWNyb3Bob25lPnRydWU8L3N1cHBvcnRzLWVjcy1taWNyb3Bob25lPgoJPHN1cHBvcnRzLXdha2Utb24td2xhbj50cnVlPC9zdXBwb3J0cy13YWtlLW9uLXdsYW4+Cgk8c3VwcG9ydHMtYWlycGxheT50cnVlPC9zdXBwb3J0cy1haXJwbGF5PgoJPGhhcy1wbGF5LW9uLXJva3U+dHJ1ZTwvaGFzLXBsYXktb24tcm9rdT4KCTxoYXMtbW9iaWxlLXNjcmVlbnNhdmVyPmZhbHNlPC9oYXMtbW9iaWxlLXNjcmVlbnNhdmVyPgoJPHN1cHBvcnQtdXJsPmhpc2Vuc2UtdXNhLmNvbS9zdXBwb3J0PC9zdXBwb3J0LXVybD4KCTxncmFuZGNlbnRyYWwtdmVyc2lvbj4xMC40LjQ1PC9ncmFuZGNlbnRyYWwtdmVyc2lvbj4KCTxzdXBwb3J0cy10cmM+dHJ1ZTwvc3VwcG9ydHMtdHJjPgoJPHRyYy12ZXJzaW9uPjMuMDwvdHJjLXZlcnNpb24+Cgk8dHJjLWNoYW5uZWwtdmVyc2lvbj45LjMuMTA8L3RyYy1jaGFubmVsLXZlcnNpb24+Cgk8YXYtc3luYy1jYWxpYnJhdGlvbi1lbmFibGVkPjMuMDwvYXYtc3luYy1jYWxpYnJhdGlvbi1lbmFibGVkPgo8L2RldmljZS1pbmZvPgo=","content-type":"text/xml; charset=\"utf-8\"","response":"query-device-info","response-id":"2","status":"200","status-msg":"OK"}
+    }
+
+    func getDeviceApps() async throws -> [AppLinkAppEntity] {
+        throw Self.ECPError.notImplemented
+//        {"request":"query-apps","request-id":"6"}
+//        {"content-data":"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiID8+CjxhcHBzPgoJPGFwcCBpZD0idHZpbnB1dC5kdHYiIHR5cGU9InR2aW4iIHZlcnNpb249IjEuMC4wIj5MaXZlwqBUVjwvYXBwPgoJPGFwcCBpZD0idHZpbnB1dC5oZG1pMiIgdHlwZT0idHZpbiIgdmVyc2lvbj0iMS4wLjAiPk5pbnRlbmRvIFN3aXRjaDwvYXBwPgoJPGFwcCBpZD0idHZpbnB1dC5oZG1pMyIgdHlwZT0idHZpbiIgdmVyc2lvbj0iMS4wLjAiPkhETUnCoDM8L2FwcD4KCTxhcHAgaWQ9InR2aW5wdXQuaGRtaTEiIHR5cGU9InR2aW4iIHZlcnNpb249IjEuMC4wIj5IRE1JwqAxwqAoZUFSQyk8L2FwcD4KCTxhcHAgaWQ9IjEyIiB0eXBlPSJhcHBsIiBzdWJ0eXBlPSJuZGthIiB2ZXJzaW9uPSI2LjEuMTIwMDg4MDI1Ij5OZXRmbGl4PC9hcHA+Cgk8YXBwIGlkPSIyOTEwOTciIHR5cGU9ImFwcGwiIHN1YnR5cGU9InJzZ2EiIHZlcnNpb249IjEuMzguMjAyMzEyMDgwMCI+RGlzbmV5IFBsdXM8L2FwcD4KCTxhcHAgaWQ9IjEzIiB0eXBlPSJhcHBsIiBzdWJ0eXBlPSJuZGthIiB2ZXJzaW9uPSIxNC4xLjIwMjMwOTIwMjIiPlByaW1lIFZpZGVvPC9hcHA+Cgk8YXBwIGlkPSIyMjg1IiB0eXBlPSJhcHBsIiBzdWJ0eXBlPSJyc2dhIiB2ZXJzaW9uPSI2Ljc3LjIiPkh1bHU8L2FwcD4KCTxhcHAgaWQ9IjIyMjk3IiB0eXBlPSJhcHBsIiBzdWJ0eXBlPSJuZGthIiB2ZXJzaW9uPSIyLjExLjY2Ij5TcG90aWZ5IE11c2ljPC9hcHA+Cgk8YXBwIGlkPSIxNTE5MDgiIHR5cGU9ImFwcGwiIHN1YnR5cGU9InJzZ2EiIHZlcnNpb249IjkuMy4xMCI+VGhlIFJva3UgQ2hhbm5lbDwvYXBwPgoJPGFwcCBpZD0iODM3IiB0eXBlPSJhcHBsIiBzdWJ0eXBlPSJuZGthIiB2ZXJzaW9uPSIyLjIyLjExMDAwNTEwMCI+WW91VHViZTwvYXBwPgoJPGFwcCBpZD0iNDE0NjgiIHR5cGU9ImFwcGwiIHN1YnR5cGU9InJzZ2EiIHZlcnNpb249IjMuMC4yIj5UdWJpIC0gRnJlZSBNb3ZpZXMgJmFtcDsgVFY8L2FwcD4KCTxhcHAgaWQ9IjYxMzIyIiB0eXBlPSJhcHBsIiBzdWJ0eXBlPSJyc2dhIiB2ZXJzaW9uPSI1NS4zLjEiPk1heDwvYXBwPgoJPGFwcCBpZD0iODgzOCIgdHlwZT0iYXBwbCIgc3VidHlwZT0icnNnYSIgdmVyc2lvbj0iMi4zMC40Ij5TSE9XVElNRTwvYXBwPgoJPGFwcCBpZD0iNTUxMDEyIiB0eXBlPSJhcHBsIiBzdWJ0eXBlPSJuZGthIiB2ZXJzaW9uPSIxNC4wLjQzIj5BcHBsZSBUVjwvYXBwPgoJPGFwcCBpZD0iNTkzMDk5IiB0eXBlPSJhcHBsIiBzdWJ0eXBlPSJyc2dhIiB2ZXJzaW9uPSI0LjExLjIzIj5QZWFjb2NrIFRWPC9hcHA+Cgk8YXBwIGlkPSI3NDUxOSIgdHlwZT0iYXBwbCIgc3VidHlwZT0icnNnYSIgdmVyc2lvbj0iNS4zMS4yIj5QbHV0byBUViAtIEl0J3MgRnJlZSBUVjwvYXBwPgoJPGFwcCBpZD0iMTIwNDA3IiB0eXBlPSJhcHBsIiBzdWJ0eXBlPSJyc2dhIiB2ZXJzaW9uPSIzLjcuOCI+V0lTIE5ld3MgMTA8L2FwcD4KCTxhcHAgaWQ9IjM1MDU4IiB0eXBlPSJhcHBsIiBzdWJ0eXBlPSJyc2dhIiB2ZXJzaW9uPSI1LjQwLjAiPkxpZmV0aW1lPC9hcHA+Cgk8YXBwIGlkPSI2ODAyMCIgdHlwZT0iYXBwbCIgc3VidHlwZT0icnNnYSIgdmVyc2lvbj0iNS40MC4wIj5MaWZldGltZSBNb3ZpZSBDbHViPC9hcHA+CjwvYXBwcz4K","content-type":"text/xml; charset=\"utf-8\"","response":"query-apps","response-id":"6","status":"200","status-msg":"OK"}
+    }
+
+    func getDeviceCapabilities () async throws -> DeviceCapabilities {
+        throw Self.ECPError.notImplemented
+//        {"request":"query-audio-device","request-id":"5"}
+//        {"content-data":"PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiID8+CjxhdWRpby1kZXZpY2U+Cgk8Y2FwYWJpbGl0aWVzPgoJCTxhbGwtZGVzdGluYXRpb25zPmRhdGFncmFtLGhlYWRwaG9uZXMscGVyaXBoZXJhbC1zcGVha2VycyxhcmMsc3BlYWtlcnMsc3BkaWYsbGluZW91dCx3aWZpLXJlbW90ZS1zYXMsbW9iaWxlLXNhczwvYWxsLWRlc3RpbmF0aW9ucz4KCTwvY2FwYWJpbGl0aWVzPgoJPGdsb2JhbD4KCQk8bXV0ZWQ+ZmFsc2U8L211dGVkPgoJCTx2b2x1bWU+MjI8L3ZvbHVtZT4KCQk8ZGVzdGluYXRpb24tbGlzdD5zcGVha2VycyxzcGRpZixsaW5lb3V0PC9kZXN0aW5hdGlvbi1saXN0PgoJPC9nbG9iYWw+Cgk8ZGVzdGluYXRpb25zPgoJCTxkZXN0aW5hdGlvbiBuYW1lPSJzcGVha2VycyI+CgkJCTxtdXRlZD5mYWxzZTwvbXV0ZWQ+CgkJCTx2b2x1bWU+MjI8L3ZvbHVtZT4KCQk8L2Rlc3RpbmF0aW9uPgoJCTxkZXN0aW5hdGlvbiBuYW1lPSJzcGRpZiI+CgkJCTxtdXRlZD5mYWxzZTwvbXV0ZWQ+CgkJCTx2b2x1bWU+MTAwPC92b2x1bWU+CgkJPC9kZXN0aW5hdGlvbj4KCQk8ZGVzdGluYXRpb24gbmFtZT0ibGluZW91dCI+CgkJCTxtdXRlZD5mYWxzZTwvbXV0ZWQ+CgkJCTx2b2x1bWU+MTAwPC92b2x1bWU+CgkJPC9kZXN0aW5hdGlvbj4KCTwvZGVzdGluYXRpb25zPgoJPG1vYmlsZS1zYXM+CgkJPG1pbi12ZXJzaW9uPjQzPC9taW4tdmVyc2lvbj4KCQk8bWF4LXZlcnNpb24+NDU8L21heC12ZXJzaW9uPgoJPC9tb2JpbGUtc2FzPgoJPHJ0cC1pbmZvPgoJCTxydHAtYWRkcmVzcyAvPgoJCTxydGNwLXBvcnQ+NTE1MDwvcnRjcC1wb3J0PgoJCTxjdXJyZW50LWJ1ZmZlci1kZWxheS11cz4wPC9jdXJyZW50LWJ1ZmZlci1kZWxheS11cz4KCQk8Y2xpZW50LXZlcnNpb25zIC8+Cgk8L3J0cC1pbmZvPgo8L2F1ZGlvLWRldmljZT4K","content-type":"text/xml; charset=\"utf-8\"","response":"query-audio-device","response-id":"5","status":"200","status-msg":"OK"}
+    }
+
     private func requestTextEditNotify() async throws {
         // Start notify for textedit state
         let notifyRequestId = getAndUpdateRequestId()
@@ -711,7 +758,7 @@ actor ECPSession {
         try await withTimeout(delay: delay) {
             try await self.preInitWebsocket()
             let dataString = String(data: data ?? .init(), encoding: .utf8) ?? "--BAD UTF8 DATA--"
-            Self.logger.info("Sending data \(dataString)")
+            Self.logger.info("Sending data \(dataString, privacy: .public)")
         }
 
         connection?.send(
@@ -760,17 +807,17 @@ actor ECPSession {
 
     #if !os(watchOS)
     public func powerToggleDevice() async throws {
-        Self.logger.debug("Toggling power for device \(self.device.location, privacy: .public)")
+        Self.logger.debug("Toggling power for device \(self.location, privacy: .public)")
 
         // Attempt checking the device power mode
-        let canConnect = await canConnectTCP(location: self.device.location, timeout: 0.5)
+        let canConnect = await canConnectTCP(location: self.location, timeout: 0.5)
         do {
             if canConnect {
                 Self.logger.debug("Attempting to power toggle device with api first")
                 try await self.sendKeypress(RemoteButton.power.apiValue!, delay: 1.1)
            } else {
                Self.logger.debug("Power toggle not toggled via api, toggling via wol")
-               await sendWolToDevice(location: device.location, macs: device.macs())
+               await sendWolToDevice(location: location, macs: macs)
             }
         } catch {
             Self.logger.warning("Error toggling power")
@@ -778,7 +825,7 @@ actor ECPSession {
     }
     #else
     public func powerToggleDevice() async throws {
-        Self.logger.debug("Toggling power for device \(self.device.location, privacy: .public)")
+        Self.logger.debug("Toggling power for device \(self.location, privacy: .public)")
 
         // Attempt checking the device power mode
         do {
@@ -792,7 +839,7 @@ actor ECPSession {
     #if !os(watchOS)
         public func requestHeadphonesMode() async throws {
             guard let connectingInterface = await tryConnectTCP(location: url.absoluteString, timeout: 3.0) else {
-                Self.logger.error("Unable to connect tcp to \(self.url.absoluteString) to request headphones mode")
+                Self.logger.error("Unable to connect tcp to \(self.url.absoluteString, privacy: .public) to request headphones mode")
                 throw ECPError.connectFailed
             }
 
@@ -802,12 +849,12 @@ actor ECPSession {
             else {
                 Self.logger
                     .error(
-                        "Connected with interface \(connectingInterface.name) but no match in \(localInterfaces.map(\.name))"
+                        "Connected with interface \(connectingInterface.name, privacy: .public) but no match in \(localInterfaces.map(\.name), privacy: .public)"
                     )
                 throw ECPError.badInterfaceIP
             }
             let localAddress = localNWInterface.address.addressString
-            Self.logger.debug("Got local address \(localAddress)")
+            Self.logger.debug("Got local address \(localAddress, privacy: .public)")
 
             let plRequestId = getAndUpdateRequestId()
             let requestData = try String(
@@ -832,7 +879,7 @@ actor ECPSession {
             let plResponse = try kebabDecoder.decode(BaseResponse.self, from: plResponseData)
             if !plResponse.isSuccess {
                 Self.logger
-                    .error("Unable to start headphones mode on roku with response \(String(describing: plResponse))")
+                    .error("Unable to start headphones mode on roku with response \(String(describing: plResponse), privacy: .public)")
                 throw ECPError.plStartFailed
             } else {
                 Self.logger.info("Started headphones mode successfully")
@@ -847,7 +894,7 @@ actor ECPSession {
         }
 
         guard let keypress = key.apiValue else {
-            Self.logger.fault("Bad key with no api value \(String(describing: key))")
+            Self.logger.fault("Bad key with no api value \(String(describing: key), privacy: .public)")
             throw ECPError.badKepress
         }
 
@@ -869,14 +916,14 @@ actor ECPSession {
         do {
             try await openAppOnce(appId, params: params)
         } catch {
-            Self.logger.warning("Error opening app the first time-retrying: \(error)")
+            Self.logger.warning("Error opening app the first time-retrying: \(error, privacy: .public)")
             try await Task.sleep(duration: 0.1)
             try await openAppOnce(appId, params: params)
         }
     }
 
     public func openAppOnce(_ appId: String, params: [String: String]? = nil, delay: TimeInterval = 5) async throws {
-        Self.logger.info("Opening app \(appId)")
+        Self.logger.info("Opening app \(appId, privacy: .public)")
 
         let reqId = self.getAndUpdateRequestId()
         let requestData = try String(
@@ -893,7 +940,7 @@ actor ECPSession {
             _ = try await receiveTask.value
         }
 
-        Self.logger.info("Opened app \(appId) successfully")
+        Self.logger.info("Opened app \(appId, privacy: .public) successfully")
     }
 
     private func sendKeypress(_ data: String, delay: TimeInterval = 5) async throws {
@@ -908,7 +955,7 @@ actor ECPSession {
     }
 
     private func sendKeypressOnce(_ data: String, delay: TimeInterval = 5) async throws {
-        Self.logger.trace("Trying to send keypress \(data)")
+        Self.logger.trace("Trying to send keypress \(data, privacy: .public)")
 
         let reqId = getAndUpdateRequestId()
         let requestData = try String(
@@ -925,7 +972,7 @@ actor ECPSession {
             _ = try await receiveTask.value
         }
 
-        Self.logger.info("Sent key \(data) successfully")
+        Self.logger.info("Sent key \(data, privacy: .public) successfully")
     }
 
     // MARK: Helper methods
@@ -986,7 +1033,7 @@ actor ECPSession {
                 _ = try await receiveTask.value
                 Self.logger.info("Authenticated to roku successfully")
             } catch {
-                Self.logger.info("Auth challenge failed with error \(error)")
+                Self.logger.info("Auth challenge failed with error \(error, privacy: .public)")
 
                 if let error = error as? ECPError {
                     switch error {
@@ -1157,7 +1204,7 @@ func kebabParamDecodingStrategy() -> JSONDecoder.KeyDecodingStrategy {
         let keyPart = keySequence.last!
         let segments = keyPart.stringValue.stripPrefix("param-").split(separator: "-")
         if segments.isEmpty {
-            ECPSession.logger.error("Error parsing kebab-case parameter name: \(keyPart.stringValue)")
+            ECPSession.logger.error("Error parsing kebab-case parameter name: \(keyPart.stringValue, privacy: .public)")
         }
 
         // Join camel case

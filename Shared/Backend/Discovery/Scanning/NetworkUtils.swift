@@ -53,10 +53,6 @@ struct Addressed4NetworkInterface: Encodable {
     let flags: UInt32
     let nwInterface: NWInterface?
 
-    var isEthernetLike: Bool {
-        nwInterface?.type == .wifi || nwInterface?.type == .wiredEthernet
-    }
-
     var isIPv4: Bool {
         family == AF_INET
     }

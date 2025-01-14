@@ -41,7 +41,7 @@ func listenContinually(ecpSession: ECPSession, location: String, rtcpPort: UInt1
                     await Task.sleepUntilCancelled()
                 } catch {
                     if !(error is CancellationError) {
-                        logger.error("Error requesting headphones mode \(error)")
+                        logger.error("Error requesting headphones mode \(error, privacy: .public)")
                     }
                     throw error
                 }
@@ -53,7 +53,7 @@ func listenContinually(ecpSession: ECPSession, location: String, rtcpPort: UInt1
                         try await rtpSession.performRTCPHandshake()
                     }
                 } catch {
-                    logger.error("Error performing handshake: \(error)")
+                    logger.error("Error performing handshake: \(error, privacy: .public)")
                     throw error
                 }
                 do {
@@ -65,7 +65,7 @@ func listenContinually(ecpSession: ECPSession, location: String, rtcpPort: UInt1
             }
         }
     } catch {
-        logger.error("Error among headphones mode tasks \(error)")
+        logger.error("Error among headphones mode tasks \(error, privacy: .public)")
         throw error
     }
 }
@@ -141,7 +141,7 @@ actor RTPSession {
         rtcpListener.stateUpdateHandler = { [weak self] state in
             switch state {
             case let .failed(err):
-                Self.logger.info("rtcpConnection failed with error \(err)")
+                Self.logger.info("rtcpConnection failed with error \(err, privacy: .public)")
                 self?.rtcpStream.fail(err)
             case .cancelled:
                 Self.logger.info("rtcpConnection cancelled")
@@ -149,7 +149,7 @@ actor RTPSession {
             case .ready:
                 Self.logger.info("rtcpConnection ready")
             default:
-                Self.logger.info("Getting new rtcp state \(String(describing: state))")
+                Self.logger.info("Getting new rtcp state \(String(describing: state), privacy: .public)")
             }
         }
 
@@ -158,9 +158,9 @@ actor RTPSession {
                 Self.logger.warning("No rtcp stream when getting new connection")
                 return
             }
-            Self.logger.info("Got new rtcp connection \(String(describing: rtcpConnection))")
+            Self.logger.info("Got new rtcp connection \(String(describing: rtcpConnection), privacy: .public)")
             @Sendable func closure(_ data: Data?, _: NWConnection.ContentContext?, _: Bool, _ error: NWError?) {
-                Self.logger.info("Got new rtcp packet \(String(describing: data)), error: \(error)")
+                Self.logger.info("Got new rtcp packet \(String(describing: data), privacy: .public), error: \(error, privacy: .public)")
                 guard let data else {
                     return
                 }
@@ -177,11 +177,11 @@ actor RTPSession {
             self?.rtcpListener.stateUpdateHandler = { state in
                 switch state {
                 case let .failed(err):
-                    Self.logger.info("rtcpConnection failed with error \(err)")
+                    Self.logger.info("rtcpConnection failed with error \(err, privacy: .public)")
                     rtcpConnection.send(
                         content: RtcpPacket.bye(.init(ssrc: 0)).packet(),
                         completion: .contentProcessed { error in
-                            Self.logger.info("Sent RTCP Bye with error \(error)")
+                            Self.logger.info("Sent RTCP Bye with error \(error, privacy: .public)")
                             rtcpConnection.cancel()
                         }
                     )
@@ -191,7 +191,7 @@ actor RTPSession {
                     rtcpConnection.send(
                         content: RtcpPacket.bye(.init(ssrc: 0)).packet(),
                         completion: .contentProcessed { error in
-                            Self.logger.info("Sent RTCP Bye with error \(error)")
+                            Self.logger.info("Sent RTCP Bye with error \(error, privacy: .public)")
                             rtcpConnection.cancel()
                         }
                     )
@@ -199,14 +199,14 @@ actor RTPSession {
                 case .ready:
                     Self.logger.info("rtcpConnection ready")
                 default:
-                    Self.logger.info("Getting new rtcp state \(String(describing: state))")
+                    Self.logger.info("Getting new rtcp state \(String(describing: state), privacy: .public)")
                 }
             }
 
             rtcpConnection.stateUpdateHandler = { state in
                 switch state {
                 case let .failed(err):
-                    Self.logger.info("rtcpConnection connection failed with error \(err)")
+                    Self.logger.info("rtcpConnection connection failed with error \(err, privacy: .public)")
                     rtcpStream.fail(err)
                 case .cancelled:
                     Self.logger.info("rtcpConnection connection cancelled")
@@ -214,7 +214,7 @@ actor RTPSession {
                 case .ready:
                     Self.logger.info("rtcpConnection connection ready")
                 default:
-                    Self.logger.info("Getting new rtcpConnection connection state \(String(describing: state))")
+                    Self.logger.info("Getting new rtcpConnection connection state \(String(describing: state), privacy: .public)")
                 }
             }
             rtcpConnection.start(queue: .global())
@@ -227,7 +227,7 @@ actor RTPSession {
         rtpListener.stateUpdateHandler = { [weak self] state in
             switch state {
             case let .failed(err):
-                Self.logger.info("rtpConnection failed with error \(err)")
+                Self.logger.info("rtpConnection failed with error \(err, privacy: .public)")
                 self?.rtpStream.fail(err)
             case .cancelled:
                 Self.logger.info("rtpConnection cancelled")
@@ -235,7 +235,7 @@ actor RTPSession {
             case .ready:
                 Self.logger.info("rtpConnection ready")
             default:
-                Self.logger.info("Getting new rtp state \(String(describing: state))")
+                Self.logger.info("Getting new rtp state \(String(describing: state), privacy: .public)")
             }
         }
 
@@ -245,7 +245,7 @@ actor RTPSession {
                 return
             }
 
-            Self.logger.info("Getting rtp connection \(String(describing: rtpConnection))")
+            Self.logger.info("Getting rtp connection \(String(describing: rtpConnection), privacy: .public)")
 
             @Sendable func closure(_ data: Data?, _: NWConnection.ContentContext?, _: Bool, _: NWError?) {
                 guard let data else {
@@ -256,7 +256,7 @@ actor RTPSession {
 
                     rtpStream.send(packet)
                 } catch {
-                    Self.logger.error("Error parsing rtp packet")
+                    Self.logger.error("Error parsing rtp packet: \(error, privacy: .public)")
                 }
 
                 rtpConnection.receiveMessage(completion: closure)
@@ -266,7 +266,7 @@ actor RTPSession {
             rtpConnection.stateUpdateHandler = { state in
                 switch state {
                 case let .failed(err):
-                    Self.logger.info("rtpConnection connection failed with error \(err)")
+                    Self.logger.info("rtpConnection connection failed with error \(err, privacy: .public)")
                     rtpStream.fail(err)
                 case .cancelled:
                     Self.logger.info("rtpConnection connection cancelled")
@@ -274,7 +274,7 @@ actor RTPSession {
                 case .ready:
                     Self.logger.info("rtpConnection connection ready")
                 default:
-                    Self.logger.info("Getting new rtpConnection connection state \(String(describing: state))")
+                    Self.logger.info("Getting new rtpConnection connection state \(String(describing: state), privacy: .public)")
                 }
             }
             rtpConnection.start(queue: .global())
@@ -282,7 +282,7 @@ actor RTPSession {
             self?.rtpListener.stateUpdateHandler = { state in
                 switch state {
                 case let .failed(err):
-                    Self.logger.info("RTPConnection failed with error \(err)")
+                    Self.logger.info("RTPConnection failed with error \(err, privacy: .public)")
                     rtpConnection.cancel()
                     rtpStream.fail(err)
                 case .cancelled:
@@ -292,7 +292,7 @@ actor RTPSession {
                 case .ready:
                     Self.logger.info("rtpConnection ready")
                 default:
-                    Self.logger.info("Getting new rtp state \(String(describing: state))")
+                    Self.logger.info("Getting new rtp state \(String(describing: state), privacy: .public)")
                 }
             }
         }
@@ -313,7 +313,7 @@ actor RTPSession {
                         Self.logger.warning("Error sending VDLY packet \(error, privacy: .public)")
                         continuation.resume(throwing: error)
                     } else {
-                        Self.logger.debug("VDLY Sent \(globalHugeFixedVDLYMS)")
+                        Self.logger.debug("VDLY Sent \(globalHugeFixedVDLYMS, privacy: .public)")
                         continuation.resume(returning: ())
                     }
                 }
@@ -327,9 +327,9 @@ actor RTPSession {
                     Self.logger.info("Got good xdly packet from rtcp as expected")
                     return
                 }
-                Self.logger.warning("Got bad xdly microseconds. Expecting \(globalHugeFixedVDLYMS * 1000)")
+                Self.logger.warning("Got bad xdly microseconds. Expecting \(globalHugeFixedVDLYMS * 1000, privacy: .public)")
             default:
-                Self.logger.warning("Got bad packet from rtcp. Expecting App.XDLY. Got \(String(describing: packet))")
+                Self.logger.warning("Got bad packet from rtcp. Expecting App.XDLY. Got \(String(describing: packet), privacy: .public)")
             }
         }
     }
@@ -359,7 +359,7 @@ actor RTPSession {
                 Self.logger.info("Got ncli packet from rtcp as expected")
                 return
             default:
-                Self.logger.warning("Got bad packet from rtcp. Expecting App.NCLI. Got \(String(describing: packet))")
+                Self.logger.warning("Got bad packet from rtcp. Expecting App.NCLI. Got \(String(describing: packet), privacy: .public)")
             }
         }
     }
@@ -374,7 +374,7 @@ actor RTPSession {
                 }
                 break
             } catch {
-                Self.logger.error("Error performing VDLY handshake \(error)")
+                Self.logger.error("Error performing VDLY handshake \(error, privacy: .public)")
                 _ = await timerStream.next()
             }
         }
@@ -386,7 +386,7 @@ actor RTPSession {
                 }
                 break
             } catch {
-                Self.logger.error("Error performing NCLI handshake \(error)")
+                Self.logger.error("Error performing NCLI handshake \(error, privacy: .public)")
             }
         }
         Self.logger.info("Performed RTCP handshake successfully")
@@ -428,7 +428,7 @@ actor RTPSession {
                 do {
                     try AVAudioSession.sharedInstance().setActive(false)
                 } catch {
-                    Self.logger.error("Failed to disable audio session active: \(error)")
+                    Self.logger.error("Failed to disable audio session active: \(error, privacy: .public)")
                 }
             }
         #endif
@@ -446,7 +446,7 @@ actor RTPSession {
                 do {
                     for try await rtpPacket in self.rtpStream {
                         let seqNo = rtpPacket.sequenceNumber
-                        Self.logger.debug("Received packet in stream: \(seqNo)")
+                        Self.logger.debug("Received packet in stream: \(seqNo, privacy: .public)")
                         // Drop first 5 packets because we want to have a reasonable sync packet and sometimes the first
                         // packet or two isn't valid
                         count += 1
@@ -455,14 +455,14 @@ actor RTPSession {
                         }
 
                         if lsqNo != Int64(seqNo) - 1 {
-                            Self.logger.info("Packet with seqno received \(seqNo) when expecting \(lsqNo + 1)")
+                            Self.logger.info("Packet with seqno received \(seqNo, privacy: .public) when expecting \(lsqNo + 1, privacy: .public)")
                         }
                         lsqNo = Int64(seqNo)
 
                         await decoder.addPacket(packet: rtpPacket)
                     }
                 } catch {
-                    Self.logger.error("Error iterating rtpstream \(error)")
+                    Self.logger.error("Error iterating rtpstream \(error, privacy: .public)")
                 }
             }
 
@@ -504,7 +504,7 @@ actor RTPSession {
 
                 if let stream = await LatencyListener().events {
                     for await latency in stream {
-                        Self.logger.error("New latency event \(latency)")
+                        Self.logger.error("New latency event \(latency, privacy: .public)")
                         for await _ in AsyncTimerSequence.repeating(every: .milliseconds(200)) {
                             if let lrt = await rtpAudioPlayer.lastRender() {
                                 if await decoder.syncAudio(
@@ -537,7 +537,7 @@ actor RTPSession {
                 try audioSession.setCategory(.playback, mode: .default, policy: .longFormAudio)
                 try audioSession.setActive(true)
             } catch {
-                Self.logger.error("Failed to set the audio session configuration: \(error)")
+                Self.logger.error("Failed to set the audio session configuration: \(error, privacy: .public)")
             }
         }
     #endif

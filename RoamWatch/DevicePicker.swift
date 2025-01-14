@@ -82,7 +82,7 @@ struct DevicePicker: View {
                                         do {
                                             try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
                                         } catch {
-                                            Self.logger.error("Error deleting device \(error)")
+                                            Self.logger.error("Error deleting device \(error, privacy: .public)")
                                         }
                                     }
 
@@ -102,7 +102,7 @@ struct DevicePicker: View {
                                         do {
                                             try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
                                         } catch {
-                                            Self.logger.error("Error deleting device \(error)")
+                                            Self.logger.error("Error deleting device \(error, privacy: .public)")
                                         }
                                     }
                                 }

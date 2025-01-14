@@ -205,7 +205,7 @@ public struct OpenDeviceIntent: OpenIntent {
     )
 
     public func clickButton(button: RemoteButton, device: DeviceAppEntity?) async throws {
-        logger.debug("Pressing widget button \(button.apiValue ?? "nil") on device \(device?.name ?? "nil")")
+        logger.debug("Pressing widget button \(button.apiValue ?? "nil", privacy: .public) on device \(device?.name ?? "nil", privacy: .public)")
         let modelContainer = await getSharedModelContainer()
 
         let dataHandler = DataHandler(modelContainer: modelContainer)
@@ -258,3 +258,62 @@ public struct OpenDeviceIntent: OpenIntent {
         #endif
     }
 #endif
+
+public func launchApp(app: AppLinkAppEntity, device: DeviceAppEntity?) async throws {
+    let modelContainer = await getSharedModelContainer()
+    let dataHandler = DataHandler(modelContainer: modelContainer)
+
+    var targetDevice = device
+    if targetDevice == nil {
+        targetDevice = await dataHandler.fetchSelectedDeviceAppEntity()
+    }
+
+    if let targetDevice {
+        #if os(watchOS)
+        do {
+            try await openApp(location: targetDevice.location, app: app.id)
+        } catch {
+            logger.error("Error opening app: \(error, privacy: .public)")
+            throw ApiError.deviceNotConnectable
+        }
+        #else
+        do {
+            try await withTimeout(delay: 5) {
+                let ecpSession: ECPSession?
+                let ecpSessionState: ECPSessionState = await ECPSessionState()
+                do {
+                    ecpSession = try ECPSession(device: targetDevice, status: ecpSessionState)
+                    defer {
+                        Task {
+                            await ecpSession?.close()
+                        }
+                    }
+
+                    try await ecpSession?.configure()
+                    try await ecpSession?.openApp(app)
+                } catch {
+                    logger.error("Error creating ECPSession or opening app: \(error, privacy: .public)")
+                    throw ApiError.deviceNotConnectable
+                }
+            }
+        } catch is TimeoutError {
+            logger.warning("Timeout opening app from intent")
+            throw ApiError.deviceNotConnectable
+        }
+        #endif
+    } else {
+        throw ApiError.noSavedDevices
+    }
+}
+
+private enum ApiError: Swift.Error, CustomLocalizedStringResourceConvertible {
+    case noSavedDevices
+    case deviceNotConnectable
+
+    var localizedStringResource: LocalizedStringResource {
+        switch self {
+        case .noSavedDevices: LocalizedStringResource("No saved devices", comment: "Error message description")
+        case .deviceNotConnectable: LocalizedStringResource("Couldn't connect to the device", comment: "Error message description")
+        }
+    }
+}

@@ -92,9 +92,9 @@ public func openApp(location: String, app: String) async throws {
     let (_, response) = try await URLSession.shared.data(for: request)
     if let httpResponse = response as? HTTPURLResponse {
         if httpResponse.statusCode == 200 {
-            logger.info("Opened app \(app) to with location \(location)")
+            logger.info("Opened app \(app) to with location \(location, privacy: .public)")
         } else {
-            logger.error("Error opening app \(app, privacy: .public) at \(location, privacy: .public)launch/\(app, privacy: .public): \(httpResponse.statusCode)")
+            logger.error("Error opening app \(app, privacy: .public) at \(location, privacy: .public)launch/\(app, privacy: .public): \(httpResponse.statusCode, privacy: .public)")
         }
     }
 }
@@ -177,7 +177,7 @@ public func sendKeyToDevice(location: String, macs: [String], key: RemoteButton)
 
 public func sendKeyToDeviceRawNotRecommended(location: String, key: String, macs: [String]) async -> Bool {
     if key == RemoteButton.power.apiValue {
-        logger.debug("Toggling power on device \(location, privacy: .public) with mac \(String(describing: macs))")
+        logger.debug("Toggling power on device \(location, privacy: .public) with mac \(String(describing: macs), privacy: .public)")
         return await powerToggleDeviceStateless(location: location, macs: macs)
     } else {
         logger.debug("Sending key to device \(key, privacy: .public)")
@@ -201,7 +201,7 @@ private func internalSendKeyToDevice(location: String, rawKey: String, timeout: 
                 logger.debug("Sent \(rawKey, privacy: .public) to \(location, privacy: .public)")
                 return true
             } else {
-                logger.error("Error sending \(rawKey, privacy: .public) to \(location, privacy: .public): \(httpResponse.statusCode)")
+                logger.error("Error sending \(rawKey, privacy: .public) to \(location, privacy: .public): \(httpResponse.statusCode, privacy: .public)")
                 return false
             }
         }

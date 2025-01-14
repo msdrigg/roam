@@ -175,7 +175,7 @@ func requestLocalNetworkAuthorization() async throws -> Bool {
                     return
                 }
 
-                logger.notice("Discovered \(results.count) listeners, reporting success.")
+                logger.notice("Discovered \(results.count, privacy: .public) listeners, reporting success.")
                 resume(with: .success(true))
             }
             browser.start(queue: queue)

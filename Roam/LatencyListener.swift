@@ -92,7 +92,7 @@ import os.log
 
             let err = AudioObjectGetPropertyData(deviceID, &address, 0, nil, &propSize, &latency)
             if err != kAudioHardwareNoError {
-                Self.logger.error("Failed to get latency for device \(deviceID), error: \(err)")
+                Self.logger.error("Failed to get latency for device \(deviceID, privacy: .public), error: \(err, privacy: .public)")
                 return nil
             }
 
@@ -107,7 +107,7 @@ import os.log
             let sampleRateErr = AudioObjectGetPropertyData(deviceID, &sampleRateAddress, 0, nil, &size, &sampleRate)
             if sampleRateErr != kAudioHardwareNoError {
                 Self.logger
-                    .error("Failed to get sample rate for device \(deviceID), error: \(err). Defaulting to 48000")
+                    .error("Failed to get sample rate for device \(deviceID, privacy: .public), error: \(err, privacy: .public). Defaulting to 48000")
                 sampleRate = 48000
             }
 
@@ -148,7 +148,7 @@ import os.log
             )
 
             if err != kAudioHardwareNoError {
-                Self.logger.error("Error adding audio property listener for default output device: \(err)")
+                Self.logger.error("Error adding audio property listener for default output device: \(err, privacy: .public)")
             }
         }
 

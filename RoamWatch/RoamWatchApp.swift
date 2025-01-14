@@ -18,7 +18,7 @@ struct RoamWatch: App {
             .datastoreLocation(.groupContainer(identifier: tipsAppGroup))
         ])
 
-        Self.logger.info("Getting WatchConnectivity \(String(describing: WatchConnectivity.shared))")
+        Self.logger.info("Getting WatchConnectivity \(String(describing: WatchConnectivity.shared), privacy: .public)")
     }
 
     var body: some Scene {

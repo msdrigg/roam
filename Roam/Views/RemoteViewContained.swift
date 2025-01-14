@@ -64,6 +64,8 @@ struct RemoteViewContained: View {
     @Environment(\.dismiss) var dismiss
 
     @State private var scanningActor: DeviceDiscoveryActor?
+    @State private var ssdpActor: DeviceDiscoveryActor?
+    @State private var refreshActor: DeviceDiscoveryActor?
     @State private var manuallySelectedDevice: Device?
     @State private var showKeyboardEntryManual: Bool = false
     @State private var keyboardLeaving: Bool = false
@@ -135,11 +137,11 @@ struct RemoteViewContained: View {
 #endif
     }
 
-    @AppStorage(UserDefaultKeys.shouldDisableAllAutoScanning) private var disableAllScanning: Bool = false
+    @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var shouldScanIPRangeAutomatically: Bool = true
     @AppStorage(UserDefaultKeys.shouldControlVolumeWithHWButtons) private var controlVolumeWithHWButtons: Bool = true
 
     var scanSSDP: Bool {
-        !disableAllScanning
+        shouldScanIPRangeAutomatically
     }
 
     @Environment(\.verticalSizeClass) var verticalSizeClass
@@ -348,7 +350,7 @@ struct RemoteViewContained: View {
                     do {
                         Self.logger.info("Checking for local network permission")
                         let permission = try await requestLocalNetworkAuthorization()
-                        Self.logger.info("Got permission check result \(permission)")
+                        Self.logger.info("Got permission check result \(permission, privacy: .public)")
                         self.networkPermissionGranted = permission
                     } catch {
                         Self.logger.error("Error requesting local network authorization \(error, privacy: .public)")
@@ -369,14 +371,14 @@ struct RemoteViewContained: View {
                 .onDisappear {
                     Self.logger.info("Closing view")
                 }
-                .task(id: scanningActor != nil && !disableAllScanning) {
-                    if !disableAllScanning {
-                        await scanningActor?.scanSSDPContinually()
+                .task(id: scanningActor != nil && scanSSDP) {
+                    if scanSSDP {
+                        await ssdpActor?.scanSSDPContinually()
                     }
                 }
-                .task(id: scanningActor != nil && !disableAllScanning && selectedDevice == nil) {
-                    if !disableAllScanning && selectedDevice == nil {
-                        await scanningActor?.scanIPV4Once()
+                .task(id: ssdpActor != nil && selectedDevice == nil && scanSSDP) {
+                    if scanSSDP && selectedDevice == nil {
+                        await scanningActor?.scanSSDPContinually()
                     }
                 }
                 .task(id: selectedDevice?.location, priority: .medium) {
@@ -397,12 +399,12 @@ struct RemoteViewContained: View {
                         ecpSession = nil
                     }
                 }
-                .task(id: scanningActor == nil ? nil : selectedDevice?.persistentModelID, priority: .medium) {
-                    if scanningActor == nil {
+                .task(id: refreshActor == nil ? nil : selectedDevice?.persistentModelID, priority: .medium) {
+                    if refreshActor == nil {
                         return
                     }
                     if let devId = selectedDevice?.persistentModelID {
-                        await scanningActor?.refreshSelectedDeviceContinually(id: devId)
+                        await refreshActor?.refreshSelectedDeviceContinually(id: devId)
                     }
                 }
                 .task(id: "\(headphonesModeEnabled),\(selectedDevice?.location ?? "--")") {
@@ -432,7 +434,7 @@ struct RemoteViewContained: View {
                             )
                             Self.logger.info("Listencontinually returned")
                         } catch {
-                            Self.logger.warning("Catching error in pl handler \(error)")
+                            Self.logger.warning("Catching error in pl handler \(error, privacy: .public)")
                             // Increment errorTrigger if the error is anything but a cancellation error
                             if !(error is CancellationError) {
                                 Self.logger.debug("Non-cancellation error in PL")
@@ -571,7 +573,7 @@ struct RemoteViewContained: View {
                             for shortcut in allKeyboardShortcuts {
                                 if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
                                     let title = shortcut.title
-                                    Self.logger.info("Not handling key press because found shortcut with title \(title)")
+                                    Self.logger.info("Not handling key press because found shortcut with title \(title, privacy: .public)")
                                     if let rb = title.matchingRemoteButton {
                                         pressButton(rb)
                                         return .handled
@@ -583,7 +585,7 @@ struct RemoteViewContained: View {
                                     if title == .keyboardShortcuts {
                                         appDelegate.navigationPath.append(.keyboardShortcutDestinaion)
                                     } else {
-                                        Self.logger.warning("Unknown function for keyboard shortcut \(title)")
+                                        Self.logger.warning("Unknown function for keyboard shortcut \(title, privacy: .public)")
                                     }
 
                                     return .handled
@@ -781,7 +783,7 @@ struct RemoteViewContained: View {
                             for shortcut in allKeyboardShortcuts {
                                 if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
                                     let title = shortcut.title
-                                    Self.logger.info("Not handling key press because found shortcut with title \(title)")
+                                    Self.logger.info("Not handling key press because found shortcut with title \(title, privacy: .public)")
                                     if let rb = title.matchingRemoteButton {
                                         pressButton(rb)
                                         return .handled
@@ -813,7 +815,7 @@ struct RemoteViewContained: View {
                                         Self.logger.info("Trying to paste")
                                         if let id = ecpSessionState.textEditStatus.texteditId, UIPasteboard.general.hasStrings {
                                             if let text = UIPasteboard.general.string {
-                                                Self.logger.info("Trying to paste \(text)")
+                                                Self.logger.info("Trying to paste \(text, privacy: .public)")
                                                 Task {
                                                     do {
                                                         try await ecpSession?.setTextEditText(text, for: id)
@@ -825,10 +827,10 @@ struct RemoteViewContained: View {
                                                 Self.logger.warning("No text to paste")
                                             }
                                         } else {
-                                            Self.logger.info("Not pasting due to empty textedit id (\(ecpSessionState.textEditStatus.texteditId ?? "none")) or false UI pasteboard hasStrings (\(UIPasteboard.general.hasStrings))")
+                                            Self.logger.info("Not pasting due to empty textedit id (\(ecpSessionState.textEditStatus.texteditId ?? "none", privacy: .public)) or false UI pasteboard hasStrings (\(UIPasteboard.general.hasStrings), privacy: .public)")
                                         }
                                     } else {
-                                        Self.logger.warning("Unknown function for keyboard shortcut \(title)")
+                                        Self.logger.warning("Unknown function for keyboard shortcut \(title, privacy: .public)")
                                     }
 
                                     return .handled
@@ -903,6 +905,12 @@ struct RemoteViewContained: View {
         }
         .onAppear {
             scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                updater?.update()
+            })
+            refreshActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                updater?.update()
+            })
+            ssdpActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
                 updater?.update()
             })
         }
@@ -1156,7 +1164,7 @@ struct RemoteViewContained: View {
             do {
                 try await ecpSession?.openApp(app)
             } catch {
-                Self.logger.error("Error opening app \(app.id): \(error)")
+                Self.logger.error("Error opening app \(app.id, privacy: .public): \(error, privacy: .public)")
             }
         }
         Task.detached {
@@ -1188,7 +1196,7 @@ struct RemoteViewContained: View {
 
     func pressKey(_ key: KeyEquivalent, modifiers: EventModifiers) {
         let character = key.character
-        Self.logger.trace("Getting keyboard press \(character)")
+        Self.logger.trace("Getting keyboard press \(character, privacy: .public)")
         if let button = RemoteButton.fromCharacter(character: character) {
             incrementButtonPressCount(button)
             if globalMajorActions.contains(button) {
@@ -1205,7 +1213,7 @@ struct RemoteViewContained: View {
                 do {
                     try await ecpSession.pressCharacter(getModifiedCharacter(key, modifiers: modifiers))
                 } catch {
-                    Self.logger.error("Error pressing character \(key.character) on device \(error)")
+                    Self.logger.error("Error pressing character \(key.character, privacy: .public) on device \(error, privacy: .public)")
                 }
             }
             return

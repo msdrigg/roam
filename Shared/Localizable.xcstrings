@@ -10450,6 +10450,9 @@
         }
       }
     },
+    "No device" : {
+
+    },
     "No devices" : {
       "comment" : "Placeholder for a device selector when there aren't any devices",
       "localizations" : {

@@ -136,12 +136,12 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
     }
 
     func persist() {
-        logger.info("Saving shortcut with title \(self.title.rawValue) key \(keys)")
+        logger.info("Saving shortcut with title \(self.title.rawValue, privacy: .public) key \(keys, privacy: .public)")
         do {
             let data = try PropertyListEncoder().encode(self)
             UserDefaults.standard.set(data, forKey: "keyboard-shortcut-\(title)")
         } catch {
-            logger.error("Error encoding keyboard shortcut to string \(error)")
+            logger.error("Error encoding keyboard shortcut to string \(error, privacy: .public)")
         }
     }
 

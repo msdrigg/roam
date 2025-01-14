@@ -35,7 +35,7 @@ actor OpusDecoderWithJitterBuffer {
         do {
             opusDecoder = try Opus.RoamDecoder(format: opusFormat)
         } catch {
-            Self.logger.error("Error initializing opus decoder \(error)")
+            Self.logger.error("Error initializing opus decoder \(error, privacy: .public)")
             throw error
         }
         self.audioBufferDuration = audioBuffer
@@ -46,7 +46,7 @@ actor OpusDecoderWithJitterBuffer {
             Self.logger.info("Not synced packet yet. Can't sync audio yet")
             return false
         }
-        Self.logger.info("Syncing time with additional audio delay \(additionalAudioDelay) buffer \(self.audioBufferDuration)")
+        Self.logger.info("Syncing time with additional audio delay \(additionalAudioDelay, privacy: .public) buffer \(self.audioBufferDuration, privacy: .public)")
 
         let packetsInBuffer = Int64(audioBufferDuration * Double(packetsPerSec))
 
@@ -75,7 +75,7 @@ actor OpusDecoderWithJitterBuffer {
         // Check payload type
         if packet.payloadType != PayloadType(97) || packet.ssrc != 0 {
             // Invalid payload
-            Self.logger.error("Error bad packet ssrc (\(packet.ssrc) or payload type (\(packet.payloadType.rawValue))")
+            Self.logger.error("Error bad packet ssrc (\(packet.ssrc, privacy: .public) or payload type (\(packet.payloadType.rawValue, privacy: .public))")
         }
         if lastPacketNumber < packet.sequenceNumber {
 //            Self.logger.trace("Adding packet with seqNo \(packet.packet.sequenceNumber) when current seqNo is
@@ -84,7 +84,7 @@ actor OpusDecoderWithJitterBuffer {
         } else {
             Self.logger
                 .error(
-                    "Error bad packet with seqNo \(packet.unwrappedSequenceNumber) when current seqNo is \(self.lastPacketNumber) rollingSeqNo \(self.rollingSequenceNumber ?? 0)"
+                    "Error bad packet with seqNo \(packet.unwrappedSequenceNumber, privacy: .public) when current seqNo is \(self.lastPacketNumber, privacy: .public) rollingSeqNo \(self.rollingSequenceNumber ?? 0)"
                 )
         }
     }
@@ -134,10 +134,10 @@ actor OpusDecoderWithJitterBuffer {
                 nextPcm = try opusDecoder.decode(np.payload)
             } else {
                 nextPcm = try opusDecoder.decode_loss_concealment(sampleCount: Int64(globalClockRate) / packetsPerSec)
-                Self.logger.error("Getting loss concealment packet for sqNo \(self.lastPacketNumber)")
+                Self.logger.error("Getting loss concealment packet for sqNo \(self.lastPacketNumber, privacy: .public)")
             }
         } catch {
-            Self.logger.error("Error decoding packet \(error)")
+            Self.logger.error("Error decoding packet \(error, privacy: .public)")
             return nil
         }
 
@@ -210,7 +210,7 @@ actor AudioPlayer {
         }
 
         if let error {
-            Self.logger.error("Error converting buffers \(error)")
+            Self.logger.error("Error converting buffers \(error, privacy: .public)")
         } else {
             await streamAudioNode.scheduleBuffer(outputBuffer, at: atTime)
         }

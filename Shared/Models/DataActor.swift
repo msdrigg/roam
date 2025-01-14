@@ -8,6 +8,10 @@ private let logger = Logger(
     category: "DataManagement"
 )
 
+func getGlobalNewDeviceName() -> String {
+    return String(localized: "New device")
+}
+
 @ModelActor
 public actor DataHandler {
     nonisolated static let logger = Logger(
@@ -38,7 +42,7 @@ public actor DataHandler {
     }
 
     func setSelectedApp(_ appId: PersistentIdentifier) {
-        DataHandler.logger.info("Updating selectedAt for app with id \(appId.described())")
+        DataHandler.logger.info("Updating selectedAt for app with id \(appId.described(), privacy: .public)")
 
         if let appLink = modelContext.existingApp(for: appId) {
             DataHandler.logger.info("Setting appId selected to now")
@@ -46,28 +50,28 @@ public actor DataHandler {
             do {
                 try modelContext.save()
             } catch {
-                DataHandler.logger.error("Error marking app as selected \(appLink.id)")
+                DataHandler.logger.error("Error marking app as selected \(appLink.id, privacy: .public)")
             }
         }
     }
 
     func setSelectedDevice(_ id: PersistentIdentifier) {
-        DataHandler.logger.info("Updating selectedAt for device with id \(String(describing: id))")
+        DataHandler.logger.info("Updating selectedAt for device with id \(String(describing: id), privacy: .public)")
         if let device = modelContext.existingDevice(for: id) {
-            DataHandler.logger.info("Found device to update with location \(device.location)")
+            DataHandler.logger.info("Found device to update with location \(device.location, privacy: .public)")
             device.lastSelectedAt = Date.now
             do {
                 try modelContext.save()
             } catch {
-                DataHandler.logger.error("Error marking device as selected \(device.location)")
+                DataHandler.logger.error("Error marking device as selected \(device.location, privacy: .public)")
             }
         }
     }
 
     func updateDevice(_ id: PersistentIdentifier, name: String, location: String, udn: String) {
-        DataHandler.logger.info("Updating device at \(location)")
+        DataHandler.logger.info("Updating device at \(location, privacy: .public)")
         if let device = modelContext.existingDevice(for: id) {
-            DataHandler.logger.info("Found device to update with id \(id.described()))")
+            DataHandler.logger.info("Found device to update with id \(id.described(), privacy: .public))")
             device.location = location
             device.name = name
             device.udn = udn
@@ -75,10 +79,10 @@ public actor DataHandler {
             do {
                 try modelContext.save()
             } catch {
-                Self.logger.warning("Error updating device at location \(location)")
+                Self.logger.warning("Error updating device at location \(location, privacy: .public)")
             }
         }
-        DataHandler.logger.info("Updated device at \(location)")
+        DataHandler.logger.info("Updated device at \(location, privacy: .public)")
     }
 
     @discardableResult
@@ -89,7 +93,7 @@ public actor DataHandler {
             do {
                 try modelContext.save()
             } catch {
-                DataHandler.logger.warning("Error updating device fields \(error)")
+                DataHandler.logger.warning("Error updating device fields \(error, privacy: .public)")
             }
             return device.persistentModelID
         }
@@ -99,7 +103,7 @@ public actor DataHandler {
             lastOnlineAt = nil
         }
 
-        DataHandler.logger.info("Adding device at \(location)")
+        DataHandler.logger.info("Adding device at \(location, privacy: .public)")
         let device = Device(
             name: friendlyDeviceName,
             location: location,
@@ -110,10 +114,10 @@ public actor DataHandler {
 
         do {
             try modelContext.save()
-            DataHandler.logger.info("Added device \(String(describing: device.persistentModelID))")
+            DataHandler.logger.info("Added device \(String(describing: device.persistentModelID), privacy: .public)")
             return device.persistentModelID
         } catch {
-            DataHandler.logger.warning("Error adding device at \(location), \(error)")
+            DataHandler.logger.warning("Error adding device at \(location, privacy: .public), \(error, privacy: .public)")
             return nil
         }
     }
@@ -125,7 +129,7 @@ public actor DataHandler {
                 try modelContext.save()
             }
         } catch {
-            DataHandler.logger.warning("Error marking device \(deviceId.described()) as sent to watch \(error)")
+            DataHandler.logger.warning("Error marking device \(deviceId.described(), privacy: .public) as sent to watch \(error, privacy: .public)")
         }
     }
 
@@ -137,7 +141,7 @@ public actor DataHandler {
         do {
             try modelContext.save()
         } catch {
-            DataHandler.logger.warning("Error marking devices as not sent to watch \(error)")
+            DataHandler.logger.warning("Error marking devices as not sent to watch \(error, privacy: .public)")
         }
     }
 
@@ -153,29 +157,29 @@ public actor DataHandler {
             let models = try modelContext.fetchSafer(descriptor)
 
             for model in models {
-                Self.logger.info("Deleteing device and apps \(model.location) with name \(model.name)")
+                Self.logger.info("Deleteing device and apps \(model.location, privacy: .public) with name \(model.name, privacy: .public)")
                 do {
                     try deleteAppsForDeviceUdn(udn: model.udn)
                 } catch {
-                    Self.logger.warning("Error deleting past apps for device \(model.udn) \(error)")
+                    Self.logger.warning("Error deleting past apps for device \(model.udn, privacy: .public) \(error, privacy: .public)")
                 }
                 modelContext.delete(model)
             }
 
             try modelContext.save()
         } catch {
-            Self.logger.warning("Error deleting past devices \(error)")
+            Self.logger.warning("Error deleting past devices \(error, privacy: .public)")
         }
     }
 
     func delete(_ id: PersistentIdentifier) async throws {
-        DataHandler.logger.info("Soft deleting device \(String(describing: id))")
+        DataHandler.logger.info("Soft deleting device \(String(describing: id), privacy: .public)")
         if let device = modelContext.existingDevice(for: id) {
             device.deletedAt = .now
             do {
                 try modelContext.save()
             } catch {
-                Self.logger.error("Error deleting device with id \(id.described())")
+                Self.logger.error("Error deleting device with id \(id.described(), privacy: .public)")
                 return
             }
         }
@@ -208,7 +212,7 @@ public actor DataHandler {
                 }
             }
         } catch {
-            DataHandler.logger.error("Error checking if device exists \(udn): \(error)")
+            DataHandler.logger.error("Error checking if device exists \(udn, privacy: .public): \(error, privacy: .public)")
         }
         return nil
     }
@@ -219,7 +223,7 @@ public actor DataHandler {
                 return deviceForUdnUnchecked(udn: udn)
             }
         } catch {
-            Self.logger.warning("Objc error getting device \(error)")
+            Self.logger.warning("Objc error getting device \(error, privacy: .public)")
             return nil
         }
     }
@@ -379,7 +383,7 @@ extension ModelContext {
 
             return model
         } catch {
-            logger.info("Error getting device for id \(id.described()): \(error)")
+            logger.info("Error getting device for id \(id.described(), privacy: .public): \(error, privacy: .public)")
             return nil
         }
     }
@@ -407,7 +411,7 @@ extension ModelContext {
 
             return data
         } catch {
-            logger.info("Error getting app for id \(id.described()): \(error)")
+            logger.info("Error getting app for id \(id.described(), privacy: .public): \(error, privacy: .public)")
             return nil
         }
     }
@@ -495,6 +499,7 @@ extension DataHandler {
             if device.udn.starts(with: "roam:newdevice-") {
                 device.udn = deviceInfo.udn
             } else if deviceInfo.udn != device.udn {
+                Self.logger.warning("Error: trying to refresh device with udn \(deviceInfo.udn, privacy: .public), but device already has udn \(device.udn, privacy: .public)")
                 return
             }
 
@@ -524,7 +529,7 @@ extension DataHandler {
             device.wifiMAC = deviceInfo.wifiMac
             device.networkType = deviceInfo.networkType
             device.powerMode = deviceInfo.powerMode
-            if device.name == String(localized: "New device") {
+            if device.name == getGlobalNewDeviceName() {
                 if let newName = deviceInfo.friendlyDeviceName {
                     device.name = newName
                 }
@@ -539,14 +544,14 @@ extension DataHandler {
         do {
             capabilities = try await fetchDeviceCapabilities(location: location)
         } catch {
-            DataHandler.logger.error("Error getting capabilities \(error)")
+            DataHandler.logger.error("Error getting capabilities \(error, privacy: .public)")
         }
 
         var apps: [AppLinkAppEntity]?
         do {
             apps = try await fetchDeviceApps(location: location)
         } catch {
-            DataHandler.logger.error("Error getting device apps \(error)")
+            DataHandler.logger.error("Error getting device apps \(error, privacy: .public)")
         }
 
         var deviceNeedsIcon = false
@@ -592,7 +597,7 @@ extension DataHandler {
 
         var deviceIcon: Data?
         if deviceNeedsIcon {
-            DataHandler.logger.info("Getting icon for device \(location)")
+            DataHandler.logger.info("Getting icon for device \(location, privacy: .public)")
             do {
                 deviceIcon = try await tryFetchDeviceIcon(location: location)
             } catch {
@@ -603,11 +608,11 @@ extension DataHandler {
         var appIcons: [String: Data] = [:]
         for appId in appsNeedingIcons {
             do {
-                DataHandler.logger.error("Getting device app icon for id \(appId)")
+                DataHandler.logger.error("Getting device app icon for id \(appId, privacy: .public)")
                 let iconData = try await fetchAppIcon(location: location, appId: appId)
                 appIcons[appId] = iconData
             } catch {
-                DataHandler.logger.error("Error getting device app icon \(error)")
+                DataHandler.logger.error("Error getting device app icon \(error, privacy: .public)")
             }
         }
 
@@ -678,7 +683,7 @@ extension DataHandler {
                 }
                 count = newMessages.count
             } catch {
-                DataHandler.logger.error("Error getting latest messages \(error)")
+                DataHandler.logger.error("Error getting latest messages \(error, privacy: .public)")
             }
 
             DataHandler.logger.info("Starting delete")
@@ -727,7 +732,7 @@ func saveDevice(
     let cleanedString = deviceIP.trimmingCharacters(in: .whitespacesAndNewlines)
         .replacingOccurrences(of: "\"", with: "").replacingOccurrences(of: "'", with: "")
     let deviceUrl = addSchemeAndPort(to: cleanedString)
-    logger.info("Getting device url \(deviceUrl)")
+    logger.info("Getting device url \(deviceUrl, privacy: .public)")
     // Save device id and location early
     await dataHandler.updateDevice(
         modelId, name: deviceName, location: deviceUrl, udn: existingUDN
@@ -744,17 +749,17 @@ func saveDevice(
             )
 
         } catch {
-            DataHandler.logger.error("Error saving device \(error)")
+            DataHandler.logger.error("Error saving device \(error, privacy: .public)")
         }
         return
     }
 
-    DataHandler.logger.info("Saving device \(deviceUrl) with id \(String(describing: modelId))")
+    DataHandler.logger.info("Saving device \(deviceUrl) with id \(String(describing: modelId), privacy: .public)")
     await dataHandler.updateDevice(
         modelId,
         name: deviceName,
         location: deviceUrl,
         udn: existingUDN
     )
-    DataHandler.logger.info("Saved device \(deviceUrl)")
+    DataHandler.logger.info("Saved device \(deviceUrl, privacy: .public)")
 }

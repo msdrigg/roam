@@ -130,7 +130,7 @@ private let logger = Logger(
 func fetchDeviceInfo(location: String) async -> DeviceInfo? {
     let deviceInfoURL = "\(location)query/device-info"
     guard let url = URL(string: deviceInfoURL) else {
-        logger.error("Unable to get device info due to bad url \(deviceInfoURL)")
+        logger.error("Unable to get device info due to bad url \(deviceInfoURL, privacy: .public)")
         return nil
     }
     var request = URLRequest(url: url)
@@ -145,7 +145,7 @@ func fetchDeviceInfo(location: String) async -> DeviceInfo? {
             do {
                 return try decoder.decode(DeviceInfo.self, from: Data(xmlString.utf8))
             } catch {
-                logger.error("Error decoding DeviceInfo response \(error)")
+                logger.error("Error decoding DeviceInfo response \(error, privacy: .public)")
             }
         }
     } catch {
