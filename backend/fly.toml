@@ -1,0 +1,43 @@
+app = 'roam-backend'
+primary_region = 'iad'
+
+[build]
+
+[env]
+DATA_DIR = '/app/data'
+RUST_LOG = 'info'
+
+[[mounts]]
+source = 'roam_backend_data'
+destination = '/app/data'
+initial_size = '20gb'
+
+[http_service]
+internal_port = 8080
+force_https = true
+auto_stop_machines = 'off'
+auto_start_machines = false
+min_machines_running = 1
+
+[http_service.concurrency]
+type = 'requests'
+hard_limit = 250
+soft_limit = 200
+
+[http_service.http_options]
+h2_backend = true
+
+[[http_service.checks]]
+path = "/health"
+interval = "10s"
+grace_period = "10s"
+timeout = "2s"
+method = "GET"
+
+
+[[restart]]
+policy = 'always'
+retries = 10
+
+[[vm]]
+size = 'shared-cpu-1x'
