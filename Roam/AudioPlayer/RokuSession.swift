@@ -14,7 +14,7 @@ enum HeadphonesModeError: Error, LocalizedError {
     case audioStreamingTimeout
 }
 
-func listenContinually(ecpSession: ECPSession, location: String, rtcpPort: UInt16?) async throws {
+func listenContinually(ecpSession: ECPWebsocketClient, location: String, rtcpPort: UInt16?) async throws {
     do {
         try await withThrowingDiscardingTaskGroup { taskGroup in
             logger.info("Starting headphones mode")

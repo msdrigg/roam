@@ -12,9 +12,9 @@ extension EnvironmentValues {
     }
 }
 
-@MainActor
-class UUIDUpdater: ObservableObject {
-    @Published var uuid: UUID = UUID()
+@MainActor @Observable
+class UUIDUpdater {
+    var uuid: UUID = UUID()
 
     func update() {
         uuid = UUID()

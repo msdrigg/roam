@@ -95,7 +95,7 @@ struct SettingsView: View {
 #elseif os(macOS)
                     openWindow(id: "messages")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        NSApplication.shared.activate(ignoringOtherApps: true)
+                        NSApp.forceFront("messages")
                     }
 #else
                     path.append(NavigationDestination.messageDestination)
@@ -351,7 +351,7 @@ struct SettingsView: View {
 #if os(macOS)
                     openWindow(id: "messages")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        NSApplication.shared.activate(ignoringOtherApps: true)
+                        NSApp.forceFront("messages")
                     }
 #else
                     path.append(NavigationDestination.messageDestination)
@@ -496,7 +496,7 @@ struct SettingsView: View {
             isScanning = true
             await scanningActor.scanIPV4Once()
         }
-        .task(priority: .background) {
+        .task(id: "\(scanIpAutomatically)-\(appDelegate.networkMonitor.networkConnection)", priority: .background) {
             if !scanIpAutomatically {
                 return
             }

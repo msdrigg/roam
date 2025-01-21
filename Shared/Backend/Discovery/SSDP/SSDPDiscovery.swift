@@ -55,6 +55,7 @@ func scanDevicesContinually(interface: String?) throws -> AsyncThrowingStream<SS
                 """
 
             let sendingHandle = Task {
+                var failures = 0
                 for await _ in exponentialBackoff(min: 2, max: 30) {
                     if Task.isCancelled {
                         return
@@ -62,8 +63,13 @@ func scanDevicesContinually(interface: String?) throws -> AsyncThrowingStream<SS
                     do {
                         try socket.send(data: Data(message.utf8), to: (address: groupAddress, port: groupPort))
                         logger.debug("Sent SSDP request successfully")
+                        failures = 0
                     } catch {
+                        failures += 1
                         logger.warning("Error sending SSDP request: \(error, privacy: .public)")
+                        if failures >= 2 {
+                            continuation.finish(throwing: error)
+                        }
                     }
                 }
             }

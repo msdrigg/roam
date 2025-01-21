@@ -124,7 +124,7 @@ struct RemoteView: View {
                         if new != nil {
                             openWindow(id: "messages")
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                NSApplication.shared.activate(ignoringOtherApps: true)
+                                NSApp.forceFront("messages")
                             }
                         }
                     }

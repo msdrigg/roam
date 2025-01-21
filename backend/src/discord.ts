@@ -29,16 +29,23 @@ type ApiError = {
 class DiscordClient {
     private baseUrl: string = 'https://discord.com/api/v10';
 
-    private retryAt: number | null = null;
+    private getRetryAt: () => Promise<number>;
+    private setRetryAt: (retryAfter: number) => Promise<void>;
 
     private botToken: string;
     private channelId: string;
     private guildId: string;
 
-    constructor(botToken: string, channelId: string, guildId: string) {
+    constructor(botToken: string, channelId: string, guildId: string, backoffOptions?: {
+        getRetryAt: () => Promise<number>;
+        setRetryAt: (retryAfter: number) => Promise<void>;
+    }) {
         this.botToken = botToken;
         this.channelId = channelId;
         this.guildId = guildId;
+        this.getRetryAt = backoffOptions?.getRetryAt || (async () => 0);
+        this.setRetryAt = backoffOptions?.setRetryAt || (async () => { });
+
     }
 
     async getMessagesInThread(threadId: string, lastMessageId: string | null = null, limit: number = 100): Promise<DiscordMessage[]> {
@@ -47,9 +54,11 @@ class DiscordClient {
         if (lastMessageId) {
             url.searchParams.append('after', lastMessageId);
         }
-        console.log(`Fetching messages in thread: ${url.toString()}`);
+        console.log(`Fetching messages in thread: ${threadId}`);
 
         try {
+            await this.checkRateLimit();
+            console.log(`Fetching messages from url: ${url.toString()}`);
             const response = await fetch(url.toString(), {
                 method: 'GET',
                 headers: {
@@ -57,7 +66,7 @@ class DiscordClient {
                 }
             });
 
-            this.updateRateLimit(response.headers)
+            await this.updateRateLimit(response.headers)
 
             if (!response.ok) {
                 await this.handleErrorResponse(response);
@@ -77,8 +86,11 @@ class DiscordClient {
         const body = {
             content: content
         };
+        console.log(`Sending messages to thread: ${threadId}`);
 
         try {
+            await this.checkRateLimit();
+            console.log(`Sending messages at url: ${url.toString()}`);
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -88,7 +100,7 @@ class DiscordClient {
                 body: JSON.stringify(body)
             });
 
-            this.updateRateLimit(response.headers)
+            await this.updateRateLimit(response.headers)
 
             if (!response.ok) {
                 await this.handleErrorResponse(response);
@@ -110,6 +122,7 @@ class DiscordClient {
         formData.append("files[0]", new Blob([attachment.data], { type: attachment.contentType }), attachment.name);
 
         try {
+            await this.checkRateLimit();
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -119,7 +132,7 @@ class DiscordClient {
             });
 
 
-            this.updateRateLimit(response.headers)
+            await this.updateRateLimit(response.headers)
 
             if (!response.ok) {
                 await this.handleErrorResponse(response);
@@ -138,6 +151,7 @@ class DiscordClient {
     async getActiveThreadsUpdatedSince(latestMessageId: string | null): Promise<Thread[]> {
         const url = `${this.baseUrl}/guilds/${this.guildId}/threads/active`;
         try {
+            await this.checkRateLimit();
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -145,7 +159,7 @@ class DiscordClient {
                 }
             });
 
-            this.updateRateLimit(response.headers)
+            await this.updateRateLimit(response.headers)
 
             if (!response.ok) {
                 await this.handleErrorResponse(response);
@@ -170,30 +184,53 @@ class DiscordClient {
         }
     }
 
-    checkRateLimit() {
+    async checkRateLimit() {
+        const retryAt = await this.getRetryAt();
         // If we are rate limited, wait until the retryAt time
-        if (this.retryAt && this.retryAt > Date.now()) {
-            let waitTime = this.retryAt - Date.now();
-            console.log(`Rate limited. Waiting ${waitTime / 1000} seconds before retrying.`);
+        if (retryAt && retryAt > Date.now()) {
+            let waitTime = retryAt - Date.now();
+            console.warn(`Rate limited. Waiting ${waitTime / 1000} seconds before retrying.`);
             throw new Error(`Rate limited. Waiting ${waitTime / 1000} seconds before retrying.`);
+        } else {
+            console.debug(`Not rate limited with ${retryAt}. Proceeding with request.`);
         }
     }
 
+    /** Handles error responses from Discord API, especially rate limiting */
     async handleErrorResponse(response: Response) {
         if (response.status === 429) {
-            const rateLimitData = await response.json() as {
+            let responseText = await response.text();
+            let headerRetryAfter = response.headers.get('Retry-After');
+            let rateLimitData: {
                 message: string;
                 retry_after: number;
-            };
-            this.retryAt = Date.now() + rateLimitData.retry_after * 1000;
+            } | null = null
+            try {
+                rateLimitData = JSON.parse(responseText) as {
+                    message: string;
+                    retry_after: number;
+                };
+                await this.setRetryAt(Date.now() + rateLimitData.retry_after * 1000);
+            } catch {
+                console.error(`No rate limit response json. Possibly cloudflare banned :(`);
+                if (headerRetryAfter) {
+                    await this.setRetryAt(Date.now() + parseFloat(headerRetryAfter) * 1000);
+                } else {
+                    await this.setRetryAt(Date.now() + 5000);
+                }
+                rateLimitData = {
+                    message: responseText,
+                    retry_after: parseFloat(headerRetryAfter || '5')
+                }
+            }
 
-            throw new Error(`Rate limited: ${rateLimitData.message}`);
+            throw new Error(`Rate limited: ${rateLimitData.message} for ${rateLimitData.retry_after} seconds.`);
         }
         const errorData = await response.json() as ApiError;
         throw new Error(`Failed to fetch messages: ${errorData.message}`);
     }
 
-    updateRateLimit(headers: Headers) {
+    async updateRateLimit(headers: Headers) {
         let rateLimitInfo = {
             limit: headers.get('X-RateLimit-Limit'),
             remaining: headers.get('X-RateLimit-Remaining'),
@@ -207,8 +244,8 @@ class DiscordClient {
         if (rateLimitInfo.remaining && parseInt(rateLimitInfo.remaining) === 0) {
             let resetAfter = rateLimitInfo.resetAfter ? parseFloat(rateLimitInfo.resetAfter) : 1;
 
-            this.retryAt = Date.now() + resetAfter * 1000;
-            console.log(`Rate limit exceeded. Resetting in ${rateLimitInfo.resetAfter} seconds (${this.retryAt}).`);
+            await this.setRetryAt(Date.now() + resetAfter * 1000);
+            console.log(`Rate limit exceeded. Resetting in ${rateLimitInfo.resetAfter} seconds.`);
         }
     }
 
@@ -223,7 +260,7 @@ class DiscordClient {
         };
 
         try {
-            this.checkRateLimit();
+            await this.checkRateLimit();
 
             const response = await fetch(url, {
                 method: 'POST',
@@ -234,7 +271,7 @@ class DiscordClient {
                 body: JSON.stringify(body)
             });
 
-            this.updateRateLimit(response.headers)
+            await this.updateRateLimit(response.headers)
 
             if (!response.ok) {
                 await this.handleErrorResponse(response);

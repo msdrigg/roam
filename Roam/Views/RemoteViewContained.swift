@@ -76,27 +76,20 @@ struct RemoteViewContained: View {
     @State private var errorTrigger: Int = 0
     @State private var networkPermissionGranted: Bool?
     @AppStorage(UserDefaultKeys.networkPermissionBannerDismissed) private var networkPermissionBannerDismissed: Bool = false
-    @StateObject private var networkMonitor = NetworkMonitor()
     @AllCustomKeyboardShortcuts private var allKeyboardShortcuts: [CustomKeyboardShortcut]
+
+    private var networkMonitor: NetworkMonitor {
+        self.appDelegate.networkMonitor
+    }
 
     private var isInMenuBar: Bool
 
-    private var ecpSessionState: ECPSessionState {
-        get {
-            appDelegate.ecpSessionState
-        }
-        nonmutating set(val) {
-            appDelegate.ecpSessionState = val
-        }
+    private var ecpSessionState: ECPMonitor {
+        appDelegate.ecpMonitor
     }
 
-    private var ecpSession: ECPSession? {
-        get {
-            appDelegate.ecpSessionState.ecpSession
-        }
-        nonmutating set(val) {
-            appDelegate.ecpSessionState.ecpSession = val
-        }
+    private var ecpSession: ECPWebsocketClient? {
+        appDelegate.ecpMonitor.ecpClient
     }
 
     #if os(macOS)
@@ -357,13 +350,7 @@ struct RemoteViewContained: View {
                     }
                 }
                 .onAppear {
-                    networkMonitor.startMonitoring()
-                }
-                .onAppear {
                     networkPermissionBannerDismissed = false
-                }
-                .onDisappear {
-                    networkMonitor.stopMonitoring()
                 }
                 .onAppear {
                     Self.logger.info("Showing view")
@@ -371,40 +358,31 @@ struct RemoteViewContained: View {
                 .onDisappear {
                     Self.logger.info("Closing view")
                 }
-                .task(id: scanningActor != nil && scanSSDP) {
+                .task(id: "\(ssdpActor != nil && scanSSDP)-\(networkMonitor.networkConnection)", priority: .background) {
                     if scanSSDP {
                         await ssdpActor?.scanSSDPContinually()
                     }
                 }
-                .task(id: ssdpActor != nil && selectedDevice == nil && scanSSDP) {
+                .task(id: "\(scanningActor != nil && selectedDevice == nil && scanSSDP)-\(networkMonitor.networkConnection)") {
                     if scanSSDP && selectedDevice == nil {
-                        await scanningActor?.scanSSDPContinually()
+                        await scanningActor?.scanIPV4Once()
                     }
                 }
                 .task(id: selectedDevice?.location, priority: .medium) {
                     Self.logger
                         .info("Creating ecp session with location \(String(describing: selectedDevice?.location), privacy: .public)")
-                    let oldECP = ecpSession
-                    await oldECP?.close()
-                    ecpSession = nil
                     if let device = selectedDevice?.toAppEntity() {
-                        do {
-                            let sessionState = self.ecpSessionState
-                            ecpSession = try ECPSession(device: device, status: sessionState)
-                            try await ecpSession?.configure()
-                        } catch {
-                            Self.logger.error("Error creating ECPSession: \(error, privacy: .public)")
-                        }
+                        self.ecpSessionState.setDevice(device)
                     } else {
-                        ecpSession = nil
+                        self.ecpSessionState.setDevice(nil)
                     }
                 }
                 .task(id: refreshActor == nil ? nil : selectedDevice?.persistentModelID, priority: .medium) {
-                    if refreshActor == nil {
+                    guard let refreshActor else {
                         return
                     }
                     if let devId = selectedDevice?.persistentModelID {
-                        await refreshActor?.refreshSelectedDeviceContinually(id: devId)
+                        await refreshActor.refreshSelectedDeviceContinually(id: devId)
                     }
                 }
                 .task(id: "\(headphonesModeEnabled),\(selectedDevice?.location ?? "--")") {
@@ -509,7 +487,8 @@ struct RemoteViewContained: View {
                                         manuallySelectedDevice = $0
                                     }),
                                     ecpSessionState: ecpSessionState
-                                )                        .accessibilityIdentifier("DevicePickerTop")
+                                )
+                                .accessibilityIdentifier("DevicePickerTop")
 
                             }
                             .focusSection()
@@ -542,7 +521,7 @@ struct RemoteViewContained: View {
                                 openWindow(id: "main")
                                 dismiss()
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                    NSApplication.shared.activate(ignoringOtherApps: true)
+                                    NSApp.forceFront("main")
                                 }
                             }, label: {
                                 Label("Open main window", systemImage: "macwindow.on.rectangle")
@@ -661,7 +640,7 @@ struct RemoteViewContained: View {
 #if os(macOS)
                                 openWindow(id: "messages")
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                    NSApplication.shared.activate(ignoringOtherApps: true)
+                                    NSApp.forceFront("messages")
                                 }
 #else
                                 appDelegate.navigationPath.append(NavigationDestination.messageDestination)
@@ -669,7 +648,6 @@ struct RemoteViewContained: View {
                             }, level: .info)
                         }
                         networkConnectivityBanner
-                        networkPermissionBanner
                         Spacer().frame(maxHeight: 10)
                     }
 
@@ -805,7 +783,7 @@ struct RemoteViewContained: View {
                                         if let id = ecpSessionState.textEditStatus.texteditId {
                                             Task {
                                                 do {
-                                                    try await ecpSession?.setTextEditText("", for: id)
+                                                    try await ecpSession?.setTextEdit("", texteditId: id)
                                                 } catch {
                                                     Self.logger.error("Error cutting text: \(error, privacy: .public)")
                                                 }
@@ -818,7 +796,7 @@ struct RemoteViewContained: View {
                                                 Self.logger.info("Trying to paste \(text, privacy: .public)")
                                                 Task {
                                                     do {
-                                                        try await ecpSession?.setTextEditText(text, for: id)
+                                                        try await ecpSession?.setTextEdit(text, texteditId: id)
                                                     } catch {
                                                         Self.logger.error("Error cutting text: \(error, privacy: .public)")
                                                     }
@@ -914,7 +892,6 @@ struct RemoteViewContained: View {
                 updater?.update()
             })
         }
-
         #if os(macOS)
         .onKeyDown({ key in pressKey(key.key, modifiers: key.modifiers) }, enabled: true)
         #endif
@@ -941,29 +918,29 @@ struct RemoteViewContained: View {
                     localized: "No WiFi connection detected",
                     comment: "Warning indicator message that there is no WiFi network connection"
                 ), level: .warning)
+            } else if networkMonitor.networkConnection == .expensiveLocal {
+                NotificationBanner(message: String(
+                    localized: "No valid WiFi connection detected. You may be connected to a hotspot instead of your home WiFi network",
+                    comment: "Warning indicator message that there is no WiFi network connection"
+                ), level: .warning)
+            } else if self.networkPermissionGranted == false && !self.networkPermissionBannerDismissed && self.ecpSessionState.status != .connected  {
+#if os(macOS)
+                NotificationBanner(message: String(
+                    localized: "Local network permission may not be granted. Please open System Settings and navigate to Privacy and Security -> Local Network and enable access for Roam",
+                    comment: "Warning indicator message that there is no local network permission"
+                ), onDismiss: {
+                    self.networkPermissionBannerDismissed = true
+                })
+#else
+                NotificationBanner(message: String(
+                    localized:
+                        "Local network permission may not be granted. Please navigate to System Settings -> Apps -> Roam and enable Local Network",
+                    comment: "Warning indicator message that there is no local network permission"
+                ), onDismiss: {
+                    self.networkPermissionBannerDismissed = true
+                })
+#endif
             }
-        }
-    }
-
-    @ViewBuilder
-    var networkPermissionBanner: some View {
-        if self.networkPermissionGranted == false && !self.networkPermissionBannerDismissed && self.ecpSessionState.status != .connected {
-            #if os(macOS)
-            NotificationBanner(message: String(
-                localized: "Local network permission may not be granted. Please open System Settings and navigate to Privacy and Security -> Local Network and enable access for Roam",
-                comment: "Warning indicator message that there is no local network permission"
-            ), onDismiss: {
-                self.networkPermissionBannerDismissed = true
-            })
-            #else
-            NotificationBanner(message: String(
-                localized:
-                "Local network permission may not be granted. Please navigate to System Settings -> Apps -> Roam and enable Local Network",
-                comment: "Warning indicator message that there is no local network permission"
-            ), onDismiss: {
-                self.networkPermissionBannerDismissed = true
-            })
-            #endif
         }
     }
 
@@ -1162,7 +1139,7 @@ struct RemoteViewContained: View {
         incrementButtonPressCount(.inputAV1)
         Task.detached {
             do {
-                try await ecpSession?.openApp(app)
+                try await ecpSession?.launchApp(app.id)
             } catch {
                 Self.logger.error("Error opening app \(app.id, privacy: .public): \(error, privacy: .public)")
             }

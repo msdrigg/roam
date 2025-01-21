@@ -2,9 +2,9 @@ import Network
 import OSLog
 import SwiftUI
 
-@MainActor
-class NetworkMonitor: ObservableObject {
-    @Published var networkConnection: NetworkType = .local
+@MainActor @Observable
+class NetworkMonitor {
+    var networkConnection: NetworkType = .local
     private let monitor: NWPathMonitor
     private let queue = DispatchQueue(label: "NetworkMonitor")
 
@@ -18,8 +18,14 @@ class NetworkMonitor: ObservableObject {
         monitor.pathUpdateHandler = { [weak self] path in
             DispatchQueue.main.async { [weak self] in
                 if path.status == .satisfied {
-                    if path.usesInterfaceType(.wifi), !path.isExpensive {
-                        self?.networkConnection = .local
+                    if path.usesInterfaceType(.wifi) {
+                        if path.isExpensive {
+                            self?.networkConnection = .expensiveLocal
+                        } else {
+                            self?.networkConnection = .local
+                        }
+                    } else if path.usesInterfaceType(.wifi), !path.isExpensive {
+                        self?.networkConnection = .expensiveLocal
                     } else if path.usesInterfaceType(.wiredEthernet) {
                         self?.networkConnection = .local
                     } else if path.usesInterfaceType(.cellular) {
@@ -49,6 +55,7 @@ class NetworkMonitor: ObservableObject {
 
     enum NetworkType {
         case local
+        case expensiveLocal
         case remote
         case other
         case none

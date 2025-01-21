@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            UPDATE users\n            SET\n                thread_id = COALESCE(?, thread_id),\n                apns_token = COALESCE(?, apns_token),\n                device_info_json = COALESCE(?, device_info_json)\n            WHERE device_id = ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "e6dfcd75879048270b7b3b8d65d379ddc7caaeec7ffb11354cad9662a3cc48b7"
+}

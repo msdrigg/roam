@@ -20,7 +20,8 @@ public actor DataHandler {
     )
 
     // Only refresh every 1 hour
-    private let minRescanInterval: TimeInterval = 3600
+//    private let minRescanInterval: TimeInterval = 3600
+    private let minRescanInterval: TimeInterval = 30
 
     private func allDevices() throws -> [Device] {
         var descriptor = FetchDescriptor<Device>(
@@ -485,15 +486,46 @@ extension DataHandler {
 
 extension DataHandler {
     func refreshDevice(_ id: PersistentIdentifier) async {
+        Self.logger.info("Refreshing device with id \(String(describing: id))")
         guard let location = (modelContext.existingDevice(for: id))?.location else {
             DataHandler.logger.error("Trying to refresh device that doeesn't exist \(String(describing: id), privacy: .public)")
             return
         }
-
-        guard let deviceInfo = await fetchDeviceInfo(location: location) else {
-            DataHandler.logger.info("Failed to get device info \(location, privacy: .public)")
+        #if !os(watchOS)
+        let ecpSession: ECPWebsocketClient
+        do {
+            guard let location = URL(string: location) else {
+                throw APIError.badURLError(location)
+            }
+            ecpSession = ECPWebsocketClient(location: location)
+            await ecpSession.start()
+        } catch {
+            Self.logger.warning("Error refreshing device b/c no ECP Session: \(error, privacy: .public)")
             return
         }
+        defer {
+            Task {
+                await ecpSession.cancel()
+            }
+        }
+        #endif
+
+        #if os(watchOS)
+        guard let deviceInfo = await fetchDeviceInfo(location: location) else {
+            Self.logger.warning("Error getting device info")
+            return
+        }
+        Self.logger.info("Successfully refreshed device info")
+        #else
+        let deviceInfo: DeviceInfo
+        do {
+            deviceInfo = try await ecpSession.getDeviceInfo()
+            Self.logger.info("Successfully refreshed device info")
+        } catch {
+            Self.logger.info("Failed to get device info \(location, privacy: .public), \(error, privacy: .public)")
+            return
+        }
+        #endif
 
         if let device = modelContext.existingDevice(for: id) {
             if device.udn.starts(with: "roam:newdevice-") {
@@ -542,14 +574,25 @@ extension DataHandler {
 
         var capabilities: DeviceCapabilities?
         do {
+            #if os(watchOS)
             capabilities = try await fetchDeviceCapabilities(location: location)
+            #else
+            capabilities = try await ecpSession.getDeviceCapabilities()
+            #endif
+            Self.logger.info("Successful refreshed capabilities")
+            Self.logger.info("Successful refreshed capabilities")
         } catch {
             DataHandler.logger.error("Error getting capabilities \(error, privacy: .public)")
         }
 
         var apps: [AppLinkAppEntity]?
         do {
+            #if os(watchOS)
             apps = try await fetchDeviceApps(location: location)
+            #else
+            apps = try await ecpSession.getDeviceApps()
+            #endif
+            Self.logger.info("Successfully refreshed device apps")
         } catch {
             DataHandler.logger.error("Error getting device apps \(error, privacy: .public)")
         }
@@ -599,7 +642,7 @@ extension DataHandler {
         if deviceNeedsIcon {
             DataHandler.logger.info("Getting icon for device \(location, privacy: .public)")
             do {
-                deviceIcon = try await tryFetchDeviceIcon(location: location)
+                deviceIcon = try await fetchDeviceIcon(location: location)
             } catch {
                 DataHandler.logger.warning("Error getting device icon \(error, privacy: .public)")
             }
@@ -609,7 +652,12 @@ extension DataHandler {
         for appId in appsNeedingIcons {
             do {
                 DataHandler.logger.error("Getting device app icon for id \(appId, privacy: .public)")
+                #if os(watchOS)
                 let iconData = try await fetchAppIcon(location: location, appId: appId)
+                #else
+                let iconData = try await ecpSession.getDeviceAppIcon(appId)
+                #endif
+                Self.logger.info("Successfully refreshed device app icon")
                 appIcons[appId] = iconData
             } catch {
                 DataHandler.logger.error("Error getting device app icon \(error, privacy: .public)")
@@ -738,7 +786,23 @@ func saveDevice(
         modelId, name: deviceName, location: deviceUrl, udn: existingUDN
     )
 
+    #if os(watchOS)
     let deviceInfo = await fetchDeviceInfo(location: deviceUrl)
+    #else
+    var deviceInfo: DeviceInfo?
+    do {
+        guard let url = URL(string: deviceUrl) else {
+            return
+        }
+        deviceInfo = try await ECPWebsocketClient(location: url).oneOff { session in
+            return try await session.getDeviceInfo()
+        }
+    } catch {
+        logger.error("Error creating ECPSession getting device info: \(error, privacy: .public)")
+        return
+    }
+    #endif
+    logger.info("Got device info to save device")
 
     // If we get a device with a different UDN, replace the device
     if let udn = deviceInfo?.udn, udn != existingUDN {

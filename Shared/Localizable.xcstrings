@@ -10702,6 +10702,9 @@
         }
       }
     },
+    "No valid WiFi connection detected. You may be connected to a hotspot instead of your home WiFi network" : {
+      "comment" : "Warning indicator message that there is no WiFi network connection"
+    },
     "No WiFi connection detected" : {
       "comment" : "Warning indicator message that there is no WiFi network connection",
       "localizations" : {

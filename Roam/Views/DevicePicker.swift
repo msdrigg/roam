@@ -30,7 +30,7 @@ struct DevicePicker: View {
     var device: Binding<Device?>
 
     let showScanning: Bool
-    let ecpSessionState: ECPSessionState?
+    let ecpSessionState: ECPMonitor?
 
     let timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
     @State private var currentDate: Date = .now
@@ -76,7 +76,7 @@ struct DevicePicker: View {
         }
     }
 
-    init(devices: [Device], device: Binding<Device?>, ecpSessionState: ECPSessionState? = nil, showScanning: Bool = false) {
+    init(devices: [Device], device: Binding<Device?>, ecpSessionState: ECPMonitor? = nil, showScanning: Bool = false) {
         self.devices = devices
         self.device = device
         self.showScanning = showScanning
@@ -114,9 +114,8 @@ struct DevicePicker: View {
             #if os(macOS)
                 Button(action: {
                     openSettings()
-                    openWindow(id: "main")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        NSApplication.shared.activate(ignoringOtherApps: true)
+                        NSApp.forceFront("com_apple_SwiftUI_Settings_window")
                     }
                 }, label: {
                     Label("Settings", systemImage: "gear")

@@ -141,7 +141,8 @@ export async function sendBackgroundPushNotification(key: APNSAuthKey, deviceTok
         headers: {
             'authorization': `bearer ${jwt}`,
             'apns-topic': bundleId,
-            'content-type': 'application/json', 'apns-push-type': 'background',
+            'content-type': 'application/json',
+            'apns-push-type': 'background',
             'apns-priority': '5',
             'apns-expiration': '0'
 

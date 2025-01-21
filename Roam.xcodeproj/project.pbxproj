@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -15,6 +15,10 @@
 		AF0042852AEABA9D0051BB1E /* CollectionHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0042842AEABA9D0051BB1E /* CollectionHelpers.swift */; };
 		AF0042862AEABA9D0051BB1E /* CollectionHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0042842AEABA9D0051BB1E /* CollectionHelpers.swift */; };
 		AF0042872AEABA9F0051BB1E /* CollectionHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0042842AEABA9D0051BB1E /* CollectionHelpers.swift */; };
+		AF0532802D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF05327D2D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift */; };
+		AF0532812D36DB2200D68F8E /* HeadphonesModeTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF05327E2D36DB2200D68F8E /* HeadphonesModeTip.swift */; };
+		AF0532822D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF05327D2D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift */; };
+		AF0532852D36DB2B00D68F8E /* RoamSwiftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0532832D36DB2B00D68F8E /* RoamSwiftTests.swift */; };
 		AF05B4702BFDA49900FA3783 /* ObjcErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF05B46F2BFDA49900FA3783 /* ObjcErrors.swift */; };
 		AF05B4712BFDA49D00FA3783 /* ObjcErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF05B46F2BFDA49900FA3783 /* ObjcErrors.swift */; };
 		AF05B4722BFDA49E00FA3783 /* ObjcErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF05B46F2BFDA49900FA3783 /* ObjcErrors.swift */; };
@@ -23,13 +27,10 @@
 		AF0C82892AEB463300CBE7F8 /* AccentColor.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AF0C82872AEB44BF00CBE7F8 /* AccentColor.xcassets */; };
 		AF0C828A2AEB463400CBE7F8 /* AccentColor.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AF0C82872AEB44BF00CBE7F8 /* AccentColor.xcassets */; };
 		AF0C828C2AEB494D00CBE7F8 /* VolumeSliderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C828B2AEB494D00CBE7F8 /* VolumeSliderView.swift */; };
-		AF0C82902AEBF2A200CBE7F8 /* ECPSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C828F2AEBF2A200CBE7F8 /* ECPSession.swift */; };
-		AF0C82932AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */; };
 		AF0C82952AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82942AEBFB4600CBE7F8 /* APIHelpers.swift */; };
 		AF0C82962AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82942AEBFB4600CBE7F8 /* APIHelpers.swift */; };
 		AF0C82972AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82942AEBFB4600CBE7F8 /* APIHelpers.swift */; };
 		AF0C82982AEBFBD500CBE7F8 /* StatelessDeviceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */; };
-		AF0C82992AEBFBD500CBE7F8 /* StatelessDeviceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */; };
 		AF0C82A82AEC0C2C00CBE7F8 /* Shortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6B72ADE28C80036EC90 /* Shortcuts.swift */; };
 		AF0D09F02CDE5C410098122E /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0D09EE2CDE5C3B0098122E /* Helpers.swift */; };
 		AF0D09F12CDE5C410098122E /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0D09EE2CDE5C3B0098122E /* Helpers.swift */; };
@@ -90,8 +91,16 @@
 		AF27400D2AE02C25007C6208 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF95B6FF2ADF2FEC005FC338 /* SwiftUI.framework */; };
 		AF2740102AE02C25007C6208 /* RoamWidgetsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF27400F2AE02C25007C6208 /* RoamWidgetsApp.swift */; };
 		AF27401B2AE02C26007C6208 /* RoamWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AF27400B2AE02C25007C6208 /* RoamWidgets.appex */; platformFilters = (ios, macos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AF2AF23B2D3B0FDB00AAD5B0 /* StatelessDeviceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */; };
+		AF2AF23C2D3B0FDB00AAD5B0 /* StatelessDeviceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */; };
+		AF2C85A32D370DAF00A167B2 /* ECPWebsocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A22D370DA700A167B2 /* ECPWebsocket.swift */; };
+		AF2C85A42D370DAF00A167B2 /* ECPWebsocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A22D370DA700A167B2 /* ECPWebsocket.swift */; };
+		AF2C85A62D37183E00A167B2 /* ECPProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A52D37183600A167B2 /* ECPProtocol.swift */; };
+		AF2C85A72D37183E00A167B2 /* ECPProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A52D37183600A167B2 /* ECPProtocol.swift */; };
 		AF2F54EF2BCE58EF00BAE156 /* WorkersBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2F54EE2BCE58EF00BAE156 /* WorkersBackend.swift */; };
 		AF2F54F02BCE58EF00BAE156 /* WorkersBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2F54EE2BCE58EF00BAE156 /* WorkersBackend.swift */; };
+		AF30DD2A2D39B1FF00FD8B9A /* ECPMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */; };
+		AF30DD2B2D39B1FF00FD8B9A /* ECPMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */; };
 		AF35038F2BB499F3004F4337 /* RoamWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AF27400B2AE02C25007C6208 /* RoamWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AF3503942BB499FA004F4337 /* libwebp in Frameworks */ = {isa = PBXBuildFile; platformFilters = (watchos, ); productRef = AF3503932BB499FA004F4337 /* libwebp */; };
 		AF35ACEB2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF35ACEA2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift */; };
@@ -107,6 +116,11 @@
 		AF3EEF952AE0206E00B661F3 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5B16E32AD5D5BB00053BDC /* AudioPlayer.swift */; };
 		AF3EEF962AE0206E00B661F3 /* RokuSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF76B8152AD8A14600DF6FF7 /* RokuSession.swift */; };
 		AF3EEF972AE0206E00B661F3 /* BinaryHeap.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFED2502AD75EAF00357FA4 /* BinaryHeap.swift */; };
+		AF3F35092D3E9234009AF2F8 /* ImageDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3F35082D3E9230009AF2F8 /* ImageDecoder.swift */; };
+		AF3F350A2D3E9234009AF2F8 /* ImageDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3F35082D3E9230009AF2F8 /* ImageDecoder.swift */; };
+		AF3F350B2D3E9234009AF2F8 /* ImageDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3F35082D3E9230009AF2F8 /* ImageDecoder.swift */; };
+		AF3F350C2D3E98C9009AF2F8 /* ECPProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A52D37183600A167B2 /* ECPProtocol.swift */; };
+		AF3F350D2D3E99A2009AF2F8 /* ECPMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */; };
 		AF42442E2BB1118700334AAF /* SchemaFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF42442D2BB1118700334AAF /* SchemaFile.swift */; };
 		AF42442F2BB1118700334AAF /* SchemaFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF42442D2BB1118700334AAF /* SchemaFile.swift */; };
 		AF4244302BB1118700334AAF /* SchemaFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF42442D2BB1118700334AAF /* SchemaFile.swift */; };
@@ -141,6 +155,8 @@
 		AF842A5D2BA554E5005D52D2 /* CaptureScrollWheelModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF779BF22BA4D91E00231BC5 /* CaptureScrollWheelModifier.swift */; };
 		AF8EF51D2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF8EF51C2BB60EAF002A4D6D /* NavigationDestination.swift */; };
 		AF8EF51E2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF8EF51C2BB60EAF002A4D6D /* NavigationDestination.swift */; };
+		AF90B5C62D3B52340063FADD /* ECPMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF90B5C52D3B52310063FADD /* ECPMonitor.swift */; };
+		AF90B5C72D3B52340063FADD /* ECPMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF90B5C52D3B52310063FADD /* ECPMonitor.swift */; };
 		AF94AEF32C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AF94AEF22C0BEA8200D8D7CF /* Localizable.xcstrings */; };
 		AF94AEF42C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AF94AEF22C0BEA8200D8D7CF /* Localizable.xcstrings */; };
 		AF94AEF52C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AF94AEF22C0BEA8200D8D7CF /* Localizable.xcstrings */; };
@@ -169,7 +185,6 @@
 		AFC4A6602AE8AF3F005DAC6C /* DataImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC4A65E2AE8AF3F005DAC6C /* DataImage.swift */; };
 		AFCF22DE2B2A52190048FFD9 /* NotificationBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCF22DD2B2A52190048FFD9 /* NotificationBanner.swift */; };
 		AFCF22E02B2A6A720048FFD9 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCF22DF2B2A6A720048FFD9 /* NetworkMonitor.swift */; };
-		AFD395012D2F85D40017B2A0 /* ECPSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C828F2AEBF2A200CBE7F8 /* ECPSession.swift */; };
 		AFD395042D2F9C710017B2A0 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = AFD395032D2F9C710017B2A0 /* AsyncAlgorithms */; };
 		AFD590D02AEC673C00189620 /* WatchConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590CF2AEC673C00189620 /* WatchConnector.swift */; };
 		AFD590D22AEC692700189620 /* IPhoneConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D12AEC692700189620 /* IPhoneConnector.swift */; };
@@ -336,12 +351,14 @@
 /* Begin PBXFileReference section */
 		AF0042742AE9BD8F0051BB1E /* UserDefaultKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultKeys.swift; sourceTree = "<group>"; };
 		AF0042842AEABA9D0051BB1E /* CollectionHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionHelpers.swift; sourceTree = "<group>"; };
+		AF05327D2D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalKeyboardShortcutsTip.swift; sourceTree = "<group>"; };
+		AF05327E2D36DB2200D68F8E /* HeadphonesModeTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadphonesModeTip.swift; sourceTree = "<group>"; };
+		AF0532832D36DB2B00D68F8E /* RoamSwiftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamSwiftTests.swift; sourceTree = "<group>"; };
 		AF05B46F2BFDA49900FA3783 /* ObjcErrors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjcErrors.swift; sourceTree = "<group>"; };
 		AF05B4742BFDA4CD00FA3783 /* ObjcErrorsInternal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ObjcErrorsInternal.h; sourceTree = "<group>"; };
 		AF05B4792BFDA63100FA3783 /* Bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Bridge.h; sourceTree = "<group>"; };
 		AF0C82872AEB44BF00CBE7F8 /* AccentColor.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AccentColor.xcassets; sourceTree = "<group>"; };
 		AF0C828B2AEB494D00CBE7F8 /* VolumeSliderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeSliderView.swift; sourceTree = "<group>"; };
-		AF0C828F2AEBF2A200CBE7F8 /* ECPSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECPSession.swift; sourceTree = "<group>"; };
 		AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatelessDeviceAPI.swift; sourceTree = "<group>"; };
 		AF0C82942AEBFB4600CBE7F8 /* APIHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIHelpers.swift; sourceTree = "<group>"; };
 		AF0D09EE2CDE5C3B0098122E /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
@@ -372,7 +389,10 @@
 		AF27400F2AE02C25007C6208 /* RoamWidgetsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamWidgetsApp.swift; sourceTree = "<group>"; };
 		AF2740172AE02C26007C6208 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AF2740182AE02C26007C6208 /* RoamWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RoamWidgets.entitlements; sourceTree = "<group>"; };
+		AF2C85A22D370DA700A167B2 /* ECPWebsocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECPWebsocket.swift; sourceTree = "<group>"; };
+		AF2C85A52D37183600A167B2 /* ECPProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECPProtocol.swift; sourceTree = "<group>"; };
 		AF2F54EE2BCE58EF00BAE156 /* WorkersBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkersBackend.swift; sourceTree = "<group>"; };
+		AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECPMessages.swift; sourceTree = "<group>"; };
 		AF35ACEA2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyboardMonitorUIKit.swift; sourceTree = "<group>"; };
 		AF35ACF12BA3D21F00CC8B36 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AF38A1802D29E3EC00980D41 /* RoamWidgetsMacOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RoamWidgetsMacOS.entitlements; sourceTree = "<group>"; };
@@ -383,6 +403,7 @@
 		AF3AD55A2AE2947E00E2D780 /* KeyboardEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardEntry.swift; sourceTree = "<group>"; };
 		AF3AD55C2AE299BD00E2D780 /* DevicePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicePicker.swift; sourceTree = "<group>"; };
 		AF3D62D62AE6F703006AB8E9 /* OpusDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpusDecoder.swift; sourceTree = "<group>"; };
+		AF3F35082D3E9230009AF2F8 /* ImageDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDecoder.swift; sourceTree = "<group>"; };
 		AF42442D2BB1118700334AAF /* SchemaFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaFile.swift; sourceTree = "<group>"; };
 		AF44021B2BFBEF2500004C15 /* LinkedTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedTextView.swift; sourceTree = "<group>"; };
 		AF468D362D333A9C00DF0F2E /* QSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QSocket.swift; sourceTree = "<group>"; };
@@ -408,6 +429,7 @@
 		AF779BF62BA4DDD000231BC5 /* WrappingHStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WrappingHStack.swift; sourceTree = "<group>"; };
 		AF8CB9ED2BDABE3000115C88 /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		AF8EF51C2BB60EAF002A4D6D /* NavigationDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationDestination.swift; sourceTree = "<group>"; };
+		AF90B5C52D3B52310063FADD /* ECPMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECPMonitor.swift; sourceTree = "<group>"; };
 		AF91C6FF2CD33117008BF5AB /* RoamMacOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RoamMacOS.entitlements; sourceTree = "<group>"; };
 		AF94AEF22C0BEA8200D8D7CF /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		AF95B6F62ADF2F9F005FC338 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.crashreport; };
@@ -470,29 +492,6 @@
 		AFFED2502AD75EAF00357FA4 /* BinaryHeap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryHeap.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		AFC78ED32C389D1200A5FC0E /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				GlobalKeyboardShortcutsTip.swift,
-				HeadphonesModeTip.swift,
-			);
-			target = AFC24EFA2AD0E5A1002AB66C /* Roam */;
-		};
-		AFC78ED42C389D1200A5FC0E /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				GlobalKeyboardShortcutsTip.swift,
-			);
-			target = AF15C2452AE8672700B79FD9 /* RoamWatch */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		AFA922F52C20A2DA008F49B4 /* Tips */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (AFC78ED32C389D1200A5FC0E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, AFC78ED42C389D1200A5FC0E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Tips; sourceTree = "<group>"; };
-		AFEDCDF52CD1331E0001D959 /* RoamSwiftTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = RoamSwiftTests; sourceTree = "<group>"; };
-/* End PBXFileSystemSynchronizedRootGroup section */
-
 /* Begin PBXFrameworksBuildPhase section */
 		AF15C2432AE8672700B79FD9 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -551,6 +550,34 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		AF0532772D36DB1700D68F8E /* ECPSession */ = {
+			isa = PBXGroup;
+			children = (
+				AF90B5C52D3B52310063FADD /* ECPMonitor.swift */,
+				AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */,
+				AF2C85A52D37183600A167B2 /* ECPProtocol.swift */,
+				AF2C85A22D370DA700A167B2 /* ECPWebsocket.swift */,
+			);
+			path = ECPSession;
+			sourceTree = "<group>";
+		};
+		AF05327F2D36DB2200D68F8E /* Tips */ = {
+			isa = PBXGroup;
+			children = (
+				AF05327D2D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift */,
+				AF05327E2D36DB2200D68F8E /* HeadphonesModeTip.swift */,
+			);
+			path = Tips;
+			sourceTree = "<group>";
+		};
+		AF0532842D36DB2B00D68F8E /* RoamSwiftTests */ = {
+			isa = PBXGroup;
+			children = (
+				AF0532832D36DB2B00D68F8E /* RoamSwiftTests.swift */,
+			);
+			path = RoamSwiftTests;
+			sourceTree = "<group>";
+		};
 		AF0C82862AEB3AA500CBE7F8 /* Views */ = {
 			isa = PBXGroup;
 			children = (
@@ -592,7 +619,6 @@
 			children = (
 				AF95B7532ADF4435005FC338 /* DiscoveryActor.swift */,
 				AF19CA262AE54AB000A42DFF /* SSDP */,
-				AF95B74E2ADF43B2005FC338 /* Scanning */,
 			);
 			path = Discovery;
 			sourceTree = "<group>";
@@ -708,7 +734,7 @@
 				AF24805C2BDB475A00EF47AE /* DebugImages.xcassets */,
 				AF0C82872AEB44BF00CBE7F8 /* AccentColor.xcassets */,
 				AF5ED8D42AE984E9007DB2B8 /* WidgetColor.xcassets */,
-				AFA922F52C20A2DA008F49B4 /* Tips */,
+				AF05327F2D36DB2200D68F8E /* Tips */,
 				AF56E3BA2AD9863100F5E6E0 /* Views */,
 				AFF6077E2ADFAC4F00A7D657 /* Backend */,
 				AFF6078C2AE005E400A7D657 /* Intents */,
@@ -733,15 +759,6 @@
 				AF19CA332AE694CE00A42DFF /* BufferedChannel */,
 			);
 			path = AudioPlayer;
-			sourceTree = "<group>";
-		};
-		AF95B74E2ADF43B2005FC338 /* Scanning */ = {
-			isa = PBXGroup;
-			children = (
-				AFC6E67E2ADCE5D80036EC90 /* AsyncSemaphore.swift */,
-				AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */,
-			);
-			path = Scanning;
 			sourceTree = "<group>";
 		};
 		AFA21D322C2C7C83008EF24A /* RoamWatchUITests */ = {
@@ -804,7 +821,7 @@
 				AF15C2472AE8672700B79FD9 /* RoamWatch */,
 				AFA21D322C2C7C83008EF24A /* RoamWatchUITests */,
 				AFA21D412C2C7CB6008EF24A /* RoamUITests */,
-				AFEDCDF52CD1331E0001D959 /* RoamSwiftTests */,
+				AF0532842D36DB2B00D68F8E /* RoamSwiftTests */,
 				AFC24EFC2AD0E5A1002AB66C /* Products */,
 				AF4D5F322AD4355E0055AF35 /* Frameworks */,
 			);
@@ -844,11 +861,14 @@
 		AFF6077E2ADFAC4F00A7D657 /* Backend */ = {
 			isa = PBXGroup;
 			children = (
+				AF0532772D36DB1700D68F8E /* ECPSession */,
 				AF1C74832CE035440061E9F8 /* NetworkPermissionsCheck.swift */,
 				AF19CA252AE54AA800A42DFF /* Discovery */,
 				AF19CA3B2AE6BFC300A42DFF /* DeviceApi.swift */,
+				AF3F35082D3E9230009AF2F8 /* ImageDecoder.swift */,
 				AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */,
-				AF0C828F2AEBF2A200CBE7F8 /* ECPSession.swift */,
+				AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */,
+				AFC6E67E2ADCE5D80036EC90 /* AsyncSemaphore.swift */,
 				AFE89A2C2B9E793E0078387C /* Debugger.swift */,
 				AF2F54EE2BCE58EF00BAE156 /* WorkersBackend.swift */,
 			);
@@ -997,9 +1017,6 @@
 			);
 			dependencies = (
 				AFEDCDF92CD1331E0001D959 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				AFEDCDF52CD1331E0001D959 /* RoamSwiftTests */,
 			);
 			name = RoamSwiftTests;
 			packageProductDependencies = (
@@ -1184,6 +1201,7 @@
 				AF0C82962AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */,
 				AF0D09F12CDE5C410098122E /* Helpers.swift in Sources */,
 				AF5ED8E52AE99D95007DB2B8 /* ButtonGridView.swift in Sources */,
+				AF3F350B2D3E9234009AF2F8 /* ImageDecoder.swift in Sources */,
 				AF1C74872CE035480061E9F8 /* NetworkPermissionsCheck.swift in Sources */,
 				AF1899F42C1CB204001EDA78 /* NavigationManager.swift in Sources */,
 				AF5C23992C35DCD1004C7A63 /* GlowingButton.swift in Sources */,
@@ -1206,6 +1224,7 @@
 				AFD590D72AEC787700189620 /* ModelContainer.swift in Sources */,
 				AF779BF12BA4D82600231BC5 /* Badge.swift in Sources */,
 				AFD9C4ED2AE980C300C4079C /* DataHelpers.swift in Sources */,
+				AF0532822D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift in Sources */,
 				AFF6DE0E2BCF0326002C13FC /* Message.swift in Sources */,
 				AF70BB0A2BA7CBD0009A06EC /* HoveredView.swift in Sources */,
 				AF0C82982AEBFBD500CBE7F8 /* StatelessDeviceAPI.swift in Sources */,
@@ -1242,16 +1261,19 @@
 				AF205B1F2AE02CAF00041CDF /* MediumRemoteWidget.swift in Sources */,
 				AF19CA3D2AE6BFDF00A42DFF /* DeviceApi.swift in Sources */,
 				AF205B282AE02D0100041CDF /* AppLink.swift in Sources */,
+				AF2C85A62D37183E00A167B2 /* ECPProtocol.swift in Sources */,
 				AF0D09F02CDE5C410098122E /* Helpers.swift in Sources */,
-				AFD395012D2F85D40017B2A0 /* ECPSession.swift in Sources */,
 				AF205B2A2AE02D1C00041CDF /* RemoteButtonAppEnum.swift in Sources */,
 				AF205B212AE02CAF00041CDF /* SmallRemoteWidget.swift in Sources */,
 				AF1899FD2C1CE2E5001EDA78 /* AccessoryGroupRemoteView.swift in Sources */,
+				AF2C85A42D370DAF00A167B2 /* ECPWebsocket.swift in Sources */,
 				AF205B2C2AE02D1C00041CDF /* WidgetIntents.swift in Sources */,
 				AF19CA242AE455B400A42DFF /* DataHelpers.swift in Sources */,
 				AF6E294C2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */,
 				AFC4A65C2AE8AABA005DAC6C /* AppWidget.swift in Sources */,
+				AF2AF23C2D3B0FDB00AAD5B0 /* StatelessDeviceAPI.swift in Sources */,
 				AF2740102AE02C25007C6208 /* RoamWidgetsApp.swift in Sources */,
+				AF90B5C72D3B52340063FADD /* ECPMonitor.swift in Sources */,
 				AFD590D82AEC787700189620 /* ModelContainer.swift in Sources */,
 				AF4244302BB1118700334AAF /* SchemaFile.swift in Sources */,
 				AF205B2D2AE02D1C00041CDF /* DeviceAppEntity.swift in Sources */,
@@ -1262,6 +1284,7 @@
 				AF0042872AEABA9F0051BB1E /* CollectionHelpers.swift in Sources */,
 				AFF6DE142BCF0A14002C13FC /* Message.swift in Sources */,
 				AF1899F22C1CB204001EDA78 /* NavigationManager.swift in Sources */,
+				AF30DD2A2D39B1FF00FD8B9A /* ECPMessages.swift in Sources */,
 				AF1C74842CE035480061E9F8 /* NetworkPermissionsCheck.swift in Sources */,
 				AFC4A6602AE8AF3F005DAC6C /* DataImage.swift in Sources */,
 				AFE6249F2BDCAA5000F4992E /* DataActor.swift in Sources */,
@@ -1269,8 +1292,8 @@
 				AF205B292AE02D1C00041CDF /* LaunchAppIntent.swift in Sources */,
 				AF205B2E2AE02D1C00041CDF /* AppLinkAppEntity.swift in Sources */,
 				AF0C82972AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */,
+				AF3F35092D3E9234009AF2F8 /* ImageDecoder.swift in Sources */,
 				AFC4A65D2AE8AF16005DAC6C /* AppLinksView.swift in Sources */,
-				AF0C82932AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift in Sources */,
 				AF842A5D2BA554E5005D52D2 /* CaptureScrollWheelModifier.swift in Sources */,
 				AF19CA152AE4471200A42DFF /* AsyncHelpers.swift in Sources */,
 				AF205B262AE02D0100041CDF /* Device.swift in Sources */,
@@ -1299,9 +1322,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AF0532802D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift in Sources */,
+				AF0532812D36DB2200D68F8E /* HeadphonesModeTip.swift in Sources */,
 				AFBBE16F2C764564002B7F68 /* RemoteViewContained.swift in Sources */,
 				AF0C82952AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */,
 				AF65A88A2BB5ABF9005ECF7F /* RoamAppDelegate.swift in Sources */,
+				AF90B5C62D3B52340063FADD /* ECPMonitor.swift in Sources */,
 				AF19CA2B2AE54AD100A42DFF /* SSDPDiscovery.swift in Sources */,
 				AF20AD0C2AE01E9100D371C7 /* AppLink.swift in Sources */,
 				AF2F54EF2BCE58EF00BAE156 /* WorkersBackend.swift in Sources */,
@@ -1310,6 +1336,7 @@
 				AF3D62D72AE6F703006AB8E9 /* OpusDecoder.swift in Sources */,
 				AFCF22DE2B2A52190048FFD9 /* NotificationBanner.swift in Sources */,
 				AF19CA3C2AE6BFC400A42DFF /* DeviceApi.swift in Sources */,
+				AF2C85A32D370DAF00A167B2 /* ECPWebsocket.swift in Sources */,
 				AF70BB092BA7CBC1009A06EC /* PaddedHoverButtonStyle.swift in Sources */,
 				AF3AD55D2AE299BD00E2D780 /* DevicePicker.swift in Sources */,
 				AF779BF02BA4D82600231BC5 /* Badge.swift in Sources */,
@@ -1320,9 +1347,9 @@
 				AFF607802ADFACBA00A7D657 /* NetworkUtils.swift in Sources */,
 				AF35ACEB2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift in Sources */,
 				AFA079DE2AE02561003E2754 /* LaunchAppIntent.swift in Sources */,
-				AF0C82992AEBFBD500CBE7F8 /* StatelessDeviceAPI.swift in Sources */,
 				AFE6249D2BDCAA5000F4992E /* DataActor.swift in Sources */,
 				AF19CA232AE455B400A42DFF /* DataHelpers.swift in Sources */,
+				AF2AF23B2D3B0FDB00AAD5B0 /* StatelessDeviceAPI.swift in Sources */,
 				AFA079DA2AE02561003E2754 /* DeviceAppEntity.swift in Sources */,
 				AF1899F32C1CB204001EDA78 /* NavigationManager.swift in Sources */,
 				AF65A88C2BB5AD02005ECF7F /* ExternalAboutView.swift in Sources */,
@@ -1341,7 +1368,7 @@
 				AF19CA312AE6947600A42DFF /* ManagedCriticalState.swift in Sources */,
 				AF3AD55B2AE2947E00E2D780 /* KeyboardEntry.swift in Sources */,
 				AF3AD5552AE2910B00E2D780 /* CenterController.swift in Sources */,
-				AF0C82902AEBF2A200CBE7F8 /* ECPSession.swift in Sources */,
+				AF2C85A72D37183E00A167B2 /* ECPProtocol.swift in Sources */,
 				AFD590D62AEC787700189620 /* ModelContainer.swift in Sources */,
 				AFA079DF2AE0263F003E2754 /* Shortcuts.swift in Sources */,
 				AFF607812ADFACBA00A7D657 /* DiscoveryActor.swift in Sources */,
@@ -1358,7 +1385,9 @@
 				AF468D372D333A9E00DF0F2E /* QSocket.swift in Sources */,
 				AFFC71E62AD1212100EE8EA0 /* RemoteView.swift in Sources */,
 				AFCF22E02B2A6A720048FFD9 /* NetworkMonitor.swift in Sources */,
+				AF3F350A2D3E9234009AF2F8 /* ImageDecoder.swift in Sources */,
 				AFA9F8992B1D29E000829B7C /* KeyboardShortcutPanel.swift in Sources */,
+				AF30DD2B2D39B1FF00FD8B9A /* ECPMessages.swift in Sources */,
 				AF19CA282AE54ABC00A42DFF /* SSDPService.swift in Sources */,
 				AF11D36F2AD35D2800527AF6 /* SettingsView.swift in Sources */,
 				AFA079DC2AE02561003E2754 /* RemoteButtonAppEnum.swift in Sources */,
@@ -1388,6 +1417,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				AF0D09F42CDE64750098122E /* Helpers.swift in Sources */,
+				AF0532852D36DB2B00D68F8E /* RoamSwiftTests.swift in Sources */,
+				AF3F350D2D3E99A2009AF2F8 /* ECPMessages.swift in Sources */,
+				AF3F350C2D3E98C9009AF2F8 /* ECPProtocol.swift in Sources */,
 				AFEDCDFD2CD134130001D959 /* NetworkUtils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

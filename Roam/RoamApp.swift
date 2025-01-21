@@ -24,7 +24,9 @@ struct RoamApp: App {
 
     @AppStorage(UserDefaultKeys.showMenuBar) private var showMenuBar: Bool = false
 
-    @ObservedObject var uuidUpdater = UUIDUpdater()
+    var uuidUpdater: UUIDUpdater {
+        appDelegate.uuidUpdater
+    }
 
     var sharedModelContainer: ModelContainer
     init() {
@@ -59,7 +61,7 @@ struct RoamApp: App {
                     .environment(\.uuidUpdater, uuidUpdater)
                     .onAppear {
                         NSApp.setActivationPolicy(.regular)
-                        NSApp.activate(ignoringOtherApps: true)
+                        NSApp.forceFront("main")
                     }
                     .onDisappear {
                         // If there is only one window left (this one), then revert to .accessory app
@@ -82,7 +84,7 @@ struct RoamApp: App {
                     Button(action: {
                         openWindow(id: "about")
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            NSApplication.shared.activate(ignoringOtherApps: true)
+                            NSApp.forceFront("about")
                         }
                     }, label: {
                         Text("About Roam", comment: "Button to open the about page of the Roam app")
@@ -97,12 +99,12 @@ struct RoamApp: App {
                                     logger.info("Failed to paste because no item in pasteboard")
                                     return
                                 }
-                                guard let texteditId = appDelegate.ecpSessionState.textEditStatus.texteditId else {
+                                guard let texteditId = appDelegate.ecpMonitor.textEditStatus.texteditId else {
                                     logger.info("Failed to paste because no textedit id")
 
                                     if let (app, params) = parsePastedUrl(first) {
                                         do {
-                                            try await appDelegate.ecpSessionState.ecpSession?.openApp(app, params: params)
+                                            try await appDelegate.ecpMonitor.ecpClient?.launchApp(app, params: params)
                                         } catch {
                                             logger.error("Error opening app from url app=\(app, privacy: .public) params=\(params, privacy: .public): \(error, privacy: .public)")
                                         }
@@ -112,7 +114,7 @@ struct RoamApp: App {
                                 }
 
                                 do {
-                                    try await appDelegate.ecpSessionState.ecpSession?.setTextEditText(first, for: texteditId)
+                                    try await appDelegate.ecpMonitor.ecpClient?.setTextEdit(first, texteditId: texteditId)
                                 } catch {
                                     logger.error("Failed to paste: \(error, privacy: .public)")
                                 }
@@ -122,30 +124,30 @@ struct RoamApp: App {
 
                         Button("Cut", systemImage: "clipboard", action: {
                             Task {
-                                guard let texteditId = appDelegate.ecpSessionState.textEditStatus.texteditId else {
+                                guard let texteditId = appDelegate.ecpMonitor.textEditStatus.texteditId else {
                                     logger.info("Failed to paste because no textedit id")
                                     return
                                 }
 
-                                if let texteditText = appDelegate.ecpSessionState.textEditStatus.text {
+                                if let texteditText = appDelegate.ecpMonitor.textEditStatus.text {
                                     logger.info("Cutting text \(texteditText, privacy: .public)")
                                     NSPasteboard.general.clearContents()
                                     NSPasteboard.general.setString(texteditText, forType: .string)
                                 }
 
                                 do {
-                                    try await appDelegate.ecpSessionState.ecpSession?.setTextEditText("", for: texteditId)
+                                    try await appDelegate.ecpMonitor.ecpClient?.setTextEdit("", texteditId: texteditId)
                                 } catch {
                                     logger.error("Failed to paste: \(error, privacy: .public)")
                                 }
                             }
                         })
                         .customKeyboardShortcut(.cut)
-                        .disabled(appDelegate.ecpSessionState.textEditStatus.texteditId == nil)
+                        .disabled(appDelegate.ecpMonitor.textEditStatus.texteditId == nil)
 
                         Button("Copy", systemImage: "clipboard", action: {
                             Task {
-                                if let texteditText = appDelegate.ecpSessionState.textEditStatus.text {
+                                if let texteditText = appDelegate.ecpMonitor.textEditStatus.text {
                                     logger.info("Copying text \(texteditText, privacy: .public)")
                                     NSPasteboard.general.clearContents()
                                     NSPasteboard.general.setString(texteditText, forType: .string)
@@ -153,7 +155,7 @@ struct RoamApp: App {
                             }
                         })
                         .customKeyboardShortcut(.copy)
-                        .disabled(appDelegate.ecpSessionState.textEditStatus.texteditId == nil)
+                        .disabled(appDelegate.ecpMonitor.textEditStatus.texteditId == nil)
                     }
                 }
 
@@ -174,7 +176,7 @@ struct RoamApp: App {
                     Button("Keyboard Shortcuts", systemImage: "keyboard") {
                         openWindow(id: "keyboard-shortcuts")
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            NSApplication.shared.activate(ignoringOtherApps: true)
+                            NSApp.forceFront("keyboard-shortcuts")
                         }
                     }
                     .customKeyboardShortcut(.keyboardShortcuts)
@@ -182,7 +184,7 @@ struct RoamApp: App {
                     Button("Chat with the Developer", systemImage: "message") {
                         openWindow(id: "messages")
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            NSApplication.shared.activate(ignoringOtherApps: true)
+                            NSApp.forceFront("messages")
                         }
                     }
                     .customKeyboardShortcut(.chatWithDeveloper)
@@ -192,14 +194,14 @@ struct RoamApp: App {
                     Button("Keyboard Shortcuts", systemImage: "keyboard") {
                         openWindow(id: "keyboard-shortcuts")
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            NSApplication.shared.activate(ignoringOtherApps: true)
+                            NSApp.forceFront("keyboard-shortcuts")
                         }
                     }
                     .customKeyboardShortcut(.keyboardShortcuts)
                     Button("Chat with the Developer", systemImage: "message") {
                         openWindow(id: "messages")
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            NSApplication.shared.activate(ignoringOtherApps: true)
+                            NSApp.forceFront("messages")
                         }
                     }
                     .customKeyboardShortcut(.chatWithDeveloper)
@@ -226,7 +228,7 @@ struct RoamApp: App {
                     .disableWindowMinimize()
                     .onAppear {
                         NSApp.setActivationPolicy(.regular)
-                        NSApp.activate(ignoringOtherApps: true)
+                        NSApp.forceFront("about")
                     }
                     .onDisappear {
                         if NSApp.windows.filter({$0.level != .statusBar && $0.isVisible}).count <= 1 && showMenuBar {
@@ -263,7 +265,7 @@ struct RoamApp: App {
                     .environment(\.uuidUpdater, uuidUpdater)
                     .onAppear {
                         NSApp.setActivationPolicy(.regular)
-                        NSApp.activate(ignoringOtherApps: true)
+                        NSApp.forceFront("messages")
                     }
                     .onDisappear {
                         // If there is only one window left (this one), then revert to .accessory app
@@ -280,7 +282,7 @@ struct RoamApp: App {
                     .translucentBackground()
                     .onAppear {
                         NSApp.setActivationPolicy(.regular)
-                        NSApp.activate(ignoringOtherApps: true)
+                        NSApp.forceFront("keyboard-shortcuts")
                     }
                     .onDisappear {
                         if NSApp.windows.filter({!$0.isExcludedFromWindowsMenu && $0.canBecomeKey && $0.isVisible}).count <= 1 {
@@ -300,11 +302,8 @@ struct RoamApp: App {
                     .environment(\.uuidUpdater, uuidUpdater)
                     .onAppear {
                         NSApp.setActivationPolicy(.regular)
-                        NSApp.activate(ignoringOtherApps: true)
                     }
                     .onDisappear {
-                        // If there is only one window left (this one), then revert to .accessory app
-
                         if NSApp.windows.filter({$0.level != .statusBar && $0.isVisible}).count <= 1 && showMenuBar {
                             NSApp.setActivationPolicy(.accessory)
                         }

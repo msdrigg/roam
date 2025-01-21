@@ -26,37 +26,13 @@ actor DeviceDiscoveryActor {
             updater()
         }
     }
-
-    @discardableResult
-    func addDevice(location: String) async -> Bool {
-        guard let deviceInfo = await fetchDeviceInfo(location: location) else {
-            Self.logger.error("Error getting device info for found device \(location, privacy: .public)")
-            return false
-        }
-
-        if let device = await dataHandler.deviceEntityForUdn(udn: deviceInfo.udn) {
-            if device.location == location {
-                return false
-            }
-        }
-
-        if let pid = await dataHandler.addOrReplaceDevice(
-            location: location,
-            friendlyDeviceName: deviceInfo.friendlyDeviceName ?? getGlobalNewDeviceName(),
-            udn: deviceInfo.udn
-        ) {
-            Self.logger.info("Saved new device \(deviceInfo.udn, privacy: .public), \(location, privacy: .public)")
-            await refreshDevice(id: pid)
-            return true
-        } else {
-            return false
-        }
-    }
-
     func refreshSelectedDeviceContinually(id: PersistentIdentifier) async {
         // Refresh every 30 seconds
-        Self.logger.debug("Refreshing device \(String(describing: id), privacy: .public)")
-        await refreshDevice(id: id)
+        do {
+            try await Task.sleep(duration: 1)
+            Self.logger.debug("Refreshing device initially \(String(describing: id), privacy: .public)")
+            await refreshDevice(id: id)
+        } catch {}
         for await _ in interval(time: 30) {
             if Task.isCancelled {
                 return
@@ -67,6 +43,47 @@ actor DeviceDiscoveryActor {
     }
 
     #if !os(watchOS)
+        @discardableResult
+        func addDevice(location: String) async -> Bool {
+            Self.logger.info("Trying to add device with location \(location)")
+            var deviceInfo: DeviceInfo?
+            do {
+                guard let url = URL(string: location) else {
+                    return false
+                }
+                deviceInfo = try await ECPWebsocketClient(location: url).oneOff { session in
+                    return try await session.getDeviceInfo()
+                }
+            } catch {
+                Self.logger.error("Error creating ECPSession getting device info: \(error, privacy: .public)")
+                return false
+            }
+
+            guard let deviceInfo else {
+                Self.logger.error("Error getting device info for found device \(location, privacy: .public)")
+                return false
+            }
+            Self.logger.info("Got device info to add device with location \(location)")
+
+            if let device = await dataHandler.deviceEntityForUdn(udn: deviceInfo.udn) {
+                if device.location == location {
+                    return false
+                }
+            }
+
+            if let pid = await dataHandler.addOrReplaceDevice(
+                location: location,
+                friendlyDeviceName: deviceInfo.friendlyDeviceName ?? getGlobalNewDeviceName(),
+                udn: deviceInfo.udn
+            ) {
+                Self.logger.info("Saved new device \(deviceInfo.udn, privacy: .public), \(location, privacy: .public)")
+                await refreshDevice(id: pid)
+                return true
+            } else {
+                return false
+            }
+        }
+
         func scanIPV4Once() async {
             // Don't scan IPV4 in previews
             if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" || inScreenshotTestingContext() {

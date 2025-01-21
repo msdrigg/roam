@@ -217,7 +217,7 @@ public struct OpenDeviceIntent: OpenIntent {
 
         guard let targetDevice else {
             logger.warning("Trying to press button with no device available")
-            throw ApiError.noSavedDevices
+            throw IntentError.noSavedDevices
         }
 
         #if os(watchOS)
@@ -229,31 +229,27 @@ public struct OpenDeviceIntent: OpenIntent {
             )
             if !success {
                 logger.warning("Error sending key to device")
-                throw ApiError.deviceNotConnectable
+                throw IntentError.deviceNotConnectable
             }
         }
         #else
         do {
             try await withTimeout(delay: 5) {
-                let ecpSession: ECPSession?
-                let ecpSessionState: ECPSessionState = await ECPSessionState()
                 do {
-                    ecpSession = try ECPSession(device: targetDevice, status: ecpSessionState)
-                    defer {
-                        Task {
-                            await ecpSession?.close()
-                        }
+                    guard let url = URL(string: targetDevice.location) else {
+                        throw IntentError.deviceNotConnectable
                     }
-                    try await ecpSession?.configure()
-                    try await ecpSession?.pressButton(button)
+                    try await ECPWebsocketClient(location: url).oneOff { session in
+                        try await session.pressButton(button)
+                    }
                 } catch {
                     logger.error("Error creating ECPSession or pressing button: \(error, privacy: .public)")
-                    throw ApiError.deviceNotConnectable
+                    throw IntentError.deviceNotConnectable
                 }
             }
         } catch is TimeoutError {
             logger.warning("Timeout pressing button from intent")
-            throw ApiError.deviceNotConnectable
+            throw IntentError.deviceNotConnectable
         }
         #endif
     }
@@ -274,39 +270,27 @@ public func launchApp(app: AppLinkAppEntity, device: DeviceAppEntity?) async thr
             try await openApp(location: targetDevice.location, app: app.id)
         } catch {
             logger.error("Error opening app: \(error, privacy: .public)")
-            throw ApiError.deviceNotConnectable
+            throw IntentError.deviceNotConnectable
         }
         #else
         do {
-            try await withTimeout(delay: 5) {
-                let ecpSession: ECPSession?
-                let ecpSessionState: ECPSessionState = await ECPSessionState()
-                do {
-                    ecpSession = try ECPSession(device: targetDevice, status: ecpSessionState)
-                    defer {
-                        Task {
-                            await ecpSession?.close()
-                        }
-                    }
-
-                    try await ecpSession?.configure()
-                    try await ecpSession?.openApp(app)
-                } catch {
-                    logger.error("Error creating ECPSession or opening app: \(error, privacy: .public)")
-                    throw ApiError.deviceNotConnectable
-                }
+            guard let url = URL(string: targetDevice.location) else {
+                throw IntentError.deviceNotConnectable
             }
-        } catch is TimeoutError {
-            logger.warning("Timeout opening app from intent")
-            throw ApiError.deviceNotConnectable
+            try await ECPWebsocketClient(location: url).oneOff { session in
+                try await session.launchApp(app.id)
+            }
+        } catch {
+            logger.error("Error creating ECPSession or launching app: \(error, privacy: .public)")
+            throw IntentError.deviceNotConnectable
         }
         #endif
     } else {
-        throw ApiError.noSavedDevices
+        throw IntentError.noSavedDevices
     }
 }
 
-private enum ApiError: Swift.Error, CustomLocalizedStringResourceConvertible {
+private enum IntentError: Swift.Error, CustomLocalizedStringResourceConvertible {
     case noSavedDevices
     case deviceNotConnectable
 

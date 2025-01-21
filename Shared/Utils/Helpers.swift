@@ -56,6 +56,29 @@ public func kebabify(_ input: String) -> String {
     return split.lowercased()
 }
 
+extension Data {
+    init?(hexString: String) {
+        let length = hexString.count / 2
+        var data = Data(capacity: length)
+
+        var index = hexString.startIndex
+        for _ in 0..<length {
+            let nextIndex = hexString.index(index, offsetBy: 2)
+            guard nextIndex <= hexString.endIndex else { return nil }
+            let byteString = hexString[index..<nextIndex]
+            guard let byte = UInt8(byteString, radix: 16) else { return nil }
+            data.append(byte)
+            index = nextIndex
+        }
+
+        self = data
+    }
+
+    func toHexString() -> String {
+        return self.map { String(format: "%02x", $0) }.joined()
+    }
+}
+
 public func parsePastedUrl(_ input: String) -> (String, [String: String])? {
     guard let url = URL(string: input), let host = url.host else { return nil }
 

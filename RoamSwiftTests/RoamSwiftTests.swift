@@ -9,6 +9,15 @@ import Testing
 import Roam
 
 struct RoamSwiftTests {
+    @Test func testWebsocketHeaderdecoding() async throws {
+        let hexHeader = "817e1312"
+        var data = Data(hexString: hexHeader)!
+
+        let header = WebsocketHeader.parse(from: data)!
+
+        #expect(header.opcode == 0x01, "Opcode should be text")
+        #expect(header.payloadLength == 4882, "Payload should be 4882")
+    }
 
     @Test func testAddressableInterfaceRange() async throws {
         // Write your test here and use APIs like `#expect(...)` to check expected conditions.

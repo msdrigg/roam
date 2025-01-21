@@ -94,14 +94,23 @@ async function checkAlerts(env: Env) {
 }
 
 /// MARK: Durable Object
-
 export class InternalDurableObject extends DurableObject {
 	private discordClient: DiscordClient;
 	ROAM_KV: KVNamespace;
 
 	constructor(state: DurableObjectState, env: Env) {
 		super(state, env);
-		this.discordClient = new DiscordClient(env.DISCORD_TOKEN, env.DISCORD_HELP_CHANNEL, env.DISCORD_GUILD_ID);
+		this.discordClient = new DiscordClient(env.DISCORD_TOKEN, env.DISCORD_HELP_CHANNEL, env.DISCORD_GUILD_ID, {
+			getRetryAt: async () => {
+				let value = await this.ctx.storage.get<number>("retryAfter") ?? 0
+				console.log("Getting rate limit storage of " + value);
+				return value
+			},
+			setRetryAt: async (value) => {
+				console.log("Setting rate limit storage to " + value);
+				await this.ctx.storage.put<number>("retryAfter", value)
+			},
+		});
 		this.ROAM_KV = env.ROAM_KV;
 	}
 
@@ -233,6 +242,40 @@ export class InternalDurableObject extends DurableObject {
 		}
 	}
 
+	async getAllData(): Promise<{
+		users: {
+			apns_token: string | null,
+			device_info: InstallationInfo | null,
+			device_id: string,
+			thread_id: string,
+		}[], items: {
+			last_message_id: string,
+		}
+	}> {
+		// Get all user's ids from the storage
+		let threads = await this.ctx.storage.list({ prefix: "threadId:" });
+		let apnsTokens = await this.ctx.storage.list({ prefix: "apnsToken:" });
+		let deviceInfos = await this.ctx.storage.list({ prefix: "deviceInfoSent:" });
+		let users = [];
+		let lastMessageId = await this.ctx.storage.get("latestMessageId") as string ?? "0";
+		for (let thread of threads) {
+			let userId = thread[0].slice(9);
+			let apnsToken = apnsTokens.get(`apnsToken:${userId}`);
+			let deviceInfo = deviceInfos.get(`deviceInfoSent:${userId}`) as string;
+			users.push({
+				apns_token: apnsToken ? apnsToken as string : null,
+				device_info: deviceInfo as any,
+				device_id: userId,
+				thread_id: thread[1] as string,
+			});
+		}
+		return {
+			users,
+			items: {
+				last_message_id: lastMessageId,
+			}
+		}
+	}
 
 	/// MARK: External Functions
 
@@ -428,6 +471,14 @@ export default {
 			}
 
 			return new Response(JSON.stringify({ messages, threadId, apnsToken }), { status: 200 });
+		}
+
+		if (pathSegments[0] === "all-users") {
+			let stub = env.APNS_DURABLE_OBJECT.get(env.APNS_DURABLE_OBJECT.idFromName("apns"));
+
+			let data = await stub.getAllData();
+
+			return new Response(JSON.stringify(data), { status: 200 });
 		}
 
 		return new Response("Not found", { status: 404 });

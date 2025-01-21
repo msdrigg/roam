@@ -11,10 +11,10 @@ COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 # Build application
 COPY . .
-RUN cargo build --release --bin roam-backend-gateway
+RUN cargo build --release --bin roam-backend
 
 # We do not need the Rust toolchain to run the binary!
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
-COPY --from=builder /app/target/release/roam-backend-gateway /usr/local/bin
-ENTRYPOINT ["/usr/local/bin/roam-backend-gateway"]
+COPY --from=builder /app/target/release/roam-backend /usr/local/bin
+ENTRYPOINT ["/usr/local/bin/roam-backend"]
