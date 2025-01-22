@@ -84,7 +84,9 @@ impl AppContext {
     pub fn backend_api_key(&self) -> &str {
         &self.backend_api_key
     }
+}
 
+impl AppContext {
     async fn send_pushes(&self) -> anyhow::Result<()> {
         tracing::info!("Sending pushes");
         let last_alerted_message = self
@@ -211,50 +213,40 @@ impl AppContext {
 
     async fn refresh_user(
         &self,
-        user: &database::User,
+        mut user: database::User,
         apns_token: Option<&String>,
         installation_info: &Option<DeviceInfo>,
-    ) -> Result<(), ApiError> {
-        if let Some(apns_token) = apns_token {
-            self.db_client()
+    ) -> Result<database::User, ApiError> {
+        let old_apns_token = user.apns_token.clone();
+        let old_installation_info = user.device_info.clone().map(|it| it.0);
+        if (apns_token.is_some() && apns_token != old_apns_token.as_ref())
+            || (installation_info != &old_installation_info && installation_info.is_some())
+        {
+            user = self
+                .db_client()
                 .update_user(
                     &user.device_id,
                     &UserUpdate {
-                        apns_token: Some(apns_token.clone()),
+                        apns_token: apns_token.cloned(),
+                        device_info: installation_info.clone(),
                         ..Default::default()
                     },
                 )
                 .await
                 .map_err(ApiError::DatabaseError)?;
-        }
-        if let Some(installation_info) = installation_info {
-            if Some(installation_info) != user.device_info.as_ref().map(|it| &it.0) {
-                self.send_device_info(&user.device_id, user.thread_id, installation_info)
-                    .await?;
-            }
 
-            self.db_client()
-                .update_user(
-                    &user.device_id,
-                    &UserUpdate {
-                        device_info: Some(installation_info.clone()),
-                        ..Default::default()
-                    },
-                )
-                .await
-                .map_err(ApiError::DatabaseError)?;
+            self.send_device_info(&user).await?;
         }
 
-        Ok(())
+        Ok(user)
     }
 
-    async fn send_device_info(
-        &self,
-        device_id: &str,
-        thread_id: i64,
-        device_info: &DeviceInfo,
-    ) -> Result<(), ApiError> {
-        tracing::info!("Updating device info for user {}", device_id);
+    async fn send_device_info(&self, user: &User) -> Result<(), ApiError> {
+        let Some(device_info) = &user.device_info.as_ref() else {
+            return Ok(());
+        };
+
+        tracing::info!("Updating device info for user {}", user.device_id);
 
         let DeviceInfo {
             user_id,
@@ -262,18 +254,19 @@ impl AppContext {
             os_platform,
             os_version,
             user_locale,
-        } = device_info;
+        } = &device_info.0;
         // let message = `:ninja:\n\n### Device info\n\n- **User ID**: ${userId}\n- **Build version**: ${buildVersion}\n- **OS platform**: ${osPlatform}\n- **OS version**: ${osVersion}\n- **User Locale**: ${userLocale}`;
         let message = format!(
-                    ":ninja:\n\n### Device info\n\n- **User ID**: {}\n- **Build version**: {}\n- **OS platform**: {}\n- **OS version**: {}\n- **User Locale**: {}",
-                    user_id.as_deref().unwrap_or("--"),
-                    build_version.as_deref().unwrap_or("--"),
-                    os_platform.as_deref().unwrap_or("--"),
-                    os_version.as_deref().unwrap_or("--"),
-                    user_locale.as_deref().unwrap_or("--")
-                );
+            ":ninja:\n\n### Device info\n\n- **User ID**: {}\n- **Build version**: {}\n- **OS platform**: {}\n- **OS version**: {}\n- **User Locale**: {}\n- **APNS Token**: {}",
+            user_id.as_deref().unwrap_or("--"),
+            build_version.as_deref().unwrap_or("--"),
+            os_platform.as_deref().unwrap_or("--"),
+            os_version.as_deref().unwrap_or("--"),
+            user_locale.as_deref().unwrap_or("--"),
+            user.apns_token.as_deref().unwrap_or("--"),
+        );
         self.discord_client()
-            .send_message(thread_id, &message)
+            .send_message(user.thread_id, &message)
             .await
             .map_err(ApiError::DiscordError)?;
         Ok(())
@@ -308,10 +301,7 @@ impl AppContext {
             device_info: seed.device_info.clone().map(sqlx::types::Json),
         };
 
-        if let Some(device_info) = &seed.device_info {
-            self.send_device_info(&user.device_id, user.thread_id, device_info)
-                .await?;
-        }
+        self.send_device_info(&user).await?;
 
         self.db_client()
             .create_user(&user)

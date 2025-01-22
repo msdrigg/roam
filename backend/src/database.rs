@@ -96,15 +96,16 @@ impl DatabaseClient {
 
     pub async fn clear_user_apns(&self, device_id: &str) -> Result<(), anyhow::Error> {
         tracing::info!("Clearing APNS token for user {}", device_id);
-        sqlx::query!(
+        sqlx::query_scalar!(
             r#"
             UPDATE users
             SET apns_token = NULL
             WHERE device_id = ?
+            returning device_id as "device_id!: String"
             "#,
             device_id
         )
-        .execute(&self.writer_pool)
+        .fetch_one(&self.writer_pool)
         .await
         .context("Error updating user")?;
         Ok(())
@@ -114,12 +115,13 @@ impl DatabaseClient {
         &self,
         device_id: &str,
         user: &UserUpdate,
-    ) -> Result<(), anyhow::Error> {
+    ) -> Result<User, anyhow::Error> {
         let device_info_json = user
             .device_info
             .as_ref()
             .map(|device_info| Json(device_info.clone()));
-        sqlx::query!(
+        let user = sqlx::query_as!(
+            User,
             r#"
             UPDATE users
             SET
@@ -127,16 +129,20 @@ impl DatabaseClient {
                 apns_token = COALESCE(?, apns_token),
                 device_info_json = COALESCE(?, device_info_json)
             WHERE device_id = ?
+            RETURNING
+                device_id as "device_id!: String",
+                thread_id as "thread_id!",
+                apns_token, device_info_json as "device_info?: Json<DeviceInfo>"
             "#,
             user.thread_id,
             user.apns_token,
             device_info_json,
             device_id
         )
-        .execute(&self.writer_pool)
+        .fetch_one(&self.writer_pool)
         .await
         .context("Error updating user")?;
-        Ok(())
+        Ok(user)
     }
 
     pub async fn get_parameter(&self, key: &str) -> Result<Option<String>, anyhow::Error> {

@@ -1,1 +1,4 @@
 -   Bug fixes and improvements
+-   Improve connection speed
+-   Support Roku's with 3rd Party App's Limited
+-   Fix issue with watchOS not being able to add devices

@@ -266,7 +266,7 @@ actor ECPWebsocketClient: Sendable {
         await withDiscardingTaskGroup { taskGroup in
             taskGroup.addTask {
                 try? await Task.sleep(for: .milliseconds(200))
-                Self.logger.warning("Sending wol to wakeup if not already awake")
+                Self.logger.info("Sending wol to wakeup if not already awake")
                 await sendWolToDevice(macs: self.macs)
             }
 
@@ -306,7 +306,7 @@ actor ECPWebsocketClient: Sendable {
             Self.logger.info("Restarting on send message because we are in error state")
             self.start()
         }
-        Self.logger.info("Current response handlers \(self.responseHandlers.keys) and new request \(message.requestId) with state \(self.state.debugDescription)")
+        Self.logger.info("Current response handlers \(self.responseHandlers.count) and new request \(message.requestId) with state \(self.state.debugDescription) and ws state \(String(describing: self.connection.state))")
         self.responseHandlers[message.requestId] = completion
         let metadata = NWProtocolFramer.Message(ecpRequest: message)
         let context = NWConnection.ContentContext(
@@ -348,6 +348,7 @@ actor ECPWebsocketClient: Sendable {
         }
         connection = NWConnection(to: endpoint, using: NWParameters.ecp)
         self.clearHandlers()
+        Self.logger.info("No longer in error b/c restarting")
         self.inError = false
         connection.pathUpdateHandler = { [weak self] path in
             guard let self else {
@@ -418,6 +419,7 @@ actor ECPWebsocketClient: Sendable {
     }
 
     private func handleError(_ error: NWError, requestId: String? = nil) {
+        Self.logger.info("In error because getting req error")
         self.inError = true
         if let requestId {
             Self.logger.info("Getting error for req \(requestId)")
@@ -474,11 +476,12 @@ actor ECPWebsocketClient: Sendable {
 
         switch state {
         case .ready:
+            Self.logger.info("No longer in error with state \(String(describing: state))")
             self.inError = false
             self.reportStateChange(.connected)
         case .waiting(let error):
-            Self.logger.info("In waiting state, failing with error \(error, privacy: .public). Currently in state \(String(describing: self.connection.state), privacy: .public)")
             self.reportStateChange(.connecting(.now))
+            Self.logger.info("In waiting state, failing with error \(error, privacy: .public). Currently in state \(String(describing: self.connection.state), privacy: .public)")
             self.inError = true
 
             /// Workaround to prevent loop while reconnecting
@@ -487,14 +490,17 @@ actor ECPWebsocketClient: Sendable {
                 self.cancel()
             }
         case .failed(let error):
+            Self.logger.info("In error with state \(String(describing: state))")
             self.inError = true
             self.handleError(error)
             self.reportStateChange(.disconnected(.now))
         case .setup, .preparing:
+            Self.logger.info("No longer in error with state \(String(describing: state))")
             self.inError = false
             errorWhileWaitingCount = 0
             self.reportStateChange(.connecting(.now))
         case .cancelled:
+            Self.logger.info("In error with state \(String(describing: state))")
             self.inError = true
             self.reportStateChange(.disconnected(.now))
         @unknown default:

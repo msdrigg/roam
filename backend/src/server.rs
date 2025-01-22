@@ -242,8 +242,8 @@ async fn new_message(
         )
         .await?;
 
-    app_context
-        .refresh_user(&user, apns_token.as_ref(), &installation_info)
+    let user = app_context
+        .refresh_user(user, apns_token.as_ref(), &installation_info)
         .await?;
 
     if let Some(content) = content {

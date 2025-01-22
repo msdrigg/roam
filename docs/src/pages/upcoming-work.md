@@ -11,7 +11,10 @@ hide_table_of_contents: true
     -   Add macOS tip for keyboard entry
     -   Add tip for keyboard Shortcuts
 
--   Stop using fetchDeviceInfo for getting device info -- switch to ECP Websockets API
+- Figure out what’s causing the iOS shutdowns — have a crash log but nothing seems to be helping
+    - Says process exits (added atexit)
+    - Reproduce with open, close (without quitting), swipe to side menu, open again (not every time)
+    - Need to reproduce with other item
 
 -   Add long-press options to keys
     -   Long-press right arrow to ff
@@ -38,16 +41,7 @@ hide_table_of_contents: true
 
     -   Need to reverse-engineer the roku voice remote udp protocol
     -   Or need to add custom text-to-speech with remote button engine?
-
--   Automate Screenshot Capture
-
-    -   Use UITests to get actual screenshots for all device sizes + locales
-    -   Use AppScreens https://appscreens.com/user/project/DRxTFSSIQtuU0y9Eew4w to get the screenshots in the frames
-    -   Or something else
-        -   https://www.figma.com/community/file/886620275115089774
-        -   https://www.figma.com/community/file/1071476530354359587/app-store-screenshots?searchSessionId=lxw3ep02-oubp844ov8
-        -   https://www.figma.com/community/file/1256854154932829222/free-app-store-screenshot-templates?searchSessionId=lxw3ep02-oubp844ov8
-        -   https://www.canva.com/templates/s/iphone/
+    -   Are there 3rd party voice remotes? Is there some kind of oss protocol for voice remotes that I can use?
 
 -   Try more keyboard hacks on iPad
 

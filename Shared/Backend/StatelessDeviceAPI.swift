@@ -104,7 +104,7 @@ public func sendWolToDevice(macs: [String]) async {
     }
     let interfaceNames = interfaces.map(\.name)
 
-    logger.debug("API toggle failed, trying to WOL to macs \(String(describing: macs), privacy: .public) on interfaces \(interfaceNames, privacy: .public)")
+    logger.info("Trying to WOL to macs \(String(describing: macs), privacy: .public) on interfaces \(interfaceNames, privacy: .public)")
 
     for mac in macs {
         for iface in interfaces {
