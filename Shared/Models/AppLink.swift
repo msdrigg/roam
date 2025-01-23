@@ -2,7 +2,7 @@ import Foundation
 import os
 import SwiftData
 
-typealias AppLink = SchemaV2.AppLink
+typealias AppLink = SchemaV3.AppLink
 
 extension AppLink: Decodable {
     public convenience init(from decoder: any Decoder) throws {

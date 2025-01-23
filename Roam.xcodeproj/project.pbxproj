@@ -138,6 +138,7 @@
 		AF65A88C2BB5AD02005ECF7F /* ExternalAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF65A88B2BB5AD02005ECF7F /* ExternalAboutView.swift */; };
 		AF67C8F42C1D1A9200A6D077 /* UUIDUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF67C8F32C1D1A9000A6D077 /* UUIDUpdater.swift */; };
 		AF67C8F62C1D1A9200A6D077 /* UUIDUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF67C8F32C1D1A9000A6D077 /* UUIDUpdater.swift */; };
+		AF68F2842D41EC2700F39530 /* DataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA222AE455B400A42DFF /* DataHelpers.swift */; };
 		AF6A8F942D060834004AB1D2 /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */; };
 		AF6E294A2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6E29492C1A2ACB0062DFB3 /* ViewHelpers.swift */; };
 		AF6E294B2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6E29492C1A2ACB0062DFB3 /* ViewHelpers.swift */; };
@@ -660,6 +661,13 @@
 			path = RoamWidgets;
 			sourceTree = "<group>";
 		};
+		AF344FCC2D4290E200179FE0 /* New Group */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = "New Group";
+			sourceTree = "<group>";
+		};
 		AF4D5F322AD4355E0055AF35 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -782,6 +790,7 @@
 		AFA68FE02BD063DD005A102E /* External */ = {
 			isa = PBXGroup;
 			children = (
+				AF344FCC2D4290E200179FE0 /* New Group */,
 				AFA68FE62BD0646C005A102E /* docs */,
 				AFA68FE22BD06414005A102E /* backend */,
 			);
@@ -1417,6 +1426,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AF0D09F42CDE64750098122E /* Helpers.swift in Sources */,
+				AF68F2842D41EC2700F39530 /* DataHelpers.swift in Sources */,
 				AF0532852D36DB2B00D68F8E /* RoamSwiftTests.swift in Sources */,
 				AF3F350D2D3E99A2009AF2F8 /* ECPMessages.swift in Sources */,
 				AF3F350C2D3E98C9009AF2F8 /* ECPProtocol.swift in Sources */,

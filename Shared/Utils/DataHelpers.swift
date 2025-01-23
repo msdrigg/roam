@@ -3,13 +3,16 @@ import Foundation
 extension UInt64{
     func toData() -> Data {
         var copy = bigEndian
-        return Data(bytes: &copy, count: 4)
+        return Data(bytes: &copy, count: 8)
     }
 
     init?(bigEndian data: Data) {
-        guard data.count == 4 else { return nil }
-
-        self = UInt64(bigEndian: data.withUnsafeBytes { $0.load(as: UInt64.self) })
+        guard data.count >= MemoryLayout<UInt64>.size else { return nil }
+        guard let val = data.withUnsafeBytes({ bytes in
+            bytes.bindMemory(to: UInt64.self).baseAddress?.pointee
+        })?.bigEndian
+        else { return nil }
+        self = val
     }
 }
 
@@ -20,9 +23,12 @@ extension UInt32 {
     }
 
     init?(bigEndian data: Data) {
-        guard data.count == 4 else { return nil }
-
-        self = UInt32(bigEndian: data.withUnsafeBytes { $0.load(as: UInt32.self) })
+        guard data.count >= MemoryLayout<UInt32>.size else { return nil }
+        guard let val = data.withUnsafeBytes({ bytes in
+            bytes.bindMemory(to: UInt32.self).baseAddress?.pointee
+        })?.bigEndian
+        else { return nil }
+        self = val
     }
 }
 
@@ -33,8 +39,11 @@ extension UInt16 {
     }
 
     init?(bigEndian data: Data) {
-        guard data.count == 2 else { return nil }
-
-        self = UInt16(bigEndian: data.withUnsafeBytes { $0.load(as: UInt16.self) })
+        guard data.count >= MemoryLayout<UInt16>.size else { return nil }
+        guard let val = data.withUnsafeBytes({ bytes in
+            bytes.bindMemory(to: UInt16.self).baseAddress?.pointee
+        })?.bigEndian
+        else { return nil }
+        self = val
     }
 }

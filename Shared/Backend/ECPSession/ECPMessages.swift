@@ -24,15 +24,26 @@ enum ECPNotification: Decodable {
     enum NotifyCodingKey: String, CodingKey {
         case notify
     }
-    enum NotifyTypes: String, Decodable {
+    enum NotifyType: String, Decodable {
         case texteditOpened = "textedit-opened"
         case texteditClosed = "textedit-closed"
         case texteditChanged = "textedit-changed"
     }
 
+    var notifyType: NotifyType {
+        switch self {
+        case .texteditChanged:
+            return .texteditChanged
+        case .texteditOpened:
+            return .texteditOpened
+        case .texteditClosed:
+            return .texteditClosed
+        }
+    }
+
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: NotifyCodingKey.self)
-        let notify = try container.decode(NotifyTypes.self, forKey: .notify)
+        let notify = try container.decode(NotifyType.self, forKey: .notify)
 
         switch notify {
         case .texteditChanged:
@@ -114,6 +125,33 @@ enum ECPRequestMessage: Encodable {
             try req.encode(to: encoder)
         case .requestEventsNotify(let req):
             try req.encode(to: encoder)
+        }
+    }
+
+    var debugDescription: String {
+        switch self {
+        case .configureAudio(let value):
+            return "ConfigureAudioRequest (\(value.audioOutput)-\(value.devname ?? "nil"))"
+        case .launchApp(let value):
+            return "LaunchAppRequest (\(value.channelId))"
+        case .keyPress(let value):
+            return "KeyPressRequest (\(value.key))"
+        case .queryActiveApp:
+            return "QueryActiveAppRequest"
+        case .queryAppIcon(let value):
+            return "QueryAppIconRequest (\(value.channelId))"
+        case .queryDeviceApps:
+            return "QueryDeviceAppsRequest"
+        case .queryDeviceCapabilities:
+            return "QueryDeviceCapabilitiesRequest"
+        case .queryTexteditState:
+            return "QueryTexteditStateRequest"
+        case .setTexteditState(let value):
+            return "SetTexteditStateRequest (\(value.text)-\(value.texteditId)"
+        case .requestEventsNotify(let value):
+            return "RequestEventsNotifyRequest (\(value.events))"
+        case .queryDeviceInfo:
+            return "QueryDeviceInfoRequest"
         }
     }
 }
@@ -200,12 +238,6 @@ struct QueryAppIcon: Encodable {
 
     func withId(_ id: String) -> Self {
         Self(requestId: id, channelId: self.channelId)
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case request = "request"
-        case requestId = "request-id"
-        case channelId = "param-channel-id"
     }
 }
 struct QueryApps: Encodable {
@@ -294,6 +326,13 @@ enum ECPResponse: Decodable {
         }
     }
 
+    var responseType: String {
+        switch self {
+        case .base(let baseResponse):
+            return baseResponse.response
+        }
+    }
+
     var status: String {
         switch self {
         case .base(let baseResponse):
@@ -311,6 +350,13 @@ enum ECPResponse: Decodable {
     init(from decoder: any Decoder) throws {
         let baseResponse = try BaseResponse(from: decoder)
         self = .base(baseResponse)
+    }
+    
+    var debugDescription: String {
+        switch self {
+            case .base(let baseResponse):
+            return "ECPResponse: \(baseResponse.response)-\(baseResponse.status)"
+        }
     }
 }
 

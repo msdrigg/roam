@@ -43,7 +43,7 @@ class ECPMonitor {
 
     func setDevice(_ device: DeviceAppEntity?) {
         guard let device, let url = URL(string: device.location) else {
-            logger.info("Could not parse URL \(device?.location ?? "nil")")
+            logger.info("Could not parse URL \(device?.location ?? "nil", privacy: .public)")
 
             let oldEcpClient = self.ecpClient
             self.ecpClient = nil
@@ -57,7 +57,7 @@ class ECPMonitor {
             macs: device.macs(),
             websocketStateUpdated: {[weak self] state in
                 guard let self = self else { return }
-                logger.info("Getting new ws state \(state.debugDescription)")
+                logger.info("Getting new ws state \(state.debugDescription, privacy: .public)")
                 DispatchQueue.main.async {
                     self.status = state
                 }
@@ -84,7 +84,7 @@ class ECPMonitor {
             do {
                 try await ecpClient.requestEventsNotify()
             } catch {
-                logger.error("Error requesting events notify \(error)")
+                logger.error("Error requesting events notify \(error, privacy: .public)")
             }
         }
     }

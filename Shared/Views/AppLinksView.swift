@@ -55,8 +55,11 @@ struct AppLinksView: View {
             filter: #Predicate {
                 $0.deviceUid == deviceId
             },
-            sort: \.lastSelected,
-            order: .reverse
+            sort: [
+                SortDescriptor<AppLink>(\.lastSelected, order: .reverse),
+                SortDescriptor<AppLink>(\.deviceSortOrder, order: .forward),
+                SortDescriptor<AppLink>(\.id)
+            ]
         )
         cachedAppLinks = []
     }

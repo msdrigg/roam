@@ -76,6 +76,7 @@ struct RemoteViewContained: View {
     @State private var errorTrigger: Int = 0
     @State private var networkPermissionGranted: Bool?
     @AppStorage(UserDefaultKeys.networkPermissionBannerDismissed) private var networkPermissionBannerDismissed: Bool = false
+    @AppStorage(UserDefaultKeys.networkExpensiveBannerDismissed) private var networkExpensiveBannerDismissed: Bool = false
     @AllCustomKeyboardShortcuts private var allKeyboardShortcuts: [CustomKeyboardShortcut]
 
     private var networkMonitor: NetworkMonitor {
@@ -918,11 +919,13 @@ struct RemoteViewContained: View {
                     localized: "No WiFi connection detected",
                     comment: "Warning indicator message that there is no WiFi network connection"
                 ), level: .warning)
-            } else if networkMonitor.networkConnection == .expensiveLocal {
+            } else if networkMonitor.networkConnection == .expensiveLocal && !self.networkExpensiveBannerDismissed {
                 NotificationBanner(message: String(
                     localized: "No valid WiFi connection detected. You may be connected to a hotspot instead of your home WiFi network",
                     comment: "Warning indicator message that there is no WiFi network connection"
-                ), level: .warning)
+                ), onDismiss: {
+                    self.networkExpensiveBannerDismissed = true
+                }, level: .warning)
             } else if self.networkPermissionGranted == false && !self.networkPermissionBannerDismissed && self.ecpSessionState.status != .connected  {
 #if os(macOS)
                 NotificationBanner(message: String(

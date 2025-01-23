@@ -14,13 +14,13 @@ func getGlobalNewDeviceName() -> String {
 
 @ModelActor
 public actor DataHandler {
+    static let hardDeleteTimeout: TimeInterval = 3600
+
     nonisolated static let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier!,
         category: String(describing: DataHandler.self)
     )
 
-    // Only refresh every 1 hour
-//    private let minRescanInterval: TimeInterval = 3600
     private let minRescanInterval: TimeInterval = 30
 
     private func allDevices() throws -> [Device] {
@@ -148,7 +148,7 @@ public actor DataHandler {
 
     func deleteInPast() async {
         DataHandler.logger.info("Hard deleting devices")
-        let deleteBefore = Date.now - 60 * 3600
+        let deleteBefore = Date.now - Self.hardDeleteTimeout
         let distantFuture = Date.distantFuture
         do {
             var descriptor = FetchDescriptor<Device>(predicate: #Predicate {
@@ -486,7 +486,7 @@ extension DataHandler {
 
 extension DataHandler {
     func refreshDevice(_ id: PersistentIdentifier) async {
-        Self.logger.info("Refreshing device with id \(String(describing: id))")
+        Self.logger.info("Refreshing device with id \(String(describing: id), privacy: .public)")
         guard let location = (modelContext.existingDevice(for: id))?.location else {
             DataHandler.logger.error("Trying to refresh device that doeesn't exist \(String(describing: id), privacy: .public)")
             return
@@ -585,12 +585,12 @@ extension DataHandler {
             DataHandler.logger.error("Error getting capabilities \(error, privacy: .public)")
         }
 
-        var apps: [AppLinkAppEntity]?
+        var sortedApps: [AppLinkAppEntity]?
         do {
             #if os(watchOS)
-            apps = try await fetchDeviceApps(location: location)
+            sortedApps = try await fetchDeviceApps(location: location)
             #else
-            apps = try await ecpSession.getDeviceApps()
+            sortedApps = try await ecpSession.getDeviceApps()
             #endif
             Self.logger.info("Successfully refreshed device apps")
         } catch {
@@ -616,15 +616,18 @@ extension DataHandler {
 
             let deviceApps = (try? modelContext.fetchSafer(descriptor)) ?? []
 
-            if let apps {
+            if let sortedApps {
                 // Remove apps from device that aren't in fetchedApps
-                var deviceApps = deviceApps.filter { app in
-                    apps.contains { $0.id == app.id }
+                var deviceApps = deviceApps.filter { existingApp in
+                    return sortedApps.contains { $0.id == existingApp.id }
+                }
+                deviceApps.forEach { existingApp in
+                    existingApp.deviceSortOrder = sortedApps.firstIndex(where: { $0.id == existingApp.id }) ?? nil
                 }
 
                 // Add new apps to device
-                for app in apps where !deviceApps.contains(where: { $0.id == app.id }) {
-                    let al = AppLink(id: app.id, type: app.type, name: app.name, deviceUid: device.udn)
+                for (index, app) in sortedApps.enumerated() where !deviceApps.contains(where: { $0.id == app.id }) {
+                    let al = AppLink(id: app.id, type: app.type, name: app.name, deviceUid: device.udn, deviceSortOrder: index)
                     modelContext.insert(al)
                     deviceApps.append(al)
                 }

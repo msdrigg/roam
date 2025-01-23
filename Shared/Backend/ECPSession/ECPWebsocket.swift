@@ -63,7 +63,8 @@ actor ECPWebsocketClient: Sendable {
     let endpoint: NWEndpoint
     let macs: [String]
 
-    var requestId = 3
+    static let baseRequestId = 2
+    var requestId = 2
 
     let connectionQueue: DispatchQueue = DispatchQueue(label: "ECP Websocket Session Queue", qos: .userInitiated)
 
@@ -84,7 +85,7 @@ actor ECPWebsocketClient: Sendable {
         }
         let staleHandlers = self.responseHandlers
         self.responseHandlers = [:]
-        Self.logger.info("De-initting \(self.uuid) for \(self.endpoint.debugDescription)")
+        Self.logger.info("De-initting \(self.uuid, privacy: .public) for \(self.endpoint.debugDescription, privacy: .public)")
         for handler in staleHandlers.values {
             handler(.failure(.connectionFailed))
         }
@@ -95,6 +96,7 @@ actor ECPWebsocketClient: Sendable {
         if self.connection.state != .cancelled {
             self.connection.cancel()
         }
+        self.clearHandlers()
     }
 
     private func newRequestId() -> String {
@@ -108,7 +110,7 @@ actor ECPWebsocketClient: Sendable {
     }
 
     public func oneOff<T: Sendable>(timeout: TimeInterval = 5, _ block: @escaping @Sendable (isolated ECPWebsocketClient) async throws -> T) async throws -> T {
-        Self.logger.info("Running quick oneoff with id \(self.uuid) for endpoint \(self.endpoint.debugDescription)")
+        Self.logger.info("Running quick oneoff with id \(self.uuid, privacy: .public) for endpoint \(self.endpoint.debugDescription, privacy: .public)")
         self.start()
         defer {
             self.cancel()
@@ -140,19 +142,19 @@ actor ECPWebsocketClient: Sendable {
 
     @discardableResult
     public nonisolated func sendCommand(_ command: ECPRequestMessage, timeout: TimeInterval = 5) async throws -> ECPResponse {
-        let reqId = await self.newRequestId()
-        Self.logger.info("Sending command \(String(describing: command)) with id \(reqId))")
+        Self.logger.info("Sending command \(command.debugDescription, privacy: .public)")
 
         let response = try await withTaskCancellationHandler {
             try await withTimeout(delay: timeout) {
                 try await withCheckedThrowingContinuation { continuation in
                     Task {
-                        await self.sendMessage(command.withId(reqId), timeout: timeout, completion: { response in
-                            Self.logger.info("Got response for message \(String(describing: response)) with id \(reqId)")
+                        await self.sendMessage(command, timeout: timeout, completion: { response in
                             switch response {
                             case .success(let response):
+                                Self.logger.info("Got success response for message \(response.debugDescription, privacy: .public)")
                                 continuation.resume(returning: response)
                             case .failure(let error):
+                                Self.logger.info("Got failure for command \(command.debugDescription, privacy: .public)")
                                 continuation.resume(throwing: error)
                             }
                         })
@@ -210,10 +212,10 @@ actor ECPWebsocketClient: Sendable {
 
     public nonisolated func getDeviceCapabilities() async throws -> DeviceCapabilities {
         let result = try await self.sendCommand(.queryDeviceCapabilities(QueryAudioDevice(requestId: "")))
-        Self.logger.info("Got result \(String(reflecting: result))")
         switch result {
         case .base(let resp):
             guard let data = resp.contentData else {
+                Self.logger.info("Error getting device capaibilities -- no content data")
                 throw ECPError.invalidResponse
             }
 
@@ -229,10 +231,10 @@ actor ECPWebsocketClient: Sendable {
 
     public nonisolated func getDeviceApps() async throws -> [AppLinkAppEntity] {
         let result = try await self.sendCommand(.queryDeviceApps(QueryApps(requestId: "")))
-        Self.logger.info("Got result \(String(reflecting: result))")
         switch result {
         case .base(let resp):
             guard let data = resp.contentData else {
+                Self.logger.info("Error getting device apps -- no content data")
                 throw ECPError.invalidResponse
             }
 
@@ -245,10 +247,10 @@ actor ECPWebsocketClient: Sendable {
 
     public nonisolated func getDeviceAppIcon(_ appId: String) async throws -> Data {
         let result = try await self.sendCommand(.queryAppIcon(QueryAppIcon(requestId: "", channelId: appId)))
-        Self.logger.info("Got result \(String(reflecting: result))")
         switch result {
         case .base(let resp):
             guard let data = resp.contentData, let contentType = resp.contentType else {
+                Self.logger.info("Error getting device app icon -- no content data")
                 throw ECPError.invalidResponse
             }
 
@@ -301,13 +303,16 @@ actor ECPWebsocketClient: Sendable {
         )))
     }
 
-    private func sendMessage(_ message: ECPRequestMessage, timeout: TimeInterval? = nil, completion: @escaping ECPResponseCompletion) {
+    private func sendMessage(_ inputMessage: ECPRequestMessage, timeout: TimeInterval? = nil, completion: @escaping ECPResponseCompletion) {
         if self.inError {
             Self.logger.info("Restarting on send message because we are in error state")
             self.start()
         }
-        Self.logger.info("Current response handlers \(self.responseHandlers.count) and new request \(message.requestId) with state \(self.state.debugDescription) and ws state \(String(describing: self.connection.state))")
-        self.responseHandlers[message.requestId] = completion
+        let reqId = self.newRequestId()
+        let message = inputMessage.withId(reqId)
+
+        Self.logger.info("Current response handlers \(self.responseHandlers.count, privacy: .public) and new request \(message.requestId, privacy: .public) with state \(self.state.debugDescription, privacy: .public) and ws state \(String(describing: self.connection.state), privacy: .public)")
+        self.responseHandlers[reqId] = completion
         let metadata = NWProtocolFramer.Message(ecpRequest: message)
         let context = NWConnection.ContentContext(
             identifier: "ecpMessage",
@@ -336,6 +341,7 @@ actor ECPWebsocketClient: Sendable {
         Self.logger.info("Clearing handlers")
         let staleHandlers = self.responseHandlers
         self.responseHandlers = [:]
+        self.requestId = Self.baseRequestId
         for handler in staleHandlers.values {
             handler(.failure(.connectionFailed))
         }
@@ -390,13 +396,13 @@ actor ECPWebsocketClient: Sendable {
 
     private func listen() {
         connection.receiveMessage { [weak self] (_, context, _, error) in
-            Self.logger.info("Triggering receive message")
-
             guard let self = self else {
+                Self.logger.warning("Triggering receive message with no self")
                 return
             }
 
             if let error = error {
+                Self.logger.warning("Triggering receive message with error")
                 Task {
                     await self.handleError(error)
                 }
@@ -412,9 +418,8 @@ actor ECPWebsocketClient: Sendable {
                     await self.receiveMessage(context: context)
                 }
             } else {
-                Self.logger.info("No data or context")
+                Self.logger.warning("No data context in message")
             }
-
         }
     }
 
@@ -422,16 +427,19 @@ actor ECPWebsocketClient: Sendable {
         Self.logger.info("In error because getting req error")
         self.inError = true
         if let requestId {
-            Self.logger.info("Getting error for req \(requestId)")
+            Self.logger.info("Getting error for req \(requestId, privacy: .public)")
             self.responseHandlers.removeValue(forKey: requestId)?(.failure(.sendFailed(error)))
-        } else {
-            self.clearHandlers()
         }
+        self.cancel()
     }
 
     private func receiveMessage(context: NWConnection.ContentContext) {
+        guard context.protocolMetadata.count != 0 || !context.isFinal else {
+            Self.logger.info("Received final message unexpectedly. Shutting down now")
+            return
+        }
         guard let metadata = context.protocolMetadata(definition: ECPProtocol.definition) as? NWProtocolFramer.Message else {
-            Self.logger.warning("Received data without message")
+            Self.logger.warning("Received data without ecp message")
             return
         }
         guard let response = metadata.ecpResponse else {
@@ -441,19 +449,19 @@ actor ECPWebsocketClient: Sendable {
 
         switch response {
         case .notify(let notify):
+            Self.logger.info("Getting notify \(notify.notifyType.rawValue, privacy: .public)")
             self.notificationhandler(notify)
         case .response(let response):
-            Self.logger.info("Getting success for req \(response.responseId)")
+            Self.logger.info("Getting success for req \(response.responseId, privacy: .public): \(response.responseType, privacy: .public)")
             if let handler = self.responseHandlers.removeValue(forKey: response.responseId) {
                 handler(.success(response))
             } else {
-                Self.logger.warning("Received ECP handler for unknown response ID \(response.responseId)")
+                Self.logger.warning("Received ECP handler for unknown response ID \(response.responseId, privacy: .public)")
             }
         }
     }
 
     func reportStateChange(_ newState: ECPWebsocketState) {
-        Self.logger.info("Reporting new state \(newState.debugDescription)")
         switch (self.state, newState) {
         case (.connecting(_), .connecting(_)), (.disconnected(_), .disconnected(_)), (.connected, .connected):
             Self.logger.info("Ignoring state change because it is the same \(String(describing: newState), privacy: .public)")
@@ -472,37 +480,36 @@ actor ECPWebsocketClient: Sendable {
     }
 
     func stateDidChange(to state: NWConnection.State) {
-        Self.logger.info("WS State changed to \(String(describing: state), privacy: .public)")
-
         switch state {
         case .ready:
-            Self.logger.info("No longer in error with state \(String(describing: state))")
-            self.inError = false
+            Self.logger.info("No longer in error with state \(String(describing: state), privacy: .public)")
             self.reportStateChange(.connected)
+            self.inError = false
         case .waiting(let error):
-            self.reportStateChange(.connecting(.now))
             Self.logger.info("In waiting state, failing with error \(error, privacy: .public). Currently in state \(String(describing: self.connection.state), privacy: .public)")
+            self.reportStateChange(.connecting(.now))
             self.inError = true
 
             /// Workaround to prevent loop while reconnecting
             errorWhileWaitingCount += 1
             if errorWhileWaitingCount >= errorWhileWaitingLimit {
+                Self.logger.info("Cancelling after \(self.errorWhileWaitingLimit, privacy: .public) errors in waiting state")
                 self.cancel()
             }
         case .failed(let error):
-            Self.logger.info("In error with state \(String(describing: state))")
+            Self.logger.info("In error with state \(String(describing: state), privacy: .public)")
+            self.reportStateChange(.disconnected(.now))
             self.inError = true
             self.handleError(error)
-            self.reportStateChange(.disconnected(.now))
         case .setup, .preparing:
-            Self.logger.info("No longer in error with state \(String(describing: state))")
+            Self.logger.info("No longer in error with state \(String(describing: state), privacy: .public)")
+            self.reportStateChange(.connecting(.now))
             self.inError = false
             errorWhileWaitingCount = 0
-            self.reportStateChange(.connecting(.now))
         case .cancelled:
-            Self.logger.info("In error with state \(String(describing: state))")
-            self.inError = true
+            Self.logger.info("In error with state \(String(describing: state), privacy: .public)")
             self.reportStateChange(.disconnected(.now))
+            self.inError = true
         @unknown default:
             Self.logger.warning("Unknown state \(String(describing: state), privacy: .public)")
         }

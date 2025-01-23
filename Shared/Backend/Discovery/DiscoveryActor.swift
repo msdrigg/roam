@@ -27,13 +27,13 @@ actor DeviceDiscoveryActor {
         }
     }
     func refreshSelectedDeviceContinually(id: PersistentIdentifier) async {
-        // Refresh every 30 seconds
+        // Refresh every 20 minutes
         do {
             try await Task.sleep(duration: 1)
             Self.logger.debug("Refreshing device initially \(String(describing: id), privacy: .public)")
             await refreshDevice(id: id)
         } catch {}
-        for await _ in interval(time: 30) {
+        for await _ in interval(time: 1200) {
             if Task.isCancelled {
                 return
             }
@@ -45,7 +45,7 @@ actor DeviceDiscoveryActor {
     #if !os(watchOS)
         @discardableResult
         func addDevice(location: String) async -> Bool {
-            Self.logger.info("Trying to add device with location \(location)")
+            Self.logger.info("Trying to add device with location \(location, privacy: .public)")
             var deviceInfo: DeviceInfo?
             do {
                 guard let url = URL(string: location) else {
@@ -63,7 +63,7 @@ actor DeviceDiscoveryActor {
                 Self.logger.error("Error getting device info for found device \(location, privacy: .public)")
                 return false
             }
-            Self.logger.info("Got device info to add device with location \(location)")
+            Self.logger.info("Got device info to add device with location \(location, privacy: .public)")
 
             if let device = await dataHandler.deviceEntityForUdn(udn: deviceInfo.udn) {
                 if device.location == location {

@@ -33,7 +33,7 @@
     public func getTestingContainer() -> ModelContainer {
         do {
             let schema = Schema(
-                versionedSchema: SchemaV2.self
+                versionedSchema: SchemaV3.self
             )
             let modelConfiguration = ModelConfiguration(
                 schema: schema,
@@ -56,7 +56,7 @@
     @MainActor
     public let previewContainer: ModelContainer = {
         do {
-            let schema = Schema(versionedSchema: SchemaV2.self)
+            let schema = Schema(versionedSchema: SchemaV3.self)
             let container = try ModelContainer(
                 for: schema,
                 migrationPlan: RoamSchemaMigrationPlan.self,
