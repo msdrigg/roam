@@ -132,14 +132,11 @@ impl AppContext {
                 tracing::warn!("No user found for thread {}", thread.id);
                 continue;
             };
-            let messages: Vec<_> = self
+            let messages = self
                 .discord_client
                 .get_messages_in_thread(thread.id, Some(last_alerted_message))
                 .await
-                .context("Error getting messages in thread for user")?
-                .into_iter()
-                .filter(|message| !message.is_hidden())
-                .collect();
+                .context("Error getting messages in thread for user")?;
 
             tracing::info!(
                 "Found {} notifiable messages in thread {} since {}. Last Message Ids: {:?}",
@@ -161,7 +158,7 @@ impl AppContext {
                 .send_background_push_notification(apns_token)
                 .await?;
 
-            for message in messages {
+            for message in messages.into_iter().filter(|message| !message.is_hidden()) {
                 self.notify_user(&user, message).await?;
             }
         }
@@ -174,7 +171,10 @@ impl AppContext {
             .apns_token
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("No APNS token found for user {}", user.device_id))?;
-        if message.author.id == self.discord_bot_id || message.suppress_notification() {
+        if message.author.id == self.discord_bot_id
+            || message.suppress_notification()
+            || message.is_hidden()
+        {
             tracing::info!(
                 "Skipping foreground push notification for message: {}",
                 message.content,
