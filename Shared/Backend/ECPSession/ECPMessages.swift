@@ -354,7 +354,7 @@ enum ECPResponse: Decodable {
     
     var debugDescription: String {
         switch self {
-            case .base(let baseResponse):
+        case .base(let baseResponse):
             return "ECPResponse: \(baseResponse.response)-\(baseResponse.status)"
         }
     }

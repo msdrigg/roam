@@ -1,1 +1,3 @@
-- Correzioni di bug e miglioramenti
+-   Correzioni di bug e miglioramenti
+-   Migliora la velocità di connessione
+-   Supporto per Roku TV con Modalità Limitata

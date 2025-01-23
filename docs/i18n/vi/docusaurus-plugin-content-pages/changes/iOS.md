@@ -1,1 +1,4 @@
--   Sửa lỗi và cải tiến
+-   Sửa lỗi và cải thiện
+-   Cải thiện tốc độ kết nối
+-   Hỗ trợ cho Roku TV với Chế độ giới hạn
+-   Sửa lỗi với watchOS không thể thêm thiết bị

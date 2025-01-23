@@ -207,10 +207,9 @@ async fn get_user_messages(
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct MessageRequest {
-    content: Option<String>,
-    apns_token: Option<String>,
     user_id: String,
-    #[serde(default)]
+    apns_token: Option<String>,
+    content: Option<String>,
     installation_info: Option<DeviceInfo>,
 }
 
@@ -247,10 +246,12 @@ async fn new_message(
         .await?;
 
     if let Some(content) = content {
-        app_context
-            .discord_client()
-            .send_message(user.thread_id, &content)
-            .await?;
+        if !content.is_empty() {
+            app_context
+                .discord_client()
+                .send_message(user.thread_id, &content)
+                .await?;
+        }
     }
 
     Ok("OK".to_string())

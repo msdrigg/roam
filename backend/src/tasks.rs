@@ -6,7 +6,7 @@ use crate::AppContext;
 
 pub async fn start_tasks(app_context: AppContext) -> Result<JoinHandle<()>, Box<anyhow::Error>> {
     let task_handle = tokio::spawn(async move {
-        let mut interval = tokio::time::interval(Duration::from_secs(60));
+        let mut interval = tokio::time::interval(Duration::from_secs(60 * 5));
         loop {
             interval.tick().await;
 

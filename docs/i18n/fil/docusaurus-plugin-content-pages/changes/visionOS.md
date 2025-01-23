@@ -1,1 +1,1 @@
--   Mga pag-aayos ng bug at mga pagpapabuti
+-   Mga pag-aayos ng bug at pagpapabuti

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::Context;
 use apns::ApnsClient;
 use database::{DatabaseClient, DeviceInfo, User, UserUpdate};
-use discord::DiscordClient;
+use discord::{DiscordClient, DiscordMessage};
 use server::ApiError;
 
 pub mod apns;
@@ -162,52 +162,61 @@ impl AppContext {
                 .await?;
 
             for message in messages {
-                if message.author.id == self.discord_bot_id || message.suppress_notification() {
-                    tracing::info!(
-                        "Skipping foreground push notification for message: {}",
-                        message.content,
-                    );
-                    continue;
-                } else {
-                    tracing::info!(
-                        "Sending foreground push notification for message: {} to {}",
-                        message.content,
-                        apns_token
-                    );
-                }
-
-                tracing::info!(
-                    "Sending foreground push notification for message: {} to {}",
-                    message.content,
-                    apns_token
-                );
-
-                if let Err(err) = self
-                    .apns_client
-                    .send_push_notification(
-                        apns_token,
-                        "Message from roam",
-                        &message.normalize().content,
-                    )
-                    .await
-                {
-                    tracing::error!("Error sending push notification: {:?}", err);
-                    if matches!(
-                        err.a2_reason(),
-                        Some(
-                            a2::ErrorReason::Unregistered
-                                | a2::ErrorReason::BadDeviceToken
-                                | a2::ErrorReason::DeviceTokenNotForTopic
-                        )
-                    ) {
-                        self.db_client.clear_user_apns(&user.device_id).await?;
-                    }
-                } else {
-                    tracing::info!("Push notification sent successfully");
-                }
+                self.notify_user(&user, message).await?;
             }
         }
 
+        Ok(())
+    }
+
+    async fn notify_user(&self, user: &User, message: DiscordMessage) -> anyhow::Result<()> {
+        let apns_token = user
+            .apns_token
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("No APNS token found for user {}", user.device_id))?;
+        if message.author.id == self.discord_bot_id || message.suppress_notification() {
+            tracing::info!(
+                "Skipping foreground push notification for message: {}",
+                message.content,
+            );
+            return Ok(());
+        } else {
+            tracing::info!(
+                "Sending foreground push notification for message: {} to {}",
+                message.content,
+                apns_token
+            );
+        }
+
+        tracing::info!(
+            "Sending foreground push notification for message: {} to {}",
+            message.content,
+            apns_token
+        );
+
+        if let Err(err) = self
+            .apns_client
+            .send_push_notification(
+                apns_token,
+                "Message from roam",
+                &message.normalize().content,
+            )
+            .await
+        {
+            tracing::error!("Error sending push notification: {:?}", err);
+            if matches!(
+                err.a2_reason(),
+                Some(
+                    a2::ErrorReason::Unregistered
+                        | a2::ErrorReason::BadDeviceToken
+                        | a2::ErrorReason::DeviceTokenNotForTopic
+                )
+            ) {
+                self.db_client.clear_user_apns(&user.device_id).await?;
+            }
+        } else {
+            tracing::info!("Push notification sent successfully");
+        }
         Ok(())
     }
 

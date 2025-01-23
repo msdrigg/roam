@@ -40,6 +40,7 @@ pub enum DiscordError {
 impl DiscordClient {
     const DISCORD_API_BASE_URL: &str = "https://discord.com/api/v10";
     const DEFAULT_AUTO_ARCHIVE_DURATION: i64 = 10080;
+    const DISCORD_CONCURRENT_REQUESTS: usize = 3;
 
     async fn acquire(&self) -> Result<tokio::sync::SemaphorePermit<'_>, AcquireError> {
         self.semaphore.acquire().await
@@ -75,9 +76,11 @@ impl DiscordClient {
     async fn except_error_response(
         &self,
         response: reqwest::Response,
+        message: &str,
     ) -> Result<reqwest::Response, DiscordError> {
         let status = response.status();
         if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            tracing::info!(?message, "Discord rate limited");
             let header_retry_after = response
                 .headers()
                 .get("Retry-After")
@@ -111,6 +114,7 @@ impl DiscordClient {
                 .json()
                 .await
                 .unwrap_or_else(|_| serde_json::json!({}));
+            tracing::info!(?message, ?status, ?error_data, "Discord errored");
             return Err(DiscordError::ApiError {
                 status,
                 message: error_data["message"]
@@ -142,7 +146,9 @@ impl DiscordClient {
             channel_id,
             guild_id,
             retry_at: Arc::new(Mutex::new(None)),
-            semaphore: Arc::new(tokio::sync::Semaphore::new(5)),
+            semaphore: Arc::new(tokio::sync::Semaphore::new(
+                Self::DISCORD_CONCURRENT_REQUESTS,
+            )),
             client: reqwest::Client::new(),
         }
     }
@@ -178,7 +184,9 @@ impl DiscordClient {
         self.update_rate_limit(response.headers());
 
         let status = response.status();
-        let response = self.except_error_response(response).await?;
+        let response = self
+            .except_error_response(response, "Getting messages")
+            .await?;
 
         let messages: Vec<DiscordMessage> =
             response.json().await.map_err(|e| DiscordError::ApiError {
@@ -222,7 +230,9 @@ impl DiscordClient {
 
         self.update_rate_limit(response.headers());
 
-        let response = self.except_error_response(response).await?;
+        let response = self
+            .except_error_response(response, "sending attachment")
+            .await?;
 
         let response_data: IdResponse = response
             .json()
@@ -258,7 +268,9 @@ impl DiscordClient {
 
         self.update_rate_limit(response.headers());
 
-        let response = self.except_error_response(response).await?;
+        let response = self
+            .except_error_response(response, "getting active threads")
+            .await?;
 
         let data: ThreadResponse = response
             .json()
@@ -285,7 +297,7 @@ impl DiscordClient {
             Self::DISCORD_API_BASE_URL,
             thread_id
         );
-        tracing::info!("Sending messages to thread: {}", thread_id);
+        tracing::info!("Sending message \"{}\" to thread {}", content, thread_id);
         let body = serde_json::json!({
             "content": content,
         });
@@ -302,12 +314,15 @@ impl DiscordClient {
 
         self.update_rate_limit(response.headers());
 
-        let response = self.except_error_response(response).await?;
+        let response = self
+            .except_error_response(response, "sending message")
+            .await?;
 
         let response_data: IdResponse = response
             .json()
             .await
             .map_err(|e| DiscordError::ResponseError(e.into()))?;
+        tracing::info!("Sending message succeeded");
         Ok(response_data.id)
     }
 
@@ -325,7 +340,11 @@ impl DiscordClient {
             Self::DISCORD_API_BASE_URL,
             self.channel_id
         );
-        tracing::info!("Creating thread in channel: {}", self.channel_id);
+        tracing::info!(
+            "Creating thread in channel {} with message {}",
+            self.channel_id,
+            message
+        );
 
         let body = serde_json::json!({
             "name": title,
@@ -347,7 +366,9 @@ impl DiscordClient {
 
         self.update_rate_limit(response.headers());
 
-        let response = self.except_error_response(response).await?;
+        let response = self
+            .except_error_response(response, "creating thread")
+            .await?;
 
         let response_data: IdResponse = response
             .json()
@@ -368,11 +389,20 @@ mod types {
         pub content: String,
         pub author: DiscordAuthor,
         #[serde(rename = "type")]
-        pub message_type: u16,
+        pub message_type: u8,
     }
 
     impl DiscordMessage {
-        const ALLOWED_MESSAGE_TYPES: [u16; 4] = [0, 19, 20, 21];
+        const ALLOWED_MESSAGE_TYPES: [u8; 4] = [0, 19, 20, 21];
+
+        pub fn new(id: i64, content: String, author_id: i64, message_type: u8) -> Self {
+            Self {
+                id,
+                content,
+                author: DiscordAuthor { id: author_id },
+                message_type,
+            }
+        }
 
         pub fn author_id(&self) -> i64 {
             self.author.id
@@ -399,8 +429,6 @@ mod types {
     pub struct DiscordAuthor {
         #[serde(deserialize_with = "string_to_i64", serialize_with = "i64_to_string")]
         pub id: i64,
-        pub username: String,
-        pub discriminator: String,
     }
 
     pub struct DiscordFile {

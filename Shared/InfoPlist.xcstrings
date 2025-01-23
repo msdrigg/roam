@@ -1,538 +1,538 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    " " : {
-      "comment" : "Empty space",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
+    "sourceLanguage": "en",
+    "strings": {
+        " ": {
+            "comment": "Empty space",
+            "localizations": {
+                "ar": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": " "
+                    }
+                },
+                "de": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": " "
+                    }
+                },
+                "es": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": " "
+                    }
+                },
+                "es-419": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": " "
+                    }
+                },
+                "fil": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": " "
+                    }
+                },
+                "fr": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": " "
+                    }
+                },
+                "fr-CA": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": " "
+                    }
+                },
+                "it": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": " "
+                    }
+                },
+                "pa": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": " "
+                    }
+                },
+                "pt-BR": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": " "
+                    }
+                },
+                "pt-PT": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": " "
+                    }
+                },
+                "vi": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": " "
+                    }
+                },
+                "zh-Hans": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": " "
+                    }
+                }
+            }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
+        "CFBundleDisplayName": {
+            "comment": "Bundle display name",
+            "extractionState": "extracted_with_value",
+            "localizations": {
+                "ar": {
+                    "stringUnit": {
+                        "state": "needs_review",
+                        "value": "Roam"
+                    }
+                },
+                "de": {
+                    "stringUnit": {
+                        "state": "needs_review",
+                        "value": "Roam"
+                    }
+                },
+                "en": {
+                    "stringUnit": {
+                        "state": "new",
+                        "value": "Roam"
+                    }
+                },
+                "es": {
+                    "stringUnit": {
+                        "state": "needs_review",
+                        "value": "Roam"
+                    }
+                },
+                "es-419": {
+                    "stringUnit": {
+                        "state": "needs_review",
+                        "value": "Roam"
+                    }
+                },
+                "fil": {
+                    "stringUnit": {
+                        "state": "needs_review",
+                        "value": "Roam"
+                    }
+                },
+                "fr": {
+                    "stringUnit": {
+                        "state": "needs_review",
+                        "value": "Roam"
+                    }
+                },
+                "fr-CA": {
+                    "stringUnit": {
+                        "state": "needs_review",
+                        "value": "Roam"
+                    }
+                },
+                "it": {
+                    "stringUnit": {
+                        "state": "needs_review",
+                        "value": "Roam"
+                    }
+                },
+                "pa": {
+                    "stringUnit": {
+                        "state": "needs_review",
+                        "value": "ਰੋਮ"
+                    }
+                },
+                "pt-BR": {
+                    "stringUnit": {
+                        "state": "needs_review",
+                        "value": "Roam"
+                    }
+                },
+                "pt-PT": {
+                    "stringUnit": {
+                        "state": "needs_review",
+                        "value": "Roam"
+                    }
+                },
+                "vi": {
+                    "stringUnit": {
+                        "state": "needs_review",
+                        "value": "Roam"
+                    }
+                },
+                "zh-Hans": {
+                    "stringUnit": {
+                        "state": "needs_review",
+                        "value": "Roam"
+                    }
+                }
+            }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
+        "CFBundleName": {
+            "comment": "Bundle name",
+            "extractionState": "extracted_with_value",
+            "localizations": {
+                "ar": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam"
+                    }
+                },
+                "de": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam"
+                    }
+                },
+                "en": {
+                    "stringUnit": {
+                        "state": "new",
+                        "value": "Roam"
+                    }
+                },
+                "es": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam"
+                    }
+                },
+                "es-419": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam"
+                    }
+                },
+                "fil": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam"
+                    }
+                },
+                "fr": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam"
+                    }
+                },
+                "fr-CA": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam"
+                    }
+                },
+                "it": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam"
+                    }
+                },
+                "pa": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "ਰੋਮ"
+                    }
+                },
+                "pt-BR": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam"
+                    }
+                },
+                "pt-PT": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam"
+                    }
+                },
+                "vi": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam"
+                    }
+                },
+                "zh-Hans": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam"
+                    }
+                }
+            }
         },
-        "es-419" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
+        "NSHumanReadableCopyright": {
+            "comment": "Copyright (human-readable)",
+            "localizations": {
+                "ar": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "حقوق الطبع والنشر 2025 سكوت دريغرز"
+                    }
+                },
+                "de": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Urheberrecht 2025 Scott Driggers"
+                    }
+                },
+                "en": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Copyright 2025 Scott Driggers"
+                    }
+                },
+                "es": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Derechos de autor 2025 Scott Driggers"
+                    }
+                },
+                "es-419": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Derechos de autor 2025 Scott Driggers"
+                    }
+                },
+                "fil": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Copyright 2025 Scott Driggers"
+                    }
+                },
+                "fr": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Droits d'auteur 2025 Scott Driggers"
+                    }
+                },
+                "fr-CA": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Droits d'auteur 2025 Scott Driggers"
+                    }
+                },
+                "it": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Copyright 2025 Scott Driggers"
+                    }
+                },
+                "pa": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "ਕਾਪੀਰਾਈਟ 2025 ਸਕਾਟ ਡ੍ਰਿਗਰਸ"
+                    }
+                },
+                "pt-BR": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Direitos autorais 2025 Scott Driggers"
+                    }
+                },
+                "pt-PT": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Direitos autorais 2025 Scott Driggers"
+                    }
+                },
+                "vi": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Bản quyền 2025 Scott Driggers"
+                    }
+                },
+                "zh-Hans": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "版权所有 2025 Scott Driggers"
+                    }
+                }
+            }
         },
-        "fil" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
+        "NSLocalNetworkUsageDescription": {
+            "comment": "Privacy - Local Network Usage Description",
+            "extractionState": "extracted_with_value",
+            "localizations": {
+                "ar": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "يستخدم روام الشبكة المحلية لاكتشاف والتحكم في تلفزيون Roku الخاص بك"
+                    }
+                },
+                "de": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam verwendet das lokale Netzwerk, um Ihren Roku-Fernseher zu entdecken und zu steuern"
+                    }
+                },
+                "en": {
+                    "stringUnit": {
+                        "state": "new",
+                        "value": "Roam uses the local network to discover and control your Roku TV"
+                    }
+                },
+                "es": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam usa la red local para descubrir y controlar su televisor Roku"
+                    }
+                },
+                "es-419": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam usa la red local para descubrir y controlar su televisor Roku"
+                    }
+                },
+                "fil": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Gumagamit ang Roam ng lokal na network upang matuklasan at kontrolin ang iyong Roku TV"
+                    }
+                },
+                "fr": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam utilise le réseau local pour découvrir et contrôler votre téléviseur Roku"
+                    }
+                },
+                "fr-CA": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam utilise le réseau local pour découvrir et contrôler votre téléviseur Roku"
+                    }
+                },
+                "it": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam utilizza la rete locale per scoprire e controllare il tuo Roku TV"
+                    }
+                },
+                "pa": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "ਰੋਮ ਤੁਹਾਡੇ ਰੋਕੂ ਟੀਵੀ ਨੂੰ ਖੋਜਣ ਅਤੇ ਕੰਟਰੋਲ ਕਰਨ ਲਈ ਸਥਾਨਕ ਨੈੱਟਵਰਕ ਦੀ ਵਰਤੋਂ ਕਰਦਾ ਹੈ"
+                    }
+                },
+                "pt-BR": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam usa a rede local para descobrir e controlar sua TV Roku"
+                    }
+                },
+                "pt-PT": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam usa a rede local para descobrir e controlar sua TV Roku"
+                    }
+                },
+                "vi": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam sử dụng mạng cục bộ để khám phá và điều khiển Roku TV của bạn"
+                    }
+                },
+                "zh-Hans": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam 使用本地网络来发现和控制您的 Roku 电视"
+                    }
+                }
+            }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
-        },
-        "fr-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
-        },
-        "pa" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " "
-          }
+        "NSUserNotificationUsageDescription": {
+            "comment": "Notification Usage Description",
+            "extractionState": "manual",
+            "localizations": {
+                "ar": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "يمكن أن يخطر روامك عندما يستجيب المطور لرسالتك"
+                    }
+                },
+                "de": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam kann Sie benachrichtigen, wenn der Entwickler auf Ihre Nachricht antwortet"
+                    }
+                },
+                "en": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam can notify you when the the developer responds to your message"
+                    }
+                },
+                "es": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam puede notificarle cuando el desarrollador responda a su mensaje"
+                    }
+                },
+                "es-419": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam puede notificarle cuando el desarrollador responda a su mensaje"
+                    }
+                },
+                "fil": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Maaaring abisuhan ka ng Roam kapag tumugon ang developer sa iyong mensahe"
+                    }
+                },
+                "fr": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam peut vous notifier lorsque le développeur répond à votre message"
+                    }
+                },
+                "fr-CA": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam peut vous notifier lorsque le développeur répond à votre message"
+                    }
+                },
+                "it": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam può notificarti quando lo sviluppatore risponde al tuo messaggio"
+                    }
+                },
+                "pa": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "ਜਦੋਂ ਡਿਵੈਲਪਰ ਤੁਹਾਡੇ ਸੁਨੇਹੇ ਦਾ ਜਵਾਬ ਦੇਂਦਾ ਹੈ ਤਾਂ ਰੋਮ ਤੁਹਾਨੂੰ ਸੂਚਿਤ ਕਰ ਸਕਦਾ ਹੈ"
+                    }
+                },
+                "pt-BR": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "O Roam pode notificá-lo quando o desenvolvedor responder à sua mensagem"
+                    }
+                },
+                "pt-PT": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "O Roam pode notificá-lo quando o desenvolvedor responder à sua mensagem"
+                    }
+                },
+                "vi": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Roam có thể thông báo cho bạn khi nhà phát triển trả lời tin nhắn của bạn"
+                    }
+                },
+                "zh-Hans": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "当开发者回复您的消息时，Roam 可以通知您"
+                    }
+                }
+            }
         }
-      }
     },
-    "CFBundleDisplayName" : {
-      "comment" : "Bundle display name",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Roam"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Roam"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Roam"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Roam"
-          }
-        },
-        "es-419" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Roam"
-          }
-        },
-        "fil" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Roam"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Roam"
-          }
-        },
-        "fr-CA" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Roam"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Roam"
-          }
-        },
-        "pa" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "ਰੋਮ"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Roam"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Roam"
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Roam"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Roam"
-          }
-        }
-      }
-    },
-    "CFBundleName" : {
-      "comment" : "Bundle name",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Roam"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam"
-          }
-        },
-        "es-419" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam"
-          }
-        },
-        "fil" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam"
-          }
-        },
-        "fr-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam"
-          }
-        },
-        "pa" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ਰੋਮ"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam"
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam"
-          }
-        }
-      }
-    },
-    "NSHumanReadableCopyright" : {
-      "comment" : "Copyright (human-readable)",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "حقوق الطبع والنشر 2025 سكوت دريغرز"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Urheberrecht 2025 Scott Driggers"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright 2025 Scott Driggers"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Derechos de autor 2025 Scott Driggers"
-          }
-        },
-        "es-419" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Derechos de autor 2025 Scott Driggers"
-          }
-        },
-        "fil" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright 2025 Scott Driggers"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Droits d'auteur 2025 Scott Driggers"
-          }
-        },
-        "fr-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Droits d'auteur 2025 Scott Driggers"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copyright 2025 Scott Driggers"
-          }
-        },
-        "pa" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ਕਾਪੀਰਾਈਟ 2025 ਸਕਾਟ ਡ੍ਰਿਗਰਸ"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Direitos autorais 2025 Scott Driggers"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Direitos autorais 2025 Scott Driggers"
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bản quyền 2025 Scott Driggers"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "版权所有 2025 Scott Driggers"
-          }
-        }
-      }
-    },
-    "NSLocalNetworkUsageDescription" : {
-      "comment" : "Privacy - Local Network Usage Description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "يستخدم روام الشبكة المحلية لاكتشاف والتحكم في تلفزيون Roku الخاص بك"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam verwendet das lokale Netzwerk, um Ihren Roku-Fernseher zu entdecken und zu steuern"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Roam uses the local network to discover and control your Roku TV"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam usa la red local para descubrir y controlar su televisor Roku"
-          }
-        },
-        "es-419" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam usa la red local para descubrir y controlar su televisor Roku"
-          }
-        },
-        "fil" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gumagamit ang Roam ng lokal na network upang matuklasan at kontrolin ang iyong Roku TV"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam utilise le réseau local pour découvrir et contrôler votre téléviseur Roku"
-          }
-        },
-        "fr-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam utilise le réseau local pour découvrir et contrôler votre téléviseur Roku"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam utilizza la rete locale per scoprire e controllare il tuo Roku TV"
-          }
-        },
-        "pa" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ਰੋਮ ਤੁਹਾਡੇ ਰੋਕੂ ਟੀਵੀ ਨੂੰ ਖੋਜਣ ਅਤੇ ਕੰਟਰੋਲ ਕਰਨ ਲਈ ਸਥਾਨਕ ਨੈੱਟਵਰਕ ਦੀ ਵਰਤੋਂ ਕਰਦਾ ਹੈ"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam usa a rede local para descobrir e controlar sua TV Roku"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam usa a rede local para descobrir e controlar sua TV Roku"
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam sử dụng mạng cục bộ để khám phá và điều khiển Roku TV của bạn"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam 使用本地网络来发现和控制您的 Roku 电视"
-          }
-        }
-      }
-    },
-    "NSUserNotificationUsageDescription" : {
-      "comment" : "Notification Usage Description",
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "يمكن أن يخطر روامك عندما يستجيب المطور لرسالتك"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam kann Sie benachrichtigen, wenn der Entwickler auf Ihre Nachricht antwortet"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam can notify you when the the developer responds to your message"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam puede notificarle cuando el desarrollador responda a su mensaje"
-          }
-        },
-        "es-419" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam puede notificarle cuando el desarrollador responda a su mensaje"
-          }
-        },
-        "fil" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Maaaring abisuhan ka ng Roam kapag tumugon ang developer sa iyong mensahe"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam peut vous notifier lorsque le développeur répond à votre message"
-          }
-        },
-        "fr-CA" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam peut vous notifier lorsque le développeur répond à votre message"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam può notificarti quando lo sviluppatore risponde al tuo messaggio"
-          }
-        },
-        "pa" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ਜਦੋਂ ਡਿਵੈਲਪਰ ਤੁਹਾਡੇ ਸੁਨੇਹੇ ਦਾ ਜਵਾਬ ਦੇਂਦਾ ਹੈ ਤਾਂ ਰੋਮ ਤੁਹਾਨੂੰ ਸੂਚਿਤ ਕਰ ਸਕਦਾ ਹੈ"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O Roam pode notificá-lo quando o desenvolvedor responder à sua mensagem"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O Roam pode notificá-lo quando o desenvolvedor responder à sua mensagem"
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Roam có thể thông báo cho bạn khi nhà phát triển trả lời tin nhắn của bạn"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当开发者回复您的消息时，Roam 可以通知您"
-          }
-        }
-      }
-    }
-  },
-  "version" : "1.0"
+    "version": "1.0"
 }

@@ -1,1 +1,3 @@
 -   Fehlerbehebungen und Verbesserungen
+-   Verbindungsgeschwindigkeit erhöhen
+-   Unterstützung für Roku-TV-Geräte mit eingeschränktem Modus

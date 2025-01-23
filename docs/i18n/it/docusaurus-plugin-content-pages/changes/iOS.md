@@ -1,1 +1,4 @@
 -   Correzioni di bug e miglioramenti
+-   Migliora la velocità di connessione
+-   Supporto per le TV Roku con Modalità Limitata
+-   Risolvi il problema con watchOS che non riesce ad aggiungere dispositivi

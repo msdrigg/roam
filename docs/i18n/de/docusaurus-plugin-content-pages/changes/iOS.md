@@ -1,1 +1,4 @@
--   Fehlerbehebungen und Verbesserungen
+-   Fehlerkorrekturen und Verbesserungen
+-   Verbesserung der Verbindungsgeschwindigkeit
+-   Unterstützung für Roku-Fernseher mit eingeschränktem Modus
+-   Beheben Sie das Problem, dass watchOS keine Geräte hinzufügen kann

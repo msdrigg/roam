@@ -1,1 +1,3 @@
--   Correcciones de errores y mejoras
+- Correcciones de errores y mejoras
+- Mejora de la velocidad de conexión
+- Soporte para televisores Roku con Modo Limitado

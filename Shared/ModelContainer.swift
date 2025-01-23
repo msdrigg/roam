@@ -55,11 +55,15 @@ public func loadTestingData() -> Bool {
 @MainActor
 private func demandSharedModelContainer() -> ModelContainer {
     do {
+        #if DEBUG
         if usingTestingDataContainer() {
             return getTestingContainer()
         } else {
             return try _getSharedModelContainer()
         }
+        #else
+        return try _getSharedModelContainer()
+        #endif
     } catch {
         fatalError("Error getting shared model container \(error))")
     }

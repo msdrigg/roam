@@ -1,1 +1,1 @@
--   Correcciones de errores y mejoras
+- Correcciones de errores y mejoras

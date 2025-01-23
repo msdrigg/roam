@@ -1,1 +1,4 @@
--   Mga pag-aayos ng bug at pagpapabuti
+-   Mga pag-aayos sa bug at mga pagpapabuti
+-   Pagpapabuti ng bilis ng koneksyon
+-   Suporta para sa mga Roku TV na may Limitadong Mode
+-   Ayusin ang problema na hindi makakapagdagdag ng mga device ang watchOS

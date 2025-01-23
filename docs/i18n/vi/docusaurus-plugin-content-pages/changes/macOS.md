@@ -1,1 +1,3 @@
 -   Sửa lỗi và cải tiến
+-   Cải thiện tốc độ kết nối
+-   Hỗ trợ cho Roku TV với Chế độ giới hạn

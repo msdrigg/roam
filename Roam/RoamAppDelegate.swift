@@ -238,7 +238,7 @@ extension NSApplication {
             fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
         ) {
             logger.info("Received remote notifications")
-            requestMessages(fetchCompletionHandler: completionHandler)
+            refreshMessages(fetchCompletionHandler: completionHandler)
         }
 
         func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
@@ -266,6 +266,7 @@ extension NSApplication {
         ) {
             logger.info("didReceive notification. Showing Messages...")
             DispatchQueue.main.async {
+                self.refreshMessages()
                 if self.navigationPath.last != NavigationDestination.messageDestination {
                     self.navigationPath.append(NavigationDestination.messageDestination)
                 }
@@ -275,7 +276,7 @@ extension NSApplication {
         }
         #endif
 
-        func requestMessages(fetchCompletionHandler completionHandler: ((UIBackgroundFetchResult) -> Void)? = nil) {
+        func refreshMessages(fetchCompletionHandler completionHandler: ((UIBackgroundFetchResult) -> Void)? = nil) {
             Task {
                 let dataHandler = DataHandler(modelContainer: getSharedModelContainer())
                 let refreshResult = await dataHandler.refreshMessagesIfExpectingNewMessages()
@@ -295,7 +296,7 @@ extension NSApplication {
         ) {
             logger.info("willPresent notification. Refreshing...")
             DispatchQueue.main.async {
-                self.requestMessages()
+                self.refreshMessages()
             }
             completionHandler(.badge)
         }
