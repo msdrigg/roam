@@ -1,3 +1,5 @@
-# Discord Support Chat for Roam
+# Roam Backend (new)
 
-Checkout my blog post about it [here](https://scottdriggers.com/blog/discord-based-in-app-messaging)
+## Motivation
+
+-   Had to rewrite away from cloudflare workers due to being blocked by discord (shared public IP) and having no recourse

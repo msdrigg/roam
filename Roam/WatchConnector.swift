@@ -24,7 +24,7 @@
         }
 
         func sessionReachabilityDidChange(_ session: WCSession) {
-            WatchConnectivity.logger.info("WCSession reachability changed to \(session.isReachable)")
+            WatchConnectivity.logger.info("WCSession reachability changed to \(session.isReachable, privacy: .public)")
             if session.isReachable {
                 Task {
                     do {
@@ -33,14 +33,14 @@
                             self.transferDevices(session, devices: devices)
                         }
                     } catch {
-                        WatchConnectivity.logger.error("Error refreshing devices on session active: \(error)")
+                        WatchConnectivity.logger.error("Error refreshing devices on session active: \(error, privacy: .public)")
                     }
                 }
             }
         }
 
         func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
-            WatchConnectivity.logger.info("WCSession got message from watch to \(message). Sending devices")
+            WatchConnectivity.logger.info("WCSession got message from watch to \(message, privacy: .public). Sending devices")
             Task {
                 do {
                     let devices = try await DataHandler(modelContainer: getSharedModelContainer()).allDeviceEntities()
@@ -48,7 +48,7 @@
                         self.transferDevices(session, devices: devices)
                     }
                 } catch {
-                    WatchConnectivity.logger.error("Error refreshing devices on session active: \(error)")
+                    WatchConnectivity.logger.error("Error refreshing devices on session active: \(error, privacy: .public)")
                 }
             }
         }
@@ -56,7 +56,7 @@
         @MainActor
         func transferDevices(_ session: WCSession, devices: [DeviceAppEntity]) {
             WatchConnectivity.logger
-                .info("WCSession with activationState \(session.activationState.rawValue) trying to send devices \(devices, privacy: .public)")
+                .info("WCSession with activationState \(session.activationState.rawValue, privacy: .public) trying to send devices \(devices, privacy: .public)")
             if session.activationState == .activated {
                 if devices.count == 0 {
                     WatchConnectivity.logger.info("Not transfering devices because devices is empty")
@@ -75,7 +75,7 @@
                     return
                 }
                 Self.logger.info("Transferring devices \(String(describing: devices), privacy: .public) to watch")
-                WatchConnectivity.logger.info("Transfering devices \(deviceMap)")
+                WatchConnectivity.logger.info("Transfering devices \(deviceMap, privacy: .public)")
                 if session.outstandingUserInfoTransfers.count > 0 {
                     WatchConnectivity.logger.info("Cancelling ongoing transfer because we are creating a new one")
                     session.outstandingUserInfoTransfers.last?.cancel()
@@ -93,7 +93,7 @@
                             await dataHandler.sentToWatch(deviceId: device)
                         }
                     }
-                    WatchConnectivity.logger.info("Successfully sent devices to watch with reply \(reply)")
+                    WatchConnectivity.logger.info("Successfully sent devices to watch with reply \(reply, privacy: .public)")
                 }, errorHandler: { error in
                     WatchConnectivity.logger.error("Error sending message \(deviceMap, privacy: .public). \(error, privacy: .public)")
                 })
@@ -107,7 +107,7 @@
 
         func session(_ session: WCSession, activationDidCompleteWith _: WCSessionActivationState, error: (any Error)?) {
             if let error {
-                WatchConnectivity.logger.error("WCSession activated with error: \(error)")
+                WatchConnectivity.logger.error("WCSession activated with error: \(error, privacy: .public)")
                 Task {
                     await DataHandler(modelContainer: getSharedModelContainer()).watchPossiblyDead()
                 }
@@ -121,7 +121,7 @@
                             self.transferDevices(session, devices: devices)
                         }
                     } catch {
-                        WatchConnectivity.logger.error("Error refreshing devices on session active: \(error)")
+                        WatchConnectivity.logger.error("Error refreshing devices on session active: \(error, privacy: .public)")
                     }
                 }
             }

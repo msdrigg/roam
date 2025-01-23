@@ -11,7 +11,10 @@ hide_table_of_contents: true
     -   Add macOS tip for keyboard entry
     -   Add tip for keyboard Shortcuts
 
--   Stop using fetchDeviceInfo for getting device info -- switch to ECP Websockets API
+- Figure out what’s causing the iOS shutdowns — have a crash log but nothing seems to be helping
+    - Says process exits (added atexit)
+    - Reproduce with open, close (without quitting), swipe to side menu, open again (not every time)
+    - Need to reproduce with other item
 
 -   Add long-press options to keys
     -   Long-press right arrow to ff
@@ -24,11 +27,12 @@ hide_table_of_contents: true
 
 -   Fix bug in nextPacket loop
 
--   Automate screenshot capture and update screenshots for macOS
+-   Automate screenshot upload to macOS
 
 -   Future: Provide an optional Minimalist view on iOS that replicates siri remote's view closely
     -   https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
     -   Support visionos gestures as well...
+    -   Make standard buttons larger
 
 ## General Future Ideas
 
@@ -38,16 +42,10 @@ hide_table_of_contents: true
 
     -   Need to reverse-engineer the roku voice remote udp protocol
     -   Or need to add custom text-to-speech with remote button engine?
+    -   Are there 3rd party voice remotes? Is there some kind of oss protocol for voice remotes that I can use?
 
--   Automate Screenshot Capture
-
-    -   Use UITests to get actual screenshots for all device sizes + locales
-    -   Use AppScreens https://appscreens.com/user/project/DRxTFSSIQtuU0y9Eew4w to get the screenshots in the frames
-    -   Or something else
-        -   https://www.figma.com/community/file/886620275115089774
-        -   https://www.figma.com/community/file/1071476530354359587/app-store-screenshots?searchSessionId=lxw3ep02-oubp844ov8
-        -   https://www.figma.com/community/file/1256854154932829222/free-app-store-screenshot-templates?searchSessionId=lxw3ep02-oubp844ov8
-        -   https://www.canva.com/templates/s/iphone/
+- Investigate official voice API 
+    - See Desktop -> RokuScanning -> voice
 
 -   Try more keyboard hacks on iPad
 
@@ -79,6 +77,12 @@ hide_table_of_contents: true
             -   Render Time + additional
 
 ## Improve user messaging around info/status/capabilities management
+
+- Look at copying some of the descriptive features of other Roku remotes
+    - Explanations for local network permissions, etc…
+    - See Desktop -> RokuScanning -> 3rd party comparison 
+
+-   Better links to roam.msd3.io for concerns (instead of just listing them)
 
 -   When powering on the device with WOL and not connecting after 5 seconds, or when powering on the device and immediately failing, show a warning message underneath the wifi one
     -   “We weren’t able to wake your Roku” (Find out more) (Don’t show again for this device), (X)

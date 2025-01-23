@@ -64,6 +64,8 @@ struct RemoteViewContained: View {
     @Environment(\.dismiss) var dismiss
 
     @State private var scanningActor: DeviceDiscoveryActor?
+    @State private var ssdpActor: DeviceDiscoveryActor?
+    @State private var refreshActor: DeviceDiscoveryActor?
     @State private var manuallySelectedDevice: Device?
     @State private var showKeyboardEntryManual: Bool = false
     @State private var keyboardLeaving: Bool = false
@@ -74,27 +76,21 @@ struct RemoteViewContained: View {
     @State private var errorTrigger: Int = 0
     @State private var networkPermissionGranted: Bool?
     @AppStorage(UserDefaultKeys.networkPermissionBannerDismissed) private var networkPermissionBannerDismissed: Bool = false
-    @StateObject private var networkMonitor = NetworkMonitor()
+    @AppStorage(UserDefaultKeys.networkExpensiveBannerDismissed) private var networkExpensiveBannerDismissed: Bool = false
     @AllCustomKeyboardShortcuts private var allKeyboardShortcuts: [CustomKeyboardShortcut]
+
+    private var networkMonitor: NetworkMonitor {
+        self.appDelegate.networkMonitor
+    }
 
     private var isInMenuBar: Bool
 
-    private var ecpSessionState: ECPSessionState {
-        get {
-            appDelegate.ecpSessionState
-        }
-        nonmutating set(val) {
-            appDelegate.ecpSessionState = val
-        }
+    private var ecpSessionState: ECPMonitor {
+        appDelegate.ecpMonitor
     }
 
-    private var ecpSession: ECPSession? {
-        get {
-            appDelegate.ecpSessionState.ecpSession
-        }
-        nonmutating set(val) {
-            appDelegate.ecpSessionState.ecpSession = val
-        }
+    private var ecpSession: ECPWebsocketClient? {
+        appDelegate.ecpMonitor.ecpClient
     }
 
     #if os(macOS)
@@ -135,11 +131,11 @@ struct RemoteViewContained: View {
 #endif
     }
 
-    @AppStorage(UserDefaultKeys.shouldDisableAllAutoScanning) private var disableAllScanning: Bool = false
+    @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var shouldScanIPRangeAutomatically: Bool = true
     @AppStorage(UserDefaultKeys.shouldControlVolumeWithHWButtons) private var controlVolumeWithHWButtons: Bool = true
 
     var scanSSDP: Bool {
-        !disableAllScanning
+        shouldScanIPRangeAutomatically
     }
 
     @Environment(\.verticalSizeClass) var verticalSizeClass
@@ -348,20 +344,14 @@ struct RemoteViewContained: View {
                     do {
                         Self.logger.info("Checking for local network permission")
                         let permission = try await requestLocalNetworkAuthorization()
-                        Self.logger.info("Got permission check result \(permission)")
+                        Self.logger.info("Got permission check result \(permission, privacy: .public)")
                         self.networkPermissionGranted = permission
                     } catch {
                         Self.logger.error("Error requesting local network authorization \(error, privacy: .public)")
                     }
                 }
                 .onAppear {
-                    networkMonitor.startMonitoring()
-                }
-                .onAppear {
                     networkPermissionBannerDismissed = false
-                }
-                .onDisappear {
-                    networkMonitor.stopMonitoring()
                 }
                 .onAppear {
                     Self.logger.info("Showing view")
@@ -369,40 +359,31 @@ struct RemoteViewContained: View {
                 .onDisappear {
                     Self.logger.info("Closing view")
                 }
-                .task(id: scanningActor != nil && !disableAllScanning) {
-                    if !disableAllScanning {
-                        await scanningActor?.scanSSDPContinually()
+                .task(id: "\(ssdpActor != nil && scanSSDP)-\(networkMonitor.networkConnection)", priority: .background) {
+                    if scanSSDP {
+                        await ssdpActor?.scanSSDPContinually()
                     }
                 }
-                .task(id: scanningActor != nil && !disableAllScanning && selectedDevice == nil) {
-                    if !disableAllScanning && selectedDevice == nil {
+                .task(id: "\(scanningActor != nil && selectedDevice == nil && scanSSDP)-\(networkMonitor.networkConnection)") {
+                    if scanSSDP && selectedDevice == nil {
                         await scanningActor?.scanIPV4Once()
                     }
                 }
                 .task(id: selectedDevice?.location, priority: .medium) {
                     Self.logger
                         .info("Creating ecp session with location \(String(describing: selectedDevice?.location), privacy: .public)")
-                    let oldECP = ecpSession
-                    await oldECP?.close()
-                    ecpSession = nil
                     if let device = selectedDevice?.toAppEntity() {
-                        do {
-                            let sessionState = self.ecpSessionState
-                            ecpSession = try ECPSession(device: device, status: sessionState)
-                            try await ecpSession?.configure()
-                        } catch {
-                            Self.logger.error("Error creating ECPSession: \(error, privacy: .public)")
-                        }
+                        self.ecpSessionState.setDevice(device)
                     } else {
-                        ecpSession = nil
+                        self.ecpSessionState.setDevice(nil)
                     }
                 }
-                .task(id: scanningActor == nil ? nil : selectedDevice?.persistentModelID, priority: .medium) {
-                    if scanningActor == nil {
+                .task(id: refreshActor == nil ? nil : selectedDevice?.persistentModelID, priority: .medium) {
+                    guard let refreshActor else {
                         return
                     }
                     if let devId = selectedDevice?.persistentModelID {
-                        await scanningActor?.refreshSelectedDeviceContinually(id: devId)
+                        await refreshActor.refreshSelectedDeviceContinually(id: devId)
                     }
                 }
                 .task(id: "\(headphonesModeEnabled),\(selectedDevice?.location ?? "--")") {
@@ -432,7 +413,7 @@ struct RemoteViewContained: View {
                             )
                             Self.logger.info("Listencontinually returned")
                         } catch {
-                            Self.logger.warning("Catching error in pl handler \(error)")
+                            Self.logger.warning("Catching error in pl handler \(error, privacy: .public)")
                             // Increment errorTrigger if the error is anything but a cancellation error
                             if !(error is CancellationError) {
                                 Self.logger.debug("Non-cancellation error in PL")
@@ -507,7 +488,8 @@ struct RemoteViewContained: View {
                                         manuallySelectedDevice = $0
                                     }),
                                     ecpSessionState: ecpSessionState
-                                )                        .accessibilityIdentifier("DevicePickerTop")
+                                )
+                                .accessibilityIdentifier("DevicePickerTop")
 
                             }
                             .focusSection()
@@ -540,7 +522,7 @@ struct RemoteViewContained: View {
                                 openWindow(id: "main")
                                 dismiss()
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                    NSApplication.shared.activate(ignoringOtherApps: true)
+                                    NSApp.forceFront("main")
                                 }
                             }, label: {
                                 Label("Open main window", systemImage: "macwindow.on.rectangle")
@@ -571,7 +553,7 @@ struct RemoteViewContained: View {
                             for shortcut in allKeyboardShortcuts {
                                 if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
                                     let title = shortcut.title
-                                    Self.logger.info("Not handling key press because found shortcut with title \(title)")
+                                    Self.logger.info("Not handling key press because found shortcut with title \(title, privacy: .public)")
                                     if let rb = title.matchingRemoteButton {
                                         pressButton(rb)
                                         return .handled
@@ -583,7 +565,7 @@ struct RemoteViewContained: View {
                                     if title == .keyboardShortcuts {
                                         appDelegate.navigationPath.append(.keyboardShortcutDestinaion)
                                     } else {
-                                        Self.logger.warning("Unknown function for keyboard shortcut \(title)")
+                                        Self.logger.warning("Unknown function for keyboard shortcut \(title, privacy: .public)")
                                     }
 
                                     return .handled
@@ -659,7 +641,7 @@ struct RemoteViewContained: View {
 #if os(macOS)
                                 openWindow(id: "messages")
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                    NSApplication.shared.activate(ignoringOtherApps: true)
+                                    NSApp.forceFront("messages")
                                 }
 #else
                                 appDelegate.navigationPath.append(NavigationDestination.messageDestination)
@@ -667,7 +649,6 @@ struct RemoteViewContained: View {
                             }, level: .info)
                         }
                         networkConnectivityBanner
-                        networkPermissionBanner
                         Spacer().frame(maxHeight: 10)
                     }
 
@@ -781,7 +762,7 @@ struct RemoteViewContained: View {
                             for shortcut in allKeyboardShortcuts {
                                 if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
                                     let title = shortcut.title
-                                    Self.logger.info("Not handling key press because found shortcut with title \(title)")
+                                    Self.logger.info("Not handling key press because found shortcut with title \(title, privacy: .public)")
                                     if let rb = title.matchingRemoteButton {
                                         pressButton(rb)
                                         return .handled
@@ -803,7 +784,7 @@ struct RemoteViewContained: View {
                                         if let id = ecpSessionState.textEditStatus.texteditId {
                                             Task {
                                                 do {
-                                                    try await ecpSession?.setTextEditText("", for: id)
+                                                    try await ecpSession?.setTextEdit("", texteditId: id)
                                                 } catch {
                                                     Self.logger.error("Error cutting text: \(error, privacy: .public)")
                                                 }
@@ -813,10 +794,10 @@ struct RemoteViewContained: View {
                                         Self.logger.info("Trying to paste")
                                         if let id = ecpSessionState.textEditStatus.texteditId, UIPasteboard.general.hasStrings {
                                             if let text = UIPasteboard.general.string {
-                                                Self.logger.info("Trying to paste \(text)")
+                                                Self.logger.info("Trying to paste \(text, privacy: .public)")
                                                 Task {
                                                     do {
-                                                        try await ecpSession?.setTextEditText(text, for: id)
+                                                        try await ecpSession?.setTextEdit(text, texteditId: id)
                                                     } catch {
                                                         Self.logger.error("Error cutting text: \(error, privacy: .public)")
                                                     }
@@ -825,10 +806,10 @@ struct RemoteViewContained: View {
                                                 Self.logger.warning("No text to paste")
                                             }
                                         } else {
-                                            Self.logger.info("Not pasting due to empty textedit id (\(ecpSessionState.textEditStatus.texteditId ?? "none")) or false UI pasteboard hasStrings (\(UIPasteboard.general.hasStrings))")
+                                            Self.logger.info("Not pasting due to empty textedit id (\(ecpSessionState.textEditStatus.texteditId ?? "none", privacy: .public)) or false UI pasteboard hasStrings (\(UIPasteboard.general.hasStrings), privacy: .public)")
                                         }
                                     } else {
-                                        Self.logger.warning("Unknown function for keyboard shortcut \(title)")
+                                        Self.logger.warning("Unknown function for keyboard shortcut \(title, privacy: .public)")
                                     }
 
                                     return .handled
@@ -905,8 +886,13 @@ struct RemoteViewContained: View {
             scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
                 updater?.update()
             })
+            refreshActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                updater?.update()
+            })
+            ssdpActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                updater?.update()
+            })
         }
-
         #if os(macOS)
         .onKeyDown({ key in pressKey(key.key, modifiers: key.modifiers) }, enabled: true)
         #endif
@@ -933,29 +919,31 @@ struct RemoteViewContained: View {
                     localized: "No WiFi connection detected",
                     comment: "Warning indicator message that there is no WiFi network connection"
                 ), level: .warning)
+            } else if networkMonitor.networkConnection == .expensiveLocal && !self.networkExpensiveBannerDismissed {
+                NotificationBanner(message: String(
+                    localized: "No valid WiFi connection detected. You may be connected to a hotspot instead of your home WiFi network",
+                    comment: "Warning indicator message that there is no WiFi network connection"
+                ), onDismiss: {
+                    self.networkExpensiveBannerDismissed = true
+                }, level: .warning)
+            } else if self.networkPermissionGranted == false && !self.networkPermissionBannerDismissed && self.ecpSessionState.status != .connected  {
+#if os(macOS)
+                NotificationBanner(message: String(
+                    localized: "Local network permission may not be granted. Please open System Settings and navigate to Privacy and Security -> Local Network and enable access for Roam",
+                    comment: "Warning indicator message that there is no local network permission"
+                ), onDismiss: {
+                    self.networkPermissionBannerDismissed = true
+                })
+#else
+                NotificationBanner(message: String(
+                    localized:
+                        "Local network permission may not be granted. Please navigate to System Settings -> Apps -> Roam and enable Local Network",
+                    comment: "Warning indicator message that there is no local network permission"
+                ), onDismiss: {
+                    self.networkPermissionBannerDismissed = true
+                })
+#endif
             }
-        }
-    }
-
-    @ViewBuilder
-    var networkPermissionBanner: some View {
-        if self.networkPermissionGranted == false && !self.networkPermissionBannerDismissed && self.ecpSessionState.status != .connected {
-            #if os(macOS)
-            NotificationBanner(message: String(
-                localized: "Local network permission may not be granted. Please open System Settings and navigate to Privacy and Security -> Local Network and enable access for Roam",
-                comment: "Warning indicator message that there is no local network permission"
-            ), onDismiss: {
-                self.networkPermissionBannerDismissed = true
-            })
-            #else
-            NotificationBanner(message: String(
-                localized:
-                "Local network permission may not be granted. Please navigate to System Settings -> Apps -> Roam and enable Local Network",
-                comment: "Warning indicator message that there is no local network permission"
-            ), onDismiss: {
-                self.networkPermissionBannerDismissed = true
-            })
-            #endif
         }
     }
 
@@ -1154,9 +1142,9 @@ struct RemoteViewContained: View {
         incrementButtonPressCount(.inputAV1)
         Task.detached {
             do {
-                try await ecpSession?.openApp(app)
+                try await ecpSession?.launchApp(app.id)
             } catch {
-                Self.logger.error("Error opening app \(app.id): \(error)")
+                Self.logger.error("Error opening app \(app.id, privacy: .public): \(error, privacy: .public)")
             }
         }
         Task.detached {
@@ -1188,7 +1176,7 @@ struct RemoteViewContained: View {
 
     func pressKey(_ key: KeyEquivalent, modifiers: EventModifiers) {
         let character = key.character
-        Self.logger.trace("Getting keyboard press \(character)")
+        Self.logger.trace("Getting keyboard press \(character, privacy: .public)")
         if let button = RemoteButton.fromCharacter(character: character) {
             incrementButtonPressCount(button)
             if globalMajorActions.contains(button) {
@@ -1205,7 +1193,7 @@ struct RemoteViewContained: View {
                 do {
                     try await ecpSession.pressCharacter(getModifiedCharacter(key, modifiers: modifiers))
                 } catch {
-                    Self.logger.error("Error pressing character \(key.character) on device \(error)")
+                    Self.logger.error("Error pressing character \(key.character, privacy: .public) on device \(error, privacy: .public)")
                 }
             }
             return

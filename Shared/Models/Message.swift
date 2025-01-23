@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-public typealias Message = SchemaV2.Message
+public typealias Message = SchemaV3.Message
 
 extension Message {
     internal static func fetchAllRequest() -> FetchDescriptor<Message> {

@@ -22,15 +22,15 @@ private struct StrTransformation {
         @EnvironmentObject var appDelegate: RoamAppDelegate
 
         var texteditId: String? {
-            appDelegate.ecpSessionState.textEditStatus.texteditId
+            appDelegate.ecpMonitor.textEditStatus.texteditId
         }
 
         var texteditText: String? {
-            appDelegate.ecpSessionState.textEditStatus.text
+            appDelegate.ecpMonitor.textEditStatus.text
         }
 
-        var ecpSession: ECPSession? {
-            appDelegate.ecpSessionState.ecpSession
+        var ecpSession: ECPWebsocketClient? {
+            appDelegate.ecpMonitor.ecpClient
         }
 
         let onKeyPress: (_ press: KeyEquivalent) -> Void
@@ -72,7 +72,7 @@ private struct StrTransformation {
                     if let texteditId {
                         Task {
                             do {
-                                try await ecpSession?.setTextEditText(str, for: texteditId)
+                                try await ecpSession?.setTextEdit(str, texteditId: texteditId)
                             } catch {
                                 Self.logger.error("Error setting textedit text \(error, privacy: .public)")
                             }

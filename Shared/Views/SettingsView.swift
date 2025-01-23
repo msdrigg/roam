@@ -56,6 +56,7 @@ struct SettingsView: View {
     let destination: SettingsDestination
 
     @State private var scanningActor: DeviceDiscoveryActor!
+    @State private var ssdpActor: DeviceDiscoveryActor!
     @State private var isScanning: Bool = false
 
     @State private var showWatchOSNote = false
@@ -66,7 +67,6 @@ struct SettingsView: View {
 #endif
 
     @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanIpAutomatically: Bool = true
-    @AppStorage(UserDefaultKeys.shouldDisableAllAutoScanning) private var disableAllScanning: Bool = true
     @AppStorage(UserDefaultKeys.shouldControlVolumeWithHWButtons) private var controlVolumeWithHWButtons: Bool = true
     @AppStorage(UserDefaultKeys.showMenuBar) private var showMenuBar: Bool = false
     @AppStorage(UserDefaultKeys.userMajorActionCount) private var majorActionsCount = 0
@@ -82,7 +82,7 @@ struct SettingsView: View {
             defer { reportingDebugLogs = false }
             Self.logger.info("Starting to send logs")
             let logs = await getDebugInfo(container: getSharedModelContainer())
-            Self.logger.info("Sending logs \(logs.installationInfo.userId)")
+            Self.logger.info("Sending logs \(logs.installationInfo.userId, privacy: .public)")
 
             do {
                 try await uploadDebugLogs(logs: logs)
@@ -95,14 +95,14 @@ struct SettingsView: View {
 #elseif os(macOS)
                     openWindow(id: "messages")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        NSApplication.shared.activate(ignoringOtherApps: true)
+                        NSApp.forceFront("messages")
                     }
 #else
                     path.append(NavigationDestination.messageDestination)
 #endif
                 }
             } catch {
-                Self.logger.error("Failed to upload logs: \(error)")
+                Self.logger.error("Failed to upload logs: \(error, privacy: .public)")
             }
         }
     }
@@ -110,9 +110,9 @@ struct SettingsView: View {
     nonisolated func triggerUpdate() {
         DispatchQueue.main.async {
             self._devices.update()
-            Self.logger.info("Getting new update for value \(String(describing: self.updater?.uuid))")
+            Self.logger.info("Getting new update for value \(String(describing: self.updater?.uuid), privacy: .public)")
             self.updater?.update()
-            Self.logger.info("Getting new update 2 for value \(String(describing: self.updater?.uuid))")
+            Self.logger.info("Getting new update 2 for value \(String(describing: self.updater?.uuid), privacy: .public)")
         }
     }
 
@@ -140,7 +140,7 @@ struct SettingsView: View {
                                                 )
                                             self.triggerUpdate()
                                         } catch {
-                                            Self.logger.error("Error deleting device \(error)")
+                                            Self.logger.error("Error deleting device \(error, privacy: .public)")
                                         }
                                     }
                                 } label: {
@@ -160,7 +160,7 @@ struct SettingsView: View {
                                             try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
                                             self.triggerUpdate()
                                         } catch {
-                                            Self.logger.error("Error deleting device \(error)")
+                                            Self.logger.error("Error deleting device \(error, privacy: .public)")
                                         }
                                     }
 
@@ -179,7 +179,7 @@ struct SettingsView: View {
                                         try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
                                         self.triggerUpdate()
                                     } catch {
-                                        Self.logger.error("Error deleting device \(error)")
+                                        Self.logger.error("Error deleting device \(error, privacy: .public)")
                                     }
                                 }
                             }
@@ -351,7 +351,7 @@ struct SettingsView: View {
 #if os(macOS)
                     openWindow(id: "messages")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        NSApplication.shared.activate(ignoringOtherApps: true)
+                        NSApp.forceFront("messages")
                     }
 #else
                     path.append(NavigationDestination.messageDestination)
@@ -478,6 +478,10 @@ struct SettingsView: View {
             scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
                 updater?.update()
             })
+            ssdpActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                updater?.update()
+            })
+
         }
 #if !os(watchOS)
         .task(priority: .background) {
@@ -492,6 +496,13 @@ struct SettingsView: View {
             isScanning = true
             await scanningActor.scanIPV4Once()
         }
+        .task(id: "\(scanIpAutomatically)-\(appDelegate.networkMonitor.networkConnection)", priority: .background) {
+            if !scanIpAutomatically {
+                return
+            }
+
+            await ssdpActor.scanSSDPContinually()
+        }
 #endif
     }
 
@@ -499,7 +510,7 @@ struct SettingsView: View {
     var addDeviceButton: some View {
         Button(String(localized: "Add a device manually", comment: "Label on a button to add a device"), systemImage: "plus") {
             Task.detached {
-                let persistentId = await DataHandler(modelContainer: getSharedModelContainer()).addOrReplaceDevice(location: "http://192.168.0.1:8060/", friendlyDeviceName: String(localized: "New device"), udn: "roam:newdevice-\(UUID().uuidString)"
+                let persistentId = await DataHandler(modelContainer: getSharedModelContainer()).addOrReplaceDevice(location: "http://192.168.0.1:8060/", friendlyDeviceName: getGlobalNewDeviceName(), udn: "roam:newdevice-\(UUID().uuidString)"
                 )
                 Self.logger.info("Added empty device with persistent ID \(String(describing: persistentId), privacy: .public)")
             }
@@ -573,7 +584,7 @@ struct DeviceDetailView: View {
     @State private var scanningActor: DeviceDiscoveryActor!
 
     var deviceId: PersistentIdentifier
-    @State var deviceName: String = String(localized: "New device")
+    @State var deviceName: String = getGlobalNewDeviceName()
     @State var deviceIP: String = "192.168.0.1"
 
     @State var showHeadphonesModeDescription: Bool = false
@@ -679,7 +690,7 @@ struct DeviceDetailView: View {
                             Self.logger
                                 .info("Deleted device with id \(String(describing: deviceId))")
                         } catch {
-                            Self.logger.error("Error deleting device \(error)")
+                            Self.logger.error("Error deleting device \(error, privacy: .public)")
                         }
                         DispatchQueue.main.async {
                             dismiss()
@@ -805,16 +816,16 @@ struct DeviceDetailView: View {
         .onChange(of: device?.location) { _, new in
             if let new = new {
                 let host = getHostPortDisplay(from: new)
-                Self.logger.info("Seeing host \(host) in change")
+                Self.logger.info("Seeing host \(host, privacy: .public) in change")
                 deviceIP = host
             }
         }
         .onAppear {
-            deviceName = device?.name ?? String(localized: "New device")
+            deviceName = device?.name ?? getGlobalNewDeviceName()
             let deviceUrl = device?.location ?? "192.168.0.1"
             let host = getHostPortDisplay(from: deviceUrl)
 
-            Self.logger.info("Seeing host \(host)")
+            Self.logger.info("Seeing host \(host, privacy: .public)")
             deviceIP = host
         }
         .onDisappear {
@@ -845,9 +856,9 @@ struct DeviceDetailView: View {
                         do {
                             try await DataHandler(modelContainer: getSharedModelContainer()).delete(deviceId)
 
-                            Self.logger.info("Deleted device with id \(String(describing: deviceId))")
+                            Self.logger.info("Deleted device with id \(String(describing: deviceId), privacy: .public)")
                         } catch {
-                            Self.logger.error("Error deleting device \(error)")
+                            Self.logger.error("Error deleting device \(error, privacy: .public)")
                         }
                         DispatchQueue.main.async {
                             updater?.update()

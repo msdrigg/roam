@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            UPDATE users\n            SET apns_token = NULL\n            WHERE device_id = ?\n            returning device_id as \"device_id!: String\"\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "device_id!: String",
+        "ordinal": 0,
+        "type_info": "Null"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "0aeef4a50c80118f6d790eb4650089d464746429688a3e17f377c29ff8d096ef"
+}

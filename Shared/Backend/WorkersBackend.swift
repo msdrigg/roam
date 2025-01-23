@@ -3,7 +3,6 @@ import OSLog
 import SwiftData
 
 private let globalBackendURL = "https://backend.roam.msd3.io"
-// private let globalBackendURL = "http://192.168.8.133:8787"
 
 private let logger = Logger(
     subsystem: Bundle.main.bundleIdentifier!,
@@ -105,9 +104,9 @@ func getMessages(after: String?) async throws -> [MessageModelResponse] {
     let (data, response) = try await URLSession.shared.data(for: request)
     guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
         if let responseData = String(data: data, encoding: .utf8) {
-            logger.info("Received non-200 response with data: \(responseData)")
+            logger.info("Received non-200 get-messages response with data: \(responseData, privacy: .public)")
         } else {
-            logger.info("Received non-200 response and data could not be converted to a String")
+            logger.info("Received non-200 get-messages response and data could not be converted to a String")
         }
         throw URLError(.badServerResponse)
     }
@@ -143,9 +142,9 @@ public func sendMessage(message: String?, apnsToken: String?) async throws {
     let (data, response) = try await URLSession.shared.data(for: request)
     guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
         if let responseData = String(data: data, encoding: .utf8) {
-            logger.error("Received non-200 response with data: \(responseData)")
+            logger.error("Received non-200 send-messages response with data: \(responseData, privacy: .public)")
         } else {
-            logger.error("Received non-200 response and data could not be converted to a String")
+            logger.error("Received non-200 send-messages response and data could not be converted to a String")
         }
         throw URLError(.badServerResponse)
     }
@@ -172,9 +171,9 @@ public func uploadDebugLogs(logs: DebugInfo) async throws {
 
     guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
         if let responseData = String(data: data, encoding: .utf8) {
-            logger.error("Received non-200 response with data: \(responseData)")
+            logger.error("Received non-200 upload-debug response with data: \(responseData, privacy: .public)")
         } else {
-            logger.error("Received non-200 response and data could not be converted to a String")
+            logger.error("Received non-200 upload-debug response and data could not be converted to a String")
         }
         throw URLError(.badServerResponse)
     }

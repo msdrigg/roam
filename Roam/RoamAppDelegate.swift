@@ -23,12 +23,16 @@ func sendDeviceTokenToServer(_ token: String) async {
 
     class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject {
         @Published var navigationPath: NavigationManager
-        @Published var ecpSessionState: ECPSessionState
+        @Published var ecpMonitor: ECPMonitor
+        @Published var networkMonitor: NetworkMonitor
+        @Published var uuidUpdater: UUIDUpdater
 
         @MainActor
         override init() {
-            navigationPath = NavigationManager()
-            ecpSessionState = ECPSessionState()
+            self.navigationPath = NavigationManager()
+            self.ecpMonitor = ECPMonitor()
+            self.networkMonitor = NetworkMonitor()
+            self.uuidUpdater = UUIDUpdater()
             super.init()
             UNUserNotificationCenter.current().delegate = self
             logger.info("Setting Notifications delegate to self")
@@ -36,12 +40,22 @@ func sendDeviceTokenToServer(_ token: String) async {
 
         func applicationDidFinishLaunching(_ notification: Notification) {
             let hasSentFirstMessage = UserDefaults.standard.bool(forKey: "hasSentFirstMessage")
+            self.networkMonitor.startMonitoring()
 
             if hasSentFirstMessage {
                 UserDefaults.standard.setValue(Date.now.timeIntervalSince1970, forKey: "lastApnsRequestTime")
                 requestNotificationPermission()
             }
 
+            Task {
+                do {
+                    let selectedDevice = await DataHandler(modelContainer: getSharedModelContainer()).fetchSelectedDeviceAppEntity()
+
+                    if let selectedDevice, ecpMonitor.ecpClient == nil {
+                        ecpMonitor.setDevice(selectedDevice)
+                    }
+                }
+            }
         }
         func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
             return !UserDefaults.standard.bool(forKey: UserDefaultKeys.showMenuBar)
@@ -97,9 +111,23 @@ func sendDeviceTokenToServer(_ token: String) async {
         }
 
         func application(_: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {
-            logger.error("Failed to register with Error \(error)")
+            logger.error("Failed to register with Error \(error, privacy: .public)")
         }
     }
+
+extension NSApplication {
+    func forceFront(_ id: String) {
+        let mainWindow: NSWindow? = self.windows.first {
+            $0.identifier == NSUserInterfaceItemIdentifier(rawValue: id)
+        }
+
+        logger.info("Making window front \(id, privacy: .public), \(mainWindow?.title ?? "nil", privacy: .public)")
+        NSApplication.shared.activate(ignoringOtherApps: true)
+
+        mainWindow?.makeKeyAndOrderFront(nil)
+        mainWindow?.orderFrontRegardless()
+    }
+}
 #else
     import UIKit
     import Combine
@@ -186,14 +214,20 @@ func sendDeviceTokenToServer(_ token: String) async {
     }
 
     class RoamAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject, Sendable {
-        @Published var navigationPath: NavigationManager = NavigationManager()
+        @Published var navigationPath: NavigationManager
+        @Published var ecpMonitor: ECPMonitor
+        @Published var networkMonitor: NetworkMonitor
+        @Published var uuidUpdater: UUIDUpdater
         @Published var showingSettingsView: Bool = false
         @Published var showingMessagesView: Bool = false
-        @Published var ecpSessionState: ECPSessionState = ECPSessionState()
 
         private var cancellables: Set<AnyCancellable> = []
 
         override init() {
+            self.navigationPath = NavigationManager()
+            self.ecpMonitor = ECPMonitor()
+            self.networkMonitor = NetworkMonitor()
+            self.uuidUpdater = UUIDUpdater()
             super.init()
             UNUserNotificationCenter.current().delegate = self
         }
@@ -205,6 +239,10 @@ func sendDeviceTokenToServer(_ token: String) async {
         ) {
             logger.info("Received remote notifications")
             requestMessages(fetchCompletionHandler: completionHandler)
+        }
+
+        func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
+            logger.warning("Received memory warning")
         }
 
         func application(_: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
@@ -263,18 +301,36 @@ func sendDeviceTokenToServer(_ token: String) async {
         }
 
         func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+            self.networkMonitor.startMonitoring()
             let hasSentFirstMessage = UserDefaults.standard.bool(forKey: "hasSentFirstMessage")
             if hasSentFirstMessage {
                 UserDefaults.standard.setValue(Date.now.timeIntervalSince1970, forKey: "lastApnsRequestTime")
                 requestNotificationPermission()
             }
+            Task {
+                do {
+                    let selectedDevice = await DataHandler(modelContainer: getSharedModelContainer()).fetchSelectedDeviceAppEntity()
+
+                    if let selectedDevice, ecpMonitor.ecpClient == nil {
+                        ecpMonitor.setDevice(selectedDevice)
+                    }
+                }
+            }
 
             return true
 
         }
+        func application(_ application: UIApplication, willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+            logger.info("Adding call to ATExit")
+            atexit {
+                logger.info("Aborting due to exit being called")
+                abort()
+            }
+            return true
+        }
 
         func application(_: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {
-            logger.error("Failed to register for remote notifications with Error \(error)")
+            logger.error("Failed to register for remote notifications with Error \(error, privacy: .public)")
         }
     }
 #endif

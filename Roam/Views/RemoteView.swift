@@ -116,7 +116,7 @@ struct RemoteView: View {
             SettingsNavigationWrapper(path: $appDelegate.navigationPath.navigationPath) {
                 RemoteViewContained()
                     .onOpenURL { incomingURL in
-                        Self.logger.info("App was opened via URL: \(incomingURL)")
+                        Self.logger.info("App was opened via URL: \(incomingURL, privacy: .public)")
                         handleIncomingURL(incomingURL)
                     }
                 #if os(macOS)
@@ -124,7 +124,7 @@ struct RemoteView: View {
                         if new != nil {
                             openWindow(id: "messages")
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                NSApplication.shared.activate(ignoringOtherApps: true)
+                                NSApp.forceFront("messages")
                             }
                         }
                     }
@@ -150,11 +150,11 @@ struct RemoteView: View {
             Self.logger.warning("Getting url deep link with no action")
             return
         }
-        Self.logger.info("Getting action \(action)")
+        Self.logger.info("Getting action \(action, privacy: .public)")
 
         if action == "add-device" || action == "scan" {
             let queryParams = URLComponents(string: url.absoluteString)?.queryItems
-            let name = queryParams?.first(where: { $0.name == "name" })?.value ?? String(localized: "New device")
+            let name = queryParams?.first(where: { $0.name == "name" })?.value ?? getGlobalNewDeviceName()
             // Get location param as location=IP or p=IPV4Hex
             guard let location = queryParams?.first(where: { $0.name == "location" })?.value ??
                 queryParams?.first(where: { $0.name == "p" })?.value.flatMap({ hex in

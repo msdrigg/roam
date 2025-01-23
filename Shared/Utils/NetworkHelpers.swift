@@ -30,7 +30,7 @@ public func tryConnectTCP(
     timeout: TimeInterval,
     interface: NWInterface? = nil
 ) async -> NWInterface? {
-    checkConnectLogger.debug("Checking can connect to url (\(host):\(port)) with interface \(interface?.name ?? "--")")
+    checkConnectLogger.debug("Checking can connect to url (\(host, privacy: .public):\(port, privacy: .public)) with interface \(interface?.name ?? "--", privacy: .public)")
     let tcpParams = NWProtocolTCP.Options()
     let params = NWParameters(tls: nil, tcp: tcpParams)
     if let interface {
@@ -70,7 +70,7 @@ public func tryConnectTCP(
                 }
 
                 var iterator = stream.makeAsyncIterator()
-                connection.start(queue: DispatchQueue.global())
+                connection.start(queue: .global())
                 return await iterator.next() ?? nil
             } onCancel: {
                 connection.cancel()
@@ -88,7 +88,9 @@ public func canConnectTCP(location: String, timeout: TimeInterval, interface: NW
 #else
 public func canConnectHTTP(location: String, timeout: TimeInterval) async -> Bool {
     let result = try? await withTimeout(delay: timeout) {
-        let url = URL(string: location)!
+        guard let url = URL(string: location) else {
+            throw APIError.badURLError(location)
+        }
         let request = URLRequest(
             url: url,
             cachePolicy: .reloadIgnoringLocalAndRemoteCacheData,
@@ -115,3 +117,8 @@ public func canConnectHTTP(location: String, timeout: TimeInterval) async -> Boo
     return result ?? false
 }
 #endif
+
+enum APIError: Swift.Error, LocalizedError {
+    case badURLError(_ url: String)
+    case missingHeader(_ header: String)
+}

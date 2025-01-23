@@ -67,7 +67,7 @@ private func demandSharedModelContainer() -> ModelContainer {
 
 private func _getSharedModelContainer() throws -> ModelContainer {
     let schema = Schema(
-        versionedSchema: SchemaV2.self
+        versionedSchema: SchemaV3.self
     )
 
     let modelConfiguration = ModelConfiguration(

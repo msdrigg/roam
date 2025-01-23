@@ -80,7 +80,7 @@
                 if let ke = getKeyEquivalent(from: event) {
                     for shortcut in keyboardShortcuts {
                         if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
-                            logger.info("Not handling key press because found shortcut with title \(shortcut.title)")
+                            logger.info("Not handling key press because found shortcut with title \(shortcut.title, privacy: .public)")
                             super.keyDown(with: event)
                             return
                         }

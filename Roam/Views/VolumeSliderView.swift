@@ -102,8 +102,8 @@
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                 let newVolume = getAudioClamped(audioSession.outputVolume)
                 targetVolumeSet = getAudioClamped(audioSession.outputVolume) ?? targetVolumeSet
-                logger.info("Resetting volume to clamp value \(newVolume ?? -1), chosen \(targetVolume), unclamped \(audioSession.outputVolume)")
-                logger.info("Setting volume to new value \(volume) with target")
+                logger.info("Resetting volume to clamp value \(newVolume ?? -1, privacy: .public), chosen \(targetVolume, privacy: .public), unclamped \(audioSession.outputVolume, privacy: .public)")
+                logger.info("Setting volume to new value \(volume, privacy: .public) with target")
                 volume = targetVolume
             }
         }
@@ -127,9 +127,9 @@
                     return
                 }
 
-                logger.info("Getting volume change \(newVolume) with target")
+                logger.info("Getting volume change \(newVolume, privacy: .public) with target")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                    logger.info("Setting volume to new value \(volume) with target")
+                    logger.info("Setting volume to new value \(volume, privacy: .public) with target")
                     volume = targetVolume
                 }
             }
