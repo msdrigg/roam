@@ -43,152 +43,166 @@ actor DeviceDiscoveryActor {
     }
 
     #if !os(watchOS)
-        @discardableResult
-        func addDevice(location: String) async -> Bool {
-            Self.logger.notice("Trying to add device with location \(location, privacy: .public)")
-            var deviceInfo: DeviceInfo?
-            do {
-                guard let url = URL(string: location) else {
-                    return false
-                }
-                deviceInfo = try await ECPWebsocketClient(location: url).oneOff { session in
-                    return try await session.getDeviceInfo()
-                }
-            } catch {
-                Self.logger.error("Error creating ECPSession getting device info: \(error, privacy: .public)")
+    @discardableResult
+    func addDevice(location: String) async -> Bool {
+        Self.logger.notice("Trying to add device with location \(location, privacy: .public)")
+        var deviceInfo: DeviceInfo?
+        do {
+            guard let url = URL(string: location) else {
                 return false
             }
-
-            guard let deviceInfo else {
-                Self.logger.error("Error getting device info for found device \(location, privacy: .public)")
-                return false
+            deviceInfo = try await ECPWebsocketClient(location: url).oneOff { session in
+                return try await session.getDeviceInfo()
             }
-            Self.logger.notice("Got device info to add device with location \(location, privacy: .public)")
+        } catch {
+            Self.logger.error("Error creating ECPSession getting device info: \(error, privacy: .public)")
+            return false
+        }
 
-            if let device = await dataHandler.deviceEntityForUdn(udn: deviceInfo.udn) {
-                if device.location == location {
-                    return false
-                }
-            }
+        guard let deviceInfo else {
+            Self.logger.error("Error getting device info for found device \(location, privacy: .public)")
+            return false
+        }
+        Self.logger.notice("Got device info to add device with location \(location, privacy: .public)")
 
-            if let pid = await dataHandler.addOrReplaceDevice(
-                location: location,
-                friendlyDeviceName: deviceInfo.friendlyDeviceName ?? getGlobalNewDeviceName(),
-                udn: deviceInfo.udn
-            ) {
-                Self.logger.notice("Saved new device \(deviceInfo.udn, privacy: .public), \(location, privacy: .public)")
-                await refreshDevice(id: pid)
-                return true
-            } else {
+        if let device = await dataHandler.deviceEntityForUdn(udn: deviceInfo.udn) {
+            if device.location == location {
                 return false
             }
         }
 
-        func scanIPV4Once() async {
-            // Don't scan IPV4 in previews
-            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" || inScreenshotTestingContext() {
-                return
-            }
+        if let pid = await dataHandler.addOrReplaceDevice(
+            location: location,
+            friendlyDeviceName: deviceInfo.friendlyDeviceName ?? getGlobalNewDeviceName(),
+            udn: deviceInfo.udn
+        ) {
+            Self.logger.notice("Saved new device \(deviceInfo.udn, privacy: .public), \(location, privacy: .public)")
+            await refreshDevice(id: pid)
+            return true
+        } else {
+            return false
+        }
+    }
 
-            Self.logger.notice("Starting to scan ipv4 range")
+    func scanIPV4Once() async {
+        // Don't scan IPV4 in previews
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" || inScreenshotTestingContext() {
+            return
+        }
 
-            let maxConcurrentScanned = 37
+        Self.logger.notice("Starting to scan ipv4 range")
 
-            let ifaces = await  allAddressedInterfaces()
-            let scannableInterfaces = ifaces.filter { $0.isIPv4 }
-            let unscannableInterfaces = ifaces.filter { !$0.isIPv4 }.map(\.name)
-            let scannableIfaceNames = scannableInterfaces.map(\.name)
+        let maxConcurrentScanned = 37
 
-            Self.logger.notice("Scanning IPV4 interfaces \(scannableIfaceNames, privacy: .public), but ignoring \(unscannableInterfaces, privacy: .public)")
+        let ifaces = await  allAddressedInterfaces()
+        let scannableInterfaces = ifaces.filter { $0.isIPv4 }
+        let unscannableInterfaces = ifaces.filter { !$0.isIPv4 }.map(\.name)
+        let scannableIfaceNames = scannableInterfaces.map(\.name)
 
-            let sem = AsyncSemaphore(value: maxConcurrentScanned)
+        Self.logger.notice("Scanning IPV4 interfaces \(scannableIfaceNames, privacy: .public), but ignoring \(unscannableInterfaces, privacy: .public)")
 
-            await withDiscardingTaskGroup { taskGroup in
-                for iface in scannableInterfaces {
-                    let range = iface.scannableIPV4NetworkRange
-                    if range.count > 1024 {
-                        Self.logger.error("IPV4 range for \(iface.name, privacy: .public) has \(range.count, privacy: .public) items. Max is 1024")
-                    } else {
-                        Self.logger.info("Manually scanning \(range.count, privacy: .public) devices in network range \(range, privacy: .public) with name \(iface.name, privacy: .public)")
+        let sem = AsyncSemaphore(value: maxConcurrentScanned)
+
+        await withDiscardingTaskGroup { taskGroup in
+            for iface in scannableInterfaces {
+                let range = iface.scannableIPV4NetworkRange
+                if range.count > 1024 {
+                    Self.logger.error("IPV4 range for \(iface.name, privacy: .public) has \(range.count, privacy: .public) items. Max is 1024")
+                } else {
+                    Self.logger.info("Manually scanning \(range.count, privacy: .public) devices in network range \(range, privacy: .public) with name \(iface.name, privacy: .public)")
+                }
+                var idx = 0
+
+                for ipAddress in range {
+                    idx += 1
+                    if Task.isCancelled {
+                        break
                     }
-                    var idx = 0
-
-                    for ipAddress in range {
-                        idx += 1
+                    taskGroup.addTask {
+                        try? await sem.waitUnlessCancelled()
+                        defer {
+                            sem.signal()
+                        }
                         if Task.isCancelled {
-                            break
-                        }
-                        taskGroup.addTask {
-                            try? await sem.waitUnlessCancelled()
-                            defer {
-                                sem.signal()
-                            }
-                            if Task.isCancelled {
-                                return
-                            }
-
-                            let location = "http://\(ipAddress.addressString):8060/"
-                            Self.logger.debug("Scanning address \(ipAddress.addressString, privacy: .public)")
-
-                            if await !canConnectTCP(location: location, timeout: 1.2, interface: iface.nwInterface) {
-                                // This device is a potential item
-                                return
-                            }
-                            if Task.isCancelled {
-                                return
-                            }
-
-                            await self.addDevice(location: location)
+                            return
                         }
 
-                        if idx > 1024 {
-                            break
+                        let location = "http://\(ipAddress.addressString):8060/"
+                        Self.logger.debug("Scanning address \(ipAddress.addressString, privacy: .public)")
+
+                        if await !canConnectTCP(location: location, timeout: 1.2, interface: iface.nwInterface) {
+                            // This device is a potential item
+                            return
                         }
+                        if Task.isCancelled {
+                            return
+                        }
+
+                        await self.addDevice(location: location)
+                    }
+
+                    if idx > 1024 {
+                        break
                     }
                 }
             }
-            Self.logger.notice("Done scanning ipv4 range")
         }
+        Self.logger.notice("Done scanning ipv4 range")
+    }
 
-        func scanSSDPContinually() async {
-            if inScreenshotTestingContext() {
+    func _scanSSDPContinuallyWithRestart() async throws {
+        if inScreenshotTestingContext() {
+            return
+        }
+        let ifaces = await  allAddressedInterfaces()
+        let scannableInterfaces = ifaces.filter { $0.isIPv4 }.map(\.name)
+        let unscannableInterfaces = ifaces.filter { !$0.isIPv4 }.map(\.name)
+
+        Self.logger.notice("Scanning SSDP \(scannableInterfaces, privacy: .public), but ignoring \(unscannableInterfaces, privacy: .public)")
+        var streams: [AsyncThrowingStream<SSDPService, any Error>] = []
+        for interface in scannableInterfaces {
+            do {
+                streams.append(try scanDevicesContinually(interface: interface))
+            } catch {
+                Self.logger.error("Error getting async device stream \(error, privacy: .public)")
                 return
             }
-            let ifaces = await  allAddressedInterfaces()
-            let scannableInterfaces = ifaces.filter { $0.isIPv4 }.map(\.name)
-            let unscannableInterfaces = ifaces.filter { !$0.isIPv4 }.map(\.name)
+        }
 
-            Self.logger.notice("Scanning SSDP \(scannableInterfaces, privacy: .public), but ignoring \(unscannableInterfaces, privacy: .public)")
-            var streams: [AsyncThrowingStream<SSDPService, any Error>] = []
-            for interface in scannableInterfaces {
-                do {
-                    streams.append(try scanDevicesContinually(interface: interface))
-                } catch {
-                    Self.logger.error("Error getting async device stream \(error, privacy: .public)")
-                    return
-                }
-            }
-
-            await withDiscardingTaskGroup { outerTaskGroup in
-                for stream in streams {
-                    outerTaskGroup.addTask {
-                        await withDiscardingTaskGroup { taskGroup in
-                            do {
-                                for try await device in stream {
-                                    Self.logger.notice("Found SSDP service at \(device.location ?? "--", privacy: .public)")
-                                    if let location = device.location {
-                                        taskGroup.addTask {
-                                            await self.addDevice(location: location)
-                                        }
+        try await withThrowingDiscardingTaskGroup { outerTaskGroup in
+            for stream in streams {
+                outerTaskGroup.addTask {
+                    try await withThrowingDiscardingTaskGroup { taskGroup in
+                        do {
+                            for try await device in stream {
+                                Self.logger.notice("Found SSDP service at \(device.location ?? "--", privacy: .public)")
+                                if let location = device.location {
+                                    taskGroup.addTask {
+                                        await self.addDevice(location: location)
                                     }
                                 }
-                            } catch {
-                                Self.logger.error("Error in SSDP stream \(error, privacy: .public)")
                             }
+                        } catch {
+                            Self.logger.error("Error in SSDP stream \(error, privacy: .public)")
+                            throw error
                         }
                     }
                 }
             }
         }
+    }
+
+    func scanSSDPContinually() async {
+        for await _ in exponentialBackoff(min: 2, max: 30) {
+            if Task.isCancelled {
+                return
+            }
+            do {
+                try await self._scanSSDPContinuallyWithRestart()
+            } catch {
+                Self.logger.warning("Restarting ssdp scan due to error \(error, privacy: .public)")
+            }
+        }
+    }
     #endif
 }

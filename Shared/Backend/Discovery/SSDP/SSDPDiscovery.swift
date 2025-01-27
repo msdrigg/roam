@@ -22,6 +22,8 @@ func scanDevicesContinually(interface: String?) throws -> AsyncThrowingStream<SS
     AsyncThrowingStream { continuation in
         do {
             let socket = try FileDescriptor.socket(AF_INET, SOCK_DGRAM, 0)
+            // Setting nosigpipe due to https://developer.apple.com/forums/thread/773307
+            try socket.setSocketOption(SOL_SOCKET, SO_NOSIGPIPE, 1 as CInt)
 
             // Optionally bind to a specific interface address
             // Retrieve the interface address

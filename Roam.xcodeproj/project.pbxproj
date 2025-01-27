@@ -512,6 +512,7 @@
 		AFDB19A12C0D8D4E00C4DAB7 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		AFDB19A52C0D8E4A00C4DAB7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AFE6249C2BDCAA5000F4992E /* DataActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataActor.swift; sourceTree = "<group>"; };
+		AFE699A12D47FD790083A956 /* SignalPipeError.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SignalPipeError.h; sourceTree = "<group>"; };
 		AFE89A2C2B9E793E0078387C /* Debugger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debugger.swift; sourceTree = "<group>"; };
 		AFED42492AEE8F3B0023D684 /* VolumeListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeListener.swift; sourceTree = "<group>"; };
 		AFEDCDF42CD1331E0001D959 /* RoamSwiftTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RoamSwiftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -775,6 +776,7 @@
 				AF0C82942AEBFB4600CBE7F8 /* APIHelpers.swift */,
 				AFCF22DF2B2A6A720048FFD9 /* NetworkMonitor.swift */,
 				AF05B46F2BFDA49900FA3783 /* ObjcErrors.swift */,
+				AFE699A12D47FD790083A956 /* SignalPipeError.h */,
 				AF05B4742BFDA4CD00FA3783 /* ObjcErrorsInternal.h */,
 			);
 			path = Utils;

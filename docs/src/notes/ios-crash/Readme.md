@@ -6,6 +6,12 @@ My in-app log capture only captures logs from the current process run (not befor
 
 I also have seen that it appears my app is exiting with exit(0) so there's no crash reported. I added atexit to my main app so hopefully I will see a crash if it's truly exiting with exit(0). But idk.
 
+## Things I figured out
+
+-   SIGPIPE crash reason (13) was the key
+-   Apps crash with SIGPIPE and don't produce a crash report when writing to a broken pipe or a broken socket. It looks like sockets are my problem.
+-   Tentatively solved with using setsocketopt no_sigpipe (https://developer.apple.com/forums/thread/773307)
+
 ## Next Steps
 
 -   Review captured sysdiagnose

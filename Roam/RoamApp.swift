@@ -40,6 +40,7 @@ struct RoamApp: App {
         } else {
             logger.error("FAILED to add call to atexit")
         }
+        installSIGPIPEHandler()
 
         sharedModelContainer = getSharedModelContainer()
 
