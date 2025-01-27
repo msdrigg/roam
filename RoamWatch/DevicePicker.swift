@@ -11,7 +11,7 @@ import SwiftUI
 
 struct DevicePicker: View {
     private nonisolated static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: String(describing: DevicePicker.self)
     )
 
@@ -60,7 +60,7 @@ struct DevicePicker: View {
                                 if let chosenDevice = devices.first(where: { dev in
                                     dev.id == listItemDevice.id
                                 }) {
-                                    Self.logger.debug("Setting last selected at")
+                                    Self.logger.info("Setting last selected at")
                                     let id = chosenDevice.persistentModelID
                                     Task.detached {
                                         await DataHandler(modelContainer: getSharedModelContainer()).setSelectedDevice(id)

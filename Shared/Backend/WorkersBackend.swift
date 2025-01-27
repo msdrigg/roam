@@ -5,7 +5,7 @@ import SwiftData
 private let globalBackendURL = "https://backend.roam.msd3.io"
 
 private let logger = Logger(
-    subsystem: Bundle.main.bundleIdentifier!,
+    subsystem: getLogSubsystem(),
     category: "WorkersBackend"
 )
 
@@ -104,9 +104,9 @@ func getMessages(after: String?) async throws -> [MessageModelResponse] {
     let (data, response) = try await URLSession.shared.data(for: request)
     guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
         if let responseData = String(data: data, encoding: .utf8) {
-            logger.info("Received non-200 get-messages response with data: \(responseData, privacy: .public)")
+            logger.notice("Received non-200 get-messages response with data: \(responseData, privacy: .public)")
         } else {
-            logger.info("Received non-200 get-messages response and data could not be converted to a String")
+            logger.notice("Received non-200 get-messages response and data could not be converted to a String")
         }
         throw URLError(.badServerResponse)
     }
@@ -120,7 +120,7 @@ public func sendMessage(message: String?, apnsToken: String?) async throws {
         throw URLError(.badURL)
     }
 
-    logger.info("Sending message to backend")
+    logger.notice("Sending message to backend")
     let userId = getSystemInstallID()
 
     var request = URLRequest(url: url)

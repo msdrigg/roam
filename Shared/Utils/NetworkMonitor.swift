@@ -9,7 +9,7 @@ class NetworkMonitor {
     private let queue = DispatchQueue(label: "NetworkMonitor")
 
     private nonisolated static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: String(describing: NetworkMonitor.self)
     )
 
@@ -45,7 +45,7 @@ class NetworkMonitor {
     }
 
     func startMonitoring() {
-        Self.logger.info("Starting to monitor network path updates for display")
+        Self.logger.notice("Starting to monitor network path updates for display")
         monitor.start(queue: queue)
     }
 

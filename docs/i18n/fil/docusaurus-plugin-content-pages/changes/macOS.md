@@ -1,3 +1,1 @@
-- Mga pag-aayos ng bug at pagpapabuti
-- Itaas ang bilis ng koneksyon
-- Suporta para sa Roku TV na may Limited Mode
+-   Mga pag-aayos ng bug at pagpapabuti

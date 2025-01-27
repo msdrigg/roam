@@ -43,7 +43,7 @@ private let deviceFetchDescriptor: FetchDescriptor<Device> = {
 
 struct SettingsView: View {
     private nonisolated static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: String(describing: SettingsView.self)
     )
 #if os(macOS)
@@ -80,15 +80,15 @@ struct SettingsView: View {
         Task {
             reportingDebugLogs = true
             defer { reportingDebugLogs = false }
-            Self.logger.info("Starting to send logs")
+            Self.logger.notice("Starting to send logs")
             let logs = await getDebugInfo(container: getSharedModelContainer())
-            Self.logger.info("Sending logs \(logs.installationInfo.userId, privacy: .public)")
+            Self.logger.notice("Sending logs \(logs.installationInfo.userId, privacy: .public)")
 
             do {
                 try await uploadDebugLogs(logs: logs)
                 try await sendMessage(message: "Diagnostics Shared at \(Date.now.formatted())", apnsToken: nil)
 
-                Self.logger.info("Upload successful")
+                Self.logger.notice("Upload successful")
                 DispatchQueue.main.async {
 #if os(watchOS)
                     debugLogReportID = logs.installationInfo.userId
@@ -110,9 +110,9 @@ struct SettingsView: View {
     nonisolated func triggerUpdate() {
         DispatchQueue.main.async {
             self._devices.update()
-            Self.logger.info("Getting new update for value \(String(describing: self.updater?.uuid), privacy: .public)")
+            Self.logger.notice("Getting new update for value \(String(describing: self.updater?.uuid), privacy: .public)")
             self.updater?.update()
-            Self.logger.info("Getting new update 2 for value \(String(describing: self.updater?.uuid), privacy: .public)")
+            Self.logger.notice("Getting new update 2 for value \(String(describing: self.updater?.uuid), privacy: .public)")
         }
     }
 
@@ -136,7 +136,7 @@ struct SettingsView: View {
                                             try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
                                             Self.logger
                                                 .info(
-                                                    "Deleted device with id \(String(describing: pid))"
+                                                    "Deleted device with id \(String(describing: pid), privacy: .public)"
                                                 )
                                             self.triggerUpdate()
                                         } catch {
@@ -440,14 +440,14 @@ struct SettingsView: View {
             }
         }
         .onAppear {
-            Self.logger.info("Showing view")
+            Self.logger.notice("Showing view")
         }
         .onDisappear {
-            Self.logger.info("Closing view")
+            Self.logger.notice("Closing view")
         }
 #if !os(watchOS)
         .onAppear {
-            Self.logger.info("")
+            Self.logger.notice("")
             appDelegate.navigationPath.showingSettingsView = true
         }
         .onDisappear {
@@ -512,7 +512,7 @@ struct SettingsView: View {
             Task.detached {
                 let persistentId = await DataHandler(modelContainer: getSharedModelContainer()).addOrReplaceDevice(location: "http://192.168.0.1:8060/", friendlyDeviceName: getGlobalNewDeviceName(), udn: "roam:newdevice-\(UUID().uuidString)"
                 )
-                Self.logger.info("Added empty device with persistent ID \(String(describing: persistentId), privacy: .public)")
+                Self.logger.notice("Added empty device with persistent ID \(String(describing: persistentId), privacy: .public)")
             }
         }
     }
@@ -577,7 +577,7 @@ struct MacSettings: View {
 
 struct DeviceDetailView: View {
     private nonisolated static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: String(describing: DeviceDetailView.self)
     )
 
@@ -681,7 +681,7 @@ struct DeviceDetailView: View {
 
                 Button(String(localized: "Delete", comment: "Text on a button to delete the device"), systemImage: "trash", role: .destructive, action: {
                     // Don't block the dismiss waiting for save
-                    Self.logger.info("Deleting device")
+                    Self.logger.notice("Deleting device")
                     Task.detached {
                         do {
                             try await DataHandler(modelContainer: getSharedModelContainer()).delete(deviceId)
@@ -816,7 +816,7 @@ struct DeviceDetailView: View {
         .onChange(of: device?.location) { _, new in
             if let new = new {
                 let host = getHostPortDisplay(from: new)
-                Self.logger.info("Seeing host \(host, privacy: .public) in change")
+                Self.logger.notice("Seeing host \(host, privacy: .public) in change")
                 deviceIP = host
             }
         }
@@ -825,7 +825,7 @@ struct DeviceDetailView: View {
             let deviceUrl = device?.location ?? "192.168.0.1"
             let host = getHostPortDisplay(from: deviceUrl)
 
-            Self.logger.info("Seeing host \(host, privacy: .public)")
+            Self.logger.notice("Seeing host \(host, privacy: .public)")
             deviceIP = host
         }
         .onDisappear {
@@ -847,7 +847,7 @@ struct DeviceDetailView: View {
             ToolbarItem(id: "delete-device", placement: .destructiveAction) {
                 Button(String(localized: "Delete", comment: "Text on a button to delete the device"), systemImage: "trash", role: .destructive, action: {
                     // Don't block the dismiss waiting for save
-                    Self.logger.info("Deleting device")
+                    Self.logger.notice("Deleting device")
                     let deviceId = deviceId
                     Task.detached {
                         DispatchQueue.main.async {
@@ -856,7 +856,7 @@ struct DeviceDetailView: View {
                         do {
                             try await DataHandler(modelContainer: getSharedModelContainer()).delete(deviceId)
 
-                            Self.logger.info("Deleted device with id \(String(describing: deviceId), privacy: .public)")
+                            Self.logger.notice("Deleted device with id \(String(describing: deviceId), privacy: .public)")
                         } catch {
                             Self.logger.error("Error deleting device \(error, privacy: .public)")
                         }

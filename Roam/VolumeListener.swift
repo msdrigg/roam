@@ -15,7 +15,7 @@
 
     actor VolumeListener {
         private static nonisolated let logger = Logger(
-            subsystem: Bundle.main.bundleIdentifier!,
+            subsystem: getLogSubsystem(),
             category: String(describing: VolumeListener.self)
         )
 
@@ -36,7 +36,7 @@
                 Self.logger.error("Cannot activate audiosession to listen to volume: \(error, privacy: .public)")
                 throw error
             }
-            Self.logger.info("Starting volume observations")
+            Self.logger.notice("Starting volume observations")
 
             volumeObservation = session.observe(
                 \.outputVolume,
@@ -63,7 +63,7 @@
         }
 
         func stopListening() {
-            Self.logger.info("Stoping volume observations")
+            Self.logger.notice("Stoping volume observations")
             volumeObservation?.invalidate()
             volumeObservation = nil
         }

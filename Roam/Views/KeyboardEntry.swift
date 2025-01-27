@@ -10,7 +10,7 @@ private struct StrTransformation {
 
     @available(iOS, introduced: 17.0)
     struct KeyboardEntry: View {
-        private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "KeyboardEntry")
+        private static let logger = Logger(subsystem: getLogSubsystem(), category: "KeyboardEntry")
 
         @Binding var str: String
         @State var strSent: String = ""
@@ -20,6 +20,7 @@ private struct StrTransformation {
         @State private var transformations: [StrTransformation] = []
 
         @EnvironmentObject var appDelegate: RoamAppDelegate
+        @Environment(\.scenePhase) var scenePhase
 
         var texteditId: String? {
             appDelegate.ecpMonitor.textEditStatus.texteditId
@@ -56,61 +57,69 @@ private struct StrTransformation {
             .background(RoundedRectangle(cornerRadius: 8).fill(.fill.tertiary))
             .frame(height: 60)
             #if !os(tvOS)
-                .task {
-                    let listener = KeyboardListener()
-                    if let events = listener.events {
-                        for await _ in events {
-                            withAnimation {
-                                keyboardFocused = false
-                                showing = false
-                            }
-                        }
-                    }
+            .task(id: scenePhase) {
+                guard scenePhase == .active else {
+                    return
                 }
-            #endif
-                .onChange(of: str) { _, str in
-                    if let texteditId {
-                        Task {
-                            do {
-                                try await ecpSession?.setTextEdit(str, texteditId: texteditId)
-                            } catch {
-                                Self.logger.error("Error setting textedit text \(error, privacy: .public)")
-                            }
-                        }
-                    } else {
-                        if str.count > strSent.count {
-                            if let char = str.unicodeScalars.last {
-                                onKeyPress(KeyEquivalent(Character(char)))
-                            }
-                        }
-                    }
-                    strSent = str
+                do {
+                    try await Task.sleep(duration: 0.5)
+                } catch {
+                    return
                 }
-                .onChange(of: texteditId) {
-                    if texteditId != nil && (texteditText ?? "" != str) {
-                        str = texteditText ?? ""
-                    }
-                }
-                .onChange(of: leaving) { _, leaving in
-                    if leaving {
+                let listener = KeyboardListener()
+                if let events = listener.events {
+                    for await _ in events {
                         withAnimation {
                             keyboardFocused = false
                             showing = false
                         }
-                    } else {
-                        keyboardFocused = true
                     }
                 }
-                .onAppear {
+            }
+            #endif
+            .onChange(of: str) { _, str in
+                if let texteditId {
+                    Task {
+                        do {
+                            try await ecpSession?.setTextEdit(str, texteditId: texteditId)
+                        } catch {
+                            Self.logger.error("Error setting textedit text \(error, privacy: .public)")
+                        }
+                    }
+                } else {
+                    if str.count > strSent.count {
+                        if let char = str.unicodeScalars.last {
+                            onKeyPress(KeyEquivalent(Character(char)))
+                        }
+                    }
+                }
+                strSent = str
+            }
+            .onChange(of: texteditId) {
+                if texteditId != nil && (texteditText ?? "" != str) {
+                    str = texteditText ?? ""
+                }
+            }
+            .onChange(of: leaving) { _, leaving in
+                if leaving {
+                    withAnimation {
+                        keyboardFocused = false
+                        showing = false
+                    }
+                } else {
                     keyboardFocused = true
-                    if texteditId == nil {
-                        str = ""
-                        strSent = ""
-                    } else {
-                        str = texteditText ?? ""
-                        strSent = texteditText ?? ""
-                    }
                 }
+            }
+            .onAppear {
+                keyboardFocused = true
+                if texteditId == nil {
+                    str = ""
+                    strSent = ""
+                } else {
+                    str = texteditText ?? ""
+                    strSent = texteditText ?? ""
+                }
+            }
         }
     }
 
@@ -250,7 +259,7 @@ private struct StrTransformation {
     @MainActor
     class KeyboardListener {
         private static nonisolated let logger = Logger(
-            subsystem: Bundle.main.bundleIdentifier!,
+            subsystem: getLogSubsystem(),
             category: String(describing: KeyboardListener.self)
         )
 
@@ -267,7 +276,7 @@ private struct StrTransformation {
         }
 
         func startListening() throws {
-            Self.logger.info("Starting keyboard observations")
+            Self.logger.notice("Starting keyboard observations")
             // Get the default notification center instance.
             let t1 = NotificationCenter.default.addObserver(
                 forName: UIResponder.keyboardWillHideNotification,
@@ -295,7 +304,7 @@ private struct StrTransformation {
         }
 
         func stopListening() {
-            Self.logger.info("Stoping keyboard observations")
+            Self.logger.notice("Stoping keyboard observations")
             self.keyboardShowNotifier = nil
             self.keyboardHideNotifier = nil
             let ot = self.observerTokens

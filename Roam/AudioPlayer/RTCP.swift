@@ -2,7 +2,7 @@ import Foundation
 import os
 
 private let logger = Logger(
-    subsystem: Bundle.main.bundleIdentifier!,
+    subsystem: getLogSubsystem(),
     category: "RTCP"
 )
 
@@ -217,7 +217,7 @@ enum RtcpAppSpecific {
     init?(subtypeData: UInt8, packet: Data) {
         logger
             .trace(
-                "Initing app packet with stData \(subtypeData), packet \(packet.map { String(format: "%02x", $0) }.joined()))"
+                "Initing app packet with stData \(subtypeData, privacy: .public), packet \(packet.map { String(format: "%02x", $0) }.joined(), privacy: .public))"
             )
         // SSRC Data. Always 0 for our use case
         _ = packet.prefix(4)

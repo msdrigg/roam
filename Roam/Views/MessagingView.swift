@@ -12,15 +12,15 @@ import SwiftUI
 import UserNotifications
 
 private let logger = Logger(
-    subsystem: Bundle.main.bundleIdentifier!,
+    subsystem: getLogSubsystem(),
     category: "MessagingView"
 )
 
 func requestNotificationPermission() {
-    logger.info("Requesting notification permission")
+    logger.notice("Requesting notification permission")
     UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
         if granted {
-            logger.info("Notification permission granted.")
+            logger.notice("Notification permission granted.")
             getNotificationSettings()
         } else if let error {
             logger.error("Notification permission denied with error: \(error.localizedDescription, privacy: .public)")
@@ -32,7 +32,7 @@ func getNotificationSettings() {
     UNUserNotificationCenter.current().getNotificationSettings { settings in
         guard settings.authorizationStatus == .authorized else { return }
         DispatchQueue.main.async {
-            logger.info("Registering for remote notifications")
+            logger.notice("Registering for remote notifications")
             #if os(macOS)
                 NSApplication.shared.registerForRemoteNotifications()
             #elseif !os(watchOS)
@@ -99,9 +99,9 @@ struct MessageView: View {
             defer {
                 reportingDebugLogs = false
             }
-            logger.info("Starting to send logs")
+            logger.notice("Starting to send logs")
             let logs = await getDebugInfo(container: getSharedModelContainer())
-            logger.info("Sending logs \(logs.installationInfo.userId, privacy: .public)")
+            logger.notice("Sending logs \(logs.installationInfo.userId, privacy: .public)")
 
             do {
                 try await uploadDebugLogs(logs: logs)
@@ -110,7 +110,7 @@ struct MessageView: View {
                     self.sendMessageText(messageText: ":ninja:\nDiagnostics Shared at \(Date.now.formatted(.iso8601))")
                 }
 
-                logger.info("Upload successful")
+                logger.notice("Upload successful")
             } catch {
                 logger.error("Failed to upload logs: \(error, privacy: .public)")
             }
@@ -235,10 +235,10 @@ struct MessageView: View {
 
         }
         .onAppear {
-            logger.info("Showing view")
+            logger.notice("Showing view")
         }
         .onDisappear {
-            logger.info("Closing view")
+            logger.notice("Closing view")
         }
         .task(id: hasSentFirstMessage) {
             if !hasSentFirstMessage {
@@ -269,7 +269,7 @@ struct MessageView: View {
             if Task.isCancelled {
                 return
             }
-            logger.info("Refreshing messages")
+            logger.notice("Refreshing messages")
             try? await Task.sleep(nanoseconds: 1000 * 1000 * 1000)
             let latestMessageId = messages.last { $0.fetchedBackend == true }?.id
 
@@ -280,7 +280,7 @@ struct MessageView: View {
                         viewed: true
                     )
                 }.value
-                logger.info("Got results \(result, privacy: .public)")
+                logger.notice("Got results \(result, privacy: .public)")
 
                 if result > 0 {
                     refreshInterval = 10
@@ -291,14 +291,14 @@ struct MessageView: View {
                 }
             }
 
-            logger.info("Sleeping for \(refreshInterval, privacy: .public)s")
+            logger.notice("Sleeping for \(refreshInterval, privacy: .public)s")
             try? await Task.sleep(nanoseconds: UInt64(refreshInterval * 1_000_000_000))
-            logger.info("Done sleeping")
+            logger.notice("Done sleeping")
         }
     }
 
     func sendMessageText(messageText: String) {
-        logger.info("Sending message \"\(messageText, privacy: .public)\"")
+        logger.notice("Sending message \"\(messageText, privacy: .public)\"")
         let messageCopy = messageText
         let latestMessageId = messages.last { $0.fetchedBackend == true }?.id
         Task {

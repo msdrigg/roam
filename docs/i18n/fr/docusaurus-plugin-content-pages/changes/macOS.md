@@ -1,3 +1,1 @@
 -   Corrections de bugs et améliorations
--   Améliorer la vitesse de connexion
--   Prise en charge des téléviseurs Roku en mode limité

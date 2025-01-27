@@ -3,7 +3,7 @@ import WatchConnectivity
 
 final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
     private nonisolated static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: String(describing: WatchConnectivity.self)
     )
 
@@ -13,17 +13,17 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
         super.init()
 
         if WCSession.isSupported() {
-            WatchConnectivity.logger.info("Activating watchOS WC Receiver")
+            WatchConnectivity.logger.notice("Activating watchOS WC Receiver")
             let session = WCSession.default
             session.delegate = self
             session.activate()
         } else {
-            WatchConnectivity.logger.info("Cannot activate WC receiver because not supported")
+            WatchConnectivity.logger.notice("Cannot activate WC receiver because not supported")
         }
     }
 
     func session(_: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
-        WatchConnectivity.logger.info("Got application context from iphone \(applicationContext, privacy: .public)")
+        WatchConnectivity.logger.notice("Got application context from iphone \(applicationContext, privacy: .public)")
         handleAddDevices(applicationContext)
     }
 
@@ -32,30 +32,30 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
         didReceiveMessage message: [String: Any],
         replyHandler: @escaping ([String: Any]) -> Void
     ) {
-        WatchConnectivity.logger.info("Got message from iphone \(message, privacy: .public)")
+        WatchConnectivity.logger.notice("Got message from iphone \(message, privacy: .public)")
         handleAddDevices(message)
 
         replyHandler([:])
     }
 
     func session(_: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
-        WatchConnectivity.logger.info("Got user info from iphone \(userInfo, privacy: .public)")
+        WatchConnectivity.logger.notice("Got user info from iphone \(userInfo, privacy: .public)")
         handleAddDevices(userInfo)
     }
 
     func sessionReachabilityDidChange(_ session: WCSession) {
-        WatchConnectivity.logger.info("WCSession reachablilty changed from watchOS to: \(session.isReachable, privacy: .public)")
+        WatchConnectivity.logger.notice("WCSession reachablilty changed from watchOS to: \(session.isReachable, privacy: .public)")
         // Send message to iphone
         session.sendMessage(["message": "please send devices"], replyHandler: { reply in
             self.handleAddDevices(reply)
         }, errorHandler: { error in
-            WatchConnectivity.logger.info("Tried to send from watch with error \(error, privacy: .public)")
+            WatchConnectivity.logger.notice("Tried to send from watch with error \(error, privacy: .public)")
         })
     }
 
     func handleAddDevices(_ devices: [String: Any]) {
         if let deviceMap = devices as? [String: [String: String]] {
-            WatchConnectivity.logger.info("Trying to add devices \(deviceMap, privacy: .public)")
+            WatchConnectivity.logger.notice("Trying to add devices \(deviceMap, privacy: .public)")
             Task {
                 let modelContainer = await getSharedModelContainer()
                 let dataHandler = DataHandler(modelContainer: modelContainer)
@@ -95,15 +95,15 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
 
     func session(_ session: WCSession, activationDidCompleteWith _: WCSessionActivationState, error: (any Error)?) {
         if let error {
-            WatchConnectivity.logger.info("WCSession activated from watchOS with error \(error, privacy: .public)")
+            WatchConnectivity.logger.notice("WCSession activated from watchOS with error \(error, privacy: .public)")
         } else {
-            WatchConnectivity.logger.info("WCSession activated from watchOS successfully!")
+            WatchConnectivity.logger.notice("WCSession activated from watchOS successfully!")
         }
         // Send message to iphone
         session.sendMessage(["message": "please send devices"], replyHandler: { reply in
             self.handleAddDevices(reply)
         }, errorHandler: { error in
-            WatchConnectivity.logger.info("Tried to send from watch with error \(error, privacy: .public)")
+            WatchConnectivity.logger.notice("Tried to send from watch with error \(error, privacy: .public)")
         })
     }
 }

@@ -14,7 +14,7 @@ let mainAppGroupBackup: String? = nil
 #endif
 
 private let logger = Logger(
-    subsystem: Bundle.main.bundleIdentifier!,
+    subsystem: getLogSubsystem(),
     category: "ModelContainer"
 )
 

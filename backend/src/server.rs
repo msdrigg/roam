@@ -241,15 +241,15 @@ async fn new_message(
         )
         .await?;
 
-    let user = app_context
-        .refresh_user(user, apns_token.as_ref(), &installation_info)
-        .await?;
-
     if let Some(content) = content {
         if !content.is_empty() {
             app_context
                 .discord_client()
                 .send_message(user.thread_id, &content)
+                .await?;
+
+            app_context
+                .refresh_user(user, apns_token.as_ref(), &installation_info)
                 .await?;
         }
     }

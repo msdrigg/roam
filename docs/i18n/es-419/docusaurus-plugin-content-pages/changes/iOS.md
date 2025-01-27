@@ -1,4 +1,1 @@
-- Correcciones de errores y mejoras
-- Mejorar la velocidad de conexión
-- Soporte para Roku TV's con Modo Limitado
-- Solucionar el problema con watchOS que no puede agregar dispositivos
+-   Correcciones de errores y mejoras

@@ -1,7 +1,7 @@
 import OSLog
 import SwiftUI
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "Helpers")
+private let logger = Logger(subsystem: getLogSubsystem(), category: "Helpers")
 extension String {
     func stripPrefix(_ prefix: String) -> String {
         guard self.hasPrefix(prefix) else { return self }
@@ -113,17 +113,17 @@ private func parseAmazonPrimeUrl(_ url: URL, host: String) -> (String, [String: 
     let appId = "13"
 
     if host.contains("amazon.com") {
-        logger.info("Parsing amazon url\(url, privacy: .public)")
+        logger.notice("Parsing amazon url\(url, privacy: .public)")
         let pathComponents = url.pathComponents
         // swiftlint:disable:next force_try
         if pathComponents.last?.starts(with: try! Regex("amzn.?\\.dv")) == true {
             if let lastComponent = pathComponents.last {
-                logger.info("Parsing 'amzn' amazon url \(lastComponent, privacy: .public)")
+                logger.notice("Parsing 'amzn' amazon url \(lastComponent, privacy: .public)")
                 parsedData["contentId"] = lastComponent
             }
             parsedData["mediaType"] = "movie"
         } else {
-            logger.info("Parsing standard amazon url \(pathComponents, privacy: .public)")
+            logger.notice("Parsing standard amazon url \(pathComponents, privacy: .public)")
             parsedData["contentId"] = pathComponents.last{ piece in
                 // swiftlint:disable:next force_try
                 !piece.starts(with: try! Regex("ref"))
@@ -297,6 +297,39 @@ private func parseYouTubeUrl(_ url: URL, host: String) -> (String, [String: Stri
     return nil
 }
 
+public func kebabParamDecodingStrategy() -> JSONDecoder.KeyDecodingStrategy {
+    return JSONDecoder.KeyDecodingStrategy.custom { keySequence in
+        let keyPart = keySequence.last!
+        let segments = keyPart.stringValue.stripPrefix("param-").split(separator: "-")
+        if segments.isEmpty {
+            logger.error("Error parsing kebab-case parameter name: \(keyPart.stringValue, privacy: .public)")
+        }
+
+        // Join camel case
+        let joined = segments.makeIterator().enumerated().map { index, segment in
+            if index == 0 {
+                return segment.lowercased()
+            } else {
+                return segment.capitalized(with: Locale(identifier: "en_US"))
+            }
+        }.joined(separator: "")
+        return AnyKey(stringValue: joined)
+    }
+}
+
+public func kebabParamEncodingStrategy() -> JSONEncoder.KeyEncodingStrategy {
+    return JSONEncoder.KeyEncodingStrategy.custom { keySequence in
+        let keyPart = keySequence.last!.stringValue
+        let stringValue = if keyPart == "request" || keyPart == "requestId" || keyPart == "status" || keyPart == "statusMsg" || keyPart == "contentData" || keyPart == "notify" {
+            kebabify(keyPart)
+        } else {
+            "param-" + kebabify(keyPart)
+        }
+
+        return AnyKey(stringValue: stringValue)
+    }
+}
+
 let globalHostRTPPort: UInt16 = 6970
 let globalHostRTCPPort: UInt16 = 6971
 let globalDefaultRemoteRTCPPort: UInt16 = 5150
@@ -304,3 +337,7 @@ let globalRTPPayloadType = 97
 let globalClockRate = 48000
 let globalPacketSizeMS: Int64 = 10
 let globalHugeFixedVDLYMS: UInt32 = 1200
+
+public func getLogSubsystem() -> String {
+    return Bundle.main.bundleIdentifier ?? "com.msdrigg.roam"
+}

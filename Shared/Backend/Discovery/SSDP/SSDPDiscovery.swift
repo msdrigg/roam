@@ -5,7 +5,7 @@ import os
 import System
 
 private let logger = Logger(
-    subsystem: Bundle.main.bundleIdentifier!,
+    subsystem: getLogSubsystem(),
     category: String(describing: "SSDPDiscovery")
 )
 
@@ -28,7 +28,7 @@ func scanDevicesContinually(interface: String?) throws -> AsyncThrowingStream<SS
             if let interface {
                 let interfaceAddresses = QSockAddr.addressesByInterface()[interface] ?? []
                 let interfaceAddress = interfaceAddresses.first
-                logger.info("Getting information about interfaces \(interfaceAddresses, privacy: .public) and chose \(interfaceAddress ?? "--", privacy: .public)")
+                logger.notice("Getting information about interfaces \(interfaceAddresses, privacy: .public) and chose \(interfaceAddress ?? "--", privacy: .public)")
 
                 // Bind the socket to the interface address
                 if let address = interfaceAddress {
@@ -38,7 +38,7 @@ func scanDevicesContinually(interface: String?) throws -> AsyncThrowingStream<SS
                 }
 
                 // Set the multicast interface for sending
-                logger.info("Setting multicast interface \(interfaceAddress ?? "", privacy: .public)")
+                logger.notice("Setting multicast interface \(interfaceAddress ?? "", privacy: .public)")
                 let multicastInterface = in_addr(s_addr: inet_addr(interfaceAddress))
                 try socket.setSocketOption(IPPROTO_IP, IP_MULTICAST_IF, multicastInterface)
             }
@@ -62,7 +62,7 @@ func scanDevicesContinually(interface: String?) throws -> AsyncThrowingStream<SS
                     }
                     do {
                         try socket.send(data: Data(message.utf8), to: (address: groupAddress, port: groupPort))
-                        logger.debug("Sent SSDP request successfully")
+                        logger.info("Sent SSDP request successfully")
                         failures = 0
                     } catch {
                         failures += 1
@@ -77,9 +77,9 @@ func scanDevicesContinually(interface: String?) throws -> AsyncThrowingStream<SS
             let receivingHandle = Task {
                 while !Task.isCancelled {
                     do {
-                        logger.info("Trying to receive SSDP data from \(groupAddress, privacy: .public):\(groupPort, privacy: .public)")
+                        logger.notice("Trying to receive SSDP data from \(groupAddress, privacy: .public):\(groupPort, privacy: .public)")
                         let (data, from) = try socket.receiveFrom(maxCount: 16384)
-                        logger.info("Receinving SSDP data with len \(data.count, privacy: .public) from \(from.0, privacy: .public):\(from.1, privacy: .public)")
+                        logger.notice("Receinving SSDP data with len \(data.count, privacy: .public) from \(from.0, privacy: .public):\(from.1, privacy: .public)")
                         if let response = String(data: data, encoding: .utf8) {
                             continuation.yield(SSDPService(host: from.address, response: response))
                         }

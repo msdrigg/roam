@@ -4,19 +4,19 @@ import SwiftData
 import OSLog
 
 private nonisolated let logger = Logger(
-    subsystem: Bundle.main.bundleIdentifier!,
+    subsystem: getLogSubsystem(),
     category: "AppLinkAppEntity"
 )
 
 @available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
-public struct AppLinkAppEntity: Identifiable, Equatable, Hashable, Encodable, Sendable {
+public struct AppLinkAppEntity: Identifiable, Equatable, Hashable, Codable, Sendable {
     var name: String
     public var id: String
     public var type: String
-    public var modelId: PersistentIdentifier
+    public var modelId: PersistentIdentifier?
     public var icon: Data?
 
-    init(name: String, id: String, type: String, modelId: PersistentIdentifier, icon: Data? = nil) {
+    init(name: String, id: String, type: String, modelId: PersistentIdentifier? = nil, icon: Data? = nil) {
         self.name = name
         self.id = id
         self.type = type
@@ -31,55 +31,18 @@ public struct AppLinkAppEntity: Identifiable, Equatable, Hashable, Encodable, Se
         try container.encode(name, forKey: .name)
     }
 
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let id = try container.decode(String.self, forKey: .id)
+        let type = try container.decode(String.self, forKey: .type)
+
+        let singleValueContainer = try decoder.singleValueContainer()
+        let name = try singleValueContainer.decode(String.self)
+
+        self.init(name: name, id: id, type: type)
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, type, name
-    }
-}
-
-#if !os(watchOS)
-import CoreSpotlight
-
-extension AppLinkAppEntity: IndexedEntity {}
-#endif
-
-#if !os(tvOS)
-    extension AppLinkAppEntity: AppEntity {
-        public static let typeDisplayRepresentation = TypeDisplayRepresentation(name: LocalizedStringResource("TV App", comment: "TV App Selection option"))
-        public static let defaultQuery = AppLinkAppEntityQuery()
-
-        public struct AppLinkAppEntityQuery: EntityQuery {
-            @IntentParameterDependency<LaunchAppIntent>(\.$device) var launchAppIntent
-
-            public init() {}
-
-            public func entities(for identifiers: [AppLinkAppEntity.ID]) async throws -> [AppLinkAppEntity] {
-                let appLinkActor = DataHandler(modelContainer: await getSharedModelContainer())
-                return try await appLinkActor.appEntities(for: identifiers, deviceUid: launchAppIntent?.device.udn)
-            }
-
-            func entities(matching string: String) async throws -> [AppLinkAppEntity] {
-                let appLinkActor = DataHandler(modelContainer: await getSharedModelContainer())
-                return try await appLinkActor.appEntities(matching: string, deviceUid: launchAppIntent?.device.udn)
-            }
-
-            public func suggestedEntities() async throws -> [AppLinkAppEntity] {
-                let appLinkActor = DataHandler(modelContainer: await getSharedModelContainer())
-                return try await appLinkActor.appEntities(deviceUid: launchAppIntent?.device.udn)
-            }
-        }
-
-        public var displayRepresentation: DisplayRepresentation {
-            DisplayRepresentation(title: "\(name)", image: (icon != nil) ? DisplayRepresentation.Image(data: icon!) : DisplayRepresentation.Image(systemName: "app.dashed"))
-        }
-    }
-#endif
-
-public extension AppLink {
-    func toAppEntity() -> AppLinkAppEntity {
-        AppLinkAppEntity(name: name, id: id, type: type, modelId: persistentModelID)
-    }
-
-    func toAppEntityWithIcon() -> AppLinkAppEntity {
-        AppLinkAppEntity(name: name, id: id, type: type, modelId: persistentModelID, icon: icon)
     }
 }

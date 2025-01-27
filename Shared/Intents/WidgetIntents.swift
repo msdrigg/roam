@@ -155,7 +155,7 @@ public struct OpenDeviceIntent: OpenIntent {
     @available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
     public struct ButtonPressIntent: AppIntent, CustomIntentMigratedAppIntent, PredictableIntent {
         private nonisolated static let logger = Logger(
-            subsystem: Bundle.main.bundleIdentifier!,
+            subsystem: getLogSubsystem(),
             category: String(describing: ButtonPressIntent.self)
         )
 
@@ -200,12 +200,12 @@ public struct OpenDeviceIntent: OpenIntent {
     }
 
     private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: "SimpleClicker"
     )
 
     public func clickButton(button: RemoteButton, device: DeviceAppEntity?) async throws {
-        logger.debug("Pressing widget button \(button.apiValue ?? "nil", privacy: .public) on device \(device?.name ?? "nil", privacy: .public)")
+        logger.info("Pressing widget button \(button.apiValue ?? "nil", privacy: .public) on device \(device?.name ?? "nil", privacy: .public)")
         let modelContainer = await getSharedModelContainer()
 
         let dataHandler = DataHandler(modelContainer: modelContainer)
@@ -301,3 +301,41 @@ private enum IntentError: Swift.Error, CustomLocalizedStringResourceConvertible 
         }
     }
 }
+
+#if !os(tvOS)
+    extension AppLinkAppEntity: AppEntity {
+        public static let typeDisplayRepresentation = TypeDisplayRepresentation(name: LocalizedStringResource("TV App", comment: "TV App Selection option"))
+        public static let defaultQuery = AppLinkAppEntityQuery()
+
+        public struct AppLinkAppEntityQuery: EntityQuery {
+            @IntentParameterDependency<LaunchAppIntent>(\.$device) var launchAppIntent
+
+            public init() {}
+
+            public func entities(for identifiers: [AppLinkAppEntity.ID]) async throws -> [AppLinkAppEntity] {
+                let appLinkActor = DataHandler(modelContainer: await getSharedModelContainer())
+                return try await appLinkActor.appEntities(for: identifiers, deviceUid: launchAppIntent?.device.udn)
+            }
+
+            func entities(matching string: String) async throws -> [AppLinkAppEntity] {
+                let appLinkActor = DataHandler(modelContainer: await getSharedModelContainer())
+                return try await appLinkActor.appEntities(matching: string, deviceUid: launchAppIntent?.device.udn)
+            }
+
+            public func suggestedEntities() async throws -> [AppLinkAppEntity] {
+                let appLinkActor = DataHandler(modelContainer: await getSharedModelContainer())
+                return try await appLinkActor.appEntities(deviceUid: launchAppIntent?.device.udn)
+            }
+        }
+
+        public var displayRepresentation: DisplayRepresentation {
+            DisplayRepresentation(title: "\(name)", image: (icon != nil) ? DisplayRepresentation.Image(data: icon!) : DisplayRepresentation.Image(systemName: "app.dashed"))
+        }
+    }
+#endif
+
+#if !os(watchOS)
+import CoreSpotlight
+
+extension AppLinkAppEntity: IndexedEntity {}
+#endif

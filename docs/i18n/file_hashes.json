@@ -13,6 +13,10 @@
     "docusaurus-plugin-content-pages/recent-updates.md": "ea798f117b1a2da9fb9cb1755cc3098b0c9ca2d2a3917c398fb588d1e942501b",
     "docusaurus-plugin-content-pages/changes/visionOS.md": "459a0cd70a17e73d74c0fa081577d4b07313e391f971760878129fe04143f12f",
     "docusaurus-plugin-content-pages/changes/index.mdx": "9af81ed6b7660a4856f6b0118f1ff7a0bcb65cd786c1fbdb63d2a464cd19c300",
-    "docusaurus-plugin-content-pages/changes/macOS.md": "837362830c096068bb7094b7b6528f981d6a134849608bd940117b4e85ae6245",
-    "docusaurus-plugin-content-pages/changes/iOS.md": "c76eafeeff02a538c735405f1467dab0217a3b109f90d2fa259bfe7c66aa9f2e"
+    "docusaurus-plugin-content-pages/changes/macOS.md": "459a0cd70a17e73d74c0fa081577d4b07313e391f971760878129fe04143f12f",
+    "docusaurus-plugin-content-pages/changes/iOS.md": "459a0cd70a17e73d74c0fa081577d4b07313e391f971760878129fe04143f12f",
+    "docusaurus-plugin-content-pages/description/visionOS.md": "45c71b409e0d6beeb933820cc0844eccfa676f46e39a1f4a1a4ad91c2419505b",
+    "docusaurus-plugin-content-pages/description/index.mdx": "422b36ff06367c4622d53d23b69f62baa70a2368e7ce6a9f9db9b7230baa28ce",
+    "docusaurus-plugin-content-pages/description/macOS.md": "361ef3a31e082f0f8d8023ad70e1c6359358c0509558b35dc4ba1b10b5a66e74",
+    "docusaurus-plugin-content-pages/description/iOS.md": "69aad84f66f3ab5fbe707d0a46d39d3c4ca51f1d757c7386a65b2a34b7a92d55"
 }

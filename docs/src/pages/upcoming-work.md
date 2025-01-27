@@ -7,16 +7,19 @@ hide_table_of_contents: true
 ## Coming Soon
 
 -   Add more tips
+
     -   Add macOS tip for pasting links from youtube, max, ...
     -   Add macOS tip for keyboard entry
     -   Add tip for keyboard Shortcuts
 
-- Figure out what’s causing the iOS shutdowns — have a crash log but nothing seems to be helping
-    - Says process exits (added atexit)
-    - Reproduce with open, close (without quitting), swipe to side menu, open again (not every time)
-    - Need to reproduce with other item
+-   Figure out what’s causing the iOS shutdowns — have a crash log but nothing seems to be helping
+
+    -   Says process exits (added atexit)
+    -   Reproduce with open, close (without quitting), swipe to side menu, open again (not every time)
+    -   Need to reproduce with other item
 
 -   Add long-press options to keys
+
     -   Long-press right arrow to ff
     -   Long-press left arrow to rr
     -   Long-press mute to long-mute
@@ -44,8 +47,9 @@ hide_table_of_contents: true
     -   Or need to add custom text-to-speech with remote button engine?
     -   Are there 3rd party voice remotes? Is there some kind of oss protocol for voice remotes that I can use?
 
-- Investigate official voice API 
-    - See Desktop -> RokuScanning -> voice
+-   Investigate official voice API
+
+    -   See Desktop -> RokuScanning -> voice
 
 -   Try more keyboard hacks on iPad
 
@@ -78,11 +82,26 @@ hide_table_of_contents: true
 
 ## Improve user messaging around info/status/capabilities management
 
-- Look at copying some of the descriptive features of other Roku remotes
-    - Explanations for local network permissions, etc…
-    - See Desktop -> RokuScanning -> 3rd party comparison 
+-   Look at copying some of the descriptive features of other Roku remotes
 
--   Better links to roam.msd3.io for concerns (instead of just listing them)
+    -   Explanations for local network permissions, etc…
+    -   See Desktop -> RokuScanning -> 3rd party comparison
+    -   Bottom sheet popup when you click on "Local network permissions not granted"
+
+        -   Explain how to fix it
+        -   Dismiss it from there
+
+    -   WatchOS popup explaining when limited mode is on for devices (query /device/apps and check if it returns 4xx error)
+
+        -   Whole entry flow where you click "Try again" after entering or "Cancel"
+
+    -   Embed links to roam.msd3.io for concerns (instead of just listing them)
+
+        -   Change info bubbles to disclosure buttons (drop down below) and from that disclosure, say "Click here to read more" to open roam
+
+    -   On macOS (and maybe others), +add a device manually doesn't take you into that device view
+
+    -   Remove info from device detail view
 
 -   When powering on the device with WOL and not connecting after 5 seconds, or when powering on the device and immediately failing, show a warning message underneath the wifi one
     -   “We weren’t able to wake your Roku” (Find out more) (Don’t show again for this device), (X)

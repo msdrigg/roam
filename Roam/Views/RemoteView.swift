@@ -35,11 +35,10 @@ private func messageFetchDescriptor() -> FetchDescriptor<Message> {
 
 struct RemoteView: View {
     private static nonisolated let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: String(describing: RemoteView.self)
     )
 
-    @Environment(\.scenePhase) var scenePhase
     #if !os(tvOS)
     @Environment(\.openWindow) var openWindow
     #endif
@@ -53,7 +52,6 @@ struct RemoteView: View {
     @State private var showKeyboardEntry: Bool = false
     @State private var keyboardLeaving: Bool = false
     @State private var keyboardEntryText: String = ""
-    @State var inBackground: Bool = false
     @State var buttonPresses: [RemoteButton: Int] = [:]
     @State private var headphonesModeEnabled: Bool = false
     @State private var errorTrigger: Int = 0
@@ -116,7 +114,7 @@ struct RemoteView: View {
             SettingsNavigationWrapper(path: $appDelegate.navigationPath.navigationPath) {
                 RemoteViewContained()
                     .onOpenURL { incomingURL in
-                        Self.logger.info("App was opened via URL: \(incomingURL, privacy: .public)")
+                        Self.logger.notice("App was opened via URL: \(incomingURL, privacy: .public)")
                         handleIncomingURL(incomingURL)
                     }
                 #if os(macOS)
@@ -150,7 +148,7 @@ struct RemoteView: View {
             Self.logger.warning("Getting url deep link with no action")
             return
         }
-        Self.logger.info("Getting action \(action, privacy: .public)")
+        Self.logger.notice("Getting action \(action, privacy: .public)")
 
         if action == "add-device" || action == "scan" {
             let queryParams = URLComponents(string: url.absoluteString)?.queryItems
@@ -177,16 +175,16 @@ struct RemoteView: View {
             }
         }
         if action == "feedback" {
-            Self.logger.info("Attempting to open app debugging")
+            Self.logger.notice("Attempting to open app debugging")
             appDelegate.navigationPath.append(NavigationDestination.settingsDestination(.debugging))
         } else if action == "settings" {
-            Self.logger.info("Attempting to open app settings")
+            Self.logger.notice("Attempting to open app settings")
             appDelegate.navigationPath.append(NavigationDestination.settingsDestination(.global))
         } else if action == "about" {
-            Self.logger.info("Attempting to open about page")
+            Self.logger.notice("Attempting to open about page")
             appDelegate.navigationPath.append(NavigationDestination.aboutDestination)
         } else if action == "messages" {
-            Self.logger.info("Attempting to open messages page")
+            Self.logger.notice("Attempting to open messages page")
             appDelegate.navigationPath.append(NavigationDestination.messageDestination)
         }
     }

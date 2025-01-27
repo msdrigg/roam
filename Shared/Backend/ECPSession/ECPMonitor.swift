@@ -33,7 +33,7 @@ enum TextEditStatus: Equatable, Hashable {
     }
 }
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ECPMonitor")
+private let logger = Logger(subsystem: getLogSubsystem(), category: "ECPMonitor")
 
 @MainActor @Observable
 class ECPMonitor {
@@ -42,14 +42,13 @@ class ECPMonitor {
     var ecpClient: ECPWebsocketClient?
 
     func setDevice(_ device: DeviceAppEntity?) {
+        let oldEcpClient = self.ecpClient
+        self.ecpClient = nil
+        Task {
+            await oldEcpClient?.cancel()
+        }
         guard let device, let url = URL(string: device.location) else {
-            logger.info("Could not parse URL \(device?.location ?? "nil", privacy: .public)")
-
-            let oldEcpClient = self.ecpClient
-            self.ecpClient = nil
-            Task {
-                await oldEcpClient?.cancel()
-            }
+            logger.error("Could not parse URL for selected device \(device?.location ?? "nil", privacy: .public)")
             return
         }
         let ecpClient = ECPWebsocketClient(
@@ -57,7 +56,7 @@ class ECPMonitor {
             macs: device.macs(),
             websocketStateUpdated: {[weak self] state in
                 guard let self = self else { return }
-                logger.info("Getting new ws state \(state.debugDescription, privacy: .public)")
+                logger.notice("Getting new ws state \(state.debugDescription, privacy: .public)")
                 DispatchQueue.main.async {
                     self.status = state
                 }
@@ -76,11 +75,9 @@ class ECPMonitor {
                 }
             }
         )
-        let oldEcpClient = self.ecpClient
         self.ecpClient = ecpClient
         Task {
             await ecpClient.start()
-            await oldEcpClient?.cancel()
             do {
                 try await ecpClient.requestEventsNotify()
             } catch {

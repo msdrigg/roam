@@ -4,7 +4,7 @@ import SwiftData
 import SwiftUI
 
 private let logger = Logger(
-    subsystem: Bundle.main.bundleIdentifier!,
+    subsystem: getLogSubsystem(),
     category: "DataManagement"
 )
 
@@ -17,7 +17,7 @@ public actor DataHandler {
     static let hardDeleteTimeout: TimeInterval = 3600
 
     nonisolated static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: String(describing: DataHandler.self)
     )
 
@@ -43,10 +43,10 @@ public actor DataHandler {
     }
 
     func setSelectedApp(_ appId: PersistentIdentifier) {
-        DataHandler.logger.info("Updating selectedAt for app with id \(appId.described(), privacy: .public)")
+        DataHandler.logger.notice("Updating selectedAt for app with id \(appId.described(), privacy: .public)")
 
         if let appLink = modelContext.existingApp(for: appId) {
-            DataHandler.logger.info("Setting appId selected to now")
+            DataHandler.logger.notice("Setting appId selected to now")
             appLink.lastSelected = Date.now
             do {
                 try modelContext.save()
@@ -57,9 +57,9 @@ public actor DataHandler {
     }
 
     func setSelectedDevice(_ id: PersistentIdentifier) {
-        DataHandler.logger.info("Updating selectedAt for device with id \(String(describing: id), privacy: .public)")
+        DataHandler.logger.notice("Updating selectedAt for device with id \(String(describing: id), privacy: .public)")
         if let device = modelContext.existingDevice(for: id) {
-            DataHandler.logger.info("Found device to update with location \(device.location, privacy: .public)")
+            DataHandler.logger.notice("Found device to update with location \(device.location, privacy: .public)")
             device.lastSelectedAt = Date.now
             do {
                 try modelContext.save()
@@ -70,9 +70,9 @@ public actor DataHandler {
     }
 
     func updateDevice(_ id: PersistentIdentifier, name: String, location: String, udn: String) {
-        DataHandler.logger.info("Updating device at \(location, privacy: .public)")
+        DataHandler.logger.notice("Updating device at \(location, privacy: .public)")
         if let device = modelContext.existingDevice(for: id) {
-            DataHandler.logger.info("Found device to update with id \(id.described(), privacy: .public))")
+            DataHandler.logger.notice("Found device to update with id \(id.described(), privacy: .public))")
             device.location = location
             device.name = name
             device.udn = udn
@@ -83,7 +83,7 @@ public actor DataHandler {
                 Self.logger.warning("Error updating device at location \(location, privacy: .public)")
             }
         }
-        DataHandler.logger.info("Updated device at \(location, privacy: .public)")
+        DataHandler.logger.notice("Updated device at \(location, privacy: .public)")
     }
 
     @discardableResult
@@ -104,7 +104,7 @@ public actor DataHandler {
             lastOnlineAt = nil
         }
 
-        DataHandler.logger.info("Adding device at \(location, privacy: .public)")
+        DataHandler.logger.notice("Adding device at \(location, privacy: .public)")
         let device = Device(
             name: friendlyDeviceName,
             location: location,
@@ -115,7 +115,7 @@ public actor DataHandler {
 
         do {
             try modelContext.save()
-            DataHandler.logger.info("Added device \(String(describing: device.persistentModelID), privacy: .public)")
+            DataHandler.logger.notice("Added device \(String(describing: device.persistentModelID), privacy: .public)")
             return device.persistentModelID
         } catch {
             DataHandler.logger.warning("Error adding device at \(location, privacy: .public), \(error, privacy: .public)")
@@ -147,7 +147,7 @@ public actor DataHandler {
     }
 
     func deleteInPast() async {
-        DataHandler.logger.info("Hard deleting devices")
+        DataHandler.logger.notice("Hard deleting devices")
         let deleteBefore = Date.now - Self.hardDeleteTimeout
         let distantFuture = Date.distantFuture
         do {
@@ -158,7 +158,7 @@ public actor DataHandler {
             let models = try modelContext.fetchSafer(descriptor)
 
             for model in models {
-                Self.logger.info("Deleteing device and apps \(model.location, privacy: .public) with name \(model.name, privacy: .public)")
+                Self.logger.notice("Deleteing device and apps \(model.location, privacy: .public) with name \(model.name, privacy: .public)")
                 do {
                     try deleteAppsForDeviceUdn(udn: model.udn)
                 } catch {
@@ -174,7 +174,7 @@ public actor DataHandler {
     }
 
     func delete(_ id: PersistentIdentifier) async throws {
-        DataHandler.logger.info("Soft deleting device \(String(describing: id), privacy: .public)")
+        DataHandler.logger.notice("Soft deleting device \(String(describing: id), privacy: .public)")
         if let device = modelContext.existingDevice(for: id) {
             device.deletedAt = .now
             do {
@@ -384,7 +384,7 @@ extension ModelContext {
 
             return model
         } catch {
-            logger.info("Error getting device for id \(id.described(), privacy: .public): \(error, privacy: .public)")
+            logger.notice("Error getting device for id \(id.described(), privacy: .public): \(error, privacy: .public)")
             return nil
         }
     }
@@ -412,7 +412,7 @@ extension ModelContext {
 
             return data
         } catch {
-            logger.info("Error getting app for id \(id.described(), privacy: .public): \(error, privacy: .public)")
+            logger.notice("Error getting app for id \(id.described(), privacy: .public): \(error, privacy: .public)")
             return nil
         }
     }
@@ -486,7 +486,7 @@ extension DataHandler {
 
 extension DataHandler {
     func refreshDevice(_ id: PersistentIdentifier) async {
-        Self.logger.info("Refreshing device with id \(String(describing: id), privacy: .public)")
+        Self.logger.notice("Refreshing device with id \(String(describing: id), privacy: .public)")
         guard let location = (modelContext.existingDevice(for: id))?.location else {
             DataHandler.logger.error("Trying to refresh device that doeesn't exist \(String(describing: id), privacy: .public)")
             return
@@ -515,14 +515,14 @@ extension DataHandler {
             Self.logger.warning("Error getting device info")
             return
         }
-        Self.logger.info("Successfully refreshed device info")
+        Self.logger.notice("Successfully refreshed device info")
         #else
         let deviceInfo: DeviceInfo
         do {
             deviceInfo = try await ecpSession.getDeviceInfo()
-            Self.logger.info("Successfully refreshed device info")
+            Self.logger.notice("Successfully refreshed device info")
         } catch {
-            Self.logger.info("Failed to get device info \(location, privacy: .public), \(error, privacy: .public)")
+            Self.logger.notice("Failed to get device info \(location, privacy: .public), \(error, privacy: .public)")
             return
         }
         #endif
@@ -552,7 +552,7 @@ extension DataHandler {
                deviceApps.allSatisfy({ $0.icon != nil }), deviceApps.count > 0
             {
                 try? modelContext.save()
-                DataHandler.logger.info("Returning early from refresh")
+                DataHandler.logger.notice("Returning early from refresh")
                 return
             }
             device.lastScannedAt = Date.now
@@ -570,7 +570,7 @@ extension DataHandler {
             try? modelContext.save()
         }
 
-        DataHandler.logger.info("Refreshing capabilities and apps")
+        DataHandler.logger.notice("Refreshing capabilities and apps")
 
         var capabilities: DeviceCapabilities?
         do {
@@ -579,8 +579,8 @@ extension DataHandler {
             #else
             capabilities = try await ecpSession.getDeviceCapabilities()
             #endif
-            Self.logger.info("Successful refreshed capabilities")
-            Self.logger.info("Successful refreshed capabilities")
+            Self.logger.notice("Successful refreshed capabilities")
+            Self.logger.notice("Successful refreshed capabilities")
         } catch {
             DataHandler.logger.error("Error getting capabilities \(error, privacy: .public)")
         }
@@ -592,7 +592,7 @@ extension DataHandler {
             #else
             sortedApps = try await ecpSession.getDeviceApps()
             #endif
-            Self.logger.info("Successfully refreshed device apps")
+            Self.logger.notice("Successfully refreshed device apps")
         } catch {
             DataHandler.logger.error("Error getting device apps \(error, privacy: .public)")
         }
@@ -643,7 +643,7 @@ extension DataHandler {
 
         var deviceIcon: Data?
         if deviceNeedsIcon {
-            DataHandler.logger.info("Getting icon for device \(location, privacy: .public)")
+            DataHandler.logger.notice("Getting icon for device \(location, privacy: .public)")
             do {
                 deviceIcon = try await fetchDeviceIcon(location: location)
             } catch {
@@ -660,7 +660,7 @@ extension DataHandler {
                 #else
                 let iconData = try await ecpSession.getDeviceAppIcon(appId)
                 #endif
-                Self.logger.info("Successfully refreshed device app icon")
+                Self.logger.notice("Successfully refreshed device app icon")
                 appIcons[appId] = iconData
             } catch {
                 DataHandler.logger.error("Error getting device app icon \(error, privacy: .public)")
@@ -698,7 +698,7 @@ extension DataHandler {
 extension DataHandler {
     @discardableResult
     public func refreshMessagesIfExpectingNewMessages() async -> Int {
-        Self.logger.info("Refreshing messages")
+        Self.logger.notice("Refreshing messages")
         var descriptor = FetchDescriptor<Message>(
             predicate: #Predicate {
                 $0.fetchedBackend == true
@@ -711,7 +711,7 @@ extension DataHandler {
         let lastMessage = try? modelContext.fetchSafer(descriptor).last
 
         let lastMessageId = lastMessage?.id
-        Self.logger.info("Refreshing messages with last message \(String(describing: lastMessage?.id), privacy: .public)")
+        Self.logger.notice("Refreshing messages with last message \(String(describing: lastMessage?.id), privacy: .public)")
         if lastMessage == nil {
             return 0
         }
@@ -737,7 +737,7 @@ extension DataHandler {
                 DataHandler.logger.error("Error getting latest messages \(error, privacy: .public)")
             }
 
-            DataHandler.logger.info("Starting delete")
+            DataHandler.logger.notice("Starting delete")
             var descriptor = FetchDescriptor(
                 predicate: #Predicate<Message> { model in
                     !model.fetchedBackend
@@ -748,7 +748,7 @@ extension DataHandler {
             for model in foundModels {
                 modelContext.delete(model)
             }
-            DataHandler.logger.info("Ending delete")
+            DataHandler.logger.notice("Ending delete")
 
             if viewed == true {
                 let unviewedMessagesDescriptor = FetchDescriptor<Message>(predicate: #Predicate {
@@ -783,7 +783,7 @@ func saveDevice(
     let cleanedString = deviceIP.trimmingCharacters(in: .whitespacesAndNewlines)
         .replacingOccurrences(of: "\"", with: "").replacingOccurrences(of: "'", with: "")
     let deviceUrl = addSchemeAndPort(to: cleanedString)
-    logger.info("Getting device url \(deviceUrl, privacy: .public)")
+    logger.notice("Getting device url \(deviceUrl, privacy: .public)")
     // Save device id and location early
     await dataHandler.updateDevice(
         modelId, name: deviceName, location: deviceUrl, udn: existingUDN
@@ -805,7 +805,7 @@ func saveDevice(
         return
     }
     #endif
-    logger.info("Got device info to save device")
+    logger.notice("Got device info to save device")
 
     // If we get a device with a different UDN, replace the device
     if let udn = deviceInfo?.udn, udn != existingUDN {
@@ -821,12 +821,12 @@ func saveDevice(
         return
     }
 
-    DataHandler.logger.info("Saving device \(deviceUrl) with id \(String(describing: modelId), privacy: .public)")
+    DataHandler.logger.notice("Saving device \(deviceUrl) with id \(String(describing: modelId), privacy: .public)")
     await dataHandler.updateDevice(
         modelId,
         name: deviceName,
         location: deviceUrl,
         udn: existingUDN
     )
-    DataHandler.logger.info("Saved device \(deviceUrl, privacy: .public)")
+    DataHandler.logger.notice("Saved device \(deviceUrl, privacy: .public)")
 }

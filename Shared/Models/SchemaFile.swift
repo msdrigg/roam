@@ -10,7 +10,7 @@ public enum SchemaV1: VersionedSchema {
     @Model
     public final class Device: Hashable {
         private nonisolated static let logger = Logger(
-            subsystem: Bundle.main.bundleIdentifier!, category: String(describing: Device.self)
+            subsystem: getLogSubsystem(), category: String(describing: Device.self)
         )
 
         @Attribute(.unique, originalName: "id") public var udn: String
@@ -101,7 +101,7 @@ public enum SchemaV2: VersionedSchema {
     @Model
     public final class Device: Hashable {
         private nonisolated static let logger = Logger(
-            subsystem: Bundle.main.bundleIdentifier!, category: String(describing: Device.self)
+            subsystem: getLogSubsystem(), category: String(describing: Device.self)
         )
 
         @Attribute(.unique, originalName: "id") public var udn: String
@@ -196,7 +196,7 @@ public enum SchemaV3: VersionedSchema {
     @Model
     public final class Device: Hashable {
         private nonisolated static let logger = Logger(
-            subsystem: Bundle.main.bundleIdentifier!, category: String(describing: Device.self)
+            subsystem: getLogSubsystem(), category: String(describing: Device.self)
         )
 
         @Attribute(.unique, originalName: "id") public var udn: String

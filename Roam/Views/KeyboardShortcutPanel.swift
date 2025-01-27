@@ -3,7 +3,7 @@ import SwiftUI
 import OSLog
 import TipKit
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "KeyboardShortcut")
+private let logger = Logger(subsystem: getLogSubsystem(), category: "KeyboardShortcut")
 
 struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
     let title: CustomKeyboardShortcut.Key
@@ -136,7 +136,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
     }
 
     func persist() {
-        logger.info("Saving shortcut with title \(self.title.rawValue, privacy: .public) key \(keys, privacy: .public)")
+        logger.notice("Saving shortcut with title \(self.title.rawValue, privacy: .public) key \(keys, privacy: .public)")
         do {
             let data = try PropertyListEncoder().encode(self)
             UserDefaults.standard.set(data, forKey: "keyboard-shortcut-\(title)")
@@ -846,10 +846,10 @@ struct KeyboardShortcutPanel: View {
             }
         }
         .onAppear {
-            logger.info("Showing view")
+            logger.notice("Showing view")
         }
         .onDisappear {
-            logger.info("Closing view")
+            logger.notice("Closing view")
         }
         #if os(macOS)
         .onAppear {

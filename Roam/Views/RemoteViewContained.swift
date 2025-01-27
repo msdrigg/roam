@@ -48,11 +48,10 @@ enum KeyboardFocus {
 
 struct RemoteViewContained: View {
     private static nonisolated let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: String(describing: RemoteViewContained.self)
     )
 
-    @Environment(\.scenePhase) var scenePhase
     #if !os(tvOS)
     @Environment(\.openWindow) var openWindow
     #endif
@@ -70,7 +69,6 @@ struct RemoteViewContained: View {
     @State private var showKeyboardEntryManual: Bool = false
     @State private var keyboardLeaving: Bool = false
     @State private var keyboardEntryText: String = ""
-    @State var inBackground: Bool = false
     @State var buttonPresses: [RemoteButton: Int] = [:]
     @State private var headphonesModeEnabled: Bool = false
     @State private var errorTrigger: Int = 0
@@ -342,9 +340,9 @@ struct RemoteViewContained: View {
 #endif
                 .task{
                     do {
-                        Self.logger.info("Checking for local network permission")
+                        Self.logger.notice("Checking for local network permission")
                         let permission = try await requestLocalNetworkAuthorization()
-                        Self.logger.info("Got permission check result \(permission, privacy: .public)")
+                        Self.logger.notice("Got permission check result \(permission, privacy: .public)")
                         self.networkPermissionGranted = permission
                     } catch {
                         Self.logger.error("Error requesting local network authorization \(error, privacy: .public)")
@@ -354,10 +352,10 @@ struct RemoteViewContained: View {
                     networkPermissionBannerDismissed = false
                 }
                 .onAppear {
-                    Self.logger.info("Showing view")
+                    Self.logger.notice("Showing view")
                 }
                 .onDisappear {
-                    Self.logger.info("Closing view")
+                    Self.logger.notice("Closing view")
                 }
                 .task(id: "\(ssdpActor != nil && scanSSDP)-\(networkMonitor.networkConnection)", priority: .background) {
                     if scanSSDP {
@@ -393,7 +391,7 @@ struct RemoteViewContained: View {
                         try AVAudioSession.sharedInstance().setCategory(.ambient)
                         try AVAudioSession.sharedInstance().setActive(false)
                         } catch {
-                            Self.logger.info("Unable to set AVAudioSession category to background")
+                            Self.logger.notice("Unable to set AVAudioSession category to background")
                         }
                         #endif
                         return
@@ -411,12 +409,12 @@ struct RemoteViewContained: View {
                                 location: location,
                                 rtcpPort: rtcpPort
                             )
-                            Self.logger.info("Listencontinually returned")
+                            Self.logger.notice("Listencontinually returned")
                         } catch {
                             Self.logger.warning("Catching error in pl handler \(error, privacy: .public)")
                             // Increment errorTrigger if the error is anything but a cancellation error
                             if !(error is CancellationError) {
-                                Self.logger.debug("Non-cancellation error in PL")
+                                Self.logger.info("Non-cancellation error in PL")
                                 errorTrigger += 1
                             }
                         }
@@ -553,7 +551,7 @@ struct RemoteViewContained: View {
                             for shortcut in allKeyboardShortcuts {
                                 if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
                                     let title = shortcut.title
-                                    Self.logger.info("Not handling key press because found shortcut with title \(title, privacy: .public)")
+                                    Self.logger.notice("Not handling key press because found shortcut with title \(title, privacy: .public)")
                                     if let rb = title.matchingRemoteButton {
                                         pressButton(rb)
                                         return .handled
@@ -674,7 +672,7 @@ struct RemoteViewContained: View {
                             }
                             Self.logger
                                 .info(
-                                    "Pressing button \(String(describing: key)) with volume \(volume) after volume event \(String(describing: volumeEvent))"
+                                    "Pressing button \(String(describing: key), privacy: .public) with volume \(volume, privacy: .public) after volume event \(String(describing: volumeEvent), privacy: .public)"
                                 )
                             pressButton(key)
                         }.id("VolumeOverlay")
@@ -762,7 +760,7 @@ struct RemoteViewContained: View {
                             for shortcut in allKeyboardShortcuts {
                                 if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
                                     let title = shortcut.title
-                                    Self.logger.info("Not handling key press because found shortcut with title \(title, privacy: .public)")
+                                    Self.logger.notice("Not handling key press because found shortcut with title \(title, privacy: .public)")
                                     if let rb = title.matchingRemoteButton {
                                         pressButton(rb)
                                         return .handled
@@ -791,10 +789,10 @@ struct RemoteViewContained: View {
                                             }
                                         }
                                     } else if title == .paste {
-                                        Self.logger.info("Trying to paste")
+                                        Self.logger.notice("Trying to paste")
                                         if let id = ecpSessionState.textEditStatus.texteditId, UIPasteboard.general.hasStrings {
                                             if let text = UIPasteboard.general.string {
-                                                Self.logger.info("Trying to paste \(text, privacy: .public)")
+                                                Self.logger.notice("Trying to paste \(text, privacy: .public)")
                                                 Task {
                                                     do {
                                                         try await ecpSession?.setTextEdit(text, texteditId: id)
@@ -806,7 +804,7 @@ struct RemoteViewContained: View {
                                                 Self.logger.warning("No text to paste")
                                             }
                                         } else {
-                                            Self.logger.info("Not pasting due to empty textedit id (\(ecpSessionState.textEditStatus.texteditId ?? "none", privacy: .public)) or false UI pasteboard hasStrings (\(UIPasteboard.general.hasStrings), privacy: .public)")
+                                            Self.logger.notice("Not pasting due to empty textedit id (\(ecpSessionState.textEditStatus.texteditId ?? "none", privacy: .public)) or false UI pasteboard hasStrings (\(UIPasteboard.general.hasStrings), privacy: .public)")
                                         }
                                     } else {
                                         Self.logger.warning("Unknown function for keyboard shortcut \(title, privacy: .public)")
@@ -867,9 +865,6 @@ struct RemoteViewContained: View {
             #if !os(visionOS)
                 .sensoryFeedback(.error, trigger: errorTrigger)
             #endif
-                .onChange(of: scenePhase) { _, newPhase in
-                    inBackground = newPhase != ScenePhase.active
-                }
                 .onChange(of: ecpSessionState.textEditStatus) { old, new in
                     if old.isActive && !new.isActive {
                         withAnimation {
@@ -1148,7 +1143,9 @@ struct RemoteViewContained: View {
             }
         }
         Task.detached {
-            await DataHandler(modelContainer: getSharedModelContainer()).setSelectedApp(app.modelId)
+            if let modelId = app.modelId {
+                await DataHandler(modelContainer: getSharedModelContainer()).setSelectedApp(modelId)
+            }
         }
     }
 
@@ -1169,14 +1166,14 @@ struct RemoteViewContained: View {
             do {
                 try await ecpSession?.pressButton(button)
             } catch {
-                Self.logger.info("Error sending button to device via ecp: \(error, privacy: .public)")
+                Self.logger.notice("Error sending button to device via ecp: \(error, privacy: .public)")
             }
         }
     }
 
     func pressKey(_ key: KeyEquivalent, modifiers: EventModifiers) {
         let character = key.character
-        Self.logger.trace("Getting keyboard press \(character, privacy: .public)")
+        Self.logger.debug("Getting keyboard press \(character, privacy: .public)")
         if let button = RemoteButton.fromCharacter(character: character) {
             incrementButtonPressCount(button)
             if globalMajorActions.contains(button) {
@@ -1188,7 +1185,7 @@ struct RemoteViewContained: View {
         }
 
         if let ecpSession {
-            Self.logger.info("Getting ecp session to send data to")
+            Self.logger.notice("Getting ecp session to send data to")
             Task {
                 do {
                     try await ecpSession.pressCharacter(getModifiedCharacter(key, modifiers: modifiers))

@@ -2,8 +2,8 @@ import Foundation
 import Network
 import os
 
-let checkConnectLogger = Logger(
-    subsystem: Bundle.main.bundleIdentifier!,
+private let logger = Logger(
+    subsystem: getLogSubsystem(),
     category: "TCPConnectionChecker"
 )
 
@@ -17,7 +17,7 @@ public func tryConnectTCP(
           let host = url.host,
           let port = url.port
     else {
-        checkConnectLogger.error("Cannot connect to url \(location, privacy: .public) bc url not valid")
+        logger.error("Cannot connect to url \(location, privacy: .public) bc url not valid")
         return nil
     }
 
@@ -30,7 +30,7 @@ public func tryConnectTCP(
     timeout: TimeInterval,
     interface: NWInterface? = nil
 ) async -> NWInterface? {
-    checkConnectLogger.debug("Checking can connect to url (\(host, privacy: .public):\(port, privacy: .public)) with interface \(interface?.name ?? "--", privacy: .public)")
+    logger.debug("Checking can connect to url (\(host, privacy: .public):\(port, privacy: .public)) with interface \(interface?.name ?? "--", privacy: .public)")
     let tcpParams = NWProtocolTCP.Options()
     let params = NWParameters(tls: nil, tcp: tcpParams)
     if let interface {
@@ -50,9 +50,9 @@ public func tryConnectTCP(
                     connection.stateUpdateHandler = { state in
                         switch state {
                         case .ready:
-                            checkConnectLogger
+                            logger
                                 .debug(
-                                    "Connected to \(host, privacy: .public):\(port, privacy: .public) with ifaces \(String(describing: connection.currentPath?.availableInterfaces))"
+                                    "Connected to \(host, privacy: .public):\(port, privacy: .public) with ifaces \(String(describing: connection.currentPath?.availableInterfaces), privacy: .public)"
                                 )
                             if let localIface = connection.currentPath?.availableInterfaces.first {
                                 continuation.yield(Optional(localIface))
@@ -77,7 +77,7 @@ public func tryConnectTCP(
             }
         }
     } catch {
-        checkConnectLogger.warning("Cannot connect to \(host, privacy: .public):\(port, privacy: .public) on interface \(interface?.name ?? "--", privacy: .public) because of error \(error, privacy: .public)")
+        logger.warning("Cannot connect to \(host, privacy: .public):\(port, privacy: .public) on interface \(interface?.name ?? "--", privacy: .public) because of error \(error, privacy: .public)")
         return nil
     }
 }

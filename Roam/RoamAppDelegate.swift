@@ -5,7 +5,7 @@ import SwiftUI
 import UserNotifications
 
 private let logger = Logger(
-    subsystem: Bundle.main.bundleIdentifier!,
+    subsystem: getLogSubsystem(),
     category: "AppDelegate"
 )
 
@@ -35,7 +35,7 @@ func sendDeviceTokenToServer(_ token: String) async {
             self.uuidUpdater = UUIDUpdater()
             super.init()
             UNUserNotificationCenter.current().delegate = self
-            logger.info("Setting Notifications delegate to self")
+            logger.notice("Setting Notifications delegate to self")
         }
 
         func applicationDidFinishLaunching(_ notification: Notification) {
@@ -66,7 +66,7 @@ func sendDeviceTokenToServer(_ token: String) async {
                 String(format: "%02.2hhx", data)
             }
             let token = tokenParts.joined()
-            logger.info("Device Token: \(token, privacy: .public)")
+            logger.notice("Device Token: \(token, privacy: .public)")
 
             Task {
                 await sendDeviceTokenToServer(token)
@@ -75,7 +75,7 @@ func sendDeviceTokenToServer(_ token: String) async {
         }
 
         func application(_ application: NSApplication, didReceiveRemoteNotification userInfo: [String: Any]) {
-            logger.info("Received remote notification")
+            logger.notice("Received remote notification")
             refreshMessages()
         }
 
@@ -84,7 +84,7 @@ func sendDeviceTokenToServer(_ token: String) async {
             didReceive _: UNNotificationResponse,
             withCompletionHandler completionHandler: @escaping () -> Void
         ) {
-            logger.info("didReceive notification. Showing Messages...")
+            logger.notice("didReceive notification. Showing Messages...")
             refreshMessages()
             let navigationPath = self.navigationPath
             DispatchQueue.main.async {
@@ -105,7 +105,7 @@ func sendDeviceTokenToServer(_ token: String) async {
             willPresent _: UNNotification,
             withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
         ) {
-            logger.info("WillPresent notification. Refreshing messages...")
+            logger.notice("WillPresent notification. Refreshing messages...")
             refreshMessages()
             completionHandler(.badge)
         }
@@ -121,7 +121,7 @@ extension NSApplication {
             $0.identifier == NSUserInterfaceItemIdentifier(rawValue: id)
         }
 
-        logger.info("Making window front \(id, privacy: .public), \(mainWindow?.title ?? "nil", privacy: .public)")
+        logger.notice("Making window front \(id, privacy: .public), \(mainWindow?.title ?? "nil", privacy: .public)")
         NSApplication.shared.activate(ignoringOtherApps: true)
 
         mainWindow?.makeKeyAndOrderFront(nil)
@@ -237,7 +237,7 @@ extension NSApplication {
             didReceiveRemoteNotification userInfo: [AnyHashable: Any],
             fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
         ) {
-            logger.info("Received remote notifications")
+            logger.notice("Received remote notifications")
             refreshMessages(fetchCompletionHandler: completionHandler)
         }
 
@@ -250,7 +250,7 @@ extension NSApplication {
                 String(format: "%02.2hhx", data)
             }
             let token = tokenParts.joined()
-            logger.info("Device Token: \(token, privacy: .public)")
+            logger.notice("Device Token: \(token, privacy: .public)")
 
             Task {
                 await sendDeviceTokenToServer(token)
@@ -264,7 +264,7 @@ extension NSApplication {
             didReceive _: UNNotificationResponse,
             withCompletionHandler completionHandler: @escaping () -> Void
         ) {
-            logger.info("didReceive notification. Showing Messages...")
+            logger.notice("didReceive notification. Showing Messages...")
             DispatchQueue.main.async {
                 self.refreshMessages()
                 if self.navigationPath.last != NavigationDestination.messageDestination {
@@ -294,7 +294,7 @@ extension NSApplication {
             willPresent _: UNNotification,
             withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
         ) {
-            logger.info("willPresent notification. Refreshing...")
+            logger.notice("willPresent notification. Refreshing...")
             DispatchQueue.main.async {
                 self.refreshMessages()
             }
@@ -322,11 +322,6 @@ extension NSApplication {
 
         }
         func application(_ application: UIApplication, willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-            logger.info("Adding call to ATExit")
-            atexit {
-                logger.info("Aborting due to exit being called")
-                abort()
-            }
             return true
         }
 

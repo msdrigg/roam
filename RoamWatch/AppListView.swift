@@ -4,7 +4,7 @@ import SwiftUI
 
 struct AppListView: View {
     private nonisolated static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: String(describing: AppListView.self)
     )
 

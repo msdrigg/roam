@@ -14,6 +14,7 @@ from typing import Tuple
 #
 #     Find both of these values in App Store Connect web after creating the API key
 
+
 def archive_application(platform: str, render_github_actions: bool = False):
     scheme = "Roam"
     project_path = "."
@@ -28,6 +29,7 @@ def archive_application(platform: str, render_github_actions: bool = False):
     )
     print(f"Archive succeeded for platform {platform}")
 
+
 def publish_to_app_store(platform: str, render_github_actions: bool = False):
     print(f"Exporting for platform {platform}")
     subprocess.run(
@@ -37,6 +39,7 @@ def publish_to_app_store(platform: str, render_github_actions: bool = False):
     )
 
     print(f"Publish succeeded for platform {platform}")
+
 
 def get_current_versions() -> Tuple[str, str]:
     project_file_path = "./Roam.xcodeproj/project.pbxproj"
@@ -68,6 +71,7 @@ def get_current_versions() -> Tuple[str, str]:
 
     return current_marketing_version, current_version
 
+
 def get_marketing_version():
     git_tag = (
         subprocess.check_output(["git", "describe", "--tags", "--abbrev=0"])
@@ -75,6 +79,7 @@ def get_marketing_version():
         .strip()
     )
     return git_tag.strip("v")
+
 
 def get_git_build_number():
     last_commit_sha = (
@@ -86,6 +91,7 @@ def get_git_build_number():
     # Last 8 characters of the SHA
     return f"{decimal_sha}"[-7:]
 
+
 def get_build_version():
     date_str = datetime.now().strftime("%Y%m%d")
     git_commit = get_git_build_number()
@@ -96,6 +102,7 @@ def get_build_version():
         patch_version = int(build_version.split(".")[-1]) + 1
 
     return f"{date_str}.{git_commit}.{patch_version}"
+
 
 def bump_versions():
     project_file_path = "./Roam.xcodeproj/project.pbxproj"
@@ -111,6 +118,7 @@ def bump_versions():
 
     sed_cmd_build_version = f"sed -i '' 's/CURRENT_PROJECT_VERSION = {current_build_version};/CURRENT_PROJECT_VERSION = {new_build_version};/g' {project_file_path}"
     subprocess.run(sed_cmd_build_version, shell=True, check=True)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -132,7 +140,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--platform",
         help="Platform to build and publish",
-        choices=["macOS", "iOS", "tvOS", "visionOS"],
+        choices=["macOS", "iOS", "visionOS"],
         nargs="+",
     )
 
@@ -153,9 +161,9 @@ if __name__ == "__main__":
         bump_versions()
 
     if args.archive:
-        for platform in args.platform:
+        for platform in args.platform or []:
             archive_application(platform, render_github_actions=args.github_actions)
 
     if args.publish:
-        for platform in args.platform:
+        for platform in args.platform or []:
             publish_to_app_store(platform, render_github_actions=args.github_actions)

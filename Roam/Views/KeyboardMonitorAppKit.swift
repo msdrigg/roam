@@ -5,7 +5,7 @@
     import SwiftUI
 
     private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: "KeyboardMonitor"
     )
 
@@ -65,7 +65,7 @@
             }
 
             override func resignFirstResponder() -> Bool {
-                logger.info("Asked to resign first responder. Returning false")
+                logger.notice("Asked to resign first responder. Returning false")
                 return false
             }
 
@@ -80,7 +80,7 @@
                 if let ke = getKeyEquivalent(from: event) {
                     for shortcut in keyboardShortcuts {
                         if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
-                            logger.info("Not handling key press because found shortcut with title \(shortcut.title, privacy: .public)")
+                            logger.notice("Not handling key press because found shortcut with title \(shortcut.title, privacy: .public)")
                             super.keyDown(with: event)
                             return
                         }

@@ -2,7 +2,7 @@ import Foundation
 import Network
 import OSLog
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: #fileID)
+private let logger = Logger(subsystem: getLogSubsystem(), category: #fileID)
 
 #if os(macOS)
 func requestLocalNetworkAuthorization() async throws -> Bool {
@@ -30,7 +30,7 @@ func requestLocalNetworkAuthorization() async throws -> Bool {
             connection.stateUpdateHandler = { newState in
                 switch newState {
                 case .setup:
-                    logger.debug("Browser performing setup.")
+                    logger.info("Browser performing setup.")
                     return
                 case .ready:
                     logger.notice("Connection ready to send packets.")
@@ -52,7 +52,7 @@ func requestLocalNetworkAuthorization() async throws -> Bool {
                         resume(with: .failure(error))
                     }
                 case .preparing:
-                    logger.debug("Connection preparing.")
+                    logger.info("Connection preparing.")
                 @unknown default:
                     logger.warning("Ignoring unknown Connection state: \(String(describing: newState), privacy: .public)")
                     return
@@ -86,12 +86,12 @@ private let type = "_preflight_check._tcp"
 func requestLocalNetworkAuthorization() async throws -> Bool {
     let queue = DispatchQueue(label: "com.nonstrict.localNetworkAuthCheck")
 
-    logger.info("Setup listener.")
+    logger.notice("Setup listener.")
     let listener = try NWListener(using: NWParameters(tls: .none, tcp: NWProtocolTCP.Options()))
     listener.service = NWListener.Service(name: UUID().uuidString, type: type)
     listener.newConnectionHandler = { _ in } // Must be set or else the listener will error with POSIX error 22
 
-    logger.info("Setup browser.")
+    logger.notice("Setup browser.")
     let parameters = NWParameters()
     parameters.includePeerToPeer = true
     let browser = NWBrowser(for: .bonjour(type: type, domain: nil), using: parameters)
@@ -122,7 +122,7 @@ func requestLocalNetworkAuthorization() async throws -> Bool {
             listener.stateUpdateHandler = { newState in
                 switch newState {
                 case .setup:
-                    logger.debug("Listener performing setup.")
+                    logger.info("Listener performing setup.")
                 case .ready:
                     logger.notice("Listener ready to be discovered.")
                 case .cancelled:
@@ -143,7 +143,7 @@ func requestLocalNetworkAuthorization() async throws -> Bool {
             browser.stateUpdateHandler = { newState in
                 switch newState {
                 case .setup:
-                    logger.debug("Browser performing setup.")
+                    logger.info("Browser performing setup.")
                     return
                 case .ready:
                     logger.notice("Browser ready to discover listeners.")

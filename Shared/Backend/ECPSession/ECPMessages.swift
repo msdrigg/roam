@@ -1,6 +1,6 @@
 import OSLog
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ECPResponseMessage")
+private let logger = Logger(subsystem: getLogSubsystem(), category: "ECPResponseMessage")
 enum ECPResponseMessage: Decodable {
     case notify(ECPNotification)
     case response(ECPResponse)
@@ -68,6 +68,9 @@ enum ECPRequestMessage: Encodable {
     case queryDeviceCapabilities(QueryAudioDevice)
     case queryAppIcon(QueryAppIcon)
     case requestEventsNotify(EventsNotifyRequest)
+    case custom(CustomRequest)
+    case queryVoiceServiceInfo(QueryVoiceServiceInfo)
+    case requestVoiceService(VoiceServiceRequest)
 
     var requestId: String {
         switch self {
@@ -82,6 +85,9 @@ enum ECPRequestMessage: Encodable {
         case .queryDeviceInfo(let req): req.requestId
         case .queryDeviceCapabilities(let req): req.requestId
         case .requestEventsNotify(let req): req.requestId
+        case .custom(let req): req.requestId
+        case .queryVoiceServiceInfo(let req): req.requestId
+        case .requestVoiceService(let req): req.requestId
         }
     }
 
@@ -98,6 +104,9 @@ enum ECPRequestMessage: Encodable {
         case .queryDeviceInfo(let req): .queryDeviceInfo(req.withId(id))
         case .queryDeviceCapabilities(let req): .queryDeviceCapabilities(req.withId(id))
         case .requestEventsNotify(let req): .requestEventsNotify(req.withId(id))
+        case .custom(let req): .custom(req.withId(id))
+        case .queryVoiceServiceInfo(let req): .queryVoiceServiceInfo(req.withId(id))
+        case .requestVoiceService(let req): .requestVoiceService(req.withId(id))
         }
     }
 
@@ -124,6 +133,12 @@ enum ECPRequestMessage: Encodable {
         case .queryDeviceCapabilities(let req):
             try req.encode(to: encoder)
         case .requestEventsNotify(let req):
+            try req.encode(to: encoder)
+        case .custom(let req):
+            try req.encode(to: encoder)
+        case .queryVoiceServiceInfo(let req):
+            try req.encode(to: encoder)
+        case .requestVoiceService(let req):
             try req.encode(to: encoder)
         }
     }
@@ -152,6 +167,12 @@ enum ECPRequestMessage: Encodable {
             return "RequestEventsNotifyRequest (\(value.events))"
         case .queryDeviceInfo:
             return "QueryDeviceInfoRequest"
+        case .custom(let value):
+            return "CustomRequest (\(value))"
+        case .queryVoiceServiceInfo:
+            return "QueryVoiceServiceInfo"
+        case .requestVoiceService(let req):
+            return "VoiceServiceRequest (\(req))"
         }
     }
 }
@@ -231,6 +252,61 @@ struct AppLaunchRequest: Encodable {
     }
 }
 
+struct CustomRequest: Codable {
+    let request: String
+    let requestId: String
+    let customParams: [String: String]
+
+    func withId(_ id: String) -> Self {
+        Self(request: self.request, requestId: id, customParams: self.customParams)
+    }
+
+    init(request: String, requestId: String, customParams: [String: String]) {
+        self.request = request
+        self.requestId = requestId
+        self.customParams = customParams
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: DynamicCodingKey.self)
+
+        request = try container.decode(String.self, forKey: DynamicCodingKey(stringValue: "request")!)
+        requestId = (try? container.decode(String.self, forKey: DynamicCodingKey(stringValue: "requestId")!)) ?? ""
+
+        var customParams = [String: String]()
+        for key in container.allKeys {
+            if key.stringValue != "request" && key.stringValue != "requestId" {
+                customParams[key.stringValue] = try container.decode(String.self, forKey: key)
+            }
+        }
+
+        self.customParams = customParams
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var dynamicContainer = encoder.container(keyedBy: DynamicCodingKey.self)
+        try dynamicContainer.encode(request, forKey: DynamicCodingKey(stringValue: "request")!)
+        try dynamicContainer.encode(requestId, forKey: DynamicCodingKey(stringValue: "requestId")!)
+
+        for (key, value) in customParams {
+            try dynamicContainer.encode(value, forKey: DynamicCodingKey(stringValue: key)!)
+        }
+    }
+
+    private struct DynamicCodingKey: CodingKey {
+        var stringValue: String
+        var intValue: Int? { nil }
+
+        init?(stringValue: String) {
+            self.stringValue = stringValue
+        }
+
+        init?(intValue: Int) {
+            return nil
+        }
+    }
+}
+
 struct QueryAppIcon: Encodable {
     let request: String = "query-icon"
     let requestId: String
@@ -246,6 +322,26 @@ struct QueryApps: Encodable {
 
     func withId(_ id: String) -> Self {
         Self(requestId: id)
+    }
+}
+
+struct QueryVoiceServiceInfo: Encodable {
+    let request: String = "query-info-for-voice-service"
+    let requestId: String
+
+    func withId(_ id: String) -> Self {
+        Self(requestId: id)
+    }
+}
+
+struct VoiceServiceRequest: Encodable {
+    let request: String = "send-voice-events"
+    let sessionId: String = UUID().uuidString
+    let events: String
+    let requestId: String
+
+    func withId(_ id: String) -> Self {
+        Self(events: self.events, requestId: id)
     }
 }
 
@@ -351,7 +447,7 @@ enum ECPResponse: Decodable {
         let baseResponse = try BaseResponse(from: decoder)
         self = .base(baseResponse)
     }
-    
+
     var debugDescription: String {
         switch self {
         case .base(let baseResponse):

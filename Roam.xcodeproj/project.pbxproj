@@ -101,6 +101,24 @@
 		AF2F54F02BCE58EF00BAE156 /* WorkersBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2F54EE2BCE58EF00BAE156 /* WorkersBackend.swift */; };
 		AF30DD2A2D39B1FF00FD8B9A /* ECPMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */; };
 		AF30DD2B2D39B1FF00FD8B9A /* ECPMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */; };
+		AF344FE82D42D35000179FE0 /* RoamCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF344FE62D42D35000179FE0 /* RoamCLI.swift */; };
+		AF344FEB2D42D3BE00179FE0 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = AF344FEA2D42D3BE00179FE0 /* ArgumentParser */; };
+		AF344FEC2D42DB6C00179FE0 /* ECPWebsocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A22D370DA700A167B2 /* ECPWebsocket.swift */; };
+		AF344FED2D42DB7700179FE0 /* ECPMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */; };
+		AF344FEE2D42DB7F00179FE0 /* ECPProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A52D37183600A167B2 /* ECPProtocol.swift */; };
+		AF344FEF2D42DB8C00179FE0 /* RemoteButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E68B2ADDDF450036EC90 /* RemoteButton.swift */; };
+		AF344FF02D42E1C500179FE0 /* APIHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82942AEBFB4600CBE7F8 /* APIHelpers.swift */; };
+		AF344FF22D42E21400179FE0 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = AF344FF12D42E21400179FE0 /* AsyncAlgorithms */; };
+		AF344FF42D42E24D00179FE0 /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0D09EE2CDE5C3B0098122E /* Helpers.swift */; };
+		AF344FF52D42E27000179FE0 /* StatelessDeviceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */; };
+		AF344FF62D42E28500179FE0 /* AppLinkAppEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E68D2ADDE2BC0036EC90 /* AppLinkAppEntity.swift */; };
+		AF344FF92D42E30500179FE0 /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */; };
+		AF344FFA2D42E32700179FE0 /* DeviceApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA3B2AE6BFC300A42DFF /* DeviceApi.swift */; };
+		AF344FFB2D42E33700179FE0 /* ImageDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3F35082D3E9230009AF2F8 /* ImageDecoder.swift */; };
+		AF344FFC2D42E6BC00179FE0 /* AsyncHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA132AE4471200A42DFF /* AsyncHelpers.swift */; };
+		AF344FFD2D42E76600179FE0 /* DataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA222AE455B400A42DFF /* DataHelpers.swift */; };
+		AF344FFE2D42E9D200179FE0 /* NetworkHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF95B74F2ADF43FD005FC338 /* NetworkHelpers.swift */; };
+		AF3450002D42EA3000179FE0 /* XMLCoder in Frameworks */ = {isa = PBXBuildFile; productRef = AF344FFF2D42EA3000179FE0 /* XMLCoder */; };
 		AF35038F2BB499F3004F4337 /* RoamWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AF27400B2AE02C25007C6208 /* RoamWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AF3503942BB499FA004F4337 /* libwebp in Frameworks */ = {isa = PBXBuildFile; platformFilters = (watchos, ); productRef = AF3503932BB499FA004F4337 /* libwebp */; };
 		AF35ACEB2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF35ACEA2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift */; };
@@ -295,6 +313,15 @@
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AF344FDD2D42D34A00179FE0 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		AF3503692BB493F4004F4337 /* Embed App Clips */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -394,6 +421,8 @@
 		AF2C85A52D37183600A167B2 /* ECPProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECPProtocol.swift; sourceTree = "<group>"; };
 		AF2F54EE2BCE58EF00BAE156 /* WorkersBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkersBackend.swift; sourceTree = "<group>"; };
 		AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECPMessages.swift; sourceTree = "<group>"; };
+		AF344FDF2D42D34A00179FE0 /* roam-cli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "roam-cli"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AF344FE62D42D35000179FE0 /* RoamCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamCLI.swift; sourceTree = "<group>"; };
 		AF35ACEA2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyboardMonitorUIKit.swift; sourceTree = "<group>"; };
 		AF35ACF12BA3D21F00CC8B36 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AF38A1802D29E3EC00980D41 /* RoamWidgetsMacOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RoamWidgetsMacOS.entitlements; sourceTree = "<group>"; };
@@ -512,6 +541,16 @@
 				AF27400D2AE02C25007C6208 /* SwiftUI.framework in Frameworks */,
 				AF27400C2AE02C25007C6208 /* WidgetKit.framework in Frameworks */,
 				AFD395042D2F9C710017B2A0 /* AsyncAlgorithms in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AF344FDC2D42D34A00179FE0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AF3450002D42EA3000179FE0 /* XMLCoder in Frameworks */,
+				AF344FEB2D42D3BE00179FE0 /* ArgumentParser in Frameworks */,
+				AF344FF22D42E21400179FE0 /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -666,6 +705,14 @@
 			children = (
 			);
 			path = "New Group";
+			sourceTree = "<group>";
+		};
+		AF344FE72D42D35000179FE0 /* RoamCLI */ = {
+			isa = PBXGroup;
+			children = (
+				AF344FE62D42D35000179FE0 /* RoamCLI.swift */,
+			);
+			path = RoamCLI;
 			sourceTree = "<group>";
 		};
 		AF4D5F322AD4355E0055AF35 /* Frameworks */ = {
@@ -831,6 +878,7 @@
 				AFA21D322C2C7C83008EF24A /* RoamWatchUITests */,
 				AFA21D412C2C7CB6008EF24A /* RoamUITests */,
 				AF0532842D36DB2B00D68F8E /* RoamSwiftTests */,
+				AF344FE72D42D35000179FE0 /* RoamCLI */,
 				AFC24EFC2AD0E5A1002AB66C /* Products */,
 				AF4D5F322AD4355E0055AF35 /* Frameworks */,
 			);
@@ -845,6 +893,7 @@
 				AFA21D312C2C7C83008EF24A /* RoamWatchUITests.xctest */,
 				AFA21D402C2C7CB6008EF24A /* RoamUITests.xctest */,
 				AFEDCDF42CD1331E0001D959 /* RoamSwiftTests.xctest */,
+				AF344FDF2D42D34A00179FE0 /* roam-cli */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -946,6 +995,28 @@
 			productReference = AF27400B2AE02C25007C6208 /* RoamWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		AF344FDE2D42D34A00179FE0 /* roam-cli */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AF344FE52D42D34A00179FE0 /* Build configuration list for PBXNativeTarget "roam-cli" */;
+			buildPhases = (
+				AF344FDB2D42D34A00179FE0 /* Sources */,
+				AF344FDC2D42D34A00179FE0 /* Frameworks */,
+				AF344FDD2D42D34A00179FE0 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "roam-cli";
+			packageProductDependencies = (
+				AF344FEA2D42D3BE00179FE0 /* ArgumentParser */,
+				AF344FF12D42E21400179FE0 /* AsyncAlgorithms */,
+				AF344FFF2D42EA3000179FE0 /* XMLCoder */,
+			);
+			productName = RoamCLI;
+			productReference = AF344FDF2D42D34A00179FE0 /* roam-cli */;
+			productType = "com.apple.product-type.tool";
+		};
 		AFA21D302C2C7C83008EF24A /* RoamWatchUITests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = AFA21D392C2C7C83008EF24A /* Build configuration list for PBXNativeTarget "RoamWatchUITests" */;
@@ -1041,7 +1112,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1610;
+				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					AF15C2452AE8672700B79FD9 = {
@@ -1049,6 +1120,9 @@
 					};
 					AF27400A2AE02C25007C6208 = {
 						CreatedOnToolsVersion = 15.0;
+					};
+					AF344FDE2D42D34A00179FE0 = {
+						CreatedOnToolsVersion = 16.2;
 					};
 					AFA21D302C2C7C83008EF24A = {
 						CreatedOnToolsVersion = 16.0;
@@ -1095,6 +1169,7 @@
 				AFECDE1E2AE18519003F6676 /* XCRemoteSwiftPackageReference "swift-rtp" */,
 				AF19CA192AE44B1900A42DFF /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 				AF0042812AEAA3ED0051BB1E /* XCRemoteSwiftPackageReference "libwebp-Xcode" */,
+				AF344FE92D42D3B600179FE0 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 			);
 			productRefGroup = AFC24EFC2AD0E5A1002AB66C /* Products */;
 			projectDirPath = "";
@@ -1106,6 +1181,7 @@
 				AFA21D302C2C7C83008EF24A /* RoamWatchUITests */,
 				AFA21D3F2C2C7CB6008EF24A /* RoamUITests */,
 				AFEDCDF32CD1331E0001D959 /* RoamSwiftTests */,
+				AF344FDE2D42D34A00179FE0 /* roam-cli */,
 			);
 		};
 /* End PBXProject section */
@@ -1306,6 +1382,28 @@
 				AF842A5D2BA554E5005D52D2 /* CaptureScrollWheelModifier.swift in Sources */,
 				AF19CA152AE4471200A42DFF /* AsyncHelpers.swift in Sources */,
 				AF205B262AE02D0100041CDF /* Device.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AF344FDB2D42D34A00179FE0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AF344FFB2D42E33700179FE0 /* ImageDecoder.swift in Sources */,
+				AF344FED2D42DB7700179FE0 /* ECPMessages.swift in Sources */,
+				AF344FEC2D42DB6C00179FE0 /* ECPWebsocket.swift in Sources */,
+				AF344FFE2D42E9D200179FE0 /* NetworkHelpers.swift in Sources */,
+				AF344FF52D42E27000179FE0 /* StatelessDeviceAPI.swift in Sources */,
+				AF344FF62D42E28500179FE0 /* AppLinkAppEntity.swift in Sources */,
+				AF344FF42D42E24D00179FE0 /* Helpers.swift in Sources */,
+				AF344FFD2D42E76600179FE0 /* DataHelpers.swift in Sources */,
+				AF344FEF2D42DB8C00179FE0 /* RemoteButton.swift in Sources */,
+				AF344FFC2D42E6BC00179FE0 /* AsyncHelpers.swift in Sources */,
+				AF344FEE2D42DB7F00179FE0 /* ECPProtocol.swift in Sources */,
+				AF344FFA2D42E32700179FE0 /* DeviceApi.swift in Sources */,
+				AF344FF92D42E30500179FE0 /* NetworkUtils.swift in Sources */,
+				AF344FF02D42E1C500179FE0 /* APIHelpers.swift in Sources */,
+				AF344FE82D42D35000179FE0 /* RoamCLI.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1636,6 +1734,34 @@
 			};
 			name = Release;
 		};
+		AF344FE32D42D34A00179FE0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2865NTZ7H3;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		AF344FE42D42D34A00179FE0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2865NTZ7H3;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		AFA21D3A2C2C7C83008EF24A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1644,7 +1770,7 @@
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.39;
+				MARKETING_VERSION = 1.40;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamWatchUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -1664,7 +1790,7 @@
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.39;
+				MARKETING_VERSION = 1.40;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamWatchUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -1686,7 +1812,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.39;
+				MARKETING_VERSION = 1.40;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1711,7 +1837,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.39;
+				MARKETING_VERSION = 1.40;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1765,7 +1891,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20250123.2532640.5;
+				CURRENT_PROJECT_VERSION = 20250125.3007445.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;
@@ -1789,7 +1915,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.39;
+				MARKETING_VERSION = 1.40;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1847,7 +1973,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20250123.2532640.5;
+				CURRENT_PROJECT_VERSION = 20250125.3007445.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;
@@ -1865,7 +1991,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.39;
+				MARKETING_VERSION = 1.40;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = auto;
@@ -1995,7 +2121,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
-				MARKETING_VERSION = 1.39;
+				MARKETING_VERSION = 1.40;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamSwiftTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2015,7 +2141,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
-				MARKETING_VERSION = 1.39;
+				MARKETING_VERSION = 1.40;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamSwiftTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2042,6 +2168,15 @@
 			buildConfigurations = (
 				AF27401C2AE02C27007C6208 /* Debug */,
 				AF27401D2AE02C27007C6208 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AF344FE52D42D34A00179FE0 /* Build configuration list for PBXNativeTarget "roam-cli" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AF344FE32D42D34A00179FE0 /* Debug */,
+				AF344FE42D42D34A00179FE0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -2110,6 +2245,14 @@
 				minimumVersion = 0.1.0;
 			};
 		};
+		AF344FE92D42D3B600179FE0 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.0;
+			};
+		};
 		AFECDE182AE184FE003F6676 /* XCRemoteSwiftPackageReference "XMLCoder" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/CoreOffice/XMLCoder.git";
@@ -2153,6 +2296,21 @@
 			productName = AsyncAlgorithms;
 		};
 		AF19CA392AE6BF9D00A42DFF /* XMLCoder */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AFECDE182AE184FE003F6676 /* XCRemoteSwiftPackageReference "XMLCoder" */;
+			productName = XMLCoder;
+		};
+		AF344FEA2D42D3BE00179FE0 /* ArgumentParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AF344FE92D42D3B600179FE0 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
+			productName = ArgumentParser;
+		};
+		AF344FF12D42E21400179FE0 /* AsyncAlgorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AF19CA192AE44B1900A42DFF /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
+			productName = AsyncAlgorithms;
+		};
+		AF344FFF2D42EA3000179FE0 /* XMLCoder */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = AFECDE182AE184FE003F6676 /* XCRemoteSwiftPackageReference "XMLCoder" */;
 			productName = XMLCoder;

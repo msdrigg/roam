@@ -80,17 +80,17 @@ struct NotificationBanner: View {
 
 #if DEBUG
 #Preview("Clickable") {
-    NotificationBanner(message: "Message (clickable)", onDismiss: {})
+    NotificationBanner(message: String("Message (clickable)"), onDismiss: {})
         .padding()
 }
 
 #Preview("Not clickable") {
-    NotificationBanner(message: "Message (not clickable)")
+    NotificationBanner(message: String("Message (not clickable)"))
         .padding()
 }
 
 #Preview("Info") {
-    NotificationBanner(message: "Message (not clickable)", level: .info)
+    NotificationBanner(message: String("Message (not clickable)"), level: .info)
         .padding()
 }
 #endif

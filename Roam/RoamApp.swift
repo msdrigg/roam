@@ -7,7 +7,7 @@ import UniformTypeIdentifiers
     import AppKit
 #endif
 
-private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "Main")
+private let logger = Logger(subsystem: getLogSubsystem(), category: "Main")
 
 @main
 struct RoamApp: App {
@@ -30,7 +30,17 @@ struct RoamApp: App {
 
     var sharedModelContainer: ModelContainer
     init() {
-        logger.info("Starting Roam")
+        logger.notice("Starting Roam")
+        let atexitResult = atexit({
+            logger.error("Aborting due to exit being called")
+            abort()
+        })
+        if atexitResult == 0 {
+            logger.notice("Added call to atexit")
+        } else {
+            logger.error("FAILED to add call to atexit")
+        }
+
         sharedModelContainer = getSharedModelContainer()
 
         try? Tips.configure([
@@ -70,7 +80,7 @@ struct RoamApp: App {
                         }
                     }
                     .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
-                        logger.info("Shutting down from willTerminate")
+                        logger.notice("Shutting down from willTerminate")
                     }
                     .frame(width: inScreenshotTestingContext() ? macOSWidth : nil, height: inScreenshotTestingContext() ? macOSHeigth : nil)
             }
@@ -96,11 +106,11 @@ struct RoamApp: App {
                         PasteButton(payloadType: String.self, onPaste: { item in
                             Task {
                                 guard let first = item.first else {
-                                    logger.info("Failed to paste because no item in pasteboard")
+                                    logger.notice("Failed to paste because no item in pasteboard")
                                     return
                                 }
                                 guard let texteditId = appDelegate.ecpMonitor.textEditStatus.texteditId else {
-                                    logger.info("Failed to paste because no textedit id")
+                                    logger.notice("Failed to paste because no textedit id")
 
                                     if let (app, params) = parsePastedUrl(first) {
                                         do {
@@ -125,12 +135,12 @@ struct RoamApp: App {
                         Button("Cut", systemImage: "clipboard", action: {
                             Task {
                                 guard let texteditId = appDelegate.ecpMonitor.textEditStatus.texteditId else {
-                                    logger.info("Failed to paste because no textedit id")
+                                    logger.notice("Failed to paste because no textedit id")
                                     return
                                 }
 
                                 if let texteditText = appDelegate.ecpMonitor.textEditStatus.text {
-                                    logger.info("Cutting text \(texteditText, privacy: .public)")
+                                    logger.notice("Cutting text \(texteditText, privacy: .public)")
                                     NSPasteboard.general.clearContents()
                                     NSPasteboard.general.setString(texteditText, forType: .string)
                                 }
@@ -148,7 +158,7 @@ struct RoamApp: App {
                         Button("Copy", systemImage: "clipboard", action: {
                             Task {
                                 if let texteditText = appDelegate.ecpMonitor.textEditStatus.text {
-                                    logger.info("Copying text \(texteditText, privacy: .public)")
+                                    logger.notice("Copying text \(texteditText, privacy: .public)")
                                     NSPasteboard.general.clearContents()
                                     NSPasteboard.general.setString(texteditText, forType: .string)
                                 }
@@ -215,7 +225,7 @@ struct RoamApp: App {
                     .environment(\.uuidUpdater, uuidUpdater)
                     .environmentObject(appDelegate)
                     .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
-                        logger.info("Shutting down from willTerminate")
+                        logger.notice("Shutting down from willTerminate")
                     }
             }
             .menuBarExtraStyle(.window)
@@ -247,7 +257,7 @@ struct RoamApp: App {
 #endif
                         .environment(\.uuidUpdater, uuidUpdater)
                         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
-                            logger.info("Shutting down from willTerminate")
+                            logger.notice("Shutting down from willTerminate")
                         }
             }
             #if os(visionOS)

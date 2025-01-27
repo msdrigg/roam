@@ -9,7 +9,7 @@
     let globalDefaultVolume: Float = 0.25
 
     private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: String(describing: CustomVolumeSlider.self)
     )
 
@@ -78,11 +78,14 @@
         var changeVolume: (VolumeEvent) -> Void
 
         @State private var isTouched: Bool = false
-        @State var inBackground: Bool = false
 
         @AppStorage(UserDefaultKeys.shouldControlVolumeWithHWButtons) private var controlVolumeWithHWButtons: Bool =
             true
         @Environment(\.scenePhase) var scenePhase
+
+        var inForeground: Bool {
+            return scenePhase == .active
+        }
 
         var targetVolume: Float {
             targetVolumeSet ?? globalDefaultVolume
@@ -102,8 +105,8 @@
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                 let newVolume = getAudioClamped(audioSession.outputVolume)
                 targetVolumeSet = getAudioClamped(audioSession.outputVolume) ?? targetVolumeSet
-                logger.info("Resetting volume to clamp value \(newVolume ?? -1, privacy: .public), chosen \(targetVolume, privacy: .public), unclamped \(audioSession.outputVolume, privacy: .public)")
-                logger.info("Setting volume to new value \(volume, privacy: .public) with target")
+                logger.notice("Resetting volume to clamp value \(newVolume ?? -1, privacy: .public), chosen \(targetVolume, privacy: .public), unclamped \(audioSession.outputVolume, privacy: .public)")
+                logger.notice("Setting volume to new value \(volume, privacy: .public) with target")
                 volume = targetVolume
             }
         }
@@ -123,20 +126,26 @@
             }
             .offset(x: -800)
             .onChange(of: volume) { _, newVolume in
-                if inBackground || !controlVolumeWithHWButtons {
+                guard inForeground && controlVolumeWithHWButtons else {
                     return
                 }
 
-                logger.info("Getting volume change \(newVolume, privacy: .public) with target")
+                logger.notice("Getting volume change \(newVolume, privacy: .public) with target")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                    logger.info("Setting volume to new value \(volume, privacy: .public) with target")
+                    logger.notice("Setting volume to new value \(volume, privacy: .public) with target")
                     volume = targetVolume
                 }
             }
-            .task(id: inBackground || !controlVolumeWithHWButtons) {
-                if inBackground || !controlVolumeWithHWButtons {
+            .task(id: inForeground && controlVolumeWithHWButtons) {
+                guard inForeground && controlVolumeWithHWButtons else {
                     return
                 }
+                do {
+                    try await Task.sleep(duration: 0.5)
+                } catch {
+                    return
+                }
+
                 if let stream = await VolumeListener(session: AVAudioSession.sharedInstance()).events {
                     for await volumeEvent in stream {
                         let newVolume = volumeEvent.volume
@@ -154,18 +163,17 @@
                 }
             }
             .onChange(of: scenePhase) { oldPhase, newPhase in
-                if !controlVolumeWithHWButtons {
+                guard controlVolumeWithHWButtons else {
                     return
                 }
-                inBackground = newPhase != .active
-                logger.info("New scene phase \(String(describing: newPhase), privacy: .public)")
+                logger.notice("New scene phase \(String(describing: newPhase), privacy: .public)")
                 if oldPhase != .active, newPhase == .active {
                     self.resetVolume()
                 }
             }
             .onAppear {
-                logger.info("Appearing")
-                if inBackground || !controlVolumeWithHWButtons {
+                logger.notice("Volume slider appearing")
+                guard inForeground && controlVolumeWithHWButtons else {
                     return
                 }
                 self.resetVolume()

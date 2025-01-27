@@ -11,7 +11,7 @@ struct AudioFrame {
 
 actor OpusDecoderWithJitterBuffer {
     private nonisolated static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: String(describing: OpusDecoderWithJitterBuffer.self)
     )
 
@@ -43,10 +43,10 @@ actor OpusDecoderWithJitterBuffer {
 
     func syncAudio(time: AVAudioTime, additionalAudioDelay: TimeInterval) -> Bool {
         guard let syncPacket else {
-            Self.logger.info("Not synced packet yet. Can't sync audio yet")
+            Self.logger.notice("Not synced packet yet. Can't sync audio yet")
             return false
         }
-        Self.logger.info("Syncing time with additional audio delay \(additionalAudioDelay, privacy: .public) buffer \(self.audioBufferDuration, privacy: .public)")
+        Self.logger.notice("Syncing time with additional audio delay \(additionalAudioDelay, privacy: .public) buffer \(self.audioBufferDuration, privacy: .public)")
 
         let packetsInBuffer = Int64(audioBufferDuration * Double(packetsPerSec))
 
@@ -78,20 +78,20 @@ actor OpusDecoderWithJitterBuffer {
             Self.logger.error("Error bad packet ssrc (\(packet.ssrc, privacy: .public) or payload type (\(packet.payloadType.rawValue, privacy: .public))")
         }
         if lastPacketNumber < packet.sequenceNumber {
-//            Self.logger.trace("Adding packet with seqNo \(packet.packet.sequenceNumber) when current seqNo is
+//            Self.logger.debug("Adding packet with seqNo \(packet.packet.sequenceNumber) when current seqNo is
 //            \(self.lastPacketNumber)")
             jitterBuffer.insert(packet)
         } else {
             Self.logger
                 .error(
-                    "Error bad packet with seqNo \(packet.unwrappedSequenceNumber, privacy: .public) when current seqNo is \(self.lastPacketNumber, privacy: .public) rollingSeqNo \(self.rollingSequenceNumber ?? 0)"
+                    "Error bad packet with seqNo \(packet.unwrappedSequenceNumber, privacy: .public) when current seqNo is \(self.lastPacketNumber, privacy: .public) rollingSeqNo \(self.rollingSequenceNumber ?? 0, privacy: .public)"
                 )
         }
     }
 
     func nextPacket(atTime _: sending AVAudioTime) -> (AVAudioPCMBuffer, AVAudioTime)? {
         guard let lastSampleTime else {
-            Self.logger.info("Not returning packet because not synced yet")
+            Self.logger.notice("Not returning packet because not synced yet")
             return nil
         }
 
@@ -104,7 +104,7 @@ actor OpusDecoderWithJitterBuffer {
                 if let destroyed = nextPacket {
                     Self.logger
                         .error(
-                            "Destroying packet \(destroyed.sequenceNumber) when lastPacket \(self.lastPacketNumber) next packet \(np.sequenceNumber)"
+                            "Destroying packet \(destroyed.sequenceNumber, privacy: .public) when lastPacket \(self.lastPacketNumber, privacy: .public) next packet \(np.sequenceNumber, privacy: .public)"
                         )
                 }
                 nextPacket = jitterBuffer.remove()
@@ -159,7 +159,7 @@ enum AudioPlayerError: Error, LocalizedError {
 
 actor AudioPlayer {
     private nonisolated static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: String(describing: AudioPlayer.self)
     )
 
@@ -224,7 +224,7 @@ actor AudioPlayer {
     }
 
     public func stop() {
-        Self.logger.info("Stopping audioplayer")
+        Self.logger.notice("Stopping audioplayer")
         engine.stop()
         streamAudioNode.stop()
     }

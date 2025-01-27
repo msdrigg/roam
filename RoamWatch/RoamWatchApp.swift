@@ -6,7 +6,7 @@ import TipKit
 @main
 struct RoamWatch: App {
     private nonisolated static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: String(describing: RoamWatch.self)
     )
     var sharedModelContainer: ModelContainer
@@ -18,7 +18,7 @@ struct RoamWatch: App {
             .datastoreLocation(.groupContainer(identifier: tipsAppGroup))
         ])
 
-        Self.logger.info("Getting WatchConnectivity \(String(describing: WatchConnectivity.shared), privacy: .public)")
+        Self.logger.notice("Getting WatchConnectivity \(String(describing: WatchConnectivity.shared), privacy: .public)")
     }
 
     var body: some Scene {
@@ -67,7 +67,7 @@ private let deviceFetchDescriptor: FetchDescriptor<Device> = {
 
 struct WatchAppView: View {
     nonisolated static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: String(describing: WatchAppView.self)
     )
 

@@ -85,11 +85,11 @@ struct DeviceCapabilities {
 }
 
 struct Apps: Decodable {
-    let app: [AppLink]
+    let app: [AppLinkAppEntity]
 }
 
 private let logger = Logger(
-    subsystem: Bundle.main.bundleIdentifier!,
+    subsystem: getLogSubsystem(),
     category: "FetchDevice"
 )
 
@@ -166,7 +166,7 @@ func fetchDeviceApps(location: String) async throws -> [AppLinkAppEntity] {
     let decoder = XMLDecoder()
     let apps = try decoder.decode(Apps.self, from: data)
 
-    return apps.app.map { $0.toAppEntity() }
+    return apps.app
 }
 
 func fetchAppIcon(location: String, appId: String) async throws -> Data {

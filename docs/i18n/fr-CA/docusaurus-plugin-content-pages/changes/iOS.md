@@ -1,4 +1,1 @@
-- Corrections de bugs et améliorations
-- Amélioration de la vitesse de connexion
-- Support pour les TV Roku en Mode Limité
-- Correction d'un problème avec watchOS ne pouvant pas ajouter des appareils
+-   Corrections de bugs et améliorations

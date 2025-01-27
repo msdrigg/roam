@@ -7,7 +7,7 @@ import os.log
     @MainActor
     class LatencyListener {
         private static nonisolated let logger = Logger(
-            subsystem: Bundle.main.bundleIdentifier!,
+            subsystem: getLogSubsystem(),
             category: String(describing: LatencyListener.self)
         )
 
@@ -16,7 +16,7 @@ import os.log
         let audioSession = AVAudioSession.sharedInstance()
 
         func startListening() throws {
-            Self.logger.info("Starting Latency observations")
+            Self.logger.notice("Starting Latency observations")
             // Get the default notification center instance.
             let token = NotificationCenter.default.addObserver(
                 forName: AVAudioSession.routeChangeNotification,
@@ -34,7 +34,7 @@ import os.log
         }
 
         func stopListening() {
-            Self.logger.info("Stoping Latency observations")
+            Self.logger.notice("Stoping Latency observations")
 
             let ot = self.observerTokens
             self.observerTokens = []
@@ -66,7 +66,7 @@ import os.log
 
     actor LatencyListener {
         private static nonisolated let logger = Logger(
-            subsystem: Bundle.main.bundleIdentifier!,
+            subsystem: getLogSubsystem(),
             category: String(describing: LatencyListener.self)
         )
 
@@ -119,7 +119,7 @@ import os.log
         }
 
         func startListening() {
-            Self.logger.info("Starting Latency observations")
+            Self.logger.notice("Starting Latency observations")
 
             var defaultDeviceAddress = defaultDeviceAddress
 
@@ -153,7 +153,7 @@ import os.log
         }
 
         func stopListening() {
-            Self.logger.info("Stopping Latency observations")
+            Self.logger.notice("Stopping Latency observations")
 
             var defaultDeviceAddress = defaultDeviceAddress
 

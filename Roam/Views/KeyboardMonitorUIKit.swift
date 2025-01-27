@@ -5,7 +5,7 @@
     import UIKit
 
     private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier!,
+        subsystem: getLogSubsystem(),
         category: "KeyboardMonitor"
     )
 
@@ -102,12 +102,12 @@
                 if let key = press.key, let ke = getKeyEquivalent(key) {
                     for shortcut in keyboardShortcuts ?? [] {
                         if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
-                            logger.info("Not handling key press because found shortcut with title \(shortcut.title, privacy: .public)")
+                            logger.notice("Not handling key press because found shortcut with title \(shortcut.title, privacy: .public)")
                             super.pressesBegan(presses, with: event)
                             return
                         }
                     }
-                    logger.info("Handling key press \(ke.key.printableRepresentation, privacy: .public)")
+                    logger.notice("Handling key press \(ke.key.printableRepresentation, privacy: .public)")
                     onKeyPress?(ke)
                     handled = true
                 }
@@ -122,7 +122,7 @@
         }
 
         @objc func handleKeyPress(_ command: UIKeyCommand) {
-            logger.info("Getting keyboard shortcut \(command.title, privacy: .public) \(String(describing: command.input), privacy: .public)")
+            logger.notice("Getting keyboard shortcut \(command.title, privacy: .public) \(String(describing: command.input), privacy: .public)")
             if let key = CustomKeyboardShortcut.Key(rawValue: command.title) {
                 onKeyboardShortcut?(key)
             }

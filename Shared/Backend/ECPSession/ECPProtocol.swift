@@ -72,7 +72,7 @@ final class ECPProtocol: NWProtocolFramerImplementation {
         if case let .hostPort(hostname, _) = framer.remote {
             host = "\(hostname.debugDescription)"
         } else {
-            Self.logger.info("Unable to parse host header from \(String(describing: framer.remote), privacy: .public)")
+            Self.logger.notice("Unable to parse host header from \(String(describing: framer.remote), privacy: .public)")
             host = "roku.local"
         }
 
@@ -103,7 +103,7 @@ final class ECPProtocol: NWProtocolFramerImplementation {
             framer.markFailed(error: .posix(.ETIMEDOUT))
             self.state = .stopped
         } else if self.state == .ready && self.needProgressBy.timeIntervalSinceNow < 4 && self.lastPingSent.timeIntervalSinceNow < -0.6 {
-//            Self.logger.trace("Sending ping with time due \(self.needProgressBy.timeIntervalSinceNow, privacy: .public)  and last ping sent \(self.lastPingSent.timeIntervalSinceNow, privacy: .public)")
+//            Self.logger.debug("Sending ping with time due \(self.needProgressBy.timeIntervalSinceNow, privacy: .public)  and last ping sent \(self.lastPingSent.timeIntervalSinceNow, privacy: .public)")
             self.lastPingSent = .now
 
             self.sendPing(framer: framer)
@@ -167,30 +167,30 @@ final class ECPProtocol: NWProtocolFramerImplementation {
                 header = nextHeader
                 self.partialheader = Data()
             case .failed(let data, let needed):
-//                Self.logger.trace("Failed to parse data with partial \(data.count, privacy: .public) needed \(needed, privacy: .public)")
+//                Self.logger.debug("Failed to parse data with partial \(data.count, privacy: .public) needed \(needed, privacy: .public)")
                 self.partialheader = data
                 return .doneForNow(needed)
             }
         }
-//        Self.logger.trace("Parsed header \(header.debugOpcode, privacy: .public) with len \(header.payloadLength, privacy: .public)")
+//        Self.logger.debug("Parsed header \(header.debugOpcode, privacy: .public) with len \(header.payloadLength, privacy: .public)")
 
         var nextWsFrame: WebsocketMessage?
         if header.payloadLength == 0 {
             nextWsFrame = try WebsocketMessage.parse(header: header, data: nil)
             self.nextHeader = nil
         } else {
-//            Self.logger.trace("Requesting data for payload length \(header.payloadLength, privacy: .public)")
+//            Self.logger.debug("Requesting data for payload length \(header.payloadLength, privacy: .public)")
             let parseResult = framer.parseInput(minimumIncompleteLength: header.payloadLength, maximumLength: header.payloadLength) { buffer, _ in
                 guard let buffer = buffer else {
-//                    Self.logger.trace("No buffer, not consuming anything")
+//                    Self.logger.debug("No buffer, not consuming anything")
                     return 0
                 }
-//                Self.logger.trace("Got buffer with count \(buffer.count, privacy: .public)")
+//                Self.logger.debug("Got buffer with count \(buffer.count, privacy: .public)")
 
                 do {
                     let frame = try WebsocketMessage.parse(header: header, data: buffer)
                     nextWsFrame = frame
-//                    Self.logger.trace("Consuming \(header.payloadLength, privacy: .public) for \(frame.debugDescription, privacy: .public)")
+//                    Self.logger.debug("Consuming \(header.payloadLength, privacy: .public) for \(frame.debugDescription, privacy: .public)")
                     return header.payloadLength
                 } catch {
                     Self.logger.error("Error parsing unknown ws frame \(error, privacy: .public). Consuming \(header.payloadLength, privacy: .public)")
@@ -211,7 +211,7 @@ final class ECPProtocol: NWProtocolFramerImplementation {
         }
 
         guard let frame = nextWsFrame else {
-//            Self.logger.trace("Returning bc no frame from nextwsframe")
+//            Self.logger.debug("Returning bc no frame from nextwsframe")
             return .doneForNow(header.payloadLength)
         }
         switch (self.state, frame) {
@@ -219,7 +219,7 @@ final class ECPProtocol: NWProtocolFramerImplementation {
             Self.logger.error("Should not be possible to hit this \(self.state.debugDescription, privacy: .public)")
             throw WebsocketError.badWebsocketFrame("Shouldn't be possible to hit this")
         case (_, .close(let code, let reason)):
-            Self.logger.info("Getting close frame unexpectedly with code \(code, privacy: .public) and reaspon \(reason ?? "nil", privacy: .public), current state \(self.state.debugDescription, privacy: .public)")
+            Self.logger.notice("Getting close frame unexpectedly with code \(code, privacy: .public) and reaspon \(reason ?? "nil", privacy: .public), current state \(self.state.debugDescription, privacy: .public)")
             self.sendClose(framer: framer)
             framer.markFailed(error: nil)
             self.state = .stopped
@@ -229,19 +229,19 @@ final class ECPProtocol: NWProtocolFramerImplementation {
             self.state = .waitingForAuthResponse
             self.needProgressBy = self.needProgressBy.addingTimeInterval(0.2)
         case (.waitingForAuthResponse, .text(let data)):
-            Self.logger.info("Getting data \(data, privacy: .public) while waiting for auth response")
+            Self.logger.notice("Getting data \(data, privacy: .public) while waiting for auth response")
             let response: BaseResponse = try self.decoder.decode(BaseResponse.self, from: data)
             if !response.isSuccess {
                 Self.logger.warning("Failed to authenticate with response status \(response.status, privacy: .public)")
                 throw WebsocketError.authFailure
             } else {
-                Self.logger.info("Successfully authed!")
+                Self.logger.notice("Successfully authed!")
             }
             self.needProgressBy = Date.now.addingTimeInterval(5)
             self.state = .ready
             framer.markReady()
         case (.waitingForAuthChallenge, .ping ), (.waitingForAuthChallenge, .pong), (.waitingForAuthResponse, .ping ), (.waitingForAuthResponse, .pong):
-            Self.logger.info("Expecting no pings or pongs before authenticating \(self.state.debugDescription, privacy: .public)")
+            Self.logger.notice("Expecting no pings or pongs before authenticating \(self.state.debugDescription, privacy: .public)")
             throw WebsocketError.badWebsocketFrame("Expecting no pings or pongs before auth")
         case (.ready, .ping):
             self.sendPong(framer: framer)
@@ -249,7 +249,7 @@ final class ECPProtocol: NWProtocolFramerImplementation {
         case (.ready, .pong):
             self.needProgressBy = Date.now.addingTimeInterval(5)
         case (.ready, .text(let data)):
-//            Self.logger.trace("Getting text while ready \(data.count, privacy: .public)")
+//            Self.logger.debug("Getting text while ready \(data.count, privacy: .public)")
             let response: ECPResponseMessage = try self.decoder.decode(ECPResponseMessage.self, from: data)
             self.needProgressBy = Date.now.addingTimeInterval(5)
             _ = framer.deliverInputNoCopy(length: 0, message: .init(ecpResponseMessage: response), isComplete: true)
@@ -267,10 +267,10 @@ final class ECPProtocol: NWProtocolFramerImplementation {
                 let parseResult = try self.handleSignleInput(framer: framer)
                 switch parseResult {
                 case .canContinue:
-//                    Self.logger.trace("Continuing to next input seamlessly")
+//                    Self.logger.debug("Continuing to next input seamlessly")
                     continue
                 case .doneForNow(let needed):
-//                    Self.logger.trace("Requesting data amount \(needed, privacy: .public)")
+//                    Self.logger.debug("Requesting data amount \(needed, privacy: .public)")
                     return needed
                 }
             } catch {
@@ -297,11 +297,11 @@ final class ECPProtocol: NWProtocolFramerImplementation {
     func stop(framer: NWProtocolFramer.Instance) -> Bool {
         switch self.state {
         case .stopped:
-            Self.logger.info("Getting re-close frame. Force-stopping")
+            Self.logger.notice("Getting re-close frame. Force-stopping")
         case .waitingForUpgrade:
-            Self.logger.info("Getting close on waiting for upgrade. Stopping instantly")
+            Self.logger.notice("Getting close on waiting for upgrade. Stopping instantly")
         case .waitingForAuthChallenge, .waitingForAuthResponse, .ready:
-            Self.logger.info("Getting close. Sending close frame before stopping")
+            Self.logger.notice("Getting close. Sending close frame before stopping")
             self.sendClose(framer: framer)
         }
 
@@ -327,25 +327,25 @@ extension NWProtocolFramer.Instance {
             maximumLength: max(1, WebsocketHeader.maxSize - partialHeader.count),
             parse: { (buffer, _) -> Int in
                 guard let buffer = buffer, buffer.count != 0 else {
-//                    ECPProtocol.logger.trace("No buffer or empty buffer. Not parsing header")
+//                    ECPProtocol.logger.debug("No buffer or empty buffer. Not parsing header")
                     return 0
                 }
                 partialData += Data(buffer)
                 if let header = WebsocketHeader.parse(from: partialData) {
                     parsedHeader = header
                     let consumed = header.encodedSize - partialHeader.count
-//                    ECPProtocol.logger.trace("Consuming \(consumed, privacy: .public) more bytes to parse header (\(header.encodedSize, privacy: .public)-\(partialHeader.count, privacy: .public))")
+//                    ECPProtocol.logger.debug("Consuming \(consumed, privacy: .public) more bytes to parse header (\(header.encodedSize, privacy: .public)-\(partialHeader.count, privacy: .public))")
                     return consumed
                 }
 
                 // How much data do we take if it's failed? All of it
-//                ECPProtocol.logger.trace("Consuming all \(buffer.count, privacy: .public) bytes to parse header \(Data(partialData).toHexString(), privacy: .public)")
+//                ECPProtocol.logger.debug("Consuming all \(buffer.count, privacy: .public) bytes to parse header \(Data(partialData).toHexString(), privacy: .public)")
                 return buffer.count
             }
         )
 
         guard framerParseResult, let header = parsedHeader else {
-//            ECPProtocol.logger.trace("No header parsed result=\(framerParseResult, privacy: .public) parsedSize=\(partialHeader.count, privacy: .public). Not consuming anything")
+//            ECPProtocol.logger.debug("No header parsed result=\(framerParseResult, privacy: .public) parsedSize=\(partialHeader.count, privacy: .public). Not consuming anything")
 
             let nextNeededSize = if partialData.count < 2 {
                 2
@@ -364,22 +364,22 @@ extension NWProtocolFramer.Instance {
 
 extension ECPProtocol {
     func sendPing(framer: NWProtocolFramer.Instance) {
-//        Self.logger.trace("Sending ping \(self.uuid, privacy: .public)")
+//        Self.logger.debug("Sending ping \(self.uuid, privacy: .public)")
         framer.writeOutput(data: WebsocketMessage.ping.rawData)
     }
 
     func sendPong(framer: NWProtocolFramer.Instance) {
-        Self.logger.info("Sending pong")
+        Self.logger.notice("Sending pong")
         framer.writeOutput(data: WebsocketMessage.pong.rawData)
     }
 
     func sendClose(framer: NWProtocolFramer.Instance) {
-        Self.logger.info("Sending close")
+        Self.logger.notice("Sending close")
         framer.writeOutput(data: WebsocketMessage.close(1000, "").rawData)
     }
 
     func sendJson<T: Encodable>(framer: NWProtocolFramer.Instance, json: T) {
-        Self.logger.info("Sending json")
+        Self.logger.notice("Sending json")
 
         do {
             let wsMessage = WebsocketMessage.text(try encoder.encode(json))
@@ -478,13 +478,13 @@ struct WebsocketHeader {
 
         if payloadLength == 126 {
             guard data.count >= 4 else { return nil }
-            ECPProtocol.logger.info("Trying to parse newlen 16 bit \(data[2...3].toHexString(), privacy: .public)")
+            ECPProtocol.logger.notice("Trying to parse newlen 16 bit \(data[2...3].toHexString(), privacy: .public)")
             guard let newLen = UInt16(bigEndian: data[2...3]) else { return nil }
             payloadLength = Int(newLen)
             offset += 2
         } else if payloadLength == 127 {
             guard data.count >= 10 else { return nil }
-            ECPProtocol.logger.info("Trying to parse newlen 64 bit \(data[2...9].toHexString(), privacy: .public)")
+            ECPProtocol.logger.notice("Trying to parse newlen 64 bit \(data[2...9].toHexString(), privacy: .public)")
             guard let newLen = UInt64(bigEndian: data[2...9]) else { return nil }
             payloadLength = Int(newLen)
             offset += 8
@@ -580,39 +580,6 @@ enum WebsocketMessage: CustomDebugStringConvertible {
         default:
             throw WebsocketError.badWebsocketFrame("Unsupported opcode \(header.opcode)")
         }
-    }
-}
-
-private func kebabParamDecodingStrategy() -> JSONDecoder.KeyDecodingStrategy {
-    return JSONDecoder.KeyDecodingStrategy.custom { keySequence in
-        let keyPart = keySequence.last!
-        let segments = keyPart.stringValue.stripPrefix("param-").split(separator: "-")
-        if segments.isEmpty {
-            ECPProtocol.logger.error("Error parsing kebab-case parameter name: \(keyPart.stringValue, privacy: .public)")
-        }
-
-        // Join camel case
-        let joined = segments.makeIterator().enumerated().map { index, segment in
-            if index == 0 {
-                return segment.lowercased()
-            } else {
-                return segment.capitalized(with: Locale(identifier: "en_US"))
-            }
-        }.joined(separator: "")
-        return AnyKey(stringValue: joined)
-    }
-}
-
-private func kebabParamEncodingStrategy() -> JSONEncoder.KeyEncodingStrategy {
-    return JSONEncoder.KeyEncodingStrategy.custom { keySequence in
-        let keyPart = keySequence.last!.stringValue
-        let stringValue = if keyPart == "request" || keyPart == "requestId" || keyPart == "status" || keyPart == "statusMsg" || keyPart == "contentData" || keyPart == "notify" {
-            kebabify(keyPart)
-        } else {
-            "param-" + kebabify(keyPart)
-        }
-
-        return AnyKey(stringValue: stringValue)
     }
 }
 

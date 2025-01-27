@@ -84,90 +84,6 @@
                 }
             }
         },
-        "  ": {
-            "comment": "Empty space",
-            "extractionState": "stale",
-            "localizations": {
-                "ar": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "  "
-                    }
-                },
-                "de": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "  "
-                    }
-                },
-                "es": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "  "
-                    }
-                },
-                "es-419": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "  "
-                    }
-                },
-                "fil": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "  "
-                    }
-                },
-                "fr": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "  "
-                    }
-                },
-                "fr-CA": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "  "
-                    }
-                },
-                "it": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "  ' in Italian is '  '."
-                    }
-                },
-                "pa": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "  "
-                    }
-                },
-                "pt-BR": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "  "
-                    }
-                },
-                "pt-PT": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "  "
-                    }
-                },
-                "vi": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "  "
-                    }
-                },
-                "zh-Hans": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "  "
-                    }
-                }
-            }
-        },
         "%@": {
             "comment": "Translate directly as \"%@\"",
             "localizations": {
@@ -1738,7 +1654,7 @@
             }
         },
         "App Version": {
-            "comment": "Version label in About page for the app\nVersion label in about page for the app",
+            "comment": "Version label in about page for the app",
             "localizations": {
                 "ar": {
                     "stringUnit": {
@@ -2152,7 +2068,7 @@
             }
         },
         "Build Version": {
-            "comment": "Version label in About page for the app\nVersion label in about page for the app",
+            "comment": "Version label in about page for the app",
             "localizations": {
                 "ar": {
                     "stringUnit": {
@@ -4552,90 +4468,6 @@
                 }
             }
         },
-        "Disable all scanning even in the background": {
-            "comment": "Label on a settings toggle",
-            "extractionState": "stale",
-            "localizations": {
-                "ar": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "تعطيل كل عمليات المسح حتى في الخلفية"
-                    }
-                },
-                "de": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "\"Deaktivieren Sie alle Scans, auch im Hintergrund\""
-                    }
-                },
-                "es": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Deshabilita todos los escaneos incluso en segundo plano"
-                    }
-                },
-                "es-419": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Deshabilita todo el escaneo incluso en segundo plano"
-                    }
-                },
-                "fil": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Huwag paganahin ang lahat ng pag-scan kahit sa background"
-                    }
-                },
-                "fr": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Désactiver tous les scans, même en arrière-plan"
-                    }
-                },
-                "fr-CA": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Désactiver tous les balayages, même en arrière-plan"
-                    }
-                },
-                "it": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Disabilita tutte le scansioni anche in background"
-                    }
-                },
-                "pa": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "ਪਿਛੋਕੜ ਵਿਚ ਵੀ ਸਾਰੇ ਸਕੈਨਿੰਗ ਨੂੰ ਅਯੋਗ ਕਰੋ"
-                    }
-                },
-                "pt-BR": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Desative todas as varreduras, mesmo em segundo plano"
-                    }
-                },
-                "pt-PT": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Desative todas as varreduras, mesmo em segundo plano"
-                    }
-                },
-                "vi": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Vô hiệu hóa tất cả các hoạt động quét ngay cả ở hậu trường"
-                    }
-                },
-                "zh-Hans": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "禁用所有扫描，即使在后台也是如此"
-                    }
-                }
-            }
-        },
         "Dismiss": {
             "localizations": {
                 "ar": {
@@ -4797,90 +4629,6 @@
                     "stringUnit": {
                         "state": "translated",
                         "value": "向下"
-                    }
-                }
-            }
-        },
-        "Download the full app": {
-            "comment": "Text on a button to download the app from the app store",
-            "extractionState": "stale",
-            "localizations": {
-                "ar": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "تحميل التطبيق الكامل"
-                    }
-                },
-                "de": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Die vollständige App herunterladen"
-                    }
-                },
-                "es": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Descargar la aplicación completa"
-                    }
-                },
-                "es-419": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Descargar la aplicación completa"
-                    }
-                },
-                "fil": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "I-download ang buong app"
-                    }
-                },
-                "fr": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Télécharger l'application complète"
-                    }
-                },
-                "fr-CA": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Télécharger l'application complète"
-                    }
-                },
-                "it": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Scarica l'app completa"
-                    }
-                },
-                "pa": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "ਪੂਰੀ ਐਪ ਡਾਊਨਲੋਡ ਕਰੋ"
-                    }
-                },
-                "pt-BR": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Baixe o app completo"
-                    }
-                },
-                "pt-PT": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Baixe o aplicativo completo"
-                    }
-                },
-                "vi": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Tải ứng dụng đầy đủ"
-                    }
-                },
-                "zh-Hans": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "下载完整应用"
                     }
                 }
             }
@@ -9449,172 +9197,6 @@
                     "stringUnit": {
                         "state": "translated",
                         "value": "消息"
-                    }
-                }
-            }
-        },
-        "Message (clickable)": {
-            "extractionState": "stale",
-            "localizations": {
-                "ar": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "رسالة (قابلة للنقر)"
-                    }
-                },
-                "de": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Nachricht (anklickbar)"
-                    }
-                },
-                "es": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Mensaje (clicable)"
-                    }
-                },
-                "es-419": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Mensaje (clicable)"
-                    }
-                },
-                "fil": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Mensahe (nakaklick)"
-                    }
-                },
-                "fr": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Message (cliquable)"
-                    }
-                },
-                "fr-CA": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Message (cliquable)"
-                    }
-                },
-                "it": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Messaggio (cliccabile)"
-                    }
-                },
-                "pa": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "ਸੁਨੇਹਾ (ਕਲਿੱਕ ਕਰ ਸਕਦਾ ਹੈ)"
-                    }
-                },
-                "pt-BR": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Mensagem (clicável)"
-                    }
-                },
-                "pt-PT": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Mensagem (clicável)"
-                    }
-                },
-                "vi": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Tin nhắn (có thể nhấp)"
-                    }
-                },
-                "zh-Hans": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "消息（可点击）"
-                    }
-                }
-            }
-        },
-        "Message (not clickable)": {
-            "extractionState": "stale",
-            "localizations": {
-                "ar": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "رسالة (غير قابلة للنقر)"
-                    }
-                },
-                "de": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Nachricht (nicht anklickbar)"
-                    }
-                },
-                "es": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Mensaje (no clicable)"
-                    }
-                },
-                "es-419": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Mensaje (no clicable)"
-                    }
-                },
-                "fil": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Mensahe (hindi nakaklick)"
-                    }
-                },
-                "fr": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Message (non cliquable)"
-                    }
-                },
-                "fr-CA": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Message (non cliquable)"
-                    }
-                },
-                "it": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Messaggio (non cliccabile)"
-                    }
-                },
-                "pa": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "ਸੁਨੇਹਾ (ਕਲਿੱਕ ਕਰਨਯੋਗ ਨਹੀਂ)"
-                    }
-                },
-                "pt-BR": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Mensagem (não clicável)"
-                    }
-                },
-                "pt-PT": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Mensagem (não clicável)"
-                    }
-                },
-                "vi": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Tin nhắn (không thể nhấp)"
-                    }
-                },
-                "zh-Hans": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "消息（不可点击）"
                     }
                 }
             }
@@ -15252,7 +14834,7 @@
             }
         },
         "Roku Apps": {
-            "comment": "Siri spotlight recommendation",
+            "comment": "Label on a widget for interactions with my application\nSiri spotlight recommendation",
             "localizations": {
                 "ar": {
                     "stringUnit": {
@@ -15335,7 +14917,7 @@
             }
         },
         "Roku Controls": {
-            "comment": "Siri spotlight recommendation",
+            "comment": "Label on a widget for interactions with my application\nSiri spotlight recommendation",
             "localizations": {
                 "ar": {
                     "stringUnit": {
@@ -17489,90 +17071,6 @@
                 }
             }
         },
-        "Test Badge!": {
-            "comment": "Label for a badge",
-            "extractionState": "stale",
-            "localizations": {
-                "ar": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "شارة اختبار!"
-                    }
-                },
-                "de": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Test-Abzeichen!"
-                    }
-                },
-                "es": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "¡Probar insignia!"
-                    }
-                },
-                "es-419": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "¡Prueba de insignia!"
-                    }
-                },
-                "fil": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Test Badge!"
-                    }
-                },
-                "fr": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Badge de test!"
-                    }
-                },
-                "fr-CA": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Badge de test!"
-                    }
-                },
-                "it": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Test Badge!"
-                    }
-                },
-                "pa": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "ਟੈਸਟ ਬੈਜ!"
-                    }
-                },
-                "pt-BR": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Teste de Distintivo!"
-                    }
-                },
-                "pt-PT": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Teste de Distintivo!"
-                    }
-                },
-                "vi": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Huy hiệu thử nghiệm!"
-                    }
-                },
-                "zh-Hans": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "测试徽章！"
-                    }
-                }
-            }
-        },
         "The developer chatted you back": {
             "comment": "Notification indicator that there was is message response waiting to be read",
             "localizations": {
@@ -18313,90 +17811,6 @@
                     "stringUnit": {
                         "state": "translated",
                         "value": "电视应用"
-                    }
-                }
-            }
-        },
-        "Unfortunately, WatchOS prevents us from discovering TV's on the local network.": {
-            "comment": "WatchOS indicator showing that watchOS can't auto-discover TV's due to network restrictions",
-            "extractionState": "stale",
-            "localizations": {
-                "ar": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "للأسف، WatchOS يمنعنا من اكتشاف التلفزيونات على الشبكة المحلية."
-                    }
-                },
-                "de": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Leider verhindert WatchOS, dass wir TV-Geräte im lokalen Netzwerk entdecken."
-                    }
-                },
-                "es": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Desafortunadamente, WatchOS nos impide descubrir televisores en la red local."
-                    }
-                },
-                "es-419": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Lamentablemente, WatchOS nos impide descubrir televisores en la red local."
-                    }
-                },
-                "fil": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Sa kasamaang-palad, pinipigilan kami ng WatchOS mula sa pagtuklas ng mga TV sa lokal na network."
-                    }
-                },
-                "fr": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Malheureusement, WatchOS nous empêche de découvrir les télévisions sur le réseau local."
-                    }
-                },
-                "fr-CA": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Malheureusement, WatchOS nous empêche de découvrir les téléviseurs sur le réseau local."
-                    }
-                },
-                "it": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Sfortunatamente, WatchOS ci impedisce di scoprire le TV sulla rete locale."
-                    }
-                },
-                "pa": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "ਅਫਸੋਸ, WatchOS ਸਾਡੇ ਲਈ ਸਥਾਨਕ ਨੈੱਟਵਰਕ ਤੇ ਟੀਵੀਜ਼ ਦੀ ਖੋਜ ਨੂੰ ਰੋਕਦਾ ਹੈ।"
-                    }
-                },
-                "pt-BR": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Infelizmente, o WatchOS nos impede de descobrir TVs na rede local."
-                    }
-                },
-                "pt-PT": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Infelizmente, o WatchOS nos impede de descobrir TVs na rede local."
-                    }
-                },
-                "vi": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "Rất tiếc, WatchOS ngăn chúng tôi phát hiện TV trên mạng cục bộ."
-                    }
-                },
-                "zh-Hans": {
-                    "stringUnit": {
-                        "state": "translated",
-                        "value": "不幸的是，WatchOS 阻止我们在本地网络上发现电视。"
                     }
                 }
             }

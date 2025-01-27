@@ -1,3 +1,1 @@
 -   Bug fixes and improvements
--   Improve connection speed
--   Support for Roku TV's with Limited Mode

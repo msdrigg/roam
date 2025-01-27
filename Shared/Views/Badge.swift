@@ -71,7 +71,7 @@ extension LabelStyle where Self == BadgeLabelStyle {
     "About",
     traits: .fixedLayout(width: 100.0, height: 300.0)
 ) {
-    Label(String(localized: "Test Badge!", comment: "Label for a badge"), systemImage: "keyboard")
+    Label(String("Test Badge!"), systemImage: "keyboard")
         .labelStyle(.badge(Color.green))
         .modelContainer(previewContainer)
 }

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import enum
@@ -303,20 +304,39 @@ class AppStoreVersion:
 
 
 @dataclass
-class LocalizedWhatsNew:
-    ios_whats_new: dict[Language, str]
-    visionos_whats_new: dict[Language, str]
-    macos_whats_new: dict[Language, str]
+class LocalizedField:
+    ios: dict[Language, str]
+    vision_os: dict[Language, str]
+    mac_os: dict[Language, str]
 
-    def get_whats_new(self, locale: Language, platform: Platform) -> str | None:
+    def get_value(self, locale: Language, platform: Platform) -> str | None:
         if platform == Platform.iOS:
-            return self.ios_whats_new[locale]
+            return self.ios[locale]
         elif platform == Platform.visionOS:
-            return self.visionos_whats_new[locale]
+            return self.vision_os[locale]
         elif platform == Platform.macOS:
-            return self.macos_whats_new[locale]
+            return self.mac_os[locale]
         else:
             return None
+
+
+@dataclass
+class LocalizedMetadata:
+    whats_new: LocalizedField
+    description: LocalizedField
+
+    def get_update(self, locale: Language, platform: Platform) -> dict[str, str]:
+        if not self.whats_new.get_value(locale, platform):
+            raise ValueError(f"Missing localized whats new for {platform} and {locale}")
+        if not self.description.get_value(locale, platform):
+            raise ValueError(
+                f"Missing localized description for {platform} and {locale}"
+            )
+
+        return {
+            "whatsNew": self.whats_new.get_value(locale, platform),
+            "description": self.description.get_value(locale, platform),
+        }
 
 
 @dataclass
@@ -341,10 +361,10 @@ class MetadataManager:
         self.workspace_path = workspace_path
         self.screenshot_update_platforms = screenshot_update_platforms
 
-    def _get_primary_whats_new(self, platform: Platform) -> str | None:
+    def _get_primary_doc(self, platform: Platform, doc: str) -> str | None:
         # Read workspace/docs/src/pages/changes/<platform>.md
         file_path = os.path.join(
-            self.workspace_path, "docs", "src", "pages", "changes", f"{platform}.md"
+            self.workspace_path, "docs", "src", "pages", doc, f"{platform}.md"
         )
         if os.path.exists(file_path):
             with open(file_path, "r") as f:
@@ -352,17 +372,16 @@ class MetadataManager:
         else:
             return None
 
-    def _get_localized_whats_new(
-        self, platform: Platform, language: Language
+    def _get_localized_doc(
+        self, platform: Platform, language: Language, doc: str
     ) -> str | None:
-        # Read workspace/docs/i18n/<language>/docusaurus-plugin-content-pages/changes/platform.md
         file_path = os.path.join(
             self.workspace_path,
             "docs",
             "i18n",
             language,
             "docusaurus-plugin-content-pages",
-            "changes",
+            doc,
             f"{platform}.md",
         )
         if os.path.exists(file_path):
@@ -371,12 +390,12 @@ class MetadataManager:
         else:
             return None
 
-    def get_update_info_localizations(self) -> LocalizedWhatsNew:
+    def _get_localized_field(self, doc: str) -> LocalizedField:
         platforms = dict()
         for platform in Platform:
-            en_whats_new = self._get_primary_whats_new(platform)
+            en_whats_new = self._get_primary_doc(platform, doc)
             if not en_whats_new:
-                raise RuntimeError(f"Missing primary whats new for platform {platform}")
+                raise RuntimeError(f'Missing primary "{doc}" for platform {platform}')
             languages = {
                 Language.en: en_whats_new,
             }
@@ -384,21 +403,27 @@ class MetadataManager:
                 if language == Language.en:
                     continue
 
-                localized_whats_new = self._get_localized_whats_new(platform, language)
+                localized_whats_new = self._get_localized_doc(platform, language, doc)
                 if localized_whats_new:
                     languages[language] = localized_whats_new
                 else:
                     raise RuntimeError(
-                        f"Missing localized whats new for platform {platform} and language {language}"
+                        f'Missing localized "{doc}" for platform {platform} and language {language}'
                     )
 
             platforms[platform] = languages
 
-        return LocalizedWhatsNew(
-            ios_whats_new=platforms[Platform.iOS],
-            visionos_whats_new=platforms[Platform.visionOS],
-            macos_whats_new=platforms[Platform.macOS],
+        return LocalizedField(
+            ios=platforms[Platform.iOS],
+            vision_os=platforms[Platform.visionOS],
+            mac_os=platforms[Platform.macOS],
         )
+
+    def get_update_info_localizations(self) -> LocalizedMetadata:
+        whats_new = self._get_localized_field("changes")
+        description = self._get_localized_field("description")
+
+        return LocalizedMetadata(whats_new=whats_new, description=description)
 
     def get_screenshots(
         self, localization: str
@@ -468,6 +493,21 @@ async def main():
     if not issuer_id:
         raise ValueError("Missing APPSTORECONNECT_API_ISSUER environment variable")
 
+    parser = argparse.ArgumentParser(
+        description="Sync metadata with an upcoming release of the app via the App Store Connect API"
+    )
+
+    parser.add_argument(
+        "--platform",
+        help="Platform to build and publish",
+        choices=[x.value for x in Platform],
+        nargs="+",
+        required=True,
+    )
+    args = parser.parse_args()
+
+    platforms = [Platform[platform] for platform in args.platform]
+
     user_home = os.path.expanduser("~")
     key_file = os.path.join(user_home, ".private_keys", f"AuthKey_{key_id}.p8")
 
@@ -481,25 +521,22 @@ async def main():
     app_versions = await asc.get_upcoming_app_store_versions("6469834197")
 
     metadata_manager = MetadataManager(
-        workspace_path=".", screenshot_update_platforms=[]
+        workspace_path=".", screenshot_update_platforms=platforms
     )
 
-    localized_whats_new = metadata_manager.get_update_info_localizations()
+    localized_metadata = metadata_manager.get_update_info_localizations()
     for app_version in app_versions:
+        if app_version.platform not in platforms:
+            continue
         print("Updating version: ", app_version.platform)
         for localization in app_version.localizations:
             print("    Updating localization: ", localization.locale)
 
-            whats_new = localized_whats_new.get_whats_new(
+            update = localized_metadata.get_update(
                 localization.locale, app_version.platform
             )
 
-            if not whats_new:
-                raise RuntimeError(
-                    f"Missing localized whats new for {app_version.platform} and {localization.locale}"
-                )
-
-            await asc.update_localization(localization.id, {"whatsNew": whats_new})
+            await asc.update_localization(localization.id, update)
 
     # https://developer.apple.com/documentation/appstoreconnectapi/post-v1-appstoreversionlocalizations
     # https://developer.apple.com/documentation/appstoreconnectapi/get-v1-appstoreversionlocalizations-_id_-appscreenshotsets
