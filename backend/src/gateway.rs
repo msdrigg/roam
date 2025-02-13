@@ -1,13 +1,21 @@
 use serenity::{
-    all::{Context, EventHandler, GatewayIntents, Message, Ready, ResumedEvent},
+    all::{
+        Context, EventHandler, GatewayIntents, Message, Nonce, Ready, ResumedEvent,
+        TypingStartEvent,
+    },
     async_trait, Client,
 };
 
-use crate::{discord::DiscordMessage, AppContext};
+use crate::{
+    discord::{DiscordMessage, MessageAttachment},
+    AppContext,
+};
 
 pub async fn setup_client(ctx: AppContext) -> Result<Client, serenity::Error> {
     // Intents are a bitflag, bitwise operations can be used to dictate which intents to use
-    let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::MESSAGE_CONTENT;
+    let intents = GatewayIntents::GUILD_MESSAGES
+        | GatewayIntents::MESSAGE_CONTENT
+        | GatewayIntents::GUILD_MESSAGE_TYPING;
     let token = ctx.discord_token().to_string();
     let handler = Handler::new(ctx);
     // Build our client.
@@ -26,6 +34,31 @@ impl Handler {
 
 #[async_trait]
 impl EventHandler for Handler {
+    async fn typing_start(&self, _ctx: Context, event: TypingStartEvent) {
+        tracing::info!("Typing start event received");
+        let thread_id = u64::from(event.channel_id) as i64;
+
+        match self.ctx.db_client().get_user_with_thread(thread_id).await {
+            Ok(Some(user)) => {
+                if self.ctx.discord_bot_id() == u64::from(event.user_id) as i64 {
+                    // Don't notify the user if the they are the ones typing
+                    return;
+                }
+                self.ctx
+                    .notify_support_typing(&user)
+                    .await
+                    .inspect_err(|e| tracing::warn!("Notifying user of typing: {:?}", e))
+                    .ok();
+            }
+            Err(err) => {
+                tracing::error!("Error getting user with thread: {:?}", err);
+            }
+            Ok(None) => {
+                tracing::info!("No user found for thread {}", thread_id);
+            }
+        }
+    }
+
     // This event will be dispatched for guilds, but not for direct messages.
     async fn message(&self, _ctx: Context, msg: Message) {
         if msg.author.id == self.ctx.discord_bot_id as u64 {
@@ -63,10 +96,23 @@ impl EventHandler for Handler {
                             msg.content,
                             u64::from(msg.author.id) as i64,
                             u8::from(msg.kind),
+                            msg.attachments
+                                .into_iter()
+                                .map(|a| MessageAttachment {
+                                    id: u64::from(a.id) as i64,
+                                    filename: a.filename,
+                                    content_type: a.content_type,
+                                    url: a.url,
+                                })
+                                .collect(),
+                            msg.nonce.map(|n| match n {
+                                Nonce::Number(n) => n.to_string(),
+                                Nonce::String(s) => s,
+                            }),
                         ),
                     )
                     .await
-                    .inspect_err(|e| tracing::error!("Error sending apple alerts: {:?}", e))
+                    .inspect_err(|e| tracing::warn!("Error sending apple alerts: {:?}", e))
                     .ok();
             }
             Ok(None) => {

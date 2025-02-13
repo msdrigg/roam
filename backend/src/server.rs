@@ -1,19 +1,20 @@
 use crate::{
     database::{DeviceInfo, User, UserUpdate},
-    discord::DiscordFile,
-    utils::string_to_i64_optional,
+    discord::{DiscordAuthor, DiscordFile},
+    presence::UserPresenceInfo,
+    utils::{i64_to_string, string_to_i64_optional},
 };
 use anyhow::Context;
 use axum::{
     body::{to_bytes, Body},
-    extract::{Path, Query, State},
+    extract::{DefaultBodyLimit, Path, Query, State},
     http::{HeaderName, Request},
     routing::post,
     Json,
 };
 use axum::{routing::get, serve::ListenerExt, Router};
 pub use error::ApiError;
-use futures::FutureExt;
+use futures::{stream, FutureExt, StreamExt};
 use opentelemetry::trace::{SpanKind, TraceContextExt};
 use serde::Serialize;
 use tokio::{net::TcpListener, task::JoinHandle};
@@ -99,6 +100,9 @@ fn build_app(app_context: AppContext) -> Router {
         )))
         .layer(PropagateRequestIdLayer::new(x_request_id))
         .layer(CatchPanicLayer::new())
+        .layer(DefaultBodyLimit::max(
+            1024 * 1024 * 70, // 70 MB
+        ))
 }
 
 #[derive(Clone, Debug)]
@@ -164,33 +168,129 @@ fn router(app_context: AppContext) -> Router {
         .route("/health", get(|| async { "Healthy!" }))
         .route("/", get(|| async { "Hello, world!" }))
         .route("/messages/{user_id}", get(get_user_messages))
+        .route("/updates/{user_id}", get(get_user_state))
         .route("/new-message", post(new_message))
         .route(
             "/upload-diagnostics/{diagnostic_key}",
             post(upload_diagnostics),
         )
         .route("/user-info/{user_id}", get(get_user_info))
+        .route("/typing/{user_id}", post(update_user_typing))
         .route("/thread-info/{thread_id}", get(get_thread_info))
         .with_state(app_context)
 }
 
 #[derive(serde::Deserialize)]
-struct GetMessagesQuery {
+struct AfterQuery {
     #[serde(default, deserialize_with = "string_to_i64_optional")]
     after: Option<i64>,
 }
 
+#[derive(Serialize)]
+struct UserState {
+    messages: Vec<DiscordMessageDownload>,
+    presence: UserPresenceInfo,
+}
+
+#[derive(Serialize)]
+pub struct DiscordMessageDownload {
+    #[serde(serialize_with = "i64_to_string")]
+    pub id: i64,
+    pub nonce: Option<String>,
+    pub content: String,
+    pub author: DiscordAuthor,
+    #[serde(rename = "type")]
+    pub message_type: u8,
+    pub attachments: Vec<DiscordFile>,
+}
+impl DiscordMessageDownload {
+    async fn prepare(message: DiscordMessage) -> Result<Self, error::ApiError> {
+        let attachments = stream::iter(message.attachments.into_iter())
+            .map(|attachment| async move {
+                let url = attachment.url;
+                let id = attachment.id;
+                let data = match reqwest::get(&url).await {
+                    Ok(response) => match response.bytes().await {
+                        Ok(bytes) => bytes.to_vec(),
+                        Err(e) => {
+                            return Err(ApiError::BadRequest(format!(
+                                "Error reading attachment: {}",
+                                e
+                            )))
+                        }
+                    },
+                    Err(e) => {
+                        return Err(ApiError::BadRequest(format!(
+                            "Error downloading attachment: {}",
+                            e
+                        )))
+                    }
+                };
+
+                Ok(DiscordFile {
+                    id,
+                    content_type: attachment
+                        .content_type
+                        .unwrap_or_else(|| "application/octet-stream".to_string()),
+                    filename: attachment.filename,
+                    data,
+                    paired_messages: vec![],
+                })
+            })
+            .buffer_unordered(10) // Adjust concurrency level
+            .collect::<Vec<Result<DiscordFile, ApiError>>>()
+            .await;
+
+        let attachments = attachments.into_iter().collect::<Result<Vec<_>, _>>()?;
+
+        Ok(Self {
+            id: message.id,
+            nonce: message.nonce,
+            content: message.content,
+            author: message.author,
+            message_type: message.message_type,
+            attachments,
+        })
+    }
+}
+
+async fn get_user_state(
+    Path(device_id): Path<String>,
+    Query(query): Query<AfterQuery>,
+    State(app_context): State<AppContext>,
+) -> Result<Json<UserState>, ApiError> {
+    let user = app_context
+        .get_or_create_user(&device_id, &UserUpdate::default())
+        .await?;
+
+    let messages = app_context
+        .discord_client()
+        .get_messages_in_thread(user.thread_id, query.after)
+        .await?
+        .into_iter()
+        .filter(|m| !m.is_hidden())
+        .map(|m| m.normalize());
+    let messages = stream::iter(messages)
+        .map(|m| async { DiscordMessageDownload::prepare(m).await }) // Async mapping
+        .buffer_unordered(10) // Adjust concurrency level as needed
+        .collect::<Vec<_>>() // Collect into Vec
+        .await;
+
+    let messages = messages.into_iter().collect::<Result<Vec<_>, _>>()?;
+
+    let presence = app_context.presence_info(&user.device_id).await;
+
+    Ok(Json(UserState { messages, presence }))
+}
+
 async fn get_user_messages(
     Path(device_id): Path<String>,
-    Query(query): Query<GetMessagesQuery>,
+    Query(query): Query<AfterQuery>,
     State(app_context): State<AppContext>,
 ) -> Result<Json<Vec<DiscordMessage>>, ApiError> {
     let user = app_context
-        .db_client()
-        .get_user_with_id(&device_id)
-        .await
-        .map_err(ApiError::DatabaseError)?
-        .ok_or_else(|| ApiError::NotFound(format!("User with id {} not found", device_id)))?;
+        .get_or_create_user(&device_id, &UserUpdate::default())
+        .await?;
 
     let messages = app_context
         .discord_client()
@@ -210,6 +310,8 @@ struct MessageRequest {
     user_id: String,
     apns_token: Option<String>,
     content: Option<String>,
+    attachments: Option<Vec<DiscordFile>>,
+    nonce: Option<String>,
     installation_info: Option<DeviceInfo>,
 }
 
@@ -222,6 +324,8 @@ async fn new_message(
         apns_token,
         user_id: device_id,
         installation_info,
+        attachments,
+        nonce,
     } = message_request;
 
     if content.is_none() && apns_token.is_none() {
@@ -245,7 +349,12 @@ async fn new_message(
         if !content.is_empty() {
             app_context
                 .discord_client()
-                .send_message(user.thread_id, &content)
+                .send_message(
+                    user.thread_id,
+                    &content,
+                    attachments.unwrap_or_default(),
+                    nonce.as_deref(),
+                )
                 .await?;
 
             app_context
@@ -280,13 +389,17 @@ async fn upload_diagnostics(
         .map_err(|e| ApiError::BadRequest(format!("Error reading body: {}", e)))?;
     app_context
         .discord_client()
-        .send_attachment(
+        .send_message(
             user.thread_id,
-            DiscordFile {
+            ":ninja:",
+            vec![DiscordFile {
                 content_type: "application/json".to_string(),
-                name: "diagnostics.json".to_string(),
+                filename: "diagnostics.json".to_string(),
                 data: body.to_vec(),
-            },
+                paired_messages: vec![],
+                id: 0,
+            }],
+            None,
         )
         .await?;
 
@@ -300,7 +413,7 @@ struct UserInfoResponse {
 }
 
 async fn get_user_info(
-    Query(query): Query<GetMessagesQuery>,
+    Query(query): Query<AfterQuery>,
     Path(user_id): Path<String>,
     State(app_context): State<AppContext>,
 ) -> Result<Json<UserInfoResponse>, ApiError> {
@@ -323,8 +436,34 @@ async fn get_user_info(
     Ok(Json(UserInfoResponse { user, messages }))
 }
 
+async fn update_user_typing(
+    Path(user_id): Path<String>,
+    State(app_context): State<AppContext>,
+) -> Result<(), ApiError> {
+    let Some(user) = app_context
+        .db_client()
+        .get_user_with_id(&user_id)
+        .await
+        .map_err(ApiError::DatabaseError)?
+    else {
+        tracing::info!("Trying to update typing for non-existent user {}", user_id);
+        return Ok(());
+    };
+    if let Err(err) = app_context.notify_self_typing(&user).await {
+        tracing::error!(error = ?err, "Error notifying self typing");
+        return Ok(());
+    };
+
+    app_context
+        .discord_client()
+        .send_typing(user.thread_id)
+        .await?;
+
+    Ok(())
+}
+
 async fn get_thread_info(
-    Query(query): Query<GetMessagesQuery>,
+    Query(query): Query<AfterQuery>,
     Path(thread_id): Path<i64>,
     State(app_context): State<AppContext>,
 ) -> Result<Json<UserInfoResponse>, ApiError> {

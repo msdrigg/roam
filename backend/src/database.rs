@@ -1,6 +1,6 @@
 use std::{path::PathBuf, str::FromStr};
 
-use crate::utils::i64_to_string;
+use crate::{utils::i64_to_string, UserId};
 use anyhow::Context;
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions},
@@ -59,7 +59,10 @@ impl DatabaseClient {
         })
     }
 
-    pub async fn get_user_with_id(&self, device_id: &str) -> Result<Option<User>, anyhow::Error> {
+    pub async fn get_user_with_id(
+        &self,
+        device_id: &UserId,
+    ) -> Result<Option<User>, anyhow::Error> {
         let user = sqlx::query_as!(
             User,
             r#"
@@ -94,7 +97,7 @@ impl DatabaseClient {
         Ok(user)
     }
 
-    pub async fn clear_user_apns(&self, device_id: &str) -> Result<(), anyhow::Error> {
+    pub async fn clear_user_apns(&self, device_id: &UserId) -> Result<(), anyhow::Error> {
         tracing::info!("Clearing APNS token for user {}", device_id);
         sqlx::query_scalar!(
             r#"
@@ -113,7 +116,7 @@ impl DatabaseClient {
 
     pub async fn update_user(
         &self,
-        device_id: &str,
+        device_id: &UserId,
         user: &UserUpdate,
     ) -> Result<User, anyhow::Error> {
         let device_info_json = user
@@ -212,7 +215,7 @@ impl DatabaseClient {
 
 #[derive(Debug, serde::Serialize)]
 pub struct User {
-    pub device_id: String,
+    pub device_id: UserId,
     #[serde(serialize_with = "i64_to_string")]
     pub thread_id: i64,
     pub apns_token: Option<String>,

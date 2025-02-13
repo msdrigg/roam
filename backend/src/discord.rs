@@ -2,12 +2,12 @@ use std::sync::{Arc, Mutex};
 
 use crate::utils::{serialize_anyhow, serialize_reqwest, serialize_status_code};
 use chrono::{DateTime, Utc};
-use reqwest::StatusCode;
+use reqwest::{Response, StatusCode};
 use serde::Serialize;
 use tokio::sync::AcquireError;
 use types::{IdResponse, Thread, ThreadResponse};
 
-pub use types::{DiscordFile, DiscordMessage};
+pub use types::{DiscordAuthor, DiscordFile, DiscordMessage, MessageAttachment};
 
 #[derive(Debug, Clone)]
 pub struct DiscordClient {
@@ -34,7 +34,9 @@ pub enum DiscordError {
         status: StatusCode,
     },
     #[error("Invalid input: {0}")]
-    InvalidInput(#[serde(serialize_with = "serialize_reqwest")] reqwest::Error),
+    InvalidInputResponse(#[serde(serialize_with = "serialize_reqwest")] reqwest::Error),
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
 }
 
 impl DiscordClient {
@@ -197,50 +199,6 @@ impl DiscordClient {
         Ok(messages)
     }
 
-    pub async fn send_attachment(
-        &self,
-        thread_id: i64,
-        attachment: DiscordFile,
-    ) -> Result<i64, DiscordError> {
-        let _permit = self.acquire().await.expect("Semaphore should never close");
-        self.error_on_locked()?;
-        let url = format!(
-            "{}/channels/{}/messages",
-            Self::DISCORD_API_BASE_URL,
-            thread_id
-        );
-        tracing::info!("Sending attachment to thread: {}", thread_id);
-
-        let form = reqwest::multipart::Form::new().part(
-            "files[0]",
-            reqwest::multipart::Part::bytes(attachment.data)
-                .file_name(attachment.name.clone())
-                .mime_str(&attachment.content_type)
-                .map_err(DiscordError::InvalidInput)?,
-        );
-
-        let response = self
-            .client
-            .post(&url)
-            .header("Authorization", format!("Bot {}", self.token))
-            .multipart(form)
-            .send()
-            .await
-            .map_err(|e| DiscordError::ConnectionError(e.into()))?;
-
-        self.update_rate_limit(response.headers());
-
-        let response = self
-            .except_error_response(response, "sending attachment")
-            .await?;
-
-        let response_data: IdResponse = response
-            .json()
-            .await
-            .map_err(|e| DiscordError::ResponseError(e.into()))?;
-        Ok(response_data.id)
-    }
-
     pub async fn get_active_threads_updated_since(
         &self,
         latest_message_id: Option<i64>,
@@ -289,7 +247,12 @@ impl DiscordClient {
         Ok(threads)
     }
 
-    pub async fn send_message(&self, thread_id: i64, content: &str) -> Result<i64, DiscordError> {
+    async fn _send_message_no_attachments(
+        &self,
+        thread_id: i64,
+        content: &str,
+        nonce: Option<&str>,
+    ) -> Result<reqwest::Response, DiscordError> {
         let _permit = self.acquire().await.expect("Semaphore should never close");
         self.error_on_locked()?;
         let url = format!(
@@ -300,6 +263,8 @@ impl DiscordClient {
         tracing::info!("Sending message \"{}\" to thread {}", content, thread_id);
         let body = serde_json::json!({
             "content": content,
+            "nonce": nonce,
+            "enforce_nonce": true,
         });
 
         let response = self
@@ -311,19 +276,152 @@ impl DiscordClient {
             .send()
             .await
             .map_err(|e| DiscordError::ConnectionError(e.into()))?;
+        Ok(response)
+    }
+
+    async fn _send_message_multipart(
+        &self,
+        thread_id: i64,
+        content: Option<&str>,
+        attachments: &[&DiscordFile],
+        nonce: Option<&str>,
+    ) -> Result<reqwest::Response, DiscordError> {
+        let _permit = self.acquire().await.expect("Semaphore should never close");
+        self.error_on_locked()?;
+        let url = format!(
+            "{}/channels/{}/messages",
+            Self::DISCORD_API_BASE_URL,
+            thread_id
+        );
+        tracing::info!(
+            "Sending attachments {:?} to thread: {}",
+            attachments,
+            thread_id
+        );
+
+        let mut form = reqwest::multipart::Form::new();
+
+        let content = content.unwrap_or_default();
+        if !content.is_empty() {
+            form = form.text("content", content.to_string());
+        }
+        if let Some(nonce) = nonce {
+            form = form.text("nonce", nonce.to_string());
+        }
+
+        for (n, attachment) in attachments.iter().enumerate() {
+            form = form.part(
+                format!("files[{n}]"),
+                reqwest::multipart::Part::bytes(attachment.data.clone())
+                    .file_name(attachment.filename.clone())
+                    .mime_str(&attachment.content_type)
+                    .map_err(DiscordError::InvalidInputResponse)?,
+            );
+        }
+
+        let response = self
+            .client
+            .post(&url)
+            .header("Authorization", format!("Bot {}", self.token))
+            .multipart(form)
+            .send()
+            .await
+            .map_err(|e| DiscordError::ConnectionError(e.into()))?;
+
+        Ok(response)
+    }
+
+    pub async fn send_typing(&self, thread_id: i64) -> Result<(), DiscordError> {
+        let _permit = self.acquire().await.expect("Semaphore should never close");
+        self.error_on_locked()?;
+
+        let url = format!(
+            "{}/channels/{}/typing",
+            Self::DISCORD_API_BASE_URL,
+            thread_id
+        );
+        tracing::info!("Sending typing indicator to thread {}", thread_id);
+
+        let response = self
+            .client
+            .post(&url)
+            .header("Authorization", format!("Bot {}", self.token))
+            .header("Content-Type", "application/json")
+            .send()
+            .await
+            .map_err(|e| DiscordError::ConnectionError(e.into()))?;
 
         self.update_rate_limit(response.headers());
 
-        let response = self
-            .except_error_response(response, "sending message")
+        let _ = self
+            .except_error_response(response, "sending typing indicator")
             .await?;
 
-        let response_data: IdResponse = response
-            .json()
-            .await
-            .map_err(|e| DiscordError::ResponseError(e.into()))?;
+        Ok(())
+    }
+
+    pub async fn send_message(
+        &self,
+        thread_id: i64,
+        content: &str,
+        attachments: Vec<DiscordFile>,
+        nonce: Option<&str>,
+    ) -> Result<(), DiscordError> {
+        if let Some(nonce) = nonce {
+            if nonce.len() > 25 {
+                return Err(DiscordError::InvalidInput(
+                    "Nonce must be at most 25 characters".to_string(),
+                ));
+            }
+        }
+
+        let handle_response = |response: Response| async {
+            self.update_rate_limit(response.headers());
+
+            let response = self
+                .except_error_response(response, "sending message")
+                .await?;
+
+            let _response_data: IdResponse = response
+                .json()
+                .await
+                .map_err(|e| DiscordError::ResponseError(e.into()))?;
+
+            tracing::info!("Sending message succeeded");
+            Ok(())
+        };
+
+        if let Some((first, rest)) = attachments.split_first() {
+            for attachment in attachments.iter() {
+                for paired_message in attachment.paired_messages.iter() {
+                    let response = self
+                        ._send_message_no_attachments(thread_id, paired_message, None)
+                        .await?;
+                    handle_response(response).await?;
+                }
+            }
+
+            // Split off first attachment
+            let response = self
+                ._send_message_multipart(thread_id, Some(content), &[first], nonce)
+                .await?;
+
+            handle_response(response).await?;
+            for attachment in rest {
+                let response = self
+                    ._send_message_multipart(thread_id, None, &[attachment], None)
+                    .await?;
+                handle_response(response).await?;
+            }
+        } else {
+            let response = self
+                ._send_message_no_attachments(thread_id, content, nonce)
+                .await?;
+            handle_response(response).await?;
+        }
+
         tracing::info!("Sending message succeeded");
-        Ok(response_data.id)
+        Ok(())
     }
 
     pub async fn create_thread(
@@ -380,27 +478,48 @@ impl DiscordClient {
 
 mod types {
     use crate::utils::{i64_to_string, string_to_i64, string_to_i64_optional};
+    use base64::{prelude::BASE64_STANDARD, Engine};
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Clone, Deserialize, Serialize)]
     pub struct DiscordMessage {
         #[serde(deserialize_with = "string_to_i64", serialize_with = "i64_to_string")]
         pub id: i64,
+        pub nonce: Option<String>,
         pub content: String,
         pub author: DiscordAuthor,
         #[serde(rename = "type")]
         pub message_type: u8,
+        pub attachments: Vec<MessageAttachment>,
+    }
+
+    #[derive(Debug, Clone, Deserialize, Serialize)]
+    pub struct MessageAttachment {
+        #[serde(deserialize_with = "string_to_i64", serialize_with = "i64_to_string")]
+        pub id: i64,
+        pub filename: String,
+        pub content_type: Option<String>,
+        pub url: String,
     }
 
     impl DiscordMessage {
         const ALLOWED_MESSAGE_TYPES: [u8; 4] = [0, 19, 20, 21];
 
-        pub fn new(id: i64, content: String, author_id: i64, message_type: u8) -> Self {
+        pub fn new(
+            id: i64,
+            content: String,
+            author_id: i64,
+            message_type: u8,
+            attachments: Vec<MessageAttachment>,
+            nonce: Option<String>,
+        ) -> Self {
             Self {
                 id,
                 content,
+                nonce,
                 author: DiscordAuthor { id: author_id },
                 message_type,
+                attachments,
             }
         }
 
@@ -431,10 +550,53 @@ mod types {
         pub id: i64,
     }
 
+    #[derive(Deserialize, Serialize)]
     pub struct DiscordFile {
-        pub name: String,
+        #[serde(
+            deserialize_with = "string_to_i64",
+            serialize_with = "i64_to_string",
+            default
+        )]
+        pub id: i64,
+        pub filename: String,
         pub content_type: String,
+        #[serde(
+            deserialize_with = "base64_data_de",
+            serialize_with = "base64_data_ser"
+        )]
         pub data: Vec<u8>,
+        #[serde(default)]
+        pub paired_messages: Vec<String>,
+    }
+
+    impl std::fmt::Debug for DiscordFile {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("DiscordFile")
+                .field("name", &self.filename)
+                .field("id", &self.id)
+                .field("content_type", &self.content_type)
+                .field("data", &self.data.len())
+                .field("paired_messages", &self.paired_messages)
+                .finish()
+        }
+    }
+
+    fn base64_data_de<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        BASE64_STANDARD
+            .decode(s.as_bytes())
+            .map_err(serde::de::Error::custom)
+    }
+
+    fn base64_data_ser<S>(data: &Vec<u8>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let s = BASE64_STANDARD.encode(data);
+        serializer.serialize_str(&s)
     }
 
     #[derive(Debug, Clone, Deserialize)]

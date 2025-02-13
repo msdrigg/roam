@@ -56,4 +56,8 @@ pub struct RoamCli {
     /// Default: 8080
     #[arg(long, env, default_value = "8080")]
     pub port: u16,
+
+    /// Disable APNS
+    #[arg(long, env)]
+    pub apns_disabled: bool,
 }

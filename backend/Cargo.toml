@@ -4,20 +4,33 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "^1", features = ["macros", "rt-multi-thread", "tracing", "signal"] }
+tokio = { version = "^1", features = [
+    "macros",
+    "rt-multi-thread",
+    "tracing",
+    "signal",
+] }
 serde = { version = "^1.0", features = ["derive"] }
 dotenvy = "^0.15"
 futures = "^0.3"
 anyhow = "^1.0"
-uuid = "^1.12"
+uuid = "^1.13"
 base64 = "^0.22"
-chrono = {version = "^0.4", default-features = false}
+chrono = { version = "^0.4", default-features = false, features = ["serde"] }
+ahash = "^0.8"
 
 clap = { version = "^4.5", features = ["derive", "env"] }
 clap_derive = { version = "^4.5" }
 
-a2 = {version = "^0.10", features = ["ring", "tracing"], default-features = false}
-reqwest = { version = "^0.12", default-features = false, features = ["json", "multipart", "rustls-tls"] }
+a2 = { version = "^0.10", features = [
+    "ring",
+    "tracing",
+], default-features = false }
+reqwest = { version = "^0.12", default-features = false, features = [
+    "json",
+    "multipart",
+    "rustls-tls",
+] }
 serenity = { version = "^0.12", default-features = false, features = [
     "client",
     "gateway",
@@ -49,4 +62,12 @@ axum = { version = "^0.8", features = ["http2", "macros", "ws"] }
 axum-macros = "^0.5"
 tower = "^0.5"
 tower-service = "^0.3"
-tower-http = { version = "^0.6", features = ["cors", "trace", "catch-panic", "request-id", "fs", "util", "validate-request"] }
+tower-http = { version = "^0.6", features = [
+    "cors",
+    "trace",
+    "catch-panic",
+    "request-id",
+    "fs",
+    "util",
+    "validate-request",
+] }

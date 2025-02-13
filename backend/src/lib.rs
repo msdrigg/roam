@@ -4,6 +4,7 @@ use anyhow::Context;
 use apns::ApnsClient;
 use database::{DatabaseClient, DeviceInfo, User, UserUpdate};
 use discord::{DiscordClient, DiscordMessage};
+use presence::{PresenceClient, UserPresenceInfo};
 use server::ApiError;
 
 pub mod apns;
@@ -12,19 +13,24 @@ pub mod database;
 pub mod discord;
 pub mod gateway;
 pub mod logging;
+pub mod presence;
 pub mod server;
 pub mod tasks;
 mod utils;
 
+pub type UserId = String;
+
 #[derive(Clone)]
 pub struct AppContext {
     db_client: DatabaseClient,
+    presence_info: PresenceClient,
     discord_client: DiscordClient,
     apns_client: ApnsClient,
     user_create_lock: Arc<tokio::sync::Mutex<()>>,
     discord_token: String,
     discord_bot_id: i64,
     backend_url: String,
+    apns_disabled: bool,
     backend_api_key: String,
     port: u16,
 }
@@ -57,7 +63,9 @@ impl AppContext {
             backend_url: cli.backend_url,
             backend_api_key: cli.backend_api_key,
             user_create_lock: Arc::new(tokio::sync::Mutex::new(())),
+            presence_info: Default::default(),
             port: cli.port,
+            apns_disabled: cli.apns_disabled,
         })
     }
 
@@ -77,6 +85,10 @@ impl AppContext {
         &self.discord_token
     }
 
+    pub fn discord_bot_id(&self) -> i64 {
+        self.discord_bot_id
+    }
+
     pub fn backend_url(&self) -> &str {
         &self.backend_url
     }
@@ -84,10 +96,17 @@ impl AppContext {
     pub fn backend_api_key(&self) -> &str {
         &self.backend_api_key
     }
+
+    async fn presence_info(&self, device_id: &UserId) -> UserPresenceInfo {
+        self.presence_info.get_user_presence_info(device_id).await
+    }
 }
 
 impl AppContext {
     async fn send_pushes(&self) -> anyhow::Result<()> {
+        if self.apns_disabled {
+            return Ok(());
+        }
         tracing::info!("Sending pushes");
         let last_alerted_message = self
             .db_client
@@ -155,18 +174,49 @@ impl AppContext {
             };
 
             self.apns_client
-                .send_background_push_notification(apns_token)
+                .send_background_push_notification(apns_token, "CHECK_MESSAGES")
                 .await?;
 
             for message in messages.into_iter().filter(|message| !message.is_hidden()) {
-                self.notify_user(&user, message).await?;
+                if let Err(err) = self.notify_user(&user, message).await {
+                    tracing::warn!("Error sending apple alerts: {:?}", err);
+                }
             }
         }
 
         Ok(())
     }
 
+    async fn notify_self_typing(&self, user: &User) -> anyhow::Result<()> {
+        self.presence_info
+            .notify_self_typing(user.device_id.clone())
+            .await?;
+        Ok(())
+    }
+
+    async fn notify_support_typing(&self, user: &User) -> anyhow::Result<()> {
+        self.presence_info
+            .notify_support_typing(user.device_id.clone())
+            .await;
+        if let Some(apns_token) = user.apns_token.as_ref() {
+            if let Err(err) = self
+                .apns_client
+                .send_background_push_notification(apns_token, "TYPING_ALERT")
+                .await
+            {
+                self.handle_apns_error(&err, user).await?;
+                return Err(err.into());
+            }
+        } else {
+            tracing::info!("No APNS token found for user {}", user.device_id);
+        }
+        Ok(())
+    }
+
     async fn notify_user(&self, user: &User, message: DiscordMessage) -> anyhow::Result<()> {
+        if self.apns_disabled {
+            return Ok(());
+        }
         let apns_token = user
             .apns_token
             .as_ref()
@@ -204,18 +254,22 @@ impl AppContext {
             .await
         {
             tracing::error!("Error sending push notification: {:?}", err);
-            if matches!(
-                err.a2_reason(),
-                Some(
-                    a2::ErrorReason::Unregistered
-                        | a2::ErrorReason::BadDeviceToken
-                        | a2::ErrorReason::DeviceTokenNotForTopic
-                )
-            ) {
-                self.db_client.clear_user_apns(&user.device_id).await?;
-            }
+            self.handle_apns_error(&err, user).await?;
         } else {
             tracing::info!("Push notification sent successfully");
+        }
+        Ok(())
+    }
+    async fn handle_apns_error(&self, err: &apns::ApnsError, user: &User) -> anyhow::Result<()> {
+        if matches!(
+            err.a2_reason(),
+            Some(
+                a2::ErrorReason::Unregistered
+                    | a2::ErrorReason::BadDeviceToken
+                    | a2::ErrorReason::DeviceTokenNotForTopic
+            )
+        ) {
+            self.db_client.clear_user_apns(&user.device_id).await?;
         }
         Ok(())
     }
@@ -275,7 +329,7 @@ impl AppContext {
             user.apns_token.as_deref().unwrap_or("--"),
         );
         self.discord_client()
-            .send_message(user.thread_id, &message)
+            .send_message(user.thread_id, &message, vec![], None)
             .await
             .map_err(ApiError::DiscordError)?;
         Ok(())
@@ -283,7 +337,7 @@ impl AppContext {
 
     async fn get_or_create_user(
         &self,
-        device_id: &str,
+        device_id: &UserId,
         seed: &UserUpdate,
     ) -> Result<User, ApiError> {
         // We need to serialize all of these requests so they need to be done with the writer queue
