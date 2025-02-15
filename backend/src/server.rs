@@ -328,7 +328,10 @@ async fn new_message(
         nonce,
     } = message_request;
 
-    if content.is_none() && apns_token.is_none() {
+    if content.is_none()
+        && apns_token.is_none()
+        && attachments.as_ref().is_none_or(|a| a.is_empty())
+    {
         return Err(ApiError::BadRequest(
             "Content or apns_token must be provided".to_string(),
         ));
