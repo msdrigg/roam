@@ -1,5 +1,5 @@
 // Swift code for the above approach:
-class MaxHeap<T: Comparable> {
+final class MaxHeap<T: Comparable> {
     var heap: [T] = []
 
     // Insert a new element into the heap

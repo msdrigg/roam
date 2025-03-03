@@ -5,10 +5,6 @@ import TipKit
 
 @main
 struct RoamWatch: App {
-    private nonisolated static let logger = Logger(
-        subsystem: getLogSubsystem(),
-        category: String(describing: RoamWatch.self)
-    )
     var sharedModelContainer: ModelContainer
     init() {
         sharedModelContainer = getSharedModelContainer()
@@ -18,7 +14,7 @@ struct RoamWatch: App {
             .datastoreLocation(.groupContainer(identifier: tipsAppGroup))
         ])
 
-        Self.logger.notice("Getting WatchConnectivity \(String(describing: WatchConnectivity.shared), privacy: .public)")
+        Log.lifecycle.notice("Getting WatchConnectivity \(String(describing: WatchConnectivity.shared), privacy: .public)")
     }
 
     var body: some Scene {
@@ -54,23 +50,22 @@ let CONTROLS: [[RemoteButton?]] = [
 ]
 
 private let deviceFetchDescriptor: FetchDescriptor<Device> = {
-    var fd = FetchDescriptor(
-        predicate: #Predicate {
+    var fd = FetchDescriptor<Device>(
+        predicate: #Predicate<Device> {
             $0.deletedAt == nil
         },
         sortBy: [SortDescriptor(\Device.name)]
     )
-    fd.propertiesToFetch = [\.udn, \.location, \.name, \.lastOnlineAt, \.lastSelectedAt, \.lastScannedAt]
+    fd.propertiesToFetch = [
+        \Device.udn, \Device.location, \Device.name,
+         \Device.lastOnlineAt, \Device.lastSelectedAt,
+         \Device.lastScannedAt
+    ]
 
     return fd
 }()
 
 struct WatchAppView: View {
-    nonisolated static let logger = Logger(
-        subsystem: getLogSubsystem(),
-        category: String(describing: WatchAppView.self)
-    )
-
     @State private var scanningActor: DeviceDiscoveryActor!
 
     @Query(deviceFetchDescriptor) private var devices: [Device]
@@ -139,9 +134,7 @@ struct WatchAppView: View {
             }
             .tabViewStyle(.verticalPage)
             .onAppear {
-                scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
-                    // Ignoring
-                })
+                scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: { })
             }
         }
     }
@@ -189,10 +182,10 @@ struct AppListViewWrapper: View {
         let pid = device.udn
 
         _apps = Query(
-            filter: #Predicate {
+            filter: #Predicate<AppLink> {
                 pid != nil && $0.deviceUid == pid
             },
-            sort: \.lastSelected,
+            sort: \AppLink.lastSelected,
             order: .reverse
         )
         self.device = device

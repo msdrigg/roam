@@ -14,11 +14,6 @@
     }
 
     actor VolumeListener {
-        private static nonisolated let logger = Logger(
-            subsystem: getLogSubsystem(),
-            category: String(describing: VolumeListener.self)
-        )
-
         var volumeObservation: NSKeyValueObservation?
         var lastVolume: Float = 0.5
         var volumeChangeHandler: ((VolumeClicked, Float) -> Void)?
@@ -33,10 +28,10 @@
                 try session.setActive(true, options: .notifyOthersOnDeactivation)
                 lastVolume = session.outputVolume
             } catch {
-                Self.logger.error("Cannot activate audiosession to listen to volume: \(error, privacy: .public)")
+                Log.userInteraction.error("Cannot activate audiosession to listen to volume: \(error, privacy: .public)")
                 throw error
             }
-            Self.logger.notice("Starting volume observations")
+            Log.userInteraction.notice("Starting volume observations")
 
             volumeObservation = session.observe(
                 \.outputVolume,
@@ -63,7 +58,7 @@
         }
 
         func stopListening() {
-            Self.logger.notice("Stoping volume observations")
+            Log.userInteraction.notice("Stoping volume observations")
             volumeObservation?.invalidate()
             volumeObservation = nil
         }

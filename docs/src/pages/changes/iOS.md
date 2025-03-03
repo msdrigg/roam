@@ -1,1 +1,1 @@
--   Bug fixes and improvements
+-   Fixing device scanning bug

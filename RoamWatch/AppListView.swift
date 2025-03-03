@@ -3,11 +3,6 @@ import os.log
 import SwiftUI
 
 struct AppListView: View {
-    private nonisolated static let logger = Logger(
-        subsystem: getLogSubsystem(),
-        category: String(describing: AppListView.self)
-    )
-
     let device: DeviceAppEntity?
     let apps: [AppLink]
     let onClick: ((AppLink) -> Void)?
@@ -37,7 +32,7 @@ struct AppListView: View {
                         do {
                             try await launchApp(app: app.toAppEntity(), device: device)
                         } catch {
-                            Self.logger.error("Error opening app \(app.id, privacy: .public): \(error, privacy: .public)")
+                            Log.connection.error("Error opening app \(app.id, privacy: .public): \(error, privacy: .public)")
                         }
                     }
                 }, label: {
@@ -45,7 +40,6 @@ struct AppListView: View {
                         Text(app.name)
                     } icon: {
                         DataImage(from: app.icon, fallback: "questionmark.app")
-                            .resizable().aspectRatio(contentMode: .fit)
                             .clipShape(RoundedRectangle(cornerRadius: 2))
                             .frame(width: 32, height: 32)
                             .shadow(radius: 4)

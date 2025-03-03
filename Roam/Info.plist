@@ -1,76 +1,78 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-	<dict>
-		<key>BACKEND_API_KEY</key>
-		<string>$(BACKEND_API_KEY)</string>
-		<key>CFBundleURLTypes</key>
-		<array>
-			<dict>
-				<key>CFBundleTypeRole</key>
-				<string>Viewer</string>
-				<key>CFBundleURLName</key>
-				<string>com.msdrigg.roam</string>
-				<key>CFBundleURLSchemes</key>
-				<array>
-					<string>roamforroku</string>
-				</array>
-			</dict>
-		</array>
-		<key>CURRENT_PROJECT_VERSION</key>
-		<string>$(CURRENT_PROJECT_VERSION)</string>
-		<key>ITSAppUsesNonExemptEncryption</key>
-		<false />
-		<key>InAlternativeAppNames</key>
-		<array>
-			<dict>
-				<key>INAlternativeAppName</key>
-				<string>Remote</string>
-			</dict>
-			<dict>
-				<key>INAlternativeAppName</key>
-				<string>Roam</string>
-			</dict>
-			<dict>
-				<key>INAlternativeAppName</key>
-				<string>Better Remote</string>
-			</dict>
-		</array>
-		<key>NSAppTransportSecurity</key>
-		<dict />
-		<key>NSBonjourServices</key>
-		<array>
-			<string>_preflight_check._tcp</string>
-		</array>
-		<key>NSUserActivityTypes</key>
-		<array>
-			<string>MuteIntent</string>
-			<string>PlayOrPauseIntent</string>
-			<string>PowerIntent</string>
-			<string>SelectIntent</string>
-		</array>
-		<key>NSUserNotificationUsageDescription</key>
-		<string>Roam can notify you when the the developer responds to your message</string>
-		<key>UIBackgroundModes</key>
-		<array>
-			<string>audio</string>
-			<string>remote-notification</string>
-		</array>
-		<key>OSLogPreferences</key>
+<dict>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This application adds photos saved from the developer chat to the library</string>
+	<key>BACKEND_API_KEY</key>
+	<string>$(BACKEND_API_KEY)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
 		<dict>
-			<key>com.msdrigg.roam</key>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>com.msdrigg.roam</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>roamforroku</string>
+			</array>
+		</dict>
+	</array>
+	<key>CURRENT_PROJECT_VERSION</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>InAlternativeAppNames</key>
+	<array>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>Remote</string>
+		</dict>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>Roam</string>
+		</dict>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>Better Remote</string>
+		</dict>
+	</array>
+	<key>NSAppTransportSecurity</key>
+	<dict/>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_preflight_check._tcp</string>
+	</array>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>MuteIntent</string>
+		<string>PlayOrPauseIntent</string>
+		<string>PowerIntent</string>
+		<string>SelectIntent</string>
+	</array>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>Roam can notify you when the the developer responds to your message</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+		<string>remote-notification</string>
+	</array>
+	<key>OSLogPreferences</key>
+	<dict>
+		<key>com.msdrigg.roam</key>
+		<dict>
+			<key>Main</key>
 			<dict>
-				<key>Main</key>
+				<key>Level</key>
 				<dict>
-					<key>Level</key>
-					<dict>
-						<key>Enable</key>
-						<string>Debug</string>
-						<key>Persist</key>
-						<string>Debug</string>
-					</dict>
+					<key>Enable</key>
+					<string>Debug</string>
+					<key>Persist</key>
+					<string>Debug</string>
 				</dict>
 			</dict>
 		</dict>
 	</dict>
+</dict>
 </plist>

@@ -3,15 +3,13 @@
     import os.log
     import SwiftUI
 
-private struct StrTransformation {
-    let old: String
-    let new: String
-}
+    private struct StrTransformation {
+        let old: String
+        let new: String
+    }
 
     @available(iOS, introduced: 17.0)
     struct KeyboardEntry: View {
-        private static let logger = Logger(subsystem: getLogSubsystem(), category: "KeyboardEntry")
-
         @Binding var str: String
         @State var strSent: String = ""
         @Binding var showing: Bool
@@ -47,16 +45,13 @@ private struct StrTransformation {
                     showing = false
                 }
             }, fullFeatures: texteditId != nil)
-            #if !os(tvOS)
             .textSelection(.disabled)
-            #endif
             .focused($keyboardFocused)
             .font(.body)
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
             .background(RoundedRectangle(cornerRadius: 8).fill(.fill.tertiary))
             .frame(height: 60)
-            #if !os(tvOS)
             .task(id: scenePhase) {
                 guard scenePhase == .active else {
                     return
@@ -76,14 +71,13 @@ private struct StrTransformation {
                     }
                 }
             }
-            #endif
             .onChange(of: str) { _, str in
                 if let texteditId {
                     Task {
                         do {
                             try await ecpSession?.setTextEdit(str, texteditId: texteditId)
                         } catch {
-                            Self.logger.error("Error setting textedit text \(error, privacy: .public)")
+                            Log.connection.error("Error setting textedit text \(error, privacy: .public)")
                         }
                     }
                 } else {
@@ -123,7 +117,7 @@ private struct StrTransformation {
         }
     }
 
-    class EndOnlyTextField: UITextField {
+    final class EndOnlyTextField: UITextField {
         var didDelete: (() -> Void)?
         var fullFeatures: Bool?
 
@@ -224,7 +218,7 @@ private struct StrTransformation {
             }
         }
 
-        class Coordinator: NSObject, UITextFieldDelegate {
+        final class Coordinator: NSObject, UITextFieldDelegate {
             var parent: TextFieldContainer
 
             init(_ textFieldContainer: TextFieldContainer) {
@@ -255,14 +249,8 @@ private struct StrTransformation {
         }
     }
 
-    #if !os(tvOS)
     @MainActor
-    class KeyboardListener {
-        private static nonisolated let logger = Logger(
-            subsystem: getLogSubsystem(),
-            category: String(describing: KeyboardListener.self)
-        )
-
+    final class KeyboardListener {
         var observerTokens: [Any] = []
 
         var keyboardHideNotifier: (() -> Void)?
@@ -276,7 +264,7 @@ private struct StrTransformation {
         }
 
         func startListening() throws {
-            Self.logger.notice("Starting keyboard observations")
+            Log.userInteraction.notice("Starting keyboard observations")
             // Get the default notification center instance.
             let t1 = NotificationCenter.default.addObserver(
                 forName: UIResponder.keyboardWillHideNotification,
@@ -304,7 +292,7 @@ private struct StrTransformation {
         }
 
         func stopListening() {
-            Self.logger.notice("Stoping keyboard observations")
+            Log.userInteraction.notice("Stoping keyboard observations")
             self.keyboardShowNotifier = nil
             self.keyboardHideNotifier = nil
             let ot = self.observerTokens
@@ -334,5 +322,4 @@ private struct StrTransformation {
             }
         }
     }
-    #endif
 #endif

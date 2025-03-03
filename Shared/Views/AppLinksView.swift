@@ -1,18 +1,18 @@
 import SwiftData
 import SwiftUI
 
-#if os(tvOS) || os(visionOS)
+#if os(visionOS)
     let globalGridWidth: CGFloat = 100
     let globalGridSpacing: CGFloat = 20
     let globalGridHeight: CGFloat = 130
-#elseif os(visionOS)
-    let globalGridWidth: CGFloat = 80
-    let globalGridSpacing: CGFloat = 20
-    let globalGridHeight: CGFloat = 130
+#elseif os(iOS)
+    let globalGridWidth: CGFloat = 70
+    let globalGridSpacing: CGFloat = 10
+    let globalGridHeight: CGFloat = 80
 #else
     let globalGridWidth: CGFloat = 60
     let globalGridSpacing: CGFloat = 10
-    let globalGridHeight: CGFloat = 80
+    let globalGridHeight: CGFloat = 70
 #endif
 
 struct AppLinksView: View {
@@ -113,7 +113,6 @@ struct AppLinkButton: View {
     let action: (AppLinkAppEntity) -> Void
 
     @ScaledMetric var gridWidth: CGFloat = globalGridWidth
-    @ScaledMetric var gridHeight: CGFloat = globalGridHeight
 
     var body: some View {
         Button(action: {
@@ -121,13 +120,12 @@ struct AppLinkButton: View {
         }, label: {
             VStack {
                 DataImage(from: app.icon, fallback: "questionmark.app")
-                    .resizable().aspectRatio(contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .frame(width: gridWidth)
                     .shadow(radius: 4)
 
                 Text(app.name)
-                #if os(tvOS) || os(visionOS)
+                #if os(visionOS)
                     .font(.body)
                 #else
                     .font(.caption)
@@ -143,16 +141,12 @@ struct AppLinkButton: View {
 
 #if DEBUG
 #Preview(
-    traits: .fixedLayout(width: 100, height: 300)
-) {
-    AppLinksView(deviceId: nil, rows: 1, handleOpenApp: { _ in })
-        .modelContainer(previewContainer)
-}
-
-#Preview(
-    traits: .fixedLayout(width: 100, height: 300)
+    "App Links",
+    traits: .fixedLayout(width: 400, height: 300)
 ) {
     AppLinksView(deviceId: nil, rows: 2, handleOpenApp: { _ in })
+        .padding(.bottom, 10)
+        .padding(.horizontal, 10)
         .modelContainer(previewContainer)
 }
 #endif

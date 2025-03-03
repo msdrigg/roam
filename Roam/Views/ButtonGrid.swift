@@ -81,7 +81,7 @@ struct ButtonGrid: View {
 
 #endif
                             view
-#if !os(tvOS) && !os(watchOS)
+#if !os(watchOS)
                             .customKeyboardShortcut(button.3)
 #endif
                     }

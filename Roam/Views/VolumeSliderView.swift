@@ -8,11 +8,6 @@
 
     let globalDefaultVolume: Float = 0.25
 
-    private let logger = Logger(
-        subsystem: getLogSubsystem(),
-        category: String(describing: CustomVolumeSlider.self)
-    )
-
     struct CustomVolumeSlider: UIViewRepresentable {
         @Binding var volume: Float
         @Binding var isTouched: Bool
@@ -48,7 +43,7 @@
             Coordinator(self)
         }
 
-        class Coordinator: NSObject {
+        final class Coordinator: NSObject {
             var customVolumeSlider: CustomVolumeSlider
 
             init(_ customVolumeSlider: CustomVolumeSlider) {
@@ -82,6 +77,7 @@
         @AppStorage(UserDefaultKeys.shouldControlVolumeWithHWButtons) private var controlVolumeWithHWButtons: Bool =
             true
         @Environment(\.scenePhase) var scenePhase
+        @Environment(\.layoutDirection) var layoutDirection
 
         var inForeground: Bool {
             return scenePhase == .active
@@ -105,8 +101,8 @@
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                 let newVolume = getAudioClamped(audioSession.outputVolume)
                 targetVolumeSet = getAudioClamped(audioSession.outputVolume) ?? targetVolumeSet
-                logger.notice("Resetting volume to clamp value \(newVolume ?? -1, privacy: .public), chosen \(targetVolume, privacy: .public), unclamped \(audioSession.outputVolume, privacy: .public)")
-                logger.notice("Setting volume to new value \(volume, privacy: .public) with target")
+                Log.userInteraction.notice("Resetting volume to clamp value \(newVolume ?? -1, privacy: .public), chosen \(targetVolume, privacy: .public), unclamped \(audioSession.outputVolume, privacy: .public)")
+                Log.userInteraction.notice("Setting volume to new value \(volume, privacy: .public) with target")
                 volume = targetVolume
             }
         }
@@ -124,15 +120,15 @@
                 Spacer()
                 Spacer()
             }
-            .offset(x: -800)
+            .offset(x: layoutDirection == .rightToLeft ? -800 : 800)
             .onChange(of: volume) { _, newVolume in
                 guard inForeground && controlVolumeWithHWButtons else {
                     return
                 }
 
-                logger.notice("Getting volume change \(newVolume, privacy: .public) with target")
+                Log.userInteraction.notice("Getting volume change \(newVolume, privacy: .public) with target")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                    logger.notice("Setting volume to new value \(volume, privacy: .public) with target")
+                    Log.userInteraction.notice("Setting volume to new value \(volume, privacy: .public) with target")
                     volume = targetVolume
                 }
             }
@@ -159,20 +155,20 @@
                         volume = newVolume
                     }
                 } else {
-                    logger.error("Unable to get volume events stream")
+                    Log.userInteraction.error("Unable to get volume events stream")
                 }
             }
             .onChange(of: scenePhase) { oldPhase, newPhase in
                 guard controlVolumeWithHWButtons else {
                     return
                 }
-                logger.notice("New scene phase \(String(describing: newPhase), privacy: .public)")
+                Log.userInteraction.notice("New scene phase in volume listener \(String(describing: newPhase), privacy: .public)")
                 if oldPhase != .active, newPhase == .active {
                     self.resetVolume()
                 }
             }
             .onAppear {
-                logger.notice("Volume slider appearing")
+                Log.userInteraction.notice("Volume slider appearing")
                 guard inForeground && controlVolumeWithHWButtons else {
                     return
                 }

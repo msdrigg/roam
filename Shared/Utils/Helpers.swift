@@ -1,7 +1,11 @@
 import OSLog
+import UserNotifications
 import SwiftUI
+import Foundation
+import CoreGraphics
+import ImageIO
+import UniformTypeIdentifiers
 
-private let logger = Logger(subsystem: getLogSubsystem(), category: "Helpers")
 extension String {
     func stripPrefix(_ prefix: String) -> String {
         guard self.hasPrefix(prefix) else { return self }
@@ -82,14 +86,41 @@ extension Data {
 public func parsePastedUrl(_ input: String) -> (String, [String: String])? {
     guard let url = URL(string: input), let host = url.host else { return nil }
 
-    let result1: (String, [String: String])? = parseHuluUrl(url, host: host)
-        ?? parseDisneyUrl(url, host: host) ?? parseAmazonPrimeUrl(url, host: host)
-        ?? parseSlingUrl(url, host: host)
-    let result2: (String, [String: String])? = parseYouTubeUrl(url, host: host)
-        ?? parseMaxUrl(url, host: host) ?? parseTubiUrl(url, host: host) ?? parseNetflixUrl(url, host: host)
-        ?? parseParamountUrl(url, host: host) ?? parsePeacockUrl(url, host: host) ?? parseRokuUrl(url, host: host)
+    if let pattern = parseHuluUrl(url, host: host) {
+        return pattern
+    }
+    if let pattern = parseDisneyUrl(url, host: host) {
+        return pattern
+    }
+    if let pattern = parseAmazonPrimeUrl(url, host: host) {
+        return pattern
+    }
+    if let pattern = parseSlingUrl(url, host: host) {
+        return pattern
+    }
+    if let pattern = parseYouTubeUrl(url, host: host) {
+        return pattern
+    }
+    if let pattern = parseMaxUrl(url, host: host) {
+        return pattern
+    }
+    if let pattern = parseTubiUrl(url, host: host) {
+        return pattern
+    }
+    if let pattern = parseNetflixUrl(url, host: host) {
+        return pattern
+    }
+    if let pattern = parseRokuUrl(url, host: host) {
+        return pattern
+    }
+    if let pattern = parseParamountUrl(url, host: host) {
+        return pattern
+    }
+    if let pattern = parsePeacockUrl(url, host: host) {
+        return pattern
+    }
 
-    return result1 ?? result2
+    return nil
 }
 
 private func parseSlingUrl(_ url: URL, host: String) -> (String, [String: String])? {
@@ -113,17 +144,17 @@ private func parseAmazonPrimeUrl(_ url: URL, host: String) -> (String, [String: 
     let appId = "13"
 
     if host.contains("amazon.com") {
-        logger.notice("Parsing amazon url\(url, privacy: .public)")
+        Log.connection.notice("Parsing amazon url\(url, privacy: .public)")
         let pathComponents = url.pathComponents
         // swiftlint:disable:next force_try
         if pathComponents.last?.starts(with: try! Regex("amzn.?\\.dv")) == true {
             if let lastComponent = pathComponents.last {
-                logger.notice("Parsing 'amzn' amazon url \(lastComponent, privacy: .public)")
+                Log.connection.notice("Parsing 'amzn' amazon url \(lastComponent, privacy: .public)")
                 parsedData["contentId"] = lastComponent
             }
             parsedData["mediaType"] = "movie"
         } else {
-            logger.notice("Parsing standard amazon url \(pathComponents, privacy: .public)")
+            Log.connection.notice("Parsing standard amazon url \(pathComponents, privacy: .public)")
             parsedData["contentId"] = pathComponents.last{ piece in
                 // swiftlint:disable:next force_try
                 !piece.starts(with: try! Regex("ref"))
@@ -302,7 +333,7 @@ public func kebabParamDecodingStrategy() -> JSONDecoder.KeyDecodingStrategy {
         let keyPart = keySequence.last!
         let segments = keyPart.stringValue.stripPrefix("param-").split(separator: "-")
         if segments.isEmpty {
-            logger.error("Error parsing kebab-case parameter name: \(keyPart.stringValue, privacy: .public)")
+            Log.connection.error("Error parsing kebab-case parameter name: \(keyPart.stringValue, privacy: .public)")
         }
 
         // Join camel case
@@ -336,8 +367,296 @@ let globalDefaultRemoteRTCPPort: UInt16 = 5150
 let globalRTPPayloadType = 97
 let globalClockRate = 48000
 let globalPacketSizeMS: Int64 = 10
-let globalHugeFixedVDLYMS: UInt32 = 1200
+let globalHugeFixedVDLYMS: UInt32 = 600
 
-public func getLogSubsystem() -> String {
-    return Bundle.main.bundleIdentifier ?? "com.msdrigg.roam"
+public func installAborter() {
+    let atexitResult = atexit({
+        Log.lifecycle.error("Aborting due to exit being called")
+        abort()
+    })
+    if atexitResult == 0 {
+        Log.lifecycle.notice("Added call to atexit")
+    } else {
+        Log.lifecycle.error("FAILED to add call to atexit")
+    }
 }
+
+@MainActor
+public extension Binding {
+    /// Returns a binding by mapping this binding's value to a `Bool` that is
+    /// `true` when the value is non-`nil` and `false` when the value is `nil`.
+    ///
+    /// When the value of the produced binding is set to `false` this binding's value
+    /// is set to `nil`.
+    func mappedToBool<Wrapped>() -> Binding<Bool> where Value == Wrapped? {
+        Binding<Bool>(mappedTo: self)
+    }
+}
+
+@MainActor
+public extension Binding where Value == Bool {
+    /// Creates a binding by mapping an optional value to a `Bool` that is
+    /// `true` when the value is non-`nil` and `false` when the value is `nil`.
+    ///
+    /// When the value of the produced binding is set to `false` the value
+    /// of `bindingToOptional`'s `wrappedValue` is set to `nil`.
+    ///
+    /// Setting the value of the produce binding to `true` does nothing and
+    /// will log an error.
+    ///
+    /// - parameter bindingToOptional: A `Binding` to an optional value, used to calculate the `wrappedValue`.
+    init(mappedTo bindingToOptional: Binding<(some Any)?>) {
+        self.init(
+            get: { bindingToOptional.wrappedValue != nil },
+            set: { newValue in
+                if !newValue {
+                    bindingToOptional.wrappedValue = nil
+                } else {
+                    os_log(
+                        .error,
+                        "Optional binding mapped to optional has been set to `true`, which will have no effect. Current value: %@",
+                        String(describing: bindingToOptional.wrappedValue)
+                    )
+                }
+            }
+        )
+    }
+}
+
+
+#if os(macOS)
+import AppKit
+#else
+import UIKit
+#endif
+
+#if os(macOS)
+extension NSImage {
+    func pngData() -> Data? {
+        guard let tiffData = self.tiffRepresentation,
+           let bitmapImage = NSBitmapImageRep(data: tiffData)
+        else {
+            return nil
+        }
+        guard let pngData = bitmapImage.representation(using: .png, properties: [:]) else {
+            return nil
+        }
+        return pngData
+    }
+}
+#endif
+
+func compressPNGOffthread(image: CGImage, maxFileSize: Int = 9 * 1024 * 1024) async -> Data? {
+    return await withCheckedContinuation { continuation in
+        DispatchQueue.global(qos: .userInitiated).async {
+            let compressedData = compressPNG(image: image, maxFileSize: maxFileSize)
+            continuation.resume(returning: compressedData)
+        }
+    }
+}
+
+func compressPNG(image: CGImage, maxFileSize: Int = 9 * 1024 * 1024) -> Data? {
+    guard let originalPNGData = pngData(from: image) else {
+        return nil
+    }
+
+    if originalPNGData.count <= maxFileSize {
+        return originalPNGData
+    }
+
+    var compressionQuality: CGFloat = 1.0
+
+    while compressionQuality > 0.1 {
+        if let compressedJPEG = jpegData(from: image, quality: compressionQuality),
+           let normalizedJPEGImage = cgImageFromJPEGData(compressedJPEG), // Re-normalize after each cycle
+           let finalPNGData = pngData(from: normalizedJPEGImage),
+           finalPNGData.count <= maxFileSize {
+            return finalPNGData
+        }
+        
+        compressionQuality -= 0.1
+    }
+
+    return nil
+}
+
+func cgImageFromJPEGData(_ data: Data) -> CGImage? {
+    guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+          let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+        return nil
+    }
+    
+    return cgImage
+}
+
+func jpegData(from image: CGImage, quality: CGFloat) -> Data? {
+    let options: [CFString: Any] = [kCGImageDestinationLossyCompressionQuality: quality]
+    let data = NSMutableData()
+    
+    guard let destination = CGImageDestinationCreateWithData(data, UTType.jpeg.identifier as CFString, 1, nil) else {
+        return nil
+    }
+    
+    CGImageDestinationAddImage(destination, image, options as CFDictionary)
+    CGImageDestinationFinalize(destination)
+    
+    return data as Data
+}
+
+
+func pngData(from image: CGImage) -> Data? {
+    let data = NSMutableData()
+    guard let destination = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil) else {
+        return nil
+    }
+    
+    CGImageDestinationAddImage(destination, image, nil)
+    CGImageDestinationFinalize(destination)
+    
+    return data as Data
+}
+
+func pngData(from jpegData: Data) -> Data? {
+    guard let imageSource = CGImageSourceCreateWithData(jpegData as CFData, nil),
+          let cgImage = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) else {
+        return nil
+    }
+
+    let data = NSMutableData()
+    guard let destination = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil) else {
+        return nil
+    }
+
+    CGImageDestinationAddImage(destination, cgImage, nil)
+    CGImageDestinationFinalize(destination)
+    
+    return data as Data
+}
+
+#if os(macOS)
+extension NSImage {
+    func compressedPNGData() async -> Data? {
+        guard let cgImage = self.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            return nil
+        }
+        return await compressPNGOffthread(image: cgImage)
+    }
+}
+#else
+extension UIImage {
+    func compressedPNGData() async -> Data? {
+        guard let cgImage = self.cgImage else { return nil }
+        return await compressPNGOffthread(image: cgImage)
+    }
+}
+#endif
+
+extension Data {
+    init?(fromAssetImage imageName: String) {
+#if os(macOS)
+        let image = NSImage(named: imageName)
+
+        if let pngData = image?.pngData() {
+            self = pngData
+        } else {
+            return nil
+        }
+#else
+        let image = UIImage(named: imageName, in: Bundle.main, with: nil)
+        guard let data = image?.pngData() else {
+            return nil
+        }
+        self = data
+#endif
+    }
+}
+
+#if os(iOS)
+import Combine
+import UIKit
+
+
+/// Publisher to read keyboard changes.
+enum KeyboardReadable { }
+
+extension KeyboardReadable {
+    @MainActor
+    static var keyboardPublisher: AnyPublisher<Bool, Never> {
+        Publishers.Merge(
+            NotificationCenter.default
+                .publisher(for: UIResponder.keyboardWillShowNotification)
+                .map { notification in
+                    let rect = notification.userInfo?[UIResponder.keyboardFrameBeginUserInfoKey] as? CGRect
+                    return (rect?.height ?? 0) > 10
+                },
+            NotificationCenter.default
+                .publisher(for: UIResponder.keyboardWillHideNotification)
+                .map { _ in false }
+        )
+        .eraseToAnyPublisher()
+    }
+}
+#endif
+
+func isHiddenMessage(_ message: String) -> Bool {
+    let hiddenPatterns = [":ninja:", ":command-share-diagnostics:"]
+    
+    for pattern in hiddenPatterns {
+        if message.hasPrefix(pattern) {
+            return true
+        }
+    }
+    
+    return false
+}
+
+func parseDiscordSnowflake(_ id: String) -> Date? {
+    guard let snowflake = UInt64(id) else { return nil }
+    
+    let discordEpoch: UInt64 = 1_420_070_400_000 // Discord epoch in milliseconds (2015-01-01T00:00:00Z)
+    let timestamp = (snowflake >> 22) + discordEpoch
+    
+    return Date(timeIntervalSince1970: TimeInterval(timestamp) / 1000)
+}
+
+func generateDiscordSnowflake(_ date: Date) -> String {
+    let discordEpoch: UInt64 = 1_420_070_400_000 // Discord epoch in milliseconds (2015-01-01T00:00:00Z)
+    let timestamp = UInt64(date.timeIntervalSince1970 * 1000) - discordEpoch
+    let randomBits: UInt64 = 0b101010101010 // Example arbitrary bits (worker ID, process ID, increment)
+
+    let snowflake = (timestamp << 22) | randomBits
+    return String(snowflake)
+}
+
+
+#if !WIDGET
+func requestNotificationPermission() {
+    Log.notifications.notice("Requesting notification permission")
+    UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+        if granted {
+            Log.notifications.notice("Notification permission granted.")
+            getNotificationSettings()
+        } else if let error {
+            Log.notifications.error("Notification permission denied with error: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+}
+
+func getNotificationSettings() {
+    UNUserNotificationCenter.current().getNotificationSettings { settings in
+        guard settings.authorizationStatus == .authorized else {
+            Log.notifications.notice("Not registering for remote notifications because notification permission is not granted. \(settings.authorizationStatus.rawValue, privacy: .public)")
+            return
+        }
+        DispatchQueue.main.async {
+            Log.notifications.notice("Registering for remote notifications")
+            #if os(macOS)
+                NSApplication.shared.registerForRemoteNotifications()
+            #elseif !os(watchOS)
+                UIApplication.shared.registerForRemoteNotifications()
+            #endif
+        }
+    }
+}
+#endif
+

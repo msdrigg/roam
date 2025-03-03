@@ -33,10 +33,8 @@ enum TextEditStatus: Equatable, Hashable {
     }
 }
 
-private let logger = Logger(subsystem: getLogSubsystem(), category: "ECPMonitor")
-
 @MainActor @Observable
-class ECPMonitor {
+final class ECPMonitor {
     var status: ECPWebsocketState = .disconnected(.distantPast)
     var textEditStatus: TextEditStatus = .off
     var ecpClient: ECPWebsocketClient?
@@ -48,7 +46,7 @@ class ECPMonitor {
             await oldEcpClient?.cancel()
         }
         guard let device, let url = URL(string: device.location) else {
-            logger.error("Could not parse URL for selected device \(device?.location ?? "nil", privacy: .public)")
+            Log.connection.error("Could not parse URL for selected device \(device?.location ?? "nil", privacy: .public)")
             return
         }
         let ecpClient = ECPWebsocketClient(
@@ -56,7 +54,7 @@ class ECPMonitor {
             macs: device.macs(),
             websocketStateUpdated: {[weak self] state in
                 guard let self = self else { return }
-                logger.notice("Getting new ws state \(state.debugDescription, privacy: .public)")
+                Log.connection.notice("Getting new ws state \(state.debugDescription, privacy: .public)")
                 DispatchQueue.main.async {
                     self.status = state
                 }
@@ -81,7 +79,7 @@ class ECPMonitor {
             do {
                 try await ecpClient.requestEventsNotify()
             } catch {
-                logger.error("Error requesting events notify \(error, privacy: .public)")
+                Log.connection.error("Error requesting events notify \(error, privacy: .public)")
             }
         }
     }

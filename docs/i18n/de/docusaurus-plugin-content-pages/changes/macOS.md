@@ -1,1 +1,1 @@
--   Fehlerbehebungen und Verbesserungen
+-   Hinzufügen einer Hotkey-Taste zur Anzeige des Roam-Menüs (Menüleiste oder Hauptfenster im Hintergrund)

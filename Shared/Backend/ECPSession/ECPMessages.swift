@@ -1,6 +1,5 @@
 import OSLog
 
-private let logger = Logger(subsystem: getLogSubsystem(), category: "ECPResponseMessage")
 enum ECPResponseMessage: Decodable {
     case notify(ECPNotification)
     case response(ECPResponse)

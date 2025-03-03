@@ -51,6 +51,10 @@ struct SettingsView: View {
     @State private var scanningActor: DeviceDiscoveryActor!
     @State private var ssdpActor: DeviceDiscoveryActor!
     @State private var isScanning: Bool = false
+    
+    private var runningInPreview: Bool {
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+    }
 
     @State private var showWatchOSNote = false
     @Environment(\.uuidUpdater) private var updater: UUIDUpdater?
@@ -58,47 +62,14 @@ struct SettingsView: View {
 #if !os(watchOS)
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 #endif
+    @Environment(\.layoutDirection) var layoutDirection
 
     @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanIpAutomatically: Bool = true
     @AppStorage(UserDefaultKeys.shouldControlVolumeWithHWButtons) private var controlVolumeWithHWButtons: Bool = true
     @AppStorage(UserDefaultKeys.showMenuBar) private var showMenuBar: Bool = false
     @AppStorage(UserDefaultKeys.userMajorActionCount) private var majorActionsCount: Int = 0
 
-    @State private var reportingDebugLogs: Bool = false
-    @State private var debugLogReportID: String?
-
     @State private var variableColor: CGFloat = 0.0
-
-    func reportDebugLogs() {
-        Task {
-            reportingDebugLogs = true
-            defer { reportingDebugLogs = false }
-            Log.userInteraction.notice("Getting logs to send \(Date.now.formatted(), privacy: .public)")
-            let logs = await getDebugInfo(container: getSharedModelContainer())
-            Log.userInteraction.notice("Sending logs \(logs.installationInfo.userId, privacy: .public)")
-
-            do {
-                try await uploadDebugLogs(logs: logs)
-                try await sendMessage(message: "Diagnostics Shared at \(Date.now.formatted())", apnsToken: nil)
-
-                Log.userInteraction.notice("Upload successful \(logs.debugErrors, privacy: .public)")
-                DispatchQueue.main.async {
-#if os(watchOS)
-                    debugLogReportID = logs.installationInfo.userId
-#elseif os(macOS)
-                    openWindow(id: "messages")
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        NSApp.forceFront("messages")
-                    }
-#else
-                    path.append(NavigationDestination.messageDestination)
-#endif
-                }
-            } catch {
-                Log.userInteraction.error("Failed to upload logs: \(error, privacy: .public)")
-            }
-        }
-    }
 
     #if !os(watchOS)
     func initiateScan() {
@@ -112,8 +83,61 @@ struct SettingsView: View {
         }
     }
     #endif
-
+    
     var body: some View {
+        if runningInPreview {
+            bodyContent
+        } else {
+            bodyContent
+                .onChange(of: self.updater?.uuid.uuidString) { _, _ in
+                    self._devices.update()
+                }
+                .onAppear {
+                    Log.lifecycle.notice("Showing \(#fileID, privacy: .public) view")
+                }
+                .onDisappear {
+                    Log.lifecycle.notice("Closing \(#fileID, privacy: .public) view")
+                }
+                .onAppear {
+                    scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                        updater?.update()
+                    })
+                    ssdpActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                        updater?.update()
+                    })
+
+                }
+#if !os(watchOS)
+                .task(priority: .background) {
+                    if !scanIpAutomatically {
+                        return
+                    }
+
+                    initiateScan()
+                }
+                .task(id: "\(scanIpAutomatically)", priority: .background) {
+                    if !scanIpAutomatically {
+                        return
+                    }
+
+                    await ssdpActor.scanSSDPContinually()
+                }
+#endif
+#if !os(watchOS) && !os(macOS)
+                .onAppear {
+                    appDelegate.navigationPath.focusedWindow = .settings
+                }
+#endif
+#if os(macOS)
+                .onWindowFocused {
+                    Log.lifecycle.notice("\(#fileID, privacy: .public) becoming key window")
+                    appDelegate.navigationPath.focusedWindow = .settings
+                }
+#endif
+        }
+    }
+
+    var bodyContent: some View {
         Form {
             Section {
                 if devices.isEmpty {
@@ -174,7 +198,7 @@ struct SettingsView: View {
                     #endif
                     .help("Scan for devices")
                     .labelStyle(.iconOnly)
-                    .offset(x: 6)
+                    .offset(x: layoutDirection == .rightToLeft ? -6 : 6)
                 }
 #else
                 Text("Devices", comment: "Header in device selection menu")
@@ -285,7 +309,6 @@ struct SettingsView: View {
 #endif
             }
 
-#if !os(watchOS)
                 Button(action: {
 #if os(macOS)
                     openWindow(id: "messages")
@@ -299,7 +322,9 @@ struct SettingsView: View {
                     HStack {
                         if unreadMessages.count > 0 {
                             Label(String(localized: "Chat with the Developer", comment: "Label on a button to open the chat window"), systemImage: "message")
+                            #if !os(watchOS)
                                 .badge(unreadMessages.count)
+                            #endif
                         } else {
                             Label(String(localized: "Chat with the Developer", comment: "Label on a button to open the chat window"), systemImage: "message")
                         }
@@ -313,55 +338,6 @@ struct SettingsView: View {
 #if os(macOS)
                 .buttonStyle(.plain)
 #endif
-
-#endif
-
-#if os(watchOS)
-                Button(action: { reportDebugLogs() }, label: {
-                    HStack {
-                        Label(
-                            // swiftlint:disable:next line_length
-                            reportingDebugLogs ? String(localized: "Collecting Diagnostics...", comment: "Description on a button that is collecting app diagnostics") : String(localized: "Share diagnostics", comment: "Label on a button to share app diagnostics"),
-                            systemImage: "square.and.arrow.up"
-                        )
-                        Spacer()
-                        if reportingDebugLogs {
-                            Image(systemName: "rays")
-                                .symbolEffect(.variableColor, isActive: true)
-                        }
-                    }
-                })
-                .sheet(isPresented: Binding<Bool>(
-                    get: { debugLogReportID != nil && !reportingDebugLogs },
-                    set: { if !$0 { debugLogReportID = nil } }
-                )) {
-                    VStack {
-                        Text("Your diagnostic report has been created with ID \"\(debugLogReportID ?? "unknown")\"", comment: "Success indicator on a diagnostic report flow")
-                            .font(.headline)
-                            .padding(.bottom, 2)
-                        Text("Please send an email to roam-support@msd3.io including the report ID any other feedback", comment: "Caption on a diagnostic report flow")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.bottom, 2)
-                        HStack {
-                            ShareLink(item: String(localized: """
-                                Hi Roam Support (roam-support@msd3.io),
-
-                                <Add Feedback Here>
-
-                                ---
-                                Debug ID \(debugLogReportID ??
-                                                    "unknown")
-                                """, comment: "Email body template for a support email"), subject: Text("Roam Feedback", comment: "Subject line in email requesting help")) {
-                                Label(String(localized: "Open Email Template", comment: "Label on a button to open an email"), systemImage: "square.and.arrow.up")
-                            }
-                            Button(String(localized: "Close", comment: "Label on a button to close a menu"), systemImage: "xmark", role: .destructive) { debugLogReportID = nil }
-                        }
-                    }
-                    .padding()
-                }
-#endif
             }
 
             Section {
@@ -369,30 +345,7 @@ struct SettingsView: View {
             }
         }
         .id(updater?.uuid.uuidString ?? "--")
-        .onChange(of: self.updater?.uuid.uuidString) { _, _ in
-            self._devices.update()
-        }
-        .onAppear {
-            if destination == .debugging {
-                reportDebugLogs()
-            }
-        }
-        .onAppear {
-            Log.lifecycle.notice("Showing \(#fileID, privacy: .public) view")
-        }
-        .onDisappear {
-            Log.lifecycle.notice("Closing \(#fileID, privacy: .public) view")
-        }
-#if os(macOS)
-        .onWindowFocused {
-            Log.lifecycle.notice("\(#fileID, privacy: .public) becoming key window")
-            appDelegate.navigationPath.focusedWindow = .settings
-        }
-#endif
 #if !os(watchOS) && !os(macOS)
-        .onAppear {
-            appDelegate.navigationPath.focusedWindow = .settings
-        }
         .refreshable {
             initiateScan()
         }
@@ -406,133 +359,18 @@ struct SettingsView: View {
         .navigationTitle(String(localized: "Settings", comment: "Navigation title on the settings page"))
 #endif
         .formStyle(.grouped)
-        .onAppear {
-            scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
-                updater?.update()
-            })
-            ssdpActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
-                updater?.update()
-            })
-
-        }
-#if !os(watchOS)
-        .task(priority: .background) {
-            if !scanIpAutomatically {
-                return
-            }
-
-            initiateScan()
-        }
-        .task(id: "\(scanIpAutomatically)", priority: .background) {
-            if !scanIpAutomatically {
-                return
-            }
-
-            await ssdpActor.scanSSDPContinually()
-        }
-#endif
     }
 
     @ViewBuilder
     var addDeviceButton: some View {
         Button(String(localized: "Add a device manually", comment: "Label on a button to add a device"), systemImage: "plus") {
-            Task.detached {
+            Task {
                 let persistentId = await DataHandler(modelContainer: getSharedModelContainer()).addOrReplaceDevice(location: "http://192.168.0.1:8060/", friendlyDeviceName: getGlobalNewDeviceName(), udn: "roam:newdevice-\(UUID().uuidString)"
                 )
                 Log.userInteraction.notice("Added empty device with persistent ID \(String(describing: persistentId), privacy: .public)")
-            }
-        }
-    }
-}
-
-struct DeviceListItem: View {
-    @Bindable var device: Device
-    var idx: Int
-
-    @Environment(\.uuidUpdater) private var updater
-
-    var body: some View {
-        NavigationLink(value: NavigationDestination.deviceSettingsDestination(device.persistentModelID)) {
-            HStack(alignment: .center) {
-                VStack(alignment: .center) {
-                    DataImage(from: device.deviceIcon, fallback: "tv")
-                        .resizable()
-                        .controlSize(.extraLarge)
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: deviceIconSize, height: deviceIconSize)
-                        .padding(4)
+                if let persistentId {
+                    path.append(.deviceSettingsDestination(persistentId))
                 }
-
-                VStack(alignment: .leading) {
-                    HStack(alignment: .center, spacing: 8) {
-                        Circle()
-                            .foregroundColor(device.isOnline() || inScreenshotTestingContext() ? Color.green : Color.gray)
-                            .frame(width: circleSize, height: circleSize)
-                        Text(device.name).lineLimit(1)
-                    }
-                    WrappingHStack(
-                        alignment: .bottomLeading,
-                        horizontalSpacing: 12,
-                        verticalSpacing: 12,
-                        fitContentWidth: true
-                    ) {
-                        Text(getHostPortDisplay(from: device.location)).foregroundStyle(Color.secondary).lineLimit(1)
-#if !os(watchOS)
-                        if device.supportsDatagram == true {
-                            Label(String(localized: "Supported", comment: "Label indicating headphones mode is supported"), systemImage: "headphones").labelStyle(.badge(.green))
-                        } else if device.supportsDatagram == false {
-                            Label(String(localized: "Not Supported", comment: "Label indicating headphones mode is not supported"), systemImage: "headphones").labelStyle(.badge(.red))
-                        } else {
-                            // swiftlint:disable:next line_length
-                            Label(String(localized: "Support Unknown", comment: "Label indicating headphones mode support is possible but not indicated"), systemImage: "headphones").labelStyle(.badge(.yellow))
-                        }
-#endif
-                    }
-                }
-            }
-        }
-        .accessibilityIdentifier("DeviceItem_\(idx)")
-#if !os(watchOS)
-        .contextMenu {
-            Button(role: .destructive) {
-                let pid = device.persistentModelID
-                Task.detached {
-                    do {
-                        try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
-                        Log.userInteraction
-                            .info(
-                                "Deleted device with id \(String(describing: pid), privacy: .public)"
-                            )
-                        DispatchQueue.main.async {
-                            self.updater?.update()
-                        }
-                    } catch {
-                        Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
-                    }
-                }
-            } label: {
-                Label(String(localized: "Delete", comment: "Label on a button to delete a device"), systemImage: "trash")
-            }
-            NavigationLink(value: NavigationDestination.deviceSettingsDestination(device.persistentModelID)) {
-                Label(String(localized: "Edit", comment: "Label on a button to edit a device"), systemImage: "pencil")
-            }
-        }
-#endif
-        .swipeActions(edge: .trailing) {
-            Button(role: .destructive) {
-                let pid = device.persistentModelID
-                Task.detached {
-                    do {
-                        try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
-                        DispatchQueue.main.async {
-                            self.updater?.update()
-                        }
-                    } catch {
-                        Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
-                    }
-                }
-            } label: {
-                Label("Delete", systemImage: "trash")
             }
         }
     }
@@ -548,19 +386,13 @@ struct MacSettings: View {
 }
 
 
-//#if DEBUG
-//#Preview(
-//    "Device List",
-//     traits: .fixedLayout(width: 400, height: 300)
-//) {
-//    @Previewable @State var path: [NavigationDestination] = []
-//    return SettingsView(path: $path, destination: .global)
-//        .modelContainer(previewContainer)
-//}
-
-#Preview {
-    Button("hi") {
-        
-    }
+#if DEBUG
+#Preview(
+    "Device List",
+     traits: .fixedLayout(width: 400, height: 300)
+) {
+    @Previewable @State var path: [NavigationDestination] = []
+    return SettingsView(path: $path, destination: .global)
+        .modelContainer(previewContainer)
 }
-//#endif
+#endif

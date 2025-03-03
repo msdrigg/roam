@@ -1,1 +1,1 @@
--   Bug fixes and improvements
+-   Adding hotkey to show roam menu (menu bar or main window in background)

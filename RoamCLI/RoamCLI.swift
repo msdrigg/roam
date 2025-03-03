@@ -346,7 +346,7 @@ extension FileHandle: @retroactive TextOutputStream {
 
 extension RemoteButton: ExpressibleByArgument { }
 
-class ArgumentLexer {
+final class ArgumentLexer {
     private enum State {
         case normal
         case inSingleQuote

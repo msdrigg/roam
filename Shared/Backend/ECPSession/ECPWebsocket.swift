@@ -26,11 +26,6 @@ enum ECPWebsocketState: Equatable, CustomDebugStringConvertible {
 }
 
 actor ECPWebsocketClient: Sendable {
-    nonisolated static let logger = Logger(
-        subsystem: getLogSubsystem(),
-        category: String(describing: ECPWebsocketClient.self)
-    )
-
     enum ECPError: Error {
         case requestFailed(String)
         case badKeypress(RemoteButton)
@@ -85,7 +80,7 @@ actor ECPWebsocketClient: Sendable {
         }
         let staleHandlers = self.responseHandlers
         self.responseHandlers = [:]
-        Self.logger.notice("De-initting \(self.uuid, privacy: .public) for \(self.endpoint.debugDescription, privacy: .public)")
+        Log.connection.notice("De-initting \(self.uuid, privacy: .public) for \(self.endpoint.debugDescription, privacy: .public)")
         for handler in staleHandlers.values {
             handler(.failure(.connectionFailed))
         }
@@ -109,18 +104,6 @@ actor ECPWebsocketClient: Sendable {
         return try await block(self)
     }
 
-    public func oneOff<T: Sendable>(timeout: TimeInterval = 5, _ block: @escaping @Sendable (isolated ECPWebsocketClient) async throws -> T) async throws -> T {
-        Self.logger.notice("Running quick oneoff with id \(self.uuid, privacy: .public) for endpoint \(self.endpoint.debugDescription, privacy: .public)")
-        self.start()
-        defer {
-            self.cancel()
-        }
-
-        return try await withTimeout(delay: timeout) {
-            return try await self.run(block)
-        }
-    }
-
     public nonisolated func pressCharacter(_ character: Character) async throws {
         let keypress = getKeypressForKey(key: character)
         try await self.sendKey(keypress)
@@ -133,7 +116,7 @@ actor ECPWebsocketClient: Sendable {
         }
 
         guard let keypress = button.apiValue else {
-            Self.logger.fault("Bad key with no api value \(button.description, privacy: .public)")
+            Log.connection.fault("Bad key with no api value \(button.description, privacy: .public)")
             throw ECPError.badKeypress(button)
         }
 
@@ -142,7 +125,7 @@ actor ECPWebsocketClient: Sendable {
 
     @discardableResult
     public nonisolated func sendCommand(_ command: ECPRequestMessage, timeout: TimeInterval = 5) async throws -> ECPResponse {
-        Self.logger.notice("Sending command \(command.debugDescription, privacy: .public)")
+        Log.connection.notice("Sending command \(command.debugDescription, privacy: .public)")
 
         let response = try await withTaskCancellationHandler {
             try await withTimeout(delay: timeout) {
@@ -151,10 +134,10 @@ actor ECPWebsocketClient: Sendable {
                         await self.sendMessage(command, timeout: timeout, completion: { response in
                             switch response {
                             case .success(let response):
-                                Self.logger.notice("Got success response for message \(response.debugDescription, privacy: .public)")
+                                Log.connection.notice("Got success response for message \(response.debugDescription, privacy: .public)")
                                 continuation.resume(returning: response)
                             case .failure(let error):
-                                Self.logger.notice("Got failure for command \(command.debugDescription, privacy: .public)")
+                                Log.connection.notice("Got failure for command \(command.debugDescription, privacy: .public)")
                                 continuation.resume(throwing: error)
                             }
                         })
@@ -163,7 +146,7 @@ actor ECPWebsocketClient: Sendable {
             }
         } onCancel: {
             Task {
-                Self.logger.notice("Cancelling self due to sendCommand getting cancelled")
+                Log.connection.notice("Cancelling self due to sendCommand getting cancelled")
                 await self.cancel()
             }
         }
@@ -184,7 +167,7 @@ actor ECPWebsocketClient: Sendable {
 
     public nonisolated func setTextEdit(_ text: String, texteditId: String) async throws {
         guard texteditId != "none" else {
-            Self.logger.error("Can't set textedit state with 'none' Textedit ID")
+            Log.connection.error("Can't set textedit state with 'none' Textedit ID")
             throw ECPError.badTexteditId
         }
 
@@ -204,7 +187,7 @@ actor ECPWebsocketClient: Sendable {
             do {
                 return try decoder.decode(DeviceInfo.self, from: data)
             } catch {
-                Self.logger.error("Error decoding DeviceInfo response \(error, privacy: .public)")
+                Log.connection.error("Error decoding DeviceInfo response \(error, privacy: .public)")
                 throw ECPError.invalidResponse
             }
         }
@@ -215,7 +198,7 @@ actor ECPWebsocketClient: Sendable {
         switch result {
         case .base(let resp):
             guard let data = resp.contentData else {
-                Self.logger.notice("Error getting device capaibilities -- no content data")
+                Log.connection.notice("Error getting device capaibilities -- no content data")
                 throw ECPError.invalidResponse
             }
 
@@ -234,7 +217,7 @@ actor ECPWebsocketClient: Sendable {
         switch result {
         case .base(let resp):
             guard let data = resp.contentData else {
-                Self.logger.notice("Error getting device apps -- no content data")
+                Log.connection.notice("Error getting device apps -- no content data")
                 throw ECPError.invalidResponse
             }
 
@@ -250,7 +233,7 @@ actor ECPWebsocketClient: Sendable {
         switch result {
         case .base(let resp):
             guard let data = resp.contentData, let contentType = resp.contentType else {
-                Self.logger.notice("Error getting device app icon -- no content data")
+                Log.connection.notice("Error getting device app icon -- no content data")
                 throw ECPError.invalidResponse
             }
 
@@ -268,7 +251,7 @@ actor ECPWebsocketClient: Sendable {
         await withDiscardingTaskGroup { taskGroup in
             taskGroup.addTask {
                 try? await Task.sleep(for: .milliseconds(200))
-                Self.logger.notice("Sending wol to wakeup if not already awake")
+                Log.connection.notice("Sending wol to wakeup if not already awake")
                 await sendWolToDevice(macs: self.macs)
             }
 
@@ -280,7 +263,7 @@ actor ECPWebsocketClient: Sendable {
 
     public func requestHeadphonesMode() async throws {
         guard let connectingInterfaces = connection.currentPath?.availableInterfaces else {
-            Self.logger.notice("Error requesting headphones mode: no path")
+            Log.connection.notice("Error requesting headphones mode: no path")
             throw ECPError.noValidInterface([])
         }
 
@@ -289,14 +272,14 @@ actor ECPWebsocketClient: Sendable {
             localInterfaces
                 .first(where: { connectingInterface.name == $0.name && $0.isIPv4 })
         }).first else {
-            Self.logger
+            Log.connection
                 .error(
                     "Connected with interfaces \(connectingInterfaces.map(\.name), privacy: .public) but no match in \(localInterfaces.map(\.name), privacy: .public)"
                 )
             throw ECPError.noValidInterface(connectingInterfaces)
         }
         let localAddress = localNWInterface.address.addressString
-        Self.logger.info("Got local address for PL request \(localAddress, privacy: .public)")
+        Log.connection.notice("Got local address for PL request \(localAddress, privacy: .public)")
 
         try await self.sendCommand(.configureAudio(ConfigureAudioRequest.headphonesMode(
             hostIp: localAddress,
@@ -306,13 +289,13 @@ actor ECPWebsocketClient: Sendable {
 
     private func sendMessage(_ inputMessage: ECPRequestMessage, timeout: TimeInterval? = nil, completion: @escaping ECPResponseCompletion) {
         if self.inError {
-            Self.logger.notice("Restarting on send message because we are in error state")
+            Log.connection.notice("Restarting on send message because we are in error state")
             self.start()
         }
         let reqId = self.newRequestId()
         let message = inputMessage.withId(reqId)
 
-        Self.logger.notice("Current response handlers \(self.responseHandlers.count, privacy: .public) and new request \(message.requestId, privacy: .public) with state \(self.state.debugDescription, privacy: .public) and ws state \(String(describing: self.connection.state), privacy: .public)")
+        Log.connection.notice("Current response handlers \(self.responseHandlers.count, privacy: .public) and new request \(message.requestId, privacy: .public) with state \(self.state.debugDescription, privacy: .public) and ws state \(String(describing: self.connection.state), privacy: .public)")
         self.responseHandlers[reqId] = completion
         let metadata = NWProtocolFramer.Message(ecpRequest: message)
         let context = NWConnection.ContentContext(
@@ -339,7 +322,7 @@ actor ECPWebsocketClient: Sendable {
     }
 
     private func clearHandlers() {
-        Self.logger.notice("Clearing handlers")
+        Log.connection.notice("Clearing handlers")
         let staleHandlers = self.responseHandlers
         self.responseHandlers = [:]
         self.requestId = Self.baseRequestId
@@ -350,12 +333,12 @@ actor ECPWebsocketClient: Sendable {
 
     public func start() {
         if connection.state != .cancelled {
-            Self.logger.notice("Cancelling existing connection to restart")
+            Log.connection.notice("Cancelling existing connection to restart")
             connection.cancel()
         }
         connection = NWConnection(to: endpoint, using: NWParameters.ecp)
         self.clearHandlers()
-        Self.logger.notice("No longer in error b/c restarting")
+        Log.connection.notice("No longer in error b/c restarting")
         self.inError = false
         connection.pathUpdateHandler = { [weak self] path in
             guard let self else {
@@ -398,12 +381,12 @@ actor ECPWebsocketClient: Sendable {
     private func listen() {
         connection.receiveMessage { [weak self] (_, context, _, error) in
             guard let self = self else {
-                Self.logger.warning("Triggering receive message with no self")
+                Log.connection.warning("Triggering receive message with no self")
                 return
             }
 
             if let error = error {
-                Self.logger.warning("Triggering receive message with error")
+                Log.connection.warning("Triggering receive message with error")
                 Task {
                     await self.handleError(error)
                 }
@@ -419,16 +402,16 @@ actor ECPWebsocketClient: Sendable {
                     await self.receiveMessage(context: context)
                 }
             } else {
-                Self.logger.warning("No data context in message")
+                Log.connection.warning("No data context in message")
             }
         }
     }
 
     private func handleError(_ error: NWError, requestId: String? = nil) {
-        Self.logger.notice("In error because getting req error")
+        Log.connection.notice("In error because getting req error")
         self.inError = true
         if let requestId {
-            Self.logger.notice("Getting error for req \(requestId, privacy: .public)")
+            Log.connection.notice("Getting error for req \(requestId, privacy: .public)")
             self.responseHandlers.removeValue(forKey: requestId)?(.failure(.sendFailed(error)))
         }
         self.cancel()
@@ -436,28 +419,28 @@ actor ECPWebsocketClient: Sendable {
 
     private func receiveMessage(context: NWConnection.ContentContext) {
         guard context.protocolMetadata.count != 0 || !context.isFinal else {
-            Self.logger.notice("Received final message unexpectedly. Shutting down now")
+            Log.connection.notice("Received final message unexpectedly. Shutting down now")
             return
         }
         guard let metadata = context.protocolMetadata(definition: ECPProtocol.definition) as? NWProtocolFramer.Message else {
-            Self.logger.warning("Received data without ecp message")
+            Log.connection.warning("Received data without ecp message")
             return
         }
         guard let response = metadata.ecpResponse else {
-            Self.logger.warning("Received message without ECP response metadata")
+            Log.connection.warning("Received message without ECP response metadata")
             return
         }
 
         switch response {
         case .notify(let notify):
-            Self.logger.notice("Getting notify \(notify.notifyType.rawValue, privacy: .public)")
+            Log.connection.notice("Getting notify \(notify.notifyType.rawValue, privacy: .public)")
             self.notificationhandler(notify)
         case .response(let response):
-            Self.logger.notice("Getting success for req \(response.responseId, privacy: .public): \(response.responseType, privacy: .public)")
+            Log.connection.notice("Getting success for req \(response.responseId, privacy: .public): \(response.responseType, privacy: .public)")
             if let handler = self.responseHandlers.removeValue(forKey: response.responseId) {
                 handler(.success(response))
             } else {
-                Self.logger.warning("Received ECP handler for unknown response ID \(response.responseId, privacy: .public)")
+                Log.connection.warning("Received ECP handler for unknown response ID \(response.responseId, privacy: .public)")
             }
         }
     }
@@ -465,16 +448,16 @@ actor ECPWebsocketClient: Sendable {
     func reportStateChange(_ newState: ECPWebsocketState) {
         switch (self.state, newState) {
         case (.connecting(_), .connecting(_)), (.disconnected(_), .disconnected(_)), (.connected, .connected):
-            Self.logger.notice("Ignoring state change because it is the same \(String(describing: newState), privacy: .public)")
+            Log.connection.notice("Ignoring state change because it is the same \(String(describing: newState), privacy: .public)")
             return
         case (.connected, .connecting(_)), (.connected, .disconnected(_)), (.disconnected(_), .connected), (.connecting(_), .connected):
-            Self.logger.notice("Entering new state \(String(describing: newState), privacy: .public) from \(String(describing: self.state), privacy: .public)")
+            Log.connection.notice("Entering new state \(String(describing: newState), privacy: .public) from \(String(describing: self.state), privacy: .public)")
             self.internalState = newState
         case (.connecting(let date), .disconnected(_)):
-            Self.logger.notice("Disconnecting after attempting connection")
+            Log.connection.notice("Disconnecting after attempting connection")
             self.internalState = .disconnected(date)
         case (.disconnected(let date), .connecting(_)):
-            Self.logger.notice("connecting after being disconnected")
+            Log.connection.notice("connecting after being disconnected")
             self.internalState = .connecting(date)
         }
         self.websocketStateUpdated(self.state)
@@ -483,49 +466,49 @@ actor ECPWebsocketClient: Sendable {
     func stateDidChange(to state: NWConnection.State) {
         switch state {
         case .ready:
-            Self.logger.notice("No longer in error with state \(String(describing: state), privacy: .public)")
+            Log.connection.notice("No longer in error with state \(String(describing: state), privacy: .public)")
             self.reportStateChange(.connected)
             self.inError = false
         case .waiting(let error):
-            Self.logger.notice("In waiting state, failing with error \(error, privacy: .public). Currently in state \(String(describing: self.connection.state), privacy: .public)")
+            Log.connection.notice("In waiting state, failing with error \(error, privacy: .public). Currently in state \(String(describing: self.connection.state), privacy: .public)")
             self.reportStateChange(.connecting(.now))
             self.inError = true
 
             /// Workaround to prevent loop while reconnecting
             errorWhileWaitingCount += 1
             if errorWhileWaitingCount >= errorWhileWaitingLimit {
-                Self.logger.notice("Cancelling after \(self.errorWhileWaitingLimit, privacy: .public) errors in waiting state")
+                Log.connection.notice("Cancelling after \(self.errorWhileWaitingLimit, privacy: .public) errors in waiting state")
                 self.cancel()
             }
         case .failed(let error):
-            Self.logger.notice("In error with state \(String(describing: state), privacy: .public)")
+            Log.connection.notice("In error with state \(String(describing: state), privacy: .public)")
             self.reportStateChange(.disconnected(.now))
             self.inError = true
             self.handleError(error)
         case .setup, .preparing:
-            Self.logger.notice("No longer in error with state \(String(describing: state), privacy: .public)")
+            Log.connection.notice("No longer in error with state \(String(describing: state), privacy: .public)")
             self.reportStateChange(.connecting(.now))
             self.inError = false
             errorWhileWaitingCount = 0
         case .cancelled:
-            Self.logger.notice("In error with state \(String(describing: state), privacy: .public)")
+            Log.connection.notice("In error with state \(String(describing: state), privacy: .public)")
             self.reportStateChange(.disconnected(.now))
             self.inError = true
         @unknown default:
-            Self.logger.warning("Unknown state \(String(describing: state), privacy: .public)")
+            Log.connection.warning("Unknown state \(String(describing: state), privacy: .public)")
         }
     }
 
     func betterPath(isAvailable: Bool) {
         if isAvailable {
-            Self.logger.notice("Reconnecting with better path")
+            Log.connection.notice("Reconnecting with better path")
         } else {
-            Self.logger.notice("Not reconnecting because no better path available")
+            Log.connection.notice("Not reconnecting because no better path available")
         }
     }
 
     func pathDidChange(to path: NWPath) {
-        Self.logger.notice("WS path changed to \(String(describing: path), privacy: .public)")
+        Log.connection.notice("WS path changed to \(String(describing: path), privacy: .public)")
     }
 
     func viabilityDidChange(isViable: Bool) {
@@ -534,7 +517,23 @@ actor ECPWebsocketClient: Sendable {
         } else {
             self.reportStateChange(.disconnected(.now))
         }
-        Self.logger.notice("Network viability changed \(isViable, privacy: .public)")
+        Log.connection.notice("Network viability changed \(isViable, privacy: .public)")
     }
 }
+
+#if WIDGET
+extension ECPWebsocketClient {
+    public func oneOff<T: Sendable>(timeout: TimeInterval = 5, _ block: @escaping @Sendable (isolated ECPWebsocketClient) async throws -> T) async throws -> T {
+        Log.connection.notice("Running quick oneoff with id \(self.uuid, privacy: .public) for endpoint \(self.endpoint.debugDescription, privacy: .public)")
+        self.start()
+        defer {
+            self.cancel()
+        }
+
+        return try await withTimeout(delay: timeout) {
+            return try await self.run(block)
+        }
+    }
+}
+#endif
 #endif

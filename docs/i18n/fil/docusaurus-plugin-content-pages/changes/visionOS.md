@@ -1,1 +1,1 @@
--   Mga pag-aayos ng bug at pagpapabuti
+-   Pag-aayos ng crash kapag nag-scan sa background

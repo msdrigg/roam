@@ -1,1 +1,1 @@
--   Corrections de bugs et améliorations
+- Correction du crash lors de la numérisation en arrière-plan

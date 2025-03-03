@@ -3,12 +3,7 @@ import Foundation
 import SwiftData
 import OSLog
 
-private nonisolated let logger = Logger(
-    subsystem: getLogSubsystem(),
-    category: "AppLinkAppEntity"
-)
-
-@available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
+@available(iOS 16.0, macOS 13.0, watchOS 9.0, *)
 public struct AppLinkAppEntity: Identifiable, Equatable, Hashable, Codable, Sendable {
     var name: String
     public var id: String

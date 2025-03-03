@@ -1,1 +1,1 @@
--   Sửa lỗi và cải tiến
+- Sửa lỗi quét thiết bị

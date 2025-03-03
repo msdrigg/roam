@@ -4,28 +4,16 @@ import SwiftData
 import SwiftUI
 import UserNotifications
 
-private let logger = Logger(
-    subsystem: getLogSubsystem(),
-    category: "AppDelegate"
-)
-
-// Optional: Send the device token to your server
-func sendDeviceTokenToServer(_ token: String) async {
-    do {
-        try await sendMessage(message: nil, apnsToken: token)
-    } catch {
-        logger.error("Error sending apns token to server \(error, privacy: .public)")
-    }
-}
-
 #if os(macOS)
     import AppKit
 
-    class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject {
+    final class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject {
         @Published var navigationPath: NavigationManager
         @Published var ecpMonitor: ECPMonitor
         @Published var networkMonitor: NetworkMonitor
         @Published var uuidUpdater: UUIDUpdater
+
+        var delegates: [String: AnyObject] = [:]
 
         @MainActor
         override init() {
@@ -35,9 +23,10 @@ func sendDeviceTokenToServer(_ token: String) async {
             self.uuidUpdater = UUIDUpdater()
             super.init()
             UNUserNotificationCenter.current().delegate = self
-            logger.notice("Setting Notifications delegate to self")
+            Log.lifecycle.notice("Setting Notifications delegate to self")
         }
 
+        @MainActor
         func applicationDidFinishLaunching(_ notification: Notification) {
             let hasSentFirstMessage = UserDefaults.standard.bool(forKey: "hasSentFirstMessage")
             self.networkMonitor.startMonitoring()
@@ -66,17 +55,28 @@ func sendDeviceTokenToServer(_ token: String) async {
                 String(format: "%02.2hhx", data)
             }
             let token = tokenParts.joined()
-            logger.notice("Device Token: \(token, privacy: .public)")
+            Log.notifications.notice("Device Token: \(token, privacy: .public)")
 
             Task {
-                await sendDeviceTokenToServer(token)
+                do {
+                    try await uploadApnsToken(token)
+                } catch {
+                    Log.notifications.error("Error sending apns token to server \(error, privacy: .public)")
+                }
                 UserDefaults.standard.set(true, forKey: "hasSentFirstMessage")
             }
         }
 
         func application(_ application: NSApplication, didReceiveRemoteNotification userInfo: [String: Any]) {
-            logger.notice("Received remote notification")
+            Log.notifications.notice("Received remote notification \(userInfo, privacy: .public)")
+            
             refreshMessages()
+            if let aps = userInfo["aps"] as? [String: Any],
+               let alert = aps["alert"] as? String,
+               alert == "TYPING" {
+                Log.notifications.notice("Received TYPING notification")
+                handleTypingNotification()
+            }
         }
 
         func userNotificationCenter(
@@ -84,7 +84,7 @@ func sendDeviceTokenToServer(_ token: String) async {
             didReceive _: UNNotificationResponse,
             withCompletionHandler completionHandler: @escaping () -> Void
         ) {
-            logger.notice("didReceive notification. Showing Messages...")
+            Log.notifications.notice("didReceive notification. Showing Messages...")
             refreshMessages()
             let navigationPath = self.navigationPath
             DispatchQueue.main.async {
@@ -100,18 +100,22 @@ func sendDeviceTokenToServer(_ token: String) async {
             }
         }
 
+        func handleTypingNotification() {
+            UserDefaults.standard.set(Date.now.timeIntervalSince1970, forKey: UserDefaultKeys.lastSupportTypingTime)
+        }
+
         func userNotificationCenter(
             _: UNUserNotificationCenter,
             willPresent _: UNNotification,
             withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
         ) {
-            logger.notice("WillPresent notification. Refreshing messages...")
+            Log.notifications.notice("WillPresent notification. Refreshing messages...")
             refreshMessages()
             completionHandler(.badge)
         }
 
         func application(_: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {
-            logger.error("Failed to register with Error \(error, privacy: .public)")
+            Log.notifications.error("Failed to register with Error \(error, privacy: .public)")
         }
     }
 
@@ -121,7 +125,7 @@ extension NSApplication {
             $0.identifier == NSUserInterfaceItemIdentifier(rawValue: id)
         }
 
-        logger.notice("Making window front \(id, privacy: .public), \(mainWindow?.title ?? "nil", privacy: .public)")
+        Log.lifecycle.notice("Making window front \(id, privacy: .public), \(mainWindow?.title ?? "nil", privacy: .public)")
         NSApplication.shared.activate(ignoringOtherApps: true)
 
         mainWindow?.makeKeyAndOrderFront(nil)
@@ -213,13 +217,11 @@ extension NSApplication {
         }
     }
 
-    class RoamAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject, Sendable {
+    final class RoamAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject, Sendable {
         @Published var navigationPath: NavigationManager
         @Published var ecpMonitor: ECPMonitor
         @Published var networkMonitor: NetworkMonitor
         @Published var uuidUpdater: UUIDUpdater
-        @Published var showingSettingsView: Bool = false
-        @Published var showingMessagesView: Bool = false
 
         private var cancellables: Set<AnyCancellable> = []
 
@@ -237,12 +239,19 @@ extension NSApplication {
             didReceiveRemoteNotification userInfo: [AnyHashable: Any],
             fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
         ) {
-            logger.notice("Received remote notifications")
+            Log.notifications.notice("Received remote notifications \(userInfo, privacy: .public)")
             refreshMessages(fetchCompletionHandler: completionHandler)
+            if let aps = userInfo["aps"] as? [String: Any],
+               let alert = aps["alert"] as? String,
+               alert == "TYPING" {
+                Log.notifications.notice("Received TYPING notification")
+                handleTypingNotification()
+            }
+
         }
 
         func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
-            logger.warning("Received memory warning")
+            Log.lifecycle.warning("Received memory warning")
         }
 
         func application(_: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
@@ -250,21 +259,24 @@ extension NSApplication {
                 String(format: "%02.2hhx", data)
             }
             let token = tokenParts.joined()
-            logger.notice("Device Token: \(token, privacy: .public)")
+            Log.notifications.notice("Device Token: \(token, privacy: .public)")
 
             Task {
-                await sendDeviceTokenToServer(token)
+                do {
+                    try await uploadApnsToken(token)
+                } catch {
+                    Log.notifications.error("Error sending apns token to server \(error, privacy: .public)")
+                }
                 UserDefaults.standard.set(true, forKey: "hasSentFirstMessage")
             }
         }
 
-        #if !os(tvOS)
         nonisolated func userNotificationCenter(
             _: UNUserNotificationCenter,
             didReceive _: UNNotificationResponse,
             withCompletionHandler completionHandler: @escaping () -> Void
         ) {
-            logger.notice("didReceive notification. Showing Messages...")
+            Log.notifications.notice("didReceive notification. Showing Messages...")
             DispatchQueue.main.async {
                 self.refreshMessages()
                 if self.navigationPath.last != NavigationDestination.messageDestination {
@@ -274,7 +286,6 @@ extension NSApplication {
 
             completionHandler()
         }
-        #endif
 
         func refreshMessages(fetchCompletionHandler completionHandler: ((UIBackgroundFetchResult) -> Void)? = nil) {
             Task {
@@ -294,7 +305,7 @@ extension NSApplication {
             willPresent _: UNNotification,
             withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
         ) {
-            logger.notice("willPresent notification. Refreshing...")
+            Log.notifications.notice("willPresent notification. Refreshing...")
             DispatchQueue.main.async {
                 self.refreshMessages()
             }
@@ -321,12 +332,17 @@ extension NSApplication {
             return true
 
         }
+
         func application(_ application: UIApplication, willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
             return true
         }
 
+        func handleTypingNotification() {
+            UserDefaults.standard.set(Date.now.timeIntervalSince1970, forKey: UserDefaultKeys.lastSupportTypingTime)
+        }
+
         func application(_: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {
-            logger.error("Failed to register for remote notifications with Error \(error, privacy: .public)")
+            Log.notifications.error("Failed to register for remote notifications with Error \(error, privacy: .public)")
         }
     }
 #endif

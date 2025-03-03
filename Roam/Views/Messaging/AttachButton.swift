@@ -1,87 +1,131 @@
 import SwiftUI
+import PhotosUI
+import UniformTypeIdentifiers
 
 struct AttachButton: View {
-    let shareDiagnostics: () -> Void
-    let sharePhotos: () -> Void
-    let loading: Bool
-    @State private var pressCounter = 0
+    let handleAttachment: (any PendingAttachment) -> Void
 
-    var imageName: String {
-        if loading {
-            "rays"
+    @State var selectedPhotos: [PhotosPickerItem] = []
+    @State var pickingPhotos: Bool = false
+    @State private var photosPressCounter = 0
+
+    @State var pickingFiles: Bool = false
+    @State private var filePressCounter = 0
+
+    @State private var diagnosticsPressCounter = 0
+
+    var body: some View {
+        if runningInPreview {
+            bodyContent
         } else {
-            "latch.2.case"
+            bodyContent
+                .onChange(of: selectedPhotos) {
+                    if selectedPhotos.count > 0 {
+                        for photo in selectedPhotos {
+                            if let attachment = PhotoImport(item: photo) {
+                                Log.userInteraction.notice("Got import for photo \(photo.itemIdentifier ?? "nil", privacy: .public)")
+                                handleAttachment(attachment)
+                            } else {
+                                Log.userInteraction.notice("Unable to create photo import for photo \(photo.itemIdentifier ?? "nil", privacy: .public)")
+                            }
+                        }
+                        selectedPhotos = []
+                    }
+                }
         }
     }
 
-    var body: some View {
+    var bodyContent: some View {
         Menu {
             Button(action: {
-                shareDiagnostics()
-                pressCounter += 1
+                handleAttachment(DiagnosticsImport())
+                diagnosticsPressCounter += 1
             }, label: {
-                Label(String(localized: "Share Diagnostics", comment: "Label on a button"), systemImage: imageName)
+                Label(String(localized: "Attach Diagnostics", comment: "Label on a button"), systemImage: "latch.2.case")
             })
-            .symbolEffect(.bounce, value: pressCounter)
+            .symbolEffect(.bounce, value: diagnosticsPressCounter)
 #if !os(visionOS)
-            .sensoryFeedback(.impact, trigger: pressCounter)
+            .sensoryFeedback(.impact, trigger: diagnosticsPressCounter)
 #endif
-            .symbolEffect(.variableColor, isActive: loading)
-            .help(
-                loading ? "Sharing diagnostics..." :
-                    "Share diagnostics"
-            )
+            .labelStyle(.titleAndIcon)
+            
+            Button(action: {
+                pickingFiles = true
+                filePressCounter += 1
+            }, label: {
+                Label(String(localized: "Attach files", comment: "Label on a button"), systemImage: "document.badge.plus")
+            })
+            .symbolEffect(.bounce, value: filePressCounter)
+#if !os(visionOS)
+            .sensoryFeedback(.impact, trigger: filePressCounter)
+#endif
+            .labelStyle(.titleAndIcon)
+
+            Button(action: {
+                pickingPhotos = true
+                photosPressCounter += 1
+            }, label: {
+                Label(String(localized: "Attach photos", comment: "Label on a button"), systemImage: "photo.badge.plus")
+            })
+            .symbolEffect(.bounce, value: photosPressCounter)
+#if !os(visionOS)
+            .sensoryFeedback(.impact, trigger: photosPressCounter)
+#endif
+            .labelStyle(.titleAndIcon)
         } label: {
-            if loading {
-#if os(macOS)
-                Image(systemName: "rays")
+            Label {
+                Text("Add Attachment")
+            } icon: {
+                Image(systemName: "plus.circle.fill")
                     .resizable()
-                    .aspectRatio(contentMode: .fit)
+#if os(macOS)
                     .frame(width: 20, height: 20)
-                    .foregroundColor(Color.gray)
 #else
-                Label(String(localized: "Sending...", comment: "Label on a button to send a message"), systemImage: "rays")
-                    .labelStyle(.iconOnly)
+                    .frame(width: 26, height: 26)
 #endif
-            } else {
-                Label {
-                    Text("Add Attachment")
-                } icon: {
-                    Image(systemName: "plus.circle.fill")
-                        .resizable()
-                    #if os(macOS)
-                        .frame(width: 20, height: 20)
-#else
-                        .frame(width: 26, height: 26)
-                    #endif
-                        .foregroundColor(Color.gray)
-                }
-                .labelStyle(.iconOnly)
+                    .foregroundColor(Color.gray)
             }
+            .labelStyle(.iconOnly)
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
         .foregroundColor(Color.gray)
-        .disabled(loading)
-        .symbolEffect(.variableColor, isActive: loading)
+        .fileImporter(
+            isPresented: $pickingFiles,
+            allowedContentTypes: [UTType.image, UTType.json, UTType.text, UTType.pdf, UTType.movie, .archive],
+            allowsMultipleSelection: false,
+            onCompletion: { result in
+                switch result {
+                case .success(let urls):
+                    guard let url = urls.first else {
+                        Log.userInteraction.warning("Got \(0, privacy: .public) items from file importer")
+                        return
+                    }
+                    Log.userInteraction.notice("Got \(urls, privacy: .public) items from file importer")
+                    if let attachment = FileImport(url: url) {
+                        handleAttachment(attachment)
+                    } else {
+                        Log.userInteraction.notice("Unable to import url \(url, privacy: .public) items from file importer")
+                    }
+                case .failure:
+                    break
+                }
+            }
+        )
+        .photosPicker(
+            isPresented: $pickingPhotos,
+            selection: $selectedPhotos,
+            maxSelectionCount: 1
+        )
     }
 }
 
 #if DEBUG
 #Preview("Send Diagnostics") {
-    @Previewable @State var sharingDiagnostics: Bool = false
     AttachButton(
-        shareDiagnostics: {
-            Task {
-                sharingDiagnostics = true
-                defer {
-                    sharingDiagnostics = false
-                }
-                
-                try? await Task.sleep(duration: 3)
-            }
-        },
-        sharingDiagnostics: sharingDiagnostics
+        handleAttachment: { attachment in
+            Log.userInteraction.notice("Sending \(String(describing: attachment))")
+        }
     )
         .padding()
 }

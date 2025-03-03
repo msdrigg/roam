@@ -1,1 +1,1 @@
-- Correções de erros e melhorias
+-   Adicionando tecla de atalho para mostrar o menu do roam (barra de menu ou janela principal em segundo plano)

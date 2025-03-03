@@ -1,1 +1,1 @@
--   Fehlerbehebungen und Verbesserungen
+-   Beheben des Absturzes beim Scannen im Hintergrund

@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 
-#if !os(tvOS)
 #if !os(watchOS)
 struct SmallAppView: View {
     let device: DeviceAppEntity?
@@ -43,7 +42,6 @@ struct SmallAppView: View {
                             Button(intent: LaunchAppIntent(app, device: device)) {
                                 VStack(spacing: 0) {
                                     DataImage(from: app.icon, fallback: "questionmark.app")
-                                        .resizable().aspectRatio(contentMode: .fit)
                                         .clipShape(RoundedRectangle(cornerRadius: 8))
                                         .shadow(radius: 4)
 
@@ -112,7 +110,6 @@ struct SmallAppView: View {
                     if let app = appRow[rowIndex] {
                         Button(intent: LaunchAppIntent(app, device: device)) {
                             DataImage(from: app.icon, fallback: "questionmark.app")
-                                .resizable().aspectRatio(contentMode: .fit)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                                 .shadow(radius: 4)
                         }
@@ -138,14 +135,17 @@ struct SmallAppView: View {
     }
 }
 #endif
-    #Preview("TwoRowsSmallAppView") {
-        SmallAppView(device: nil, apps: [], rows: 2)
-            .frame(width: 200, height: 200)
-    }
 
-    #Preview("OneRowSmallAppView") {
-        SmallAppView(device: nil, apps: [], rows: 1)
-            .frame(width: 200, height: 200)
-    }
+#if DEBUG
+#Preview("TwoRowsSmallAppView") {
+    SmallAppView(device: nil, apps: [], rows: 2)
+        .frame(width: 200, height: 200)
+        .padding(.all, 12)
+}
 
+#Preview("OneRowSmallAppView") {
+    SmallAppView(device: nil, apps: [], rows: 1)
+        .frame(width: 200, height: 100)
+        .padding(.all, 12)
+}
 #endif

@@ -2,7 +2,7 @@ import Foundation
 import os
 import SwiftData
 
-typealias AppLink = SchemaV3.AppLink
+typealias AppLink = SchemaV4.AppLink
 
 extension AppLink {
     internal static func fetchAllRequest() -> FetchDescriptor<AppLink> {

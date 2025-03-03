@@ -19,7 +19,7 @@ A Roku remote that puts users first
 ## How to Use
 
 -   Open in Xcode 15.3 or later
--   Run on iOS, macOS, watchOS, VisionOS, iPadOS, or tvOS
+-   Run on iOS, macOS, watchOS, VisionOS, iPadOS
 
 **_OR_**
 

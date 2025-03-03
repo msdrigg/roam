@@ -7,7 +7,7 @@ use serde::Serialize;
 use tokio::sync::AcquireError;
 use types::{IdResponse, Thread, ThreadResponse};
 
-pub use types::{DiscordAuthor, DiscordFile, DiscordMessage, MessageAttachment};
+pub use types::{DiscordAuthor, DiscordFile, DiscordFileUpload, DiscordMessage, MessageAttachment};
 
 #[derive(Debug, Clone)]
 pub struct DiscordClient {
@@ -283,7 +283,7 @@ impl DiscordClient {
         &self,
         thread_id: i64,
         content: Option<&str>,
-        attachments: &[&DiscordFile],
+        attachments: &[&DiscordFileUpload],
         nonce: Option<&str>,
     ) -> Result<reqwest::Response, DiscordError> {
         let _permit = self.acquire().await.expect("Semaphore should never close");
@@ -364,7 +364,64 @@ impl DiscordClient {
         &self,
         thread_id: i64,
         content: &str,
-        attachments: Vec<DiscordFile>,
+        attachment: Option<DiscordFileUpload>,
+        nonce: Option<&str>,
+    ) -> Result<DiscordMessage, DiscordError> {
+        if let Some(nonce) = nonce {
+            if nonce.len() > 25 {
+                return Err(DiscordError::InvalidInput(
+                    "Nonce must be at most 25 characters".to_string(),
+                ));
+            }
+        }
+
+        let handle_response = |response: Response| async {
+            self.update_rate_limit(response.headers());
+
+            let response = self
+                .except_error_response(response, "sending message")
+                .await?;
+
+            let result: DiscordMessage = response
+                .json()
+                .await
+                .map_err(|e| DiscordError::ResponseError(e.into()))?;
+
+            tracing::info!("Sending message succeeded");
+            Ok(result)
+        };
+
+        let result = if let Some(attachment) = attachment {
+            for paired_message in attachment.paired_messages.iter() {
+                let response = self
+                    ._send_message_no_attachments(thread_id, paired_message, None)
+                    .await?;
+                handle_response(response).await?;
+            }
+
+            // Split off first attachment
+            let response = self
+                ._send_message_multipart(thread_id, Some(content), &[&attachment], nonce)
+                .await?;
+
+            handle_response(response).await?
+        } else {
+            let response = self
+                ._send_message_no_attachments(thread_id, content, nonce)
+                .await?;
+            handle_response(response).await?
+        };
+
+        tracing::info!("Sending message succeeded");
+
+        Ok(result)
+    }
+
+    pub async fn send_message_multiple_attachments(
+        &self,
+        thread_id: i64,
+        content: &str,
+        attachments: Vec<DiscordFileUpload>,
         nonce: Option<&str>,
     ) -> Result<(), DiscordError> {
         if let Some(nonce) = nonce {
@@ -550,6 +607,19 @@ mod types {
         pub id: i64,
     }
 
+    #[derive(Deserialize, Debug)]
+    pub struct DiscordFileUpload {
+        pub filename: String,
+        pub content_type: String,
+        #[serde(
+            deserialize_with = "base64_data_de",
+            serialize_with = "base64_data_ser"
+        )]
+        pub data: Vec<u8>,
+        #[serde(default)]
+        pub paired_messages: Vec<String>,
+    }
+
     #[derive(Deserialize, Serialize)]
     pub struct DiscordFile {
         #[serde(
@@ -565,8 +635,6 @@ mod types {
             serialize_with = "base64_data_ser"
         )]
         pub data: Vec<u8>,
-        #[serde(default)]
-        pub paired_messages: Vec<String>,
     }
 
     impl std::fmt::Debug for DiscordFile {
@@ -576,7 +644,6 @@ mod types {
                 .field("id", &self.id)
                 .field("content_type", &self.content_type)
                 .field("data", &self.data.len())
-                .field("paired_messages", &self.paired_messages)
                 .finish()
         }
     }

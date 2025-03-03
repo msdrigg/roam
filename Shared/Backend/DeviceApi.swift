@@ -3,6 +3,27 @@ import os.log
 import XMLCoder
 import Network
 
+struct PreconnectionDeviceInfo: Codable {
+    let udn: String
+    let friendlyName: String
+    let location: String
+    let deviceImagePath: String?
+
+    fileprivate init(service: DeviceServiceRoot, location: String) {
+        self.udn = service.device.UDN.stripPrefix("uuid:")
+        self.friendlyName = service.device.friendlyName
+        self.location = location
+        self.deviceImagePath = service.device.iconList.icon.first?.url
+    }
+
+    init(location: String, udn: String?, friendlyName: String?, deviceImagePath: String?) {
+        self.location = location
+        self.udn = udn ?? ""
+        self.friendlyName = friendlyName ?? getGlobalNewDeviceName()
+        self.deviceImagePath = deviceImagePath
+    }
+}
+
 struct DeviceInfo: Codable {
     let powerMode: String?
     let networkType: String?
@@ -17,23 +38,25 @@ struct DeviceInfo: Codable {
     }
 }
 
-struct Root: Codable {
+private struct DeviceServiceRoot: Codable {
     let device: DeviceIconDescription
+
+    struct DeviceIconDescription: Codable {
+        let iconList: IconList
+        let friendlyName: String
+        let UDN: String
+
+        struct IconList: Codable {
+            let icon: [Icon]
+
+            struct Icon: Codable {
+                let url: String
+            }
+        }
+    }
 }
 
-struct DeviceIconDescription: Codable {
-    let iconList: IconList
-}
-
-struct IconList: Codable {
-    let icon: [Icon]
-}
-
-struct Icon: Codable {
-    let url: String
-}
-
-enum FetchDeviceIconError: Swift.Error, LocalizedError {
+enum FetchDeviceIconError: Error, LocalizedError {
     case badURL(String)
     case badIconURL(String)
     case noIconsListed
@@ -49,33 +72,33 @@ struct AudioDevice: Codable {
         case rtpInfo = "rtp-info"
         case globalInfo = "global"
     }
-}
 
-struct GlobalInfo: Codable {
-    let muted: Bool
-    let volume: UInt8
-    let destinationList: String?
+    struct GlobalInfo: Codable {
+        let muted: Bool
+        let volume: UInt8
+        let destinationList: String?
 
-    enum CodingKeys: String, CodingKey {
-        case muted
-        case volume
-        case destinationList = "destination-list"
+        enum CodingKeys: String, CodingKey {
+            case muted
+            case volume
+            case destinationList = "destination-list"
+        }
     }
-}
 
-struct Capabilities: Codable {
-    let allDestinations: String?
+    struct Capabilities: Codable {
+        let allDestinations: String?
 
-    enum CodingKeys: String, CodingKey {
-        case allDestinations = "all-destinations"
+        enum CodingKeys: String, CodingKey {
+            case allDestinations = "all-destinations"
+        }
     }
-}
 
-struct RtpInfo: Codable {
-    let rtcpPort: UInt16?
+    struct RtpInfo: Codable {
+        let rtcpPort: UInt16?
 
-    enum CodingKeys: String, CodingKey {
-        case rtcpPort = "rtcp-port"
+        enum CodingKeys: String, CodingKey {
+            case rtcpPort = "rtcp-port"
+        }
     }
 }
 
@@ -88,12 +111,7 @@ struct Apps: Decodable {
     let app: [AppLinkAppEntity]
 }
 
-private let logger = Logger(
-    subsystem: getLogSubsystem(),
-    category: "FetchDevice"
-)
-
-func fetchDeviceIcon(location: String) async throws -> Data {
+func fetchPreconnectionInfo(location: String) async throws -> PreconnectionDeviceInfo {
     // Fetch device details
     guard let url = URL(string: location) else {
         throw FetchDeviceIconError.badURL(location)
@@ -102,15 +120,18 @@ func fetchDeviceIcon(location: String) async throws -> Data {
 
     // Decode XML to Root object
     let decoder = XMLDecoder()
-    let root = try decoder.decode(Root.self, from: data)
+    let root = try decoder.decode(DeviceServiceRoot.self, from: data)
 
-    // Fetch device icon data
-    if let iconURL = root.device.iconList.icon.first?.url {
+    return PreconnectionDeviceInfo(service: root, location: location)
+}
+
+func fetchDeviceIcon(info: PreconnectionDeviceInfo) async throws -> Data {
+    let location = info.location
+    if let iconURL = info.deviceImagePath {
         guard let fullIconURL = URL(string: "\(location)\(iconURL)") else {
             throw FetchDeviceIconError.badIconURL("\(location)\(iconURL)")
         }
         return try await fetchURLIcon(url: fullIconURL)
-
     } else {
         throw FetchDeviceIconError.noIconsListed
     }
@@ -133,7 +154,7 @@ func fetchDeviceCapabilities(location: String) async throws -> DeviceCapabilitie
 func fetchDeviceInfo(location: String) async -> DeviceInfo? {
     let deviceInfoURL = "\(location)query/device-info"
     guard let url = URL(string: deviceInfoURL) else {
-        logger.error("Unable to get device info due to bad url \(deviceInfoURL, privacy: .public)")
+        Log.connection.error("Unable to get device info due to bad url \(deviceInfoURL, privacy: .public)")
         return nil
     }
     var request = URLRequest(url: url)
@@ -148,11 +169,11 @@ func fetchDeviceInfo(location: String) async -> DeviceInfo? {
             do {
                 return try decoder.decode(DeviceInfo.self, from: Data(xmlString.utf8))
             } catch {
-                logger.error("Error decoding DeviceInfo response \(error, privacy: .public)")
+                Log.connection.error("Error decoding DeviceInfo response \(error, privacy: .public)")
             }
         }
     } catch {
-        logger.error("Error getting device info: \(error, privacy: .public)")
+        Log.connection.error("Error getting device info: \(error, privacy: .public)")
     }
     return nil
 }

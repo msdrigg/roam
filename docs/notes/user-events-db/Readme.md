@@ -1,0 +1,23 @@
+# User DB for User Info and Events
+
+-   Table for users
+    -   User-device install info
+-   Table for linked-devices
+    -   Linked to user
+    -   Includes device settings
+-   Table for device capabilities
+    -   Unique by device model number/udn (tracks changes in settings over time as the tv updates)
+    -   Includes update time
+-   Allow opt out in roam settings
+    -   Be clear and transparent about why I am doing this
+-   Table for user settings
+    -   Same as device capabilities: change over time and track timestamps
+-   Record of Events
+    -   Track private listening start/end events
+    -   Track APP openings/closings
+    -   Track TV selections/connection events
+    -   Track messages
+    -   Track keyboard shortcut usage
+    -   Track network badge displays
+-   Record of errors
+    -   Track certain logged errors and record them as errors

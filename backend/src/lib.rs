@@ -329,7 +329,7 @@ impl AppContext {
             user.apns_token.as_deref().unwrap_or("--"),
         );
         self.discord_client()
-            .send_message(user.thread_id, &message, vec![], None)
+            .send_message_multiple_attachments(user.thread_id, &message, vec![], None)
             .await
             .map_err(ApiError::DiscordError)?;
         Ok(())

@@ -17,7 +17,7 @@
             func updateNSView(_: NSView, context _: Context) {}
         }
 
-        class ScrollWheelReceivingView: NSView {
+        final class ScrollWheelReceivingView: NSView {
             private var scrollVelocity: CGFloat = 0
             private var decelerationTimer: Timer?
 
@@ -25,7 +25,6 @@
 
             override func viewDidMoveToWindow() {
                 super.viewDidMoveToWindow()
-                window?.makeFirstResponder(self)
             }
 
             override func scrollWheel(with event: NSEvent) {

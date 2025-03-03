@@ -1,6 +1,8 @@
 use std::io::Cursor;
 
-use a2::{ClientConfig, ErrorBody, ErrorReason, NotificationBuilder, NotificationOptions};
+use a2::{
+    ClientConfig, Endpoint, ErrorBody, ErrorReason, NotificationBuilder, NotificationOptions,
+};
 use anyhow::Context;
 use base64::{prelude::BASE64_STANDARD_NO_PAD, Engine};
 
@@ -44,7 +46,10 @@ impl ApnsClient {
             Cursor::new(pkey_bytes),
             key_id,
             team_id,
-            ClientConfig::default(),
+            ClientConfig {
+                endpoint: Endpoint::Production,
+                ..ClientConfig::default()
+            },
         )
         .context("Failed to create APNS client")?;
         Ok(Self {
@@ -67,12 +72,17 @@ impl ApnsClient {
             apns_topic: Some(&self.topic),
             apns_push_type: None,
         };
-        let notification_payload = a2::DefaultNotificationBuilder::new()
+        let loc_key = get_loc_key(body);
+        let mut notification_builder = a2::DefaultNotificationBuilder::new()
             .set_category("DEVELOPER_RESPONSE")
             .set_sound("default")
             .set_title(title)
-            .set_body(body)
-            .build(device_token, opt);
+            .set_title_loc_key(":message-from-roam-title:")
+            .set_body(body);
+        if let Some(loc_key) = loc_key {
+            notification_builder = notification_builder.set_loc_key(loc_key);
+        }
+        let notification_payload = notification_builder.build(device_token, opt);
 
         let result = self.client.send(notification_payload).await?;
         if let Some(err) = result.error {
@@ -112,4 +122,16 @@ impl ApnsClient {
             Ok(())
         }
     }
+}
+
+fn get_loc_key(body: &str) -> Option<&'static str> {
+    let localized_items: [&'static str; 3] = [
+        ":manually-add-tv:",
+        ":manually-add-tv-full:",
+        ":help-share-diagnostics:",
+    ];
+
+    localized_items
+        .into_iter()
+        .find(|&item| body.contains(item))
 }

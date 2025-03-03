@@ -22,18 +22,6 @@ import SwiftUI
     let globalButtonRadius: CGFloat = 6
     let globalGlowingRadius: CGFloat = 4
     let globalAppLinkShrinkWidth: CGFloat = 500
-#elseif os(tvOS)
-    let globalButtonWidth: CGFloat = 60
-    let globalButtonSpacing: CGFloat = 30
-    let globalButtonHeight: CGFloat = 50
-    let globalButtonPadding: CGFloat = 16
-    let globalAppLinkShrinkWidth: CGFloat = 600
-    let globalButtonRadius: CGFloat = 10
-    let globalButtonHeightPadding: CGFloat = 32
-    let globalButtonWidthPadding: CGFloat = 36
-    let globalButtonHeightPaddingSmall: CGFloat = 20
-    let globalGlowingRadius: CGFloat = 6
-    let globalButtonWidthPaddingSmall: CGFloat = 28
 #else
     let globalButtonSpacing: CGFloat = 10
     let globalButtonWidth: CGFloat = 28

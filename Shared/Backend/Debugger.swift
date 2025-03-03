@@ -68,6 +68,7 @@ struct DeviceDebugInfo: Encodable {
 public struct InstallationInfo: Encodable, Sendable {
     let userId: String
     let buildVersion: String?
+    let releaseVersion: String?
     let osPlatform: String?
     let osVersion: String?
     let userLocale: String?
@@ -80,8 +81,6 @@ public struct InstallationInfo: Encodable, Sendable {
             osPlatform = "macOS"
         #elseif os(watchOS)
             osPlatform = "watchOS"
-        #elseif os(tvOS)
-            osPlatform = "tvOS"
         #elseif os(visionOS)
             osPlatform = "visionOS"
         #endif
@@ -90,8 +89,10 @@ public struct InstallationInfo: Encodable, Sendable {
            let currentProjectVersion = infoPlist["CURRENT_PROJECT_VERSION"] as? String
         {
             buildVersion = currentProjectVersion
+            releaseVersion = infoPlist["CFBundleShortVersionString"] as? String
         } else {
             buildVersion = nil
+            releaseVersion = nil
         }
         userId = getSystemInstallID()
         userLocale = Locale.autoupdatingCurrent.language.languageCode?.identifier
@@ -108,9 +109,43 @@ public struct DebugInfo: Encodable, Sendable {
     let devices: [DeviceDebugInfo]
     let appLinks: [AppLinkAppEntity]
     let interfaces: [Addressed4NetworkInterface]
-    let logs: [LogEntry]
+    var logs: [LogEntry]
     let debugErrors: [String]
     let language: DebugLanguage
+}
+
+func trimmedDebugInfoIfNeeded(_ debugInfo: DebugInfo, maxFileSize: Int = 9 * 1024 * 1024) -> Data? {
+    let encoder = JSONEncoder()
+    encoder.dateEncodingStrategy = .iso8601
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+
+    var trimmedDebugInfo = debugInfo
+
+    do {
+        var data = try encoder.encode(trimmedDebugInfo)
+        if data.count <= maxFileSize {
+            return data
+        }
+
+        // Iteratively remove log entries until the size is within the limit
+        while trimmedDebugInfo.logs.count > 1 {
+            let removeCount = max(trimmedDebugInfo.logs.count / 10, 1) // Remove 10% at a time
+            trimmedDebugInfo.logs.removeLast(removeCount)
+
+            data = try encoder.encode(trimmedDebugInfo)
+            if data.count <= maxFileSize {
+                return data
+            }
+        }
+
+        // If removing all logs still doesn't fit, return the struct without logs
+        trimmedDebugInfo.logs = []
+        data = try encoder.encode(trimmedDebugInfo)
+        
+        return data.count <= maxFileSize ? data : nil
+    } catch {
+        return nil
+    }
 }
 
 func getDebugInfo(container: ModelContainer) async -> DebugInfo {
@@ -194,7 +229,7 @@ func getDebugInfo(container: ModelContainer) async -> DebugInfo {
     )
 }
 
-private func getLogEntries(limit: Int = 50000) throws -> [LogEntry] {
+private func getLogEntries(limit: Int = 500000) throws -> [LogEntry] {
     let logStore = try OSLogStore(scope: .currentProcessIdentifier)
     let date = Date.now.addingTimeInterval(2)
     let position = logStore.position(date: date)

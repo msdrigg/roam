@@ -12,7 +12,7 @@ struct Dependency: Identifiable {
     }
 }
 
-#if os(watchOS) || os(tvOS)
+#if os(watchOS)
     let webpLicenses = [
         Dependency(
             name: "libwebp",
@@ -53,7 +53,7 @@ let mainLicenses: [Dependency] = [
     Dependency(name: "Wrapping HStack", link: "https://github.com/ksemianov/WrappingHStack", licenseType: "MIT"),
 ]
 
-#if os(watchOS) || os(tvOS)
+#if os(watchOS)
     let LICENSES = mainLicenses + webpLicenses
 #elseif os(macOS)
     let LICENSES = mainLicenses + macosLicenses
@@ -62,6 +62,7 @@ let mainLicenses: [Dependency] = [
 #endif
 
 struct AboutView: View {
+    @ScaledMetric var textSize = 16
     var body: some View {
         Form {
             Section {
@@ -75,7 +76,7 @@ struct AboutView: View {
                 }
                 .focusable()
 
-                LabeledContent(String(localized: "Roam Support Page", comment: "Version label in about page for the app")) {
+                LabeledContent(String(localized: "Support Page", comment: "Version label in about page for the app")) {
                     Link("https://roam.msd3.io", destination: URL(string: "https://roam.msd3.io")!)
                         .font(.body)
                         .foregroundStyle(.secondary, .secondary)
@@ -94,33 +95,21 @@ struct AboutView: View {
 
     @ViewBuilder
     var licenseIterator: some View {
-        ForEach(Array(zip(LICENSES.indices, LICENSES)), id: \.0) { idx, license in
+        ForEach(LICENSES, id: \.id) { license in
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    if idx % 8 == 7 {
-                        Text(license.name)
-                            .foregroundStyle(.primary, .primary)
-                        #if os(tvOS)
-                            .focusable()
-                        #endif
-                    } else {
-                        Text(license.name)
-                            .foregroundStyle(.primary, .primary)
-                    }
+                    Text(license.name)
+                        .foregroundStyle(.primary, .primary)
 
                     Spacer()
 
-                    #if os(tvOS)
-                        Text(license.link)
-                            .font(.body)
-                            .foregroundStyle(.secondary, .secondary)
-                            .lineLimit(1)
-                    #else
-                        Link(license.link, destination: URL(string: license.link)!)
-                            .font(.body)
-                            .foregroundStyle(.secondary, .secondary)
-                            .lineLimit(1)
-                    #endif
+                    Link(license.link, destination: URL(string: license.link)!)
+                        .foregroundStyle(.secondary, .secondary)
+                        .truncationMode(.tail)
+                        .lineLimit(1, reservesSpace: true)
+                        .frame(height: textSize)
+                        .font(.body)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Text(license.licenseType)
                     .font(.body)
@@ -133,7 +122,7 @@ struct AboutView: View {
 #if DEBUG
 #Preview(
     "About",
-    traits: .fixedLayout(width: 100.0, height: 300.0)
+    traits: .fixedLayout(width: 400.0, height: 300.0)
 ) {
     AboutView()
         .modelContainer(previewContainer)

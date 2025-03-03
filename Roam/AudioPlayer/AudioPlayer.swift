@@ -10,11 +10,6 @@ struct AudioFrame {
 }
 
 actor OpusDecoderWithJitterBuffer {
-    private nonisolated static let logger = Logger(
-        subsystem: getLogSubsystem(),
-        category: String(describing: OpusDecoderWithJitterBuffer.self)
-    )
-
     var jitterBuffer = MaxHeap<RtpPacket>()
     let opusDecoder: Opus.RoamDecoder
     var packetsPerSec: Int64 {
@@ -35,7 +30,7 @@ actor OpusDecoderWithJitterBuffer {
         do {
             opusDecoder = try Opus.RoamDecoder(format: opusFormat)
         } catch {
-            Self.logger.error("Error initializing opus decoder \(error, privacy: .public)")
+            Log.headphones.error("Error initializing opus decoder \(error, privacy: .public)")
             throw error
         }
         self.audioBufferDuration = audioBuffer
@@ -43,10 +38,10 @@ actor OpusDecoderWithJitterBuffer {
 
     func syncAudio(time: AVAudioTime, additionalAudioDelay: TimeInterval) -> Bool {
         guard let syncPacket else {
-            Self.logger.notice("Not synced packet yet. Can't sync audio yet")
+            Log.headphones.notice("Not synced packet yet. Can't sync audio yet")
             return false
         }
-        Self.logger.notice("Syncing time with additional audio delay \(additionalAudioDelay, privacy: .public) buffer \(self.audioBufferDuration, privacy: .public)")
+        Log.headphones.notice("Syncing time with additional audio delay \(additionalAudioDelay, privacy: .public) buffer \(self.audioBufferDuration, privacy: .public)")
 
         let packetsInBuffer = Int64(audioBufferDuration * Double(packetsPerSec))
 
@@ -75,14 +70,14 @@ actor OpusDecoderWithJitterBuffer {
         // Check payload type
         if packet.payloadType != PayloadType(97) || packet.ssrc != 0 {
             // Invalid payload
-            Self.logger.error("Error bad packet ssrc (\(packet.ssrc, privacy: .public) or payload type (\(packet.payloadType.rawValue, privacy: .public))")
+            Log.headphones.error("Error bad packet ssrc (\(packet.ssrc, privacy: .public) or payload type (\(packet.payloadType.rawValue, privacy: .public))")
         }
         if lastPacketNumber < packet.sequenceNumber {
-//            Self.logger.debug("Adding packet with seqNo \(packet.packet.sequenceNumber) when current seqNo is
+//            Log.headphones.debug("Adding packet with seqNo \(packet.packet.sequenceNumber) when current seqNo is
 //            \(self.lastPacketNumber)")
             jitterBuffer.insert(packet)
         } else {
-            Self.logger
+            Log.headphones
                 .error(
                     "Error bad packet with seqNo \(packet.unwrappedSequenceNumber, privacy: .public) when current seqNo is \(self.lastPacketNumber, privacy: .public) rollingSeqNo \(self.rollingSequenceNumber ?? 0, privacy: .public)"
                 )
@@ -91,7 +86,7 @@ actor OpusDecoderWithJitterBuffer {
 
     func nextPacket(atTime _: sending AVAudioTime) -> (AVAudioPCMBuffer, AVAudioTime)? {
         guard let lastSampleTime else {
-            Self.logger.notice("Not returning packet because not synced yet")
+            Log.headphones.notice("Not returning packet because not synced yet")
             return nil
         }
 
@@ -102,7 +97,7 @@ actor OpusDecoderWithJitterBuffer {
                np.sequenceNumber <= lastPacketNumber + 1
             {
                 if let destroyed = nextPacket {
-                    Self.logger
+                    Log.headphones
                         .error(
                             "Destroying packet \(destroyed.sequenceNumber, privacy: .public) when lastPacket \(self.lastPacketNumber, privacy: .public) next packet \(np.sequenceNumber, privacy: .public)"
                         )
@@ -114,7 +109,7 @@ actor OpusDecoderWithJitterBuffer {
         }
 
         if nextPacket == nil {
-            Self.logger
+            Log.headphones
                 .error("Missing packet \(String(describing: self.jitterBuffer.peek()), privacy: .public), lpn \(self.lastPacketNumber)")
         }
 
@@ -134,10 +129,10 @@ actor OpusDecoderWithJitterBuffer {
                 nextPcm = try opusDecoder.decode(np.payload)
             } else {
                 nextPcm = try opusDecoder.decode_loss_concealment(sampleCount: Int64(globalClockRate) / packetsPerSec)
-                Self.logger.error("Getting loss concealment packet for sqNo \(self.lastPacketNumber, privacy: .public)")
+                Log.headphones.error("Getting loss concealment packet for sqNo \(self.lastPacketNumber, privacy: .public)")
             }
         } catch {
-            Self.logger.error("Error decoding packet \(error, privacy: .public)")
+            Log.headphones.error("Error decoding packet \(error, privacy: .public)")
             return nil
         }
 
@@ -158,11 +153,6 @@ enum AudioPlayerError: Error, LocalizedError {
 }
 
 actor AudioPlayer {
-    private nonisolated static let logger = Logger(
-        subsystem: getLogSubsystem(),
-        category: String(describing: AudioPlayer.self)
-    )
-
     private let engine: AVAudioEngine
     private let streamAudioNode: AVAudioPlayerNode
     private let convertor: AVAudioConverter
@@ -210,7 +200,7 @@ actor AudioPlayer {
         }
 
         if let error {
-            Self.logger.error("Error converting buffers \(error, privacy: .public)")
+            Log.headphones.error("Error converting buffers \(error, privacy: .public)")
         } else {
             await streamAudioNode.scheduleBuffer(outputBuffer, at: atTime)
         }
@@ -224,7 +214,7 @@ actor AudioPlayer {
     }
 
     public func stop() {
-        Self.logger.notice("Stopping audioplayer")
+        Log.headphones.notice("Stopping audioplayer")
         engine.stop()
         streamAudioNode.stop()
     }

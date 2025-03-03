@@ -1,1 +1,1 @@
--   Fehlerbehebungen und Verbesserungen
+-   Behebung des Gerätescan-Fehlers

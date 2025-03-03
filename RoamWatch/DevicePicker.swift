@@ -10,11 +10,6 @@ import os
 import SwiftUI
 
 struct DevicePicker: View {
-    private nonisolated static let logger = Logger(
-        subsystem: getLogSubsystem(),
-        category: String(describing: DevicePicker.self)
-    )
-
     @Environment(\.layoutDirection) var layoutDirection
 
     var offset: CGFloat {
@@ -60,7 +55,7 @@ struct DevicePicker: View {
                                 if let chosenDevice = devices.first(where: { dev in
                                     dev.id == listItemDevice.id
                                 }) {
-                                    Self.logger.info("Setting last selected at")
+                                    Log.connection.notice("Setting last selected at")
                                     let id = chosenDevice.persistentModelID
                                     Task.detached {
                                         await DataHandler(modelContainer: getSharedModelContainer()).setSelectedDevice(id)
@@ -82,7 +77,7 @@ struct DevicePicker: View {
                                         do {
                                             try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
                                         } catch {
-                                            Self.logger.error("Error deleting device \(error, privacy: .public)")
+                                            Log.connection.error("Error deleting device \(error, privacy: .public)")
                                         }
                                     }
 
@@ -102,7 +97,7 @@ struct DevicePicker: View {
                                         do {
                                             try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
                                         } catch {
-                                            Self.logger.error("Error deleting device \(error, privacy: .public)")
+                                            Log.connection.error("Error deleting device \(error, privacy: .public)")
                                         }
                                     }
                                 }

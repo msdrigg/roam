@@ -2,8 +2,6 @@ import Foundation
 import Network
 import OSLog
 
-private let logger = Logger(subsystem: getLogSubsystem(), category: #fileID)
-
 #if os(macOS)
 func requestLocalNetworkAuthorization() async throws -> Bool {
     let queue = DispatchQueue(label: "com.nonstrict.localNetworkAuthCheck")
@@ -22,39 +20,44 @@ func requestLocalNetworkAuthorization() async throws -> Bool {
 
             // Do not setup listener/browser is we're already cancelled, it does work but logs a lot of very ugly errors
             if Task.isCancelled {
-                logger.notice("Task cancelled before listener & browser started.")
+                Log.network.notice("Task cancelled before listener & browser started.")
                 resume(with: .failure(CancellationError()))
                 return
+            }
+            connection.pathUpdateHandler = { newPath in
+                Log.network.notice("Browser path changed to \(String(describing: newPath))")
+                if newPath.status == .unsatisfied && newPath.unsatisfiedReason == .localNetworkDenied {
+                    resume(with: .success(false))
+                }
             }
 
             connection.stateUpdateHandler = { newState in
                 switch newState {
                 case .setup:
-                    logger.info("Browser performing setup.")
+                    Log.network.notice("Browser performing setup.")
                     return
                 case .ready:
-                    logger.notice("Connection ready to send packets.")
+                    Log.network.notice("Connection ready to send packets.")
                     resume(with: .success(true))
                     return
                 case .cancelled:
-                    logger.notice("Connection cancelled.")
+                    Log.network.notice("Connection cancelled.")
                     resume(with: .failure(CancellationError()))
                 case .failed(let error):
-                    logger.error("Connection failed, stopping. \(error, privacy: .public)")
+                    Log.network.error("Connection failed, stopping. \(error, privacy: .public)")
                     resume(with: .failure(error))
                 case let .waiting(error):
-                    switch error {
-                    case .posix(POSIXErrorCode.ENETDOWN), .dns(DNSServiceErrorType(kDNSServiceErr_PolicyDenied)):
-                        logger.notice("Connection permission denied, reporting failure.")
-                        resume(with: .success(false))
-                    default:
-                        logger.error("Connection waiting, stopping. \(error, privacy: .public)")
-                        resume(with: .failure(error))
+                    Log.network.error("Connection waiting, will update in pathUpdateHandler. \(error, privacy: .public)")
+                    queue.asyncAfter(deadline: .now() + 0.1) {
+                        switch connection.state {
+                        case .waiting: connection.restart()
+                        default: break
+                        }
                     }
                 case .preparing:
-                    logger.info("Connection preparing.")
+                    Log.network.notice("Connection preparing.")
                 @unknown default:
-                    logger.warning("Ignoring unknown Connection state: \(String(describing: newState), privacy: .public)")
+                    Log.network.warning("Ignoring unknown Connection state: \(String(describing: newState), privacy: .public)")
                     return
                 }
             }
@@ -63,7 +66,7 @@ func requestLocalNetworkAuthorization() async throws -> Bool {
 
             // Task cancelled while setting up listener & Connection, tear down immediatly
             if Task.isCancelled {
-                logger.notice("Task cancelled during listener & Connection start. (Some warnings might be logged by the listener or Connection.)")
+                Log.network.notice("Task cancelled during listener & Connection start. (Some warnings might be logged by the listener or Connection.)")
                 resume(with: .failure(CancellationError()))
                 return
             }
@@ -86,19 +89,19 @@ private let type = "_preflight_check._tcp"
 func requestLocalNetworkAuthorization() async throws -> Bool {
     let queue = DispatchQueue(label: "com.nonstrict.localNetworkAuthCheck")
 
-    logger.notice("Setup listener.")
+    Log.network.notice("Setup listener.")
     let listener = try NWListener(using: NWParameters(tls: .none, tcp: NWProtocolTCP.Options()))
     listener.service = NWListener.Service(name: UUID().uuidString, type: type)
     listener.newConnectionHandler = { _ in } // Must be set or else the listener will error with POSIX error 22
 
-    logger.notice("Setup browser.")
+    Log.network.notice("Setup browser.")
     let parameters = NWParameters()
     parameters.includePeerToPeer = true
     let browser = NWBrowser(for: .bonjour(type: type, domain: nil), using: parameters)
 
     return try await withTaskCancellationHandler {
         let stream = AsyncThrowingStream(Bool.self, bufferingPolicy: .bufferingNewest(1)) { continuation in
-            class LocalState {
+            final class LocalState {
                 var didResume = false
             }
             @Sendable func resume(with result: Result<Bool, any Error>) {
@@ -114,7 +117,7 @@ func requestLocalNetworkAuthorization() async throws -> Bool {
 
             // Do not setup listener/browser is we're already cancelled, it does work but logs a lot of very ugly errors
             if Task.isCancelled {
-                logger.notice("Task cancelled before listener & browser started.")
+                Log.network.notice("Task cancelled before listener & browser started.")
                 resume(with: .failure(CancellationError()))
                 return
             }
@@ -122,20 +125,20 @@ func requestLocalNetworkAuthorization() async throws -> Bool {
             listener.stateUpdateHandler = { newState in
                 switch newState {
                 case .setup:
-                    logger.info("Listener performing setup.")
+                    Log.network.notice("Listener performing setup.")
                 case .ready:
-                    logger.notice("Listener ready to be discovered.")
+                    Log.network.notice("Listener ready to be discovered.")
                 case .cancelled:
-                    logger.notice("Listener cancelled.")
+                    Log.network.notice("Listener cancelled.")
                     resume(with: .failure(CancellationError()))
                 case .failed(let error):
-                    logger.error("Listener failed, stopping. \(error, privacy: .public)")
+                    Log.network.error("Listener failed, stopping. \(error, privacy: .public)")
                     resume(with: .failure(error))
                 case .waiting(let error):
-                    logger.warning("Listener waiting, stopping. \(error, privacy: .public)")
+                    Log.network.warning("Listener waiting, stopping. \(error, privacy: .public)")
                     resume(with: .failure(error))
                 @unknown default:
-                    logger.warning("Ignoring unknown listener state: \(String(describing: newState), privacy: .public)")
+                    Log.network.warning("Ignoring unknown listener state: \(String(describing: newState), privacy: .public)")
                 }
             }
             listener.start(queue: queue)
@@ -143,46 +146,46 @@ func requestLocalNetworkAuthorization() async throws -> Bool {
             browser.stateUpdateHandler = { newState in
                 switch newState {
                 case .setup:
-                    logger.info("Browser performing setup.")
+                    Log.network.notice("Browser performing setup.")
                     return
                 case .ready:
-                    logger.notice("Browser ready to discover listeners.")
+                    Log.network.notice("Browser ready to discover listeners.")
                     return
                 case .cancelled:
-                    logger.notice("Browser cancelled.")
+                    Log.network.notice("Browser cancelled.")
                     resume(with: .failure(CancellationError()))
                 case .failed(let error):
-                    logger.error("Browser failed, stopping. \(error, privacy: .public)")
+                    Log.network.error("Browser failed, stopping. \(error, privacy: .public)")
                     resume(with: .failure(error))
                 case let .waiting(error):
                     switch error {
                     case .dns(DNSServiceErrorType(kDNSServiceErr_PolicyDenied)):
-                        logger.notice("Browser permission denied, reporting failure.")
+                        Log.network.notice("Browser permission denied, reporting failure.")
                         resume(with: .success(false))
                     default:
-                        logger.error("Browser waiting, stopping. \(error, privacy: .public)")
+                        Log.network.error("Browser waiting, stopping. \(error, privacy: .public)")
                         resume(with: .failure(error))
                     }
                 @unknown default:
-                    logger.warning("Ignoring unknown browser state: \(String(describing: newState), privacy: .public)")
+                    Log.network.warning("Ignoring unknown browser state: \(String(describing: newState), privacy: .public)")
                     return
                 }
             }
 
             browser.browseResultsChangedHandler = { results, _ in
                 if results.isEmpty {
-                    logger.warning("Got empty result set from browser, ignoring.")
+                    Log.network.warning("Got empty result set from browser, ignoring.")
                     return
                 }
 
-                logger.notice("Discovered \(results.count, privacy: .public) listeners, reporting success.")
+                Log.network.notice("Discovered \(results.count, privacy: .public) listeners, reporting success.")
                 resume(with: .success(true))
             }
             browser.start(queue: queue)
 
             // Task cancelled while setting up listener & browser, tear down immediatly
             if Task.isCancelled {
-                logger.notice("Task cancelled during listener & browser start. (Some warnings might be logged by the listener or browser.)")
+                Log.network.notice("Task cancelled during listener & browser start. (Some warnings might be logged by the listener or browser.)")
                 resume(with: .failure(CancellationError()))
                 return
             }

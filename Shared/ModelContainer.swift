@@ -13,12 +13,7 @@ let loadAppGroup = "group.com.msdrigg.roam.load"
 let mainAppGroupBackup: String? = nil
 #endif
 
-private let logger = Logger(
-    subsystem: getLogSubsystem(),
-    category: "ModelContainer"
-)
-
-public class GlobalModelContainer {
+public final class GlobalModelContainer {
     @MainActor
     static let sharedModelContainer = demandSharedModelContainer()
 }
@@ -71,7 +66,7 @@ private func demandSharedModelContainer() -> ModelContainer {
 
 private func _getSharedModelContainer() throws -> ModelContainer {
     let schema = Schema(
-        versionedSchema: SchemaV3.self
+        versionedSchema: SchemaV4.self
     )
 
     let modelConfiguration = ModelConfiguration(

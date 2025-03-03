@@ -1,6 +1,6 @@
 use crate::{
     database::{DeviceInfo, User, UserUpdate},
-    discord::{DiscordAuthor, DiscordFile},
+    discord::{DiscordAuthor, DiscordFile, DiscordFileUpload},
     presence::UserPresenceInfo,
     utils::{i64_to_string, string_to_i64_optional},
 };
@@ -169,7 +169,9 @@ fn router(app_context: AppContext) -> Router {
         .route("/", get(|| async { "Hello, world!" }))
         .route("/messages/{user_id}", get(get_user_messages))
         .route("/updates/{user_id}", get(get_user_state))
-        .route("/new-message", post(new_message))
+        .route("/new-message", post(new_message_old))
+        .route("/v2/new-message", post(new_message))
+        .route("/new-apns", post(new_apns))
         .route(
             "/upload-diagnostics/{diagnostic_key}",
             post(upload_diagnostics),
@@ -234,7 +236,6 @@ impl DiscordMessageDownload {
                         .unwrap_or_else(|| "application/octet-stream".to_string()),
                     filename: attachment.filename,
                     data,
-                    paired_messages: vec![],
                 })
             })
             .buffer_unordered(10) // Adjust concurrency level
@@ -306,19 +307,104 @@ async fn get_user_messages(
 
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct ApnsRequest {
+    user_id: String,
+    apns_token: String,
+    installation_info: Option<DeviceInfo>,
+}
+
+async fn new_apns(
+    State(app_context): State<AppContext>,
+    Json(req): Json<ApnsRequest>,
+) -> Result<String, ApiError> {
+    let ApnsRequest {
+        apns_token,
+        user_id: device_id,
+        installation_info,
+    } = req;
+
+    let user = app_context
+        .get_or_create_user(
+            &device_id,
+            &UserUpdate {
+                apns_token: Some(apns_token.clone()),
+                device_info: installation_info.clone(),
+                thread_id: None,
+            },
+        )
+        .await?;
+
+    app_context
+        .refresh_user(user, Some(apns_token).as_ref(), &installation_info)
+        .await?;
+
+    Ok("OK".to_string())
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct MessageRequest {
     user_id: String,
     apns_token: Option<String>,
     content: Option<String>,
-    attachments: Option<Vec<DiscordFile>>,
+    attachments: Option<Vec<DiscordFileUpload>>,
     nonce: Option<String>,
     installation_info: Option<DeviceInfo>,
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MessageRequestV2 {
+    user_id: String,
+    content: String,
+    attachment: Option<DiscordFileUpload>,
+    installation_info: Option<DeviceInfo>,
+    nonce: Option<String>,
+}
+
 async fn new_message(
     State(app_context): State<AppContext>,
+    Json(message_request): Json<MessageRequestV2>,
+) -> Result<Json<DiscordMessageDownload>, ApiError> {
+    let MessageRequestV2 {
+        content,
+        user_id: device_id,
+        installation_info,
+        attachment,
+        nonce,
+    } = message_request;
+
+    if content.is_empty() && attachment.is_none() {
+        return Err(ApiError::BadRequest(
+            "Content or attachments must be provided".to_string(),
+        ));
+    }
+
+    let user = app_context
+        .get_or_create_user(
+            &device_id,
+            &UserUpdate {
+                apns_token: None,
+                device_info: installation_info.clone(),
+                thread_id: None,
+            },
+        )
+        .await?;
+
+    let user = app_context
+        .refresh_user(user, None, &installation_info)
+        .await?;
+    let message_result = app_context
+        .discord_client()
+        .send_message(user.thread_id, &content, attachment, nonce.as_deref())
+        .await?;
+    Ok(Json(DiscordMessageDownload::prepare(message_result).await?))
+}
+
+async fn new_message_old(
+    State(app_context): State<AppContext>,
     Json(message_request): Json<MessageRequest>,
-) -> Result<String, ApiError> {
+) -> Result<(), ApiError> {
     let MessageRequest {
         content,
         apns_token,
@@ -348,25 +434,24 @@ async fn new_message(
         )
         .await?;
 
-    if let Some(content) = content {
-        if !content.is_empty() {
-            app_context
-                .discord_client()
-                .send_message(
-                    user.thread_id,
-                    &content,
-                    attachments.unwrap_or_default(),
-                    nonce.as_deref(),
-                )
-                .await?;
-
-            app_context
-                .refresh_user(user, apns_token.as_ref(), &installation_info)
-                .await?;
-        }
+    let user = app_context
+        .refresh_user(user, apns_token.as_ref(), &installation_info)
+        .await?;
+    if content.as_ref().is_some_and(|c| !c.is_empty())
+        || attachments.as_ref().is_some_and(|a| !a.is_empty())
+    {
+        app_context
+            .discord_client()
+            .send_message_multiple_attachments(
+                user.thread_id,
+                &content.unwrap_or_default(),
+                attachments.unwrap_or_default(),
+                nonce.as_deref(),
+            )
+            .await?;
+        return Ok(());
     }
-
-    Ok("OK".to_string())
+    Ok(())
 }
 
 async fn upload_diagnostics(
@@ -392,15 +477,14 @@ async fn upload_diagnostics(
         .map_err(|e| ApiError::BadRequest(format!("Error reading body: {}", e)))?;
     app_context
         .discord_client()
-        .send_message(
+        .send_message_multiple_attachments(
             user.thread_id,
             ":ninja:",
-            vec![DiscordFile {
+            vec![DiscordFileUpload {
                 content_type: "application/json".to_string(),
                 filename: "diagnostics.json".to_string(),
                 data: body.to_vec(),
                 paired_messages: vec![],
-                id: 0,
             }],
             None,
         )

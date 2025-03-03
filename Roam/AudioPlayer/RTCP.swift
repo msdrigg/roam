@@ -1,11 +1,6 @@
 import Foundation
 import os
 
-private let logger = Logger(
-    subsystem: getLogSubsystem(),
-    category: "RTCP"
-)
-
 enum RtcpPacket {
     case receiverReport(RtcpReceiverReport)
     case senderReport(RtcpSenderReport)
@@ -47,7 +42,7 @@ enum RtcpPacket {
         let data = data.dropFirst(2)
 
         if version != 2 {
-            logger.warning("Bad rtcp packet recevied with version = \(version, privacy: .public). Expected version = 2")
+            Log.headphones.warning("Bad rtcp packet recevied with version = \(version, privacy: .public). Expected version = 2")
             return nil
         }
 
@@ -63,19 +58,19 @@ enum RtcpPacket {
             self = Self.senderReport(RtcpSenderReport(data: packetData))
         case 201:
             guard let packet = RtcpReceiverReport(data: packetData) else {
-                logger.warning("Bad receiver report recevied with data \(packetData, privacy: .public)")
+                Log.headphones.warning("Bad receiver report recevied with data \(packetData, privacy: .public)")
                 return nil
             }
             self = Self.receiverReport(packet)
         case 203:
             guard let packet = RtcpBye(data: packetData) else {
-                logger.warning("Bad bye packet recevied with data \(packetData, privacy: .public)")
+                Log.headphones.warning("Bad bye packet recevied with data \(packetData, privacy: .public)")
                 return nil
             }
             self = Self.bye(packet)
         case 204:
             guard let packet = RtcpAppSpecific(subtypeData: subtypeData, packet: packetData) else {
-                logger.warning("Bad app packet recevied with data \(packetData, privacy: .public)")
+                Log.headphones.warning("Bad app packet recevied with data \(packetData, privacy: .public)")
                 return nil
             }
             self = Self.appSpecific(packet)
@@ -215,7 +210,7 @@ enum RtcpAppSpecific {
     static let packetType: UInt8 = 204
 
     init?(subtypeData: UInt8, packet: Data) {
-        logger
+        Log.headphones
             .trace(
                 "Initing app packet with stData \(subtypeData, privacy: .public), packet \(packet.map { String(format: "%02x", $0) }.joined(), privacy: .public))"
             )
@@ -223,7 +218,7 @@ enum RtcpAppSpecific {
         _ = packet.prefix(4)
         let nameData = packet.dropFirst(4).prefix(4)
         guard let name = String(data: nameData, encoding: .utf8) else {
-            logger.warning("Bad data for name in app data \(nameData, privacy: .public)")
+            Log.headphones.warning("Bad data for name in app data \(nameData, privacy: .public)")
             return nil
         }
 
@@ -322,7 +317,7 @@ struct RtcpVdly {
 
     init?(data: Data) {
         guard let delay = UInt32(bigEndian: data) else {
-            logger.warning("Bad data for vdly delay in app data \(data, privacy: .public)")
+            Log.headphones.warning("Bad data for vdly delay in app data \(data, privacy: .public)")
             return nil
         }
         delayMicroseconds = delay
@@ -340,7 +335,7 @@ struct RtcpXdly {
 
     init?(data: Data) {
         guard let delay = UInt32(bigEndian: data) else {
-            logger.warning("Bad data for vdly delay in app data \(data, privacy: .public)")
+            Log.headphones.warning("Bad data for vdly delay in app data \(data, privacy: .public)")
             return nil
         }
         delayMicroseconds = delay
@@ -370,7 +365,7 @@ struct RtcpCver {
 
     init?(data: Data) {
         guard let clientVersion = UInt32(bigEndian: data) else {
-            logger.warning("Bad data for client version in app data \(data, privacy: .public)")
+            Log.headphones.warning("Bad data for client version in app data \(data, privacy: .public)")
             return nil
         }
         self.clientVersion = clientVersion

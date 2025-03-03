@@ -1,13 +1,8 @@
-#if !os(macOS) && !os(tvOS)
+#if !os(macOS)
     import Foundation
     import OSLog
     import SwiftUI
     import UIKit
-
-    private let logger = Logger(
-        subsystem: getLogSubsystem(),
-        category: "KeyboardMonitor"
-    )
 
     struct OnKeyPressModifier: ViewModifier {
         let onKeyPress: (KeyboardShortcut) -> Void
@@ -77,7 +72,7 @@
         }
     }
 
-    private class KeyPressableViewController<Content: View>: UIViewController {
+    private final class KeyPressableViewController<Content: View>: UIViewController {
         var onKeyPress: ((KeyboardShortcut) -> Void)?
         var onKeyboardShortcut: ((CustomKeyboardShortcut.Key) -> Void)?
         var keyboardShortcuts: [CustomKeyboardShortcut]?
@@ -102,12 +97,12 @@
                 if let key = press.key, let ke = getKeyEquivalent(key) {
                     for shortcut in keyboardShortcuts ?? [] {
                         if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
-                            logger.notice("Not handling key press because found shortcut with title \(shortcut.title, privacy: .public)")
+                            Log.userInteraction.notice("Not handling key press because found shortcut with title \(shortcut.title, privacy: .public)")
                             super.pressesBegan(presses, with: event)
                             return
                         }
                     }
-                    logger.notice("Handling key press \(ke.key.printableRepresentation, privacy: .public)")
+                    Log.userInteraction.notice("Handling key press \(ke.key.printableRepresentation, privacy: .public)")
                     onKeyPress?(ke)
                     handled = true
                 }
@@ -122,7 +117,7 @@
         }
 
         @objc func handleKeyPress(_ command: UIKeyCommand) {
-            logger.notice("Getting keyboard shortcut \(command.title, privacy: .public) \(String(describing: command.input), privacy: .public)")
+            Log.userInteraction.notice("Getting keyboard shortcut \(command.title, privacy: .public) \(String(describing: command.input), privacy: .public)")
             if let key = CustomKeyboardShortcut.Key(rawValue: command.title) {
                 onKeyboardShortcut?(key)
             }
@@ -134,6 +129,7 @@
         }
 
         override func resignFirstResponder() -> Bool {
+            super.resignFirstResponder()
             return false
         }
 

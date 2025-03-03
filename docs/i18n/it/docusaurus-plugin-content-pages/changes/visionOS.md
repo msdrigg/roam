@@ -1,1 +1,1 @@
--   Correzioni di bug e miglioramenti
+-   Risoluzione del crash durante la scansione in background

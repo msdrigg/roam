@@ -1,1 +1,1 @@
--   Sửa lỗi và cải tiến
+- Sửa lỗi sập khi quét ở chế độ nền

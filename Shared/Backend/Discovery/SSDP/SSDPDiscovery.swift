@@ -4,11 +4,6 @@ import Network
 import os
 import System
 
-private let logger = Logger(
-    subsystem: getLogSubsystem(),
-    category: String(describing: "SSDPDiscovery")
-)
-
 enum SSDPError: Swift.Error, LocalizedError {
     case socketCreationFailed
     case connectionGroupFailed
@@ -21,28 +16,21 @@ enum SSDPError: Swift.Error, LocalizedError {
 func scanDevicesContinually(interface: String?) throws -> AsyncThrowingStream<SSDPService, any Error> {
     AsyncThrowingStream { continuation in
         do {
+            Log.scanning.notice("Starting scan with interface \(interface ?? "nil", privacy: .public)")
             let socket = try FileDescriptor.socket(AF_INET, SOCK_DGRAM, 0)
             // Setting nosigpipe due to https://developer.apple.com/forums/thread/773307
             try socket.setSocketOption(SOL_SOCKET, SO_NOSIGPIPE, 1 as CInt)
+            try socket.setSocketOption(SOL_SOCKET, SO_REUSEPORT, 1 as CInt)
 
-            // Optionally bind to a specific interface address
-            // Retrieve the interface address
+            _ = try QSockAddr.withSockAddr(address: "0.0.0.0", port: 1900) { sa, saLen in
+                Log.scanning.notice("Binding socket to 0.0.0.0:1900")
+                _ = try socket.bind(sa, saLen)
+            }
+
             if let interface {
-                let interfaceAddresses = QSockAddr.addressesByInterface()[interface] ?? []
-                let interfaceAddress = interfaceAddresses.first
-                logger.notice("Getting information about interfaces \(interfaceAddresses, privacy: .public) and chose \(interfaceAddress ?? "--", privacy: .public)")
-
-                // Bind the socket to the interface address
-                if let address = interfaceAddress {
-                    try QSockAddr.withSockAddr(address: address, port: 0) { sa, saLen in
-                        _ = try socket.bind(sa, saLen)
-                    }
-                }
-
-                // Set the multicast interface for sending
-                logger.notice("Setting multicast interface \(interfaceAddress ?? "", privacy: .public)")
-                let multicastInterface = in_addr(s_addr: inet_addr(interfaceAddress))
-                try socket.setSocketOption(IPPROTO_IP, IP_MULTICAST_IF, multicastInterface)
+                let iface = try QSockAddr.interfaceIndex(interface)
+                Log.scanning.notice("Setting bound interface \(interface, privacy: .public) (\(iface, privacy: .public))")
+                try socket.setSocketOption(IPPROTO_IP, IP_BOUND_IF, UInt32(iface))
             }
 
             let groupAddress = "239.255.255.250"
@@ -64,11 +52,11 @@ func scanDevicesContinually(interface: String?) throws -> AsyncThrowingStream<SS
                     }
                     do {
                         try socket.send(data: Data(message.utf8), to: (address: groupAddress, port: groupPort))
-                        logger.info("Sent SSDP request successfully")
+                        Log.scanning.notice("Sent SSDP request successfully")
                         failures = 0
                     } catch {
                         failures += 1
-                        logger.warning("Error sending SSDP request: \(error, privacy: .public)")
+                        Log.scanning.warning("Error sending SSDP request: \(error, privacy: .public)")
                         if failures >= 2 {
                             continuation.finish(throwing: error)
                         }
@@ -79,25 +67,30 @@ func scanDevicesContinually(interface: String?) throws -> AsyncThrowingStream<SS
             let receivingHandle = Task {
                 while !Task.isCancelled {
                     do {
-                        logger.notice("Trying to receive SSDP data from \(groupAddress, privacy: .public):\(groupPort, privacy: .public)")
+                        Log.scanning.notice("Trying to receive SSDP data from \(groupAddress, privacy: .public):\(groupPort, privacy: .public)")
                         let (data, from) = try socket.receiveFrom(maxCount: 16384)
-                        logger.notice("Receinving SSDP data with len \(data.count, privacy: .public) from \(from.0, privacy: .public):\(from.1, privacy: .public)")
+                        Log.scanning.notice("Receiving SSDP data with len \(data.count, privacy: .public) from \(from.0, privacy: .public):\(from.1, privacy: .public)")
                         if let response = String(data: data, encoding: .utf8) {
                             continuation.yield(SSDPService(host: from.address, response: response))
                         }
                     } catch {
-                        logger.warning("Error receiving SSDP response: \(error, privacy: .public)")
+                        if Task.isCancelled {
+                            Log.scanning.notice("Error receiving from cancelled SSDP: \(error, privacy: .public)")
+                        } else {
+                            Log.scanning.warning("Error receiving SSDP: \(error, privacy: .public)")
+                        }
                     }
                 }
             }
 
             continuation.onTermination = { @Sendable _ in
+                Log.scanning.notice("Terminating ssdp")
                 receivingHandle.cancel()
                 sendingHandle.cancel()
                 try? socket.close()
             }
         } catch {
-            logger.error("Failed to create or configure socket: \(error, privacy: .public)")
+            Log.scanning.error("Failed to create or configure socket: \(error, privacy: .public)")
             continuation.finish(throwing: SSDPError.socketCreationFailed)
         }
     }

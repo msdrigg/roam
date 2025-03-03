@@ -57,7 +57,7 @@ struct CenterController: View {
                                             .environment(\.layoutDirection, layoutDirection)
                                     }
                                 })
-                                #if !os(tvOS) && !os(watchOS)
+                                #if !os(watchOS)
                                 .customKeyboardShortcut(button.3)
                                 #endif
                                 .buttonStyle(.borderedProminent)

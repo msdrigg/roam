@@ -1,1 +1,1 @@
-- Correções de bugs e melhorias
+-   Corrigindo o bug de varredura de dispositivo

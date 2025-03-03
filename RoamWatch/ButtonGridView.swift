@@ -3,11 +3,6 @@ import os.log
 import SwiftUI
 
 struct ButtonGridView: View {
-    private nonisolated static let logger = Logger(
-        subsystem: getLogSubsystem(),
-        category: String(describing: ButtonGridView.self)
-    )
-
     let device: DeviceAppEntity?
     let controls: [[RemoteButton?]]
 
@@ -35,8 +30,9 @@ struct ButtonGridView: View {
                                         do {
                                             try await clickButton(button: button, device: device)
                                         } catch {
-                                            Self.logger
-                                                .error("Error pressing button \(String(describing: button)): \(error)")
+                                            Log.userInteraction.error(
+                                                "Error pressing button \(String(describing: button), privacy: .public): \(error, privacy: .public)"
+                                            )
                                         }
                                     }
                                 }, label: {

@@ -77,7 +77,7 @@ extension View {
     }
 }
 
-#Preview("GlowingButton") {
+#Preview("GlowingBorderedButton") {
     Button(action: {
         print("Button Pressed")
     }, label: {
@@ -89,7 +89,7 @@ extension View {
     .padding(100)
 }
 
-#Preview("PaddedButton") {
+#Preview("GlowingBorderlessButton") {
     Button(action: {
         print("Button Pressed")
     }, label: {

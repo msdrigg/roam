@@ -1,1 +1,1 @@
--   Correções de erros e melhorias
+- Corrigindo falha ao escanear em segundo plano

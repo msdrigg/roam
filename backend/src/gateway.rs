@@ -36,14 +36,17 @@ impl Handler {
 impl EventHandler for Handler {
     async fn typing_start(&self, _ctx: Context, event: TypingStartEvent) {
         tracing::info!("Typing start event received");
+        if self.ctx.discord_bot_id() == u64::from(event.user_id) as i64 {
+            tracing::info!("Bot typing start event received");
+            // Don't notify the user if the they are the ones typing
+            return;
+        } else {
+            tracing::info!("Support start event received");
+        }
         let thread_id = u64::from(event.channel_id) as i64;
 
         match self.ctx.db_client().get_user_with_thread(thread_id).await {
             Ok(Some(user)) => {
-                if self.ctx.discord_bot_id() == u64::from(event.user_id) as i64 {
-                    // Don't notify the user if the they are the ones typing
-                    return;
-                }
                 self.ctx
                     .notify_support_typing(&user)
                     .await

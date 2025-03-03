@@ -13,7 +13,7 @@ extension EnvironmentValues {
 }
 
 @MainActor @Observable
-class UUIDUpdater {
+final class UUIDUpdater {
     var uuid: UUID = UUID()
 
     func update() {

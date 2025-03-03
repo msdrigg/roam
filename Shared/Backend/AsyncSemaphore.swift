@@ -49,7 +49,7 @@ public final class AsyncSemaphore: @unchecked Sendable {
     ///
     /// We make it @unchecked Sendable in order to prevent compiler warnings:
     /// instances are always protected by the semaphore's lock.
-    private class Suspension: @unchecked Sendable {
+    private final class Suspension: @unchecked Sendable {
         enum State {
             /// Initial state. Next is suspendedUnlessCancelled, or cancelled.
             case pending

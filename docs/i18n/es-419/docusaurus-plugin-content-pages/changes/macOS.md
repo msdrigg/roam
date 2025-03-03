@@ -1,1 +1,1 @@
-- Correcciones de errores y mejoras
+- Agregando tecla de acceso rápido para mostrar el menú de roam (barra de menú o ventana principal en segundo plano)

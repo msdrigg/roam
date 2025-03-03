@@ -57,6 +57,11 @@ The voice control functionality is one of the final good features that separates
 -   **Cons**
     -   Features are much more limited because "Open Columbo" wouldn't work b/c I don't have a way to download every apps' catalog
 
+## Future: Text search
+
+-   Add keyboard entry search to do the same searching without voice
+-   Checkout how cardhop does their search--it's really good
+
 ## Voice Remote Pro API
 
 -   See [voice-search/VoiceRemotePro/Readme.md](./VoiceRemotePro/Readme.md)

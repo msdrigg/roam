@@ -3,7 +3,7 @@ import Copus
 import Opus
 
 public extension Opus {
-    class RoamDecoder {
+    final class RoamDecoder {
         let format: AVAudioFormat
         let decoder: OpaquePointer
 

@@ -36,7 +36,6 @@ let globalECPRequestTimeout: Int = 5
 final class ECPProtocol: NWProtocolFramerImplementation {
     init(framer: NWProtocolFramer.Instance) { }
 
-    static fileprivate let logger = Logger(subsystem: "ecp.websocket", category: "ECPProtocolFramer")
     static let definition = NWProtocolFramer.Definition(implementation: ECPProtocol.self)
 
     /// Protocol definition
@@ -72,7 +71,7 @@ final class ECPProtocol: NWProtocolFramerImplementation {
         if case let .hostPort(hostname, _) = framer.remote {
             host = "\(hostname.debugDescription)"
         } else {
-            Self.logger.notice("Unable to parse host header from \(String(describing: framer.remote), privacy: .public)")
+            Log.connection.notice("Unable to parse host header from \(String(describing: framer.remote), privacy: .public)")
             host = "roku.local"
         }
 
@@ -97,13 +96,13 @@ final class ECPProtocol: NWProtocolFramerImplementation {
     func wakeup(framer: NWProtocolFramer.Instance) {
         if self.needProgressBy.timeIntervalSinceNow < 0 {
             if self.state != WebsocketState.stopped {
-                Self.logger.warning("Timed out \(self.needProgressBy, privacy: .public) \(self.state.debugDescription, privacy: .public)")
+                Log.connection.warning("Timed out \(self.needProgressBy, privacy: .public) \(self.state.debugDescription, privacy: .public)")
                 self.sendClose(framer: framer)
             }
             framer.markFailed(error: .posix(.ETIMEDOUT))
             self.state = .stopped
         } else if self.state == .ready && self.needProgressBy.timeIntervalSinceNow < 4 && self.lastPingSent.timeIntervalSinceNow < -0.6 {
-//            Self.logger.debug("Sending ping with time due \(self.needProgressBy.timeIntervalSinceNow, privacy: .public)  and last ping sent \(self.lastPingSent.timeIntervalSinceNow, privacy: .public)")
+//            Log.connection.debug("Sending ping with time due \(self.needProgressBy.timeIntervalSinceNow, privacy: .public)  and last ping sent \(self.lastPingSent.timeIntervalSinceNow, privacy: .public)")
             self.lastPingSent = .now
 
             self.sendPing(framer: framer)
@@ -167,33 +166,33 @@ final class ECPProtocol: NWProtocolFramerImplementation {
                 header = nextHeader
                 self.partialheader = Data()
             case .failed(let data, let needed):
-//                Self.logger.debug("Failed to parse data with partial \(data.count, privacy: .public) needed \(needed, privacy: .public)")
+//                Log.connection.debug("Failed to parse data with partial \(data.count, privacy: .public) needed \(needed, privacy: .public)")
                 self.partialheader = data
                 return .doneForNow(needed)
             }
         }
-//        Self.logger.debug("Parsed header \(header.debugOpcode, privacy: .public) with len \(header.payloadLength, privacy: .public)")
+//        Log.connection.debug("Parsed header \(header.debugOpcode, privacy: .public) with len \(header.payloadLength, privacy: .public)")
 
         var nextWsFrame: WebsocketMessage?
         if header.payloadLength == 0 {
             nextWsFrame = try WebsocketMessage.parse(header: header, data: nil)
             self.nextHeader = nil
         } else {
-//            Self.logger.debug("Requesting data for payload length \(header.payloadLength, privacy: .public)")
+//            Log.connection.debug("Requesting data for payload length \(header.payloadLength, privacy: .public)")
             let parseResult = framer.parseInput(minimumIncompleteLength: header.payloadLength, maximumLength: header.payloadLength) { buffer, _ in
                 guard let buffer = buffer else {
-//                    Self.logger.debug("No buffer, not consuming anything")
+//                    Log.connection.debug("No buffer, not consuming anything")
                     return 0
                 }
-//                Self.logger.debug("Got buffer with count \(buffer.count, privacy: .public)")
+//                Log.connection.debug("Got buffer with count \(buffer.count, privacy: .public)")
 
                 do {
                     let frame = try WebsocketMessage.parse(header: header, data: buffer)
                     nextWsFrame = frame
-//                    Self.logger.debug("Consuming \(header.payloadLength, privacy: .public) for \(frame.debugDescription, privacy: .public)")
+//                    Log.connection.debug("Consuming \(header.payloadLength, privacy: .public) for \(frame.debugDescription, privacy: .public)")
                     return header.payloadLength
                 } catch {
-                    Self.logger.error("Error parsing unknown ws frame \(error, privacy: .public). Consuming \(header.payloadLength, privacy: .public)")
+                    Log.connection.error("Error parsing unknown ws frame \(error, privacy: .public). Consuming \(header.payloadLength, privacy: .public)")
                     parseError = error as? WebsocketError ?? .badWebsocketFrame("Failed to parse with weird error")
                     return header.payloadLength
                 }
@@ -211,15 +210,15 @@ final class ECPProtocol: NWProtocolFramerImplementation {
         }
 
         guard let frame = nextWsFrame else {
-//            Self.logger.debug("Returning bc no frame from nextwsframe")
+//            Log.connection.debug("Returning bc no frame from nextwsframe")
             return .doneForNow(header.payloadLength)
         }
         switch (self.state, frame) {
         case (.waitingForUpgrade, _), (.stopped, _):
-            Self.logger.error("Should not be possible to hit this \(self.state.debugDescription, privacy: .public)")
+            Log.connection.error("Should not be possible to hit this \(self.state.debugDescription, privacy: .public)")
             throw WebsocketError.badWebsocketFrame("Shouldn't be possible to hit this")
         case (_, .close(let code, let reason)):
-            Self.logger.notice("Getting close frame unexpectedly with code \(code, privacy: .public) and reaspon \(reason ?? "nil", privacy: .public), current state \(self.state.debugDescription, privacy: .public)")
+            Log.connection.notice("Getting close frame unexpectedly with code \(code, privacy: .public) and reaspon \(reason ?? "nil", privacy: .public), current state \(self.state.debugDescription, privacy: .public)")
             self.sendClose(framer: framer)
             framer.markFailed(error: nil)
             self.state = .stopped
@@ -229,19 +228,19 @@ final class ECPProtocol: NWProtocolFramerImplementation {
             self.state = .waitingForAuthResponse
             self.needProgressBy = self.needProgressBy.addingTimeInterval(0.2)
         case (.waitingForAuthResponse, .text(let data)):
-            Self.logger.notice("Getting data \(data, privacy: .public) while waiting for auth response")
+            Log.connection.notice("Getting data \(data, privacy: .public) while waiting for auth response")
             let response: BaseResponse = try self.decoder.decode(BaseResponse.self, from: data)
             if !response.isSuccess {
-                Self.logger.warning("Failed to authenticate with response status \(response.status, privacy: .public)")
+                Log.connection.warning("Failed to authenticate with response status \(response.status, privacy: .public)")
                 throw WebsocketError.authFailure
             } else {
-                Self.logger.notice("Successfully authed!")
+                Log.connection.notice("Successfully authed!")
             }
             self.needProgressBy = Date.now.addingTimeInterval(5)
             self.state = .ready
             framer.markReady()
         case (.waitingForAuthChallenge, .ping ), (.waitingForAuthChallenge, .pong), (.waitingForAuthResponse, .ping ), (.waitingForAuthResponse, .pong):
-            Self.logger.notice("Expecting no pings or pongs before authenticating \(self.state.debugDescription, privacy: .public)")
+            Log.connection.notice("Expecting no pings or pongs before authenticating \(self.state.debugDescription, privacy: .public)")
             throw WebsocketError.badWebsocketFrame("Expecting no pings or pongs before auth")
         case (.ready, .ping):
             self.sendPong(framer: framer)
@@ -249,7 +248,7 @@ final class ECPProtocol: NWProtocolFramerImplementation {
         case (.ready, .pong):
             self.needProgressBy = Date.now.addingTimeInterval(5)
         case (.ready, .text(let data)):
-//            Self.logger.debug("Getting text while ready \(data.count, privacy: .public)")
+//            Log.connection.debug("Getting text while ready \(data.count, privacy: .public)")
             let response: ECPResponseMessage = try self.decoder.decode(ECPResponseMessage.self, from: data)
             self.needProgressBy = Date.now.addingTimeInterval(5)
             _ = framer.deliverInputNoCopy(length: 0, message: .init(ecpResponseMessage: response), isComplete: true)
@@ -267,14 +266,14 @@ final class ECPProtocol: NWProtocolFramerImplementation {
                 let parseResult = try self.handleSignleInput(framer: framer)
                 switch parseResult {
                 case .canContinue:
-//                    Self.logger.debug("Continuing to next input seamlessly")
+//                    Log.connection.debug("Continuing to next input seamlessly")
                     continue
                 case .doneForNow(let needed):
-//                    Self.logger.debug("Requesting data amount \(needed, privacy: .public)")
+//                    Log.connection.debug("Requesting data amount \(needed, privacy: .public)")
                     return needed
                 }
             } catch {
-                Self.logger.error("Error handling input \(error, privacy: .public) in state \(self.state.debugDescription, privacy: .public)")
+                Log.connection.error("Error handling input \(error, privacy: .public) in state \(self.state.debugDescription, privacy: .public)")
                 framer.markFailed(error: (error as? WebsocketError)?.nwError ?? NWError.posix(.EPROTO))
                 self.state = .stopped
                 return 0
@@ -284,11 +283,11 @@ final class ECPProtocol: NWProtocolFramerImplementation {
 
     func handleOutput(framer: NWProtocolFramer.Instance, message: NWProtocolFramer.Message, messageLength: Int, isComplete: Bool) {
         guard let request = message.ecpRequest else {
-            Self.logger.error("Unable to get ecpRequest from message")
+            Log.connection.error("Unable to get ecpRequest from message")
             return
         }
         guard !invalidRequestIds.contains(request.requestId) else {
-            Self.logger.error("Sending request with invalid id \(request.requestId, privacy: .public)")
+            Log.connection.error("Sending request with invalid id \(request.requestId, privacy: .public)")
             return
         }
         self.sendJson(framer: framer, json: request)
@@ -297,11 +296,11 @@ final class ECPProtocol: NWProtocolFramerImplementation {
     func stop(framer: NWProtocolFramer.Instance) -> Bool {
         switch self.state {
         case .stopped:
-            Self.logger.notice("Getting re-close frame. Force-stopping")
+            Log.connection.notice("Getting re-close frame. Force-stopping")
         case .waitingForUpgrade:
-            Self.logger.notice("Getting close on waiting for upgrade. Stopping instantly")
+            Log.connection.notice("Getting close on waiting for upgrade. Stopping instantly")
         case .waitingForAuthChallenge, .waitingForAuthResponse, .ready:
-            Self.logger.notice("Getting close. Sending close frame before stopping")
+            Log.connection.notice("Getting close. Sending close frame before stopping")
             self.sendClose(framer: framer)
         }
 
@@ -327,25 +326,25 @@ extension NWProtocolFramer.Instance {
             maximumLength: max(1, WebsocketHeader.maxSize - partialHeader.count),
             parse: { (buffer, _) -> Int in
                 guard let buffer = buffer, buffer.count != 0 else {
-//                    ECPProtocol.logger.debug("No buffer or empty buffer. Not parsing header")
+//                    Log.connection.debug("No buffer or empty buffer. Not parsing header")
                     return 0
                 }
                 partialData += Data(buffer)
                 if let header = WebsocketHeader.parse(from: partialData) {
                     parsedHeader = header
                     let consumed = header.encodedSize - partialHeader.count
-//                    ECPProtocol.logger.debug("Consuming \(consumed, privacy: .public) more bytes to parse header (\(header.encodedSize, privacy: .public)-\(partialHeader.count, privacy: .public))")
+//                    Log.connection.debug("Consuming \(consumed, privacy: .public) more bytes to parse header (\(header.encodedSize, privacy: .public)-\(partialHeader.count, privacy: .public))")
                     return consumed
                 }
 
                 // How much data do we take if it's failed? All of it
-//                ECPProtocol.logger.debug("Consuming all \(buffer.count, privacy: .public) bytes to parse header \(Data(partialData).toHexString(), privacy: .public)")
+//                Log.connection.debug("Consuming all \(buffer.count, privacy: .public) bytes to parse header \(Data(partialData).toHexString(), privacy: .public)")
                 return buffer.count
             }
         )
 
         guard framerParseResult, let header = parsedHeader else {
-//            ECPProtocol.logger.debug("No header parsed result=\(framerParseResult, privacy: .public) parsedSize=\(partialHeader.count, privacy: .public). Not consuming anything")
+//            Log.connection.debug("No header parsed result=\(framerParseResult, privacy: .public) parsedSize=\(partialHeader.count, privacy: .public). Not consuming anything")
 
             let nextNeededSize = if partialData.count < 2 {
                 2
@@ -364,29 +363,29 @@ extension NWProtocolFramer.Instance {
 
 extension ECPProtocol {
     func sendPing(framer: NWProtocolFramer.Instance) {
-//        Self.logger.debug("Sending ping \(self.uuid, privacy: .public)")
+//        Log.connection.debug("Sending ping \(self.uuid, privacy: .public)")
         framer.writeOutput(data: WebsocketMessage.ping.rawData)
     }
 
     func sendPong(framer: NWProtocolFramer.Instance) {
-        Self.logger.notice("Sending pong")
+        Log.connection.notice("Sending pong")
         framer.writeOutput(data: WebsocketMessage.pong.rawData)
     }
 
     func sendClose(framer: NWProtocolFramer.Instance) {
-        Self.logger.notice("Sending close")
+        Log.connection.notice("Sending close")
         framer.writeOutput(data: WebsocketMessage.close(1000, "").rawData)
     }
 
     func sendJson<T: Encodable>(framer: NWProtocolFramer.Instance, json: T) {
-        Self.logger.notice("Sending json")
+        Log.connection.notice("Sending json")
 
         do {
             let wsMessage = WebsocketMessage.text(try encoder.encode(json))
 
             framer.writeOutput(data: wsMessage.rawData)
         } catch {
-            Self.logger.warning("Error encoding message: \(error, privacy: .public)")
+            Log.connection.warning("Error encoding message: \(error, privacy: .public)")
         }
     }
 }
@@ -478,13 +477,13 @@ struct WebsocketHeader {
 
         if payloadLength == 126 {
             guard data.count >= 4 else { return nil }
-            ECPProtocol.logger.notice("Trying to parse newlen 16 bit \(data[2...3].toHexString(), privacy: .public)")
+            Log.connection.notice("Trying to parse newlen 16 bit \(data[2...3].toHexString(), privacy: .public)")
             guard let newLen = UInt16(bigEndian: data[2...3]) else { return nil }
             payloadLength = Int(newLen)
             offset += 2
         } else if payloadLength == 127 {
             guard data.count >= 10 else { return nil }
-            ECPProtocol.logger.notice("Trying to parse newlen 64 bit \(data[2...9].toHexString(), privacy: .public)")
+            Log.connection.notice("Trying to parse newlen 64 bit \(data[2...9].toHexString(), privacy: .public)")
             guard let newLen = UInt64(bigEndian: data[2...9]) else { return nil }
             payloadLength = Int(newLen)
             offset += 8

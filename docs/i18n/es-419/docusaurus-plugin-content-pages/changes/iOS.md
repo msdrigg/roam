@@ -1,1 +1,1 @@
--   Correcciones de errores y mejoras
+-   Corrigiendo el error de escaneo del dispositivo

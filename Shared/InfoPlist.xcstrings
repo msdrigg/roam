@@ -443,6 +443,96 @@
                 }
             }
         },
+        "NSPhotoLibraryAddUsageDescription": {
+            "comment": "Privacy - Photo Library Additions Usage Description",
+            "extractionState": "extracted_with_value",
+            "localizations": {
+                "en": {
+                    "stringUnit": {
+                        "state": "new",
+                        "value": "This application adds photos saved from the developer chat to the library"
+                    }
+                },
+                "ar": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "وصف استخدام مكتبة الصور NS"
+                    }
+                },
+                "de": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "NSPhotoLibraryAddUsageDescription"
+                    }
+                },
+                "es": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Descripción de Uso de la Biblioteca de Fotos NS"
+                    }
+                },
+                "es-419": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Descripción de uso de añadir a la biblioteca de fotos"
+                    }
+                },
+                "fil": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Paglalarawan ng Paggamit sa Pagdaragdag sa Library ng Larawan"
+                    }
+                },
+                "fr": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Description de l'utilisation de l'ajout à la bibliothèque de photos"
+                    }
+                },
+                "fr-CA": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Description de l'utilisation de l'ajout à la bibliothèque de photos"
+                    }
+                },
+                "it": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Descrizione dell'uso dell'aggiunta alla libreria fotografica"
+                    }
+                },
+                "pa": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "NSPhotoLibraryAddUsageDescription ਦਾ ਪ੍ਰਯੋਗ ਵੇਰਵਾ"
+                    }
+                },
+                "pt-BR": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Descrição de Uso para Adicionar à Biblioteca de Fotos"
+                    }
+                },
+                "pt-PT": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Descrição de Uso da Adição à Biblioteca de Fotos"
+                    }
+                },
+                "vi": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "Mô tả sử dụng thêm thư viện ảnh"
+                    }
+                },
+                "zh-Hans": {
+                    "stringUnit": {
+                        "state": "translated",
+                        "value": "添加到照片库使用描述"
+                    }
+                }
+            }
+        },
         "NSUserNotificationUsageDescription": {
             "comment": "Notification Usage Description",
             "extractionState": "manual",

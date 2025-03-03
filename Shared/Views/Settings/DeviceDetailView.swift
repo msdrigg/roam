@@ -1,3 +1,6 @@
+import SwiftUI
+import SwiftData
+
 struct DeviceDetailView: View {
     @State private var scanningActor: DeviceDiscoveryActor!
 
@@ -10,6 +13,10 @@ struct DeviceDetailView: View {
     @Query private var selectedDevices: [Device]
     @Environment(\.uuidUpdater) private var updater
 
+    private var runningInPreview: Bool {
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+    }
+
     @MainActor
     init(deviceId: PersistentIdentifier, dismiss: @escaping () -> Void) {
         self.dismiss = dismiss
@@ -19,13 +26,13 @@ struct DeviceDetailView: View {
         })
         descriptor.fetchLimit = 1
         descriptor.sortBy = [
-            SortDescriptor(\.lastSelectedAt, order: .reverse)
+            SortDescriptor(\Device.lastSelectedAt, order: .reverse)
         ]
         descriptor.propertiesToFetch = [
-            \.udn, \.location, \.lastOnlineAt, \.lastSelectedAt,
-             \.name, \.deletedAt, \.lastSentToWatch, \.lastScannedAt,
-             \.ethernetMAC, \.rtcpPort, \.supportsDatagram, \.wifiMAC,
-             \.networkType, \.powerMode
+            \Device.udn, \Device.location, \Device.lastOnlineAt, \Device.lastSelectedAt,
+             \Device.name, \Device.deletedAt, \Device.lastSentToWatch, \Device.lastScannedAt,
+             \Device.ethernetMAC, \Device.rtcpPort, \Device.supportsDatagram, \Device.wifiMAC,
+             \Device.networkType, \Device.powerMode
         ]
 
         _selectedDevices = Query(
@@ -53,9 +60,67 @@ struct DeviceDetailView: View {
             nil
         }
     }
-
+    
     var body: some View {
+        if runningInPreview {
+            bodyContent
+        } else {
+            bodyContent
+                .onChange(of: device?.name) { _, new in
+                    if let new = new {
+                        deviceName = new
+                    }
+                }
+                .onChange(of: device?.location) { _, new in
+                    if let new = new {
+                        let host = getHostPortDisplay(from: new)
+                        Log.userInteraction.notice("Seeing host \(host, privacy: .public) in change")
+                        deviceIP = host
+                    }
+                }
+                .onAppear {
+                    scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                        updater?.update()
+                    })
+
+                    deviceName = device?.name ?? getGlobalNewDeviceName()
+                    let deviceUrl = device?.location ?? "192.168.0.1"
+                    let host = getHostPortDisplay(from: deviceUrl)
+
+                    Log.userInteraction.notice("Seeing host \(host, privacy: .public)")
+                    deviceIP = host
+                }
+                .onDisappear {
+                    if addressValidation != nil || nameValidation != nil {
+                        return
+                    }
+                }
+        }
+    }
+
+    @ViewBuilder
+    var bodyContent: some View {
         Form {
+            Section(content: {
+                EmptyView()
+            }, header: {
+                EmptyView()
+            }, footer: {
+                VStack {
+                    HStack(alignment: .center) {
+                        DataImage(from: device?.deviceIcon, fallback: "tv")
+                            .frame(maxHeight: 45)
+                            .padding(.horizontal, 12)
+                            .padding(4)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 8)
+                    
+                    Text(device?.name ?? getGlobalNewDeviceName())
+                        .font(.title3.bold())
+                }
+            })
+
             Section(String(localized: "Parameters", comment: "Settings section title indicating device parameters")) {
                 VStack(alignment: .leading, spacing: 4) {
                     TextField(String(localized: "Name", comment: "Settings field label for the device name"), text: $deviceName)
@@ -91,13 +156,13 @@ struct DeviceDetailView: View {
             }
 
 #if !os(watchOS)
-            Section(String(localized: "Headphones Mode", comment: "Settings section label for headphones mode")) {
+            Section(String(localized: "Capabilities", comment: "Settings section label for device ")) {
                 Button(action: {
                     withAnimation {
                         showHeadphonesModeDescription = !showHeadphonesModeDescription
                     }
                 }, label: {
-                    LabeledContent(String(localized: "Supports headphones mode", comment: "Settings label for headphones mode support")) {
+                    LabeledContent(String(localized: "Headphones mode", comment: "Settings label for headphones mode support")) {
                         HStack(spacing: 8) {
                             if device?.supportsDatagram == true {
                                 Label(String(localized: "Supported", comment: "Label indicating headphones mode is supported"), systemImage: "headphones").labelStyle(.badge(.green))
@@ -144,20 +209,32 @@ struct DeviceDetailView: View {
             }
 #endif
 
-            Section(String(localized: "Info", comment: "Settings section title for the Info section")) {
-                LabeledContent(String(localized: "Id", comment: "Settings label for the device's id")) {
-                    Text(device?.udn ?? "--")
-                }
+            Button(role: .destructive, action: {
+                // Don't block the dismiss waiting for save
+                Log.userInteraction.notice("Deleting \("device", privacy: .public)")
+                let deviceId = deviceId
+                Task.detached {
+                    DispatchQueue.main.async {
+                        dismiss()
+                    }
+                    do {
+                        try await DataHandler(modelContainer: getSharedModelContainer()).delete(deviceId)
 
-                LabeledContent(String(localized: "RTCP Port", comment: "Settings label for the device's RTCP port")) {
-                    if let rtcpPort = device?.rtcpPort {
-                        Text(rtcpPort, format: .number
-                            .grouping(.never))
-                    } else {
-                        Text("Unknown", comment: "Placeholder for unknown information")
+                        Log.userInteraction.notice("Deleted device with id \(String(describing: deviceId), privacy: .public)")
+                    } catch {
+                        Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
+                    }
+                    DispatchQueue.main.async {
+                        updater?.update()
                     }
                 }
-            }
+            }, label: {
+              Text("Delete Device", comment: "Text on a button to delete the device")
+            })
+            #if !os(macOS)
+            .frame(maxWidth: .infinity)
+            #endif
+            .foregroundStyle(Color.red)
         }
         .onSubmit {
             if nameValidation != nil || addressValidation != nil {
@@ -172,31 +249,6 @@ struct DeviceDetailView: View {
             #endif
         }
         .formStyle(.grouped)
-        .onChange(of: device?.name) { _, new in
-            if let new = new {
-                deviceName = new
-            }
-        }
-        .onChange(of: device?.location) { _, new in
-            if let new = new {
-                let host = getHostPortDisplay(from: new)
-                Log.userInteraction.notice("Seeing host \(host, privacy: .public) in change")
-                deviceIP = host
-            }
-        }
-        .onAppear {
-            deviceName = device?.name ?? getGlobalNewDeviceName()
-            let deviceUrl = device?.location ?? "192.168.0.1"
-            let host = getHostPortDisplay(from: deviceUrl)
-
-            Log.userInteraction.notice("Seeing host \(host, privacy: .public)")
-            deviceIP = host
-        }
-        .onDisappear {
-            if addressValidation != nil || nameValidation != nil {
-                return
-            }
-        }
         .toolbar(id: "settings-detail") {
             ToolbarItem(id: "save-device", placement: .primaryAction) {
                 Button(String(localized: "Save", comment: "Text on a button to save the device settings"), systemImage: "checkmark", action: {
@@ -206,42 +258,9 @@ struct DeviceDetailView: View {
                     }
                 })
             }
-
-            ToolbarItem(id: "delete-device", placement: .destructiveAction) {
-                Button(String(localized: "Delete", comment: "Text on a button to delete the device"), systemImage: "trash", role: .destructive, action: {
-                    // Don't block the dismiss waiting for save
-                    Log.userInteraction.notice("Deleting \("device", privacy: .public)")
-                    let deviceId = deviceId
-                    Task.detached {
-                        DispatchQueue.main.async {
-                            dismiss()
-                        }
-                        do {
-                            try await DataHandler(modelContainer: getSharedModelContainer()).delete(deviceId)
-
-                            Log.userInteraction.notice("Deleted device with id \(String(describing: deviceId), privacy: .public)")
-                        } catch {
-                            Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
-                        }
-                        DispatchQueue.main.async {
-                            updater?.update()
-                        }
-                    }
-                })
-                .foregroundStyle(Color.red)
-            }
         }
-        .onAppear {
-            scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
-                updater?.update()
-            })
-        }
-
-#if os(macOS)
-        .padding()
-#endif
     }
-
+    
     func save() {
         if let device = device {
             let pid = device.persistentModelID
@@ -264,3 +283,13 @@ struct DeviceDetailView: View {
         }
     }
 }
+
+#if DEBUG
+#Preview(
+    "Device Detail View",
+    traits: .fixedLayout(width: 400, height: 300)
+) {
+    DeviceDetailView(deviceId: getTestingDevices()[0].id, dismiss: {})
+        .modelContainer(previewContainer)
+}
+#endif

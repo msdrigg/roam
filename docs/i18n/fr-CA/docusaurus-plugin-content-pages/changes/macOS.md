@@ -1,1 +1,1 @@
--   Corrections de bugs et améliorations
+- Ajout d'un raccourci clavier pour afficher le menu roam (barre de menu ou fenêtre principale en arrière-plan)

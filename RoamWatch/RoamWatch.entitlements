@@ -6,6 +6,7 @@
 	<array>
 		<string>group.com.msdrigg.roam.models</string>
 		<string>group.com.msdrigg.roam.load</string>
+		<string>group.com.msdrigg.roam.tips</string>
 	</array>
 </dict>
 </plist>

@@ -3,15 +3,10 @@ import OSLog
 import SwiftUI
 
 @MainActor @Observable
-class NetworkMonitor {
+final class NetworkMonitor {
     var networkConnection: NetworkType = .local
     private let monitor: NWPathMonitor
     private let queue = DispatchQueue(label: "NetworkMonitor")
-
-    private nonisolated static let logger = Logger(
-        subsystem: getLogSubsystem(),
-        category: String(describing: NetworkMonitor.self)
-    )
 
     init() {
         monitor = NWPathMonitor()
@@ -36,8 +31,8 @@ class NetworkMonitor {
                 } else {
                     self?.networkConnection = .none
                 }
-                Self.logger
-                    .info(
+                Log.network
+                    .notice(
                         "Getting new network \(String(describing: path), privacy: .public). Updating self type to \(String(describing: self?.networkConnection), privacy: .public)"
                     )
             }
@@ -45,7 +40,7 @@ class NetworkMonitor {
     }
 
     func startMonitoring() {
-        Self.logger.notice("Starting to monitor network path updates for display")
+        Log.network.notice("Starting to monitor network path updates for display")
         monitor.start(queue: queue)
     }
 

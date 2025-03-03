@@ -1,1 +1,1 @@
--   Correzioni di bug e migliorie
+-   Risoluzione del bug di scansione del dispositivo

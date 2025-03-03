@@ -11,14 +11,18 @@ import TipKit
 
 @MainActor
 private func deviceFetchDescriptor() -> FetchDescriptor<Device> {
-    var fd = FetchDescriptor(
-        predicate: #Predicate {
+    var fd = FetchDescriptor<Device>(
+        predicate: #Predicate<Device> {
             $0.deletedAt == nil
         },
         sortBy: [SortDescriptor(\Device.name)]
     )
     fd.relationshipKeyPathsForPrefetching = []
-    fd.propertiesToFetch = [\.udn, \.location, \.name, \.lastOnlineAt, \.lastSelectedAt, \.lastScannedAt]
+    fd.propertiesToFetch = [
+        \Device.udn, \Device.location, \Device.name,
+         \Device.lastOnlineAt, \Device.lastSelectedAt,
+         \Device.lastScannedAt
+    ]
 
     return fd
 }
@@ -34,14 +38,7 @@ private func messageFetchDescriptor() -> FetchDescriptor<Message> {
 }
 
 struct RemoteView: View {
-    private static nonisolated let logger = Logger(
-        subsystem: getLogSubsystem(),
-        category: String(describing: RemoteView.self)
-    )
-
-    #if !os(tvOS)
     @Environment(\.openWindow) var openWindow
-    #endif
 
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 
@@ -114,7 +111,7 @@ struct RemoteView: View {
             SettingsNavigationWrapper(path: $appDelegate.navigationPath.navigationPath) {
                 RemoteViewContained()
                     .onOpenURL { incomingURL in
-                        Self.logger.notice("App was opened via URL: \(incomingURL, privacy: .public)")
+                        Log.lifecycle.notice("App was opened via URL: \(incomingURL, privacy: .public)")
                         handleIncomingURL(incomingURL)
                     }
                 #if os(macOS)
@@ -139,16 +136,16 @@ struct RemoteView: View {
         var path = url.pathComponents
         path.removeFirst()
         guard let dlpath = path.first, dlpath == "deep-link" else {
-            Self.logger.error("Getting Invalid URL path")
+            Log.lifecycle.error("Getting Invalid URL path")
             return
         }
         let firstPath = path.first
         path.removeFirst()
         guard let action = path.first ?? firstPath else {
-            Self.logger.warning("Getting url deep link with no action")
+            Log.lifecycle.warning("Getting url deep link with no action")
             return
         }
-        Self.logger.notice("Getting action \(action, privacy: .public)")
+        Log.lifecycle.notice("Getting action \(action, privacy: .public)")
 
         if action == "add-device" || action == "scan" {
             let queryParams = URLComponents(string: url.absoluteString)?.queryItems
@@ -165,34 +162,25 @@ struct RemoteView: View {
                     return ipComponents.map(String.init).joined(separator: ".")
                 })
             else {
-                Self.logger.error("Trying to add device with no location")
+                Log.lifecycle.error("Trying to add device with no location")
                 return
             }
 
             Task.detached {
                 let udn = queryParams?.first(where: { $0.name == "udn" })?.value ?? "roam:newdevice-\(UUID().uuidString)"
-                await DataHandler(modelContainer: getSharedModelContainer()).addOrReplaceDevice(location: location, friendlyDeviceName: name, udn: udn)
+                // TODO: Fix this
+//                await DataHandler(modelContainer: getSharedModelContainer()).addOrReplaceDevice(PreconnectionDeviceInfo())
             }
         }
-        if action == "feedback" {
-            Self.logger.notice("Attempting to open app debugging")
-            appDelegate.navigationPath.append(NavigationDestination.settingsDestination(.debugging))
-        } else if action == "settings" {
-            Self.logger.notice("Attempting to open app settings")
+        if action == "settings" {
+            Log.lifecycle.notice("Attempting to open app settings")
             appDelegate.navigationPath.append(NavigationDestination.settingsDestination(.global))
         } else if action == "about" {
-            Self.logger.notice("Attempting to open about page")
+            Log.lifecycle.notice("Attempting to open about page")
             appDelegate.navigationPath.append(NavigationDestination.aboutDestination)
         } else if action == "messages" {
-            Self.logger.notice("Attempting to open messages page")
+            Log.lifecycle.notice("Attempting to open messages page")
             appDelegate.navigationPath.append(NavigationDestination.messageDestination)
         }
     }
 }
-
-#if DEBUG
-#Preview("Remote horizontal") {
-    RemoteView()
-        .modelContainer(previewContainer)
-}
-#endif

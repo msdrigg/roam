@@ -1,1 +1,1 @@
--   Corrections de bugs et améliorations
+- Correction du bogue de balayage de l'appareil

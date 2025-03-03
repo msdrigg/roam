@@ -3,8 +3,6 @@ import SwiftUI
 import OSLog
 import TipKit
 
-private let logger = Logger(subsystem: getLogSubsystem(), category: "KeyboardShortcut")
-
 struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
     let title: CustomKeyboardShortcut.Key
     let key: KeyEquivalent?
@@ -19,13 +17,11 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
         self.modifiers = modifiers
     }
 
-    #if !os(tvOS)
     init(title: CustomKeyboardShortcut.Key, shortcut: KeyboardShortcut) {
         self.title = title
         self.key = shortcut.key
         self.modifiers = shortcut.modifiers
     }
-    #endif
 
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -50,7 +46,6 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
         return keyBuilder
     }
 
-    #if !os(tvOS)
     @MainActor
     static var defaults: [Key: KeyboardShortcut]  {
         var items: [Key: KeyboardShortcut] = [:]
@@ -73,7 +68,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
                 .chatWithDeveloper: KeyboardShortcut(KeyEquivalent("j"), modifiers: .command),
                 .paste: KeyboardShortcut(KeyEquivalent("v"), modifiers: .command),
                 .cut: KeyboardShortcut(KeyEquivalent("x"), modifiers: .command),
-                .copy: KeyboardShortcut(KeyEquivalent("c"), modifiers: .command)
+                .copy: KeyboardShortcut(KeyEquivalent("c"), modifiers: .command),
             ]
         } else {
             items = [
@@ -103,24 +98,24 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
             .volumeDown: KeyboardShortcut(.downArrow, modifiers: .command),
             .volumeUp: KeyboardShortcut(.upArrow, modifiers: .command),
             .mute: KeyboardShortcut(KeyEquivalent("m"), modifiers: .command),
-            .home: KeyboardShortcut(KeyEquivalent("h"), modifiers: [.command]),
+            .home: KeyboardShortcut(KeyEquivalent("h"), modifiers: [.command, .shift]),
             .playPause: KeyboardShortcut(KeyEquivalent("p"), modifiers: .command),
             .ok: KeyboardShortcut(.return, modifiers: .command),
-            .left: KeyboardShortcut(.leftArrow, modifiers: .command),
-            .right: KeyboardShortcut(.rightArrow, modifiers: .command),
-            .up: KeyboardShortcut(.upArrow, modifiers: .command),
-            .down: KeyboardShortcut(.downArrow, modifiers: .command),
+            .left: KeyboardShortcut(.leftArrow, modifiers: []),
+            .right: KeyboardShortcut(.rightArrow, modifiers: []),
+            .up: KeyboardShortcut(.upArrow, modifiers: []),
+            .down: KeyboardShortcut(.downArrow, modifiers: []),
             .paste: KeyboardShortcut(KeyEquivalent("v"), modifiers: .command),
             .cut: KeyboardShortcut(KeyEquivalent("x"), modifiers: .command),
             .copy: KeyboardShortcut(KeyEquivalent("c"), modifiers: .command),
             .keyboardShortcuts: KeyboardShortcut(KeyEquivalent("k"), modifiers: .command),
-            .chatWithDeveloper: KeyboardShortcut(KeyEquivalent("j"), modifiers: .command)
+            .chatWithDeveloper: KeyboardShortcut(KeyEquivalent("j"), modifiers: .command),
+            .showRoam: KeyboardShortcut(KeyEquivalent("r"), modifiers: [.command, .control, .shift])
         ]
         #endif
 
         return items
     }
-    #endif
 
     enum CodingKeys: String, CodingKey {
         case title
@@ -136,12 +131,12 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
     }
 
     func persist() {
-        logger.notice("Saving shortcut with title \(self.title.rawValue, privacy: .public) key \(keys, privacy: .public)")
+        Log.userInteraction.notice("Saving shortcut with title \(self.title.rawValue, privacy: .public) key \(keys, privacy: .public)")
         do {
             let data = try PropertyListEncoder().encode(self)
             UserDefaults.standard.set(data, forKey: "keyboard-shortcut-\(title)")
         } catch {
-            logger.error("Error encoding keyboard shortcut to string \(error, privacy: .public)")
+            Log.userInteraction.error("Error encoding keyboard shortcut to string \(error, privacy: .public)")
         }
     }
 
@@ -149,7 +144,6 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
         UserDefaults.standard.removeObject(forKey: "keyboard-shortcut-\(title)")
     }
 
-    #if !os(tvOS)
     @MainActor
     init(title: Key) {
         if let data = UserDefaults.standard.data(forKey: "keyboard-shortcut-\(title)"),
@@ -163,7 +157,6 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
             self.modifiers = .command
         }
     }
-    #endif
 
     public enum Key: String, CaseIterable, Codable, CustomStringConvertible {
         case back = "Back"
@@ -187,10 +180,20 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
         case rewind = "Rewind"
         case paste = "Paste"
         case copy = "Copy"
-        case cut = ""
+        case cut = "Cut"
+        case showRoam = "Show Roam"
 
         var defaultsKey: String {
             return "keyboard-shortcut-\(rawValue)"
+        }
+
+        static var usableCases: [Self] {
+            Self.allCases
+            #if !os(macOS)
+                .filter({ key in
+                    key != .showRoam
+                })
+            #endif
         }
 
         public static let caseDisplayRepresentations: [Self: String] = [
@@ -215,7 +218,8 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
             .rewind: String(localized: "Rewind", comment: "Keyboard shortcut to rewind"),
             .paste: String(localized: "Paste", comment: "Keyboard shortcut to paste"),
             .cut: String(localized: "Cut", comment: "Keyboard shortcut to cut"),
-            .copy: String(localized: "Copy", comment: "Keyboard shortcut to copy")
+            .copy: String(localized: "Copy", comment: "Keyboard shortcut to copy"),
+            .showRoam: String(localized: "Show Roam", comment: "Keyboard shortcut to show the Roam app"),
         ]
 
         public var description: String {
@@ -289,7 +293,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
                 return .up
             case .down:
                 return .down
-            case .keyboardShortcuts, .paste, .chatWithDeveloper, .cut, .copy:
+            case .keyboardShortcuts, .paste, .chatWithDeveloper, .cut, .copy, .showRoam:
                 return nil
             case .options:
                 return .options
@@ -353,6 +357,16 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
         return command
     }
 #endif
+}
+
+extension CustomKeyboardShortcut {
+    var shortcut: KeyboardShortcut? {
+        if let key = self.key {
+            return KeyboardShortcut(key, modifiers: self.modifiers)
+        } else {
+            return nil
+        }
+    }
 }
 
 extension KeyEquivalent: Codable {
@@ -461,7 +475,6 @@ extension EventModifiers: Codable {
     }
 }
 
-#if !os(tvOS)
 extension View {
     func customKeyboardShortcut(_ title: CustomKeyboardShortcut.Key) -> some View {
         modifier(CustomKeyboardShortcutModifier(title: title))
@@ -552,6 +565,7 @@ struct AllCustomKeyboardShortcuts: DynamicProperty {
     @KeyboardShortcutStorage(.instantReplay) private var instantReplayShortcut
     @KeyboardShortcutStorage(.fastForward) private var fastForwardShortcut
     @KeyboardShortcutStorage(.rewind) private var rewindShortcut
+    @KeyboardShortcutStorage(.showRoam) private var showRoamShortcut
 
     var wrappedValue: [CustomKeyboardShortcut] {
         [
@@ -576,7 +590,8 @@ struct AllCustomKeyboardShortcuts: DynamicProperty {
             rewindShortcut,
             pasteShortcut,
             copyShortcut,
-            cutShortcut
+            cutShortcut,
+            showRoamShortcut
         ]
             .compactMap { $0 }
     }
@@ -606,7 +621,8 @@ struct AllCustomKeyboardShortcuts: DynamicProperty {
                     rewindShortcut,
                     pasteShortcut,
                     cutShortcut,
-                    copyShortcut
+                    copyShortcut,
+                    showRoamShortcut,
                 ].compactMap { $0 }
             },
             set: { newShortcuts in
@@ -634,6 +650,7 @@ struct AllCustomKeyboardShortcuts: DynamicProperty {
                     case .paste: pasteShortcut = shortcut
                     case .cut: cutShortcut = shortcut
                     case .copy: copyShortcut = shortcut
+                    case .showRoam: showRoamShortcut = shortcut
                     }
                 }
             }
@@ -698,11 +715,12 @@ struct ShortcutDisplay: View {
 
 struct KeyboardShortcutPanel: View {
     var shortcuts: [CustomKeyboardShortcut] {
-        return CustomKeyboardShortcut.Key.allCases.map{
+        return CustomKeyboardShortcut.Key.usableCases.map{
             CustomKeyboardShortcut(title: $0)
         }
     }
 
+    @EnvironmentObject private var appDelegate: RoamAppDelegate
     @State private var focusedShortcut: CustomKeyboardShortcut.Key?
     @Environment(\.openURL) var openURL
 
@@ -757,7 +775,6 @@ struct KeyboardShortcutPanel: View {
 #else
             Text("Tap a row below to change the shortcut, or swipe to reset", comment: "Caption on a keyboard shortcut panel")
                 .foregroundStyle(.secondary)
-#if !os(tvOS)
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button(role: .cancel, action: {
                         for shortcut in shortcuts {
@@ -777,7 +794,6 @@ struct KeyboardShortcutPanel: View {
                     })
 
                 }
-#endif
                 .contextMenu {
                     Button(role: .cancel, action: {
                         for shortcut in shortcuts {
@@ -815,7 +831,6 @@ struct KeyboardShortcutPanel: View {
                         .scaleEffect(focusedShortcut == shortcut.title ? 1 : 1.04)
                         .animation(focusedShortcut == shortcut.title ? .easeIn(duration: 0.2) : .easeOut(duration: 0.0), value: focusedShortcut == shortcut.title)
                 )
-#if !os(tvOS)
                 .swipeActions(edge: .trailing) {
                     Button(role: .cancel, action: {
                         shortcut.reset()
@@ -829,7 +844,6 @@ struct KeyboardShortcutPanel: View {
                         Label(String(localized: "Clear", comment: "Label on a button to clear a keyboard shortcut"), systemImage: "xmark")
                     })
                 }
-#endif
                 .contextMenu {
                     Button(role: .cancel, action: {
                         shortcut.reset()
@@ -846,10 +860,10 @@ struct KeyboardShortcutPanel: View {
             }
         }
         .onAppear {
-            logger.notice("Showing view")
+            Log.lifecycle.notice("Showing \(#fileID, privacy: .public) view")
         }
         .onDisappear {
-            logger.notice("Closing view")
+            Log.lifecycle.notice("Closing \(#fileID, privacy: .public) view")
         }
         #if os(macOS)
         .onAppear {
@@ -860,12 +874,20 @@ struct KeyboardShortcutPanel: View {
                 CustomKeyboardShortcut(title: focusedShortcut, shortcut: KeyboardShortcut(key.key, modifiers: key.modifiers)).persist()
             }
         }, captureShortcuts: true)
-        #elseif !os(tvOS)
+        .onWindowFocused {
+            Log.lifecycle.notice("\(#fileID, privacy: .public) becoming key window")
+
+            appDelegate.navigationPath.focusedWindow = .keyboardShortcuts
+        }
+        #else
         .onKeyDown({ key in
             if let focusedShortcut {
                 CustomKeyboardShortcut(title: focusedShortcut, shortcut: KeyboardShortcut(key.key, modifiers: key.modifiers)).persist()
             }
         })
+        .onAppear {
+            appDelegate.navigationPath.focusedWindow = .keyboardShortcuts
+        }
         #endif
         .formStyle(.grouped)
         .navigationTitle("Keyboard Shortcuts")
@@ -875,7 +897,6 @@ struct KeyboardShortcutPanel: View {
     }
 }
 
-#Preview {
+#Preview("Keyboard Shortcut") {
     KeyboardShortcutPanel()
 }
-#endif

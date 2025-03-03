@@ -2,11 +2,7 @@ import SwiftUI
 
 struct BadgeLabelStyle: LabelStyle {
     var color: Color = .blue
-    #if os(tvOS)
-        @ScaledMetric(relativeTo: .footnote) private var iconWidth = 28.0
-    #else
-        @ScaledMetric(relativeTo: .footnote) private var iconWidth = 10.0
-    #endif
+    @ScaledMetric(relativeTo: .footnote) private var iconWidth = 10.0
 
     func makeBody(configuration: Configuration) -> some View {
         HStack(alignment: .center, spacing: iconWidth) {
@@ -14,7 +10,7 @@ struct BadgeLabelStyle: LabelStyle {
                 .frame(width: iconWidth)
             configuration.title
         }
-        #if os(tvOS) || os(visionOS)
+        #if os(visionOS)
         .padding(.horizontal, 10)
         .padding(.vertical, 3)
         #else
@@ -69,9 +65,10 @@ extension LabelStyle where Self == BadgeLabelStyle {
 #if DEBUG
 #Preview(
     "About",
-    traits: .fixedLayout(width: 100.0, height: 300.0)
+    traits: .fixedLayout(width: 200.0, height: 300.0)
 ) {
     Label(String("Test Badge!"), systemImage: "keyboard")
+        .padding()
         .labelStyle(.badge(Color.green))
         .modelContainer(previewContainer)
 }

@@ -36,7 +36,6 @@
 		AF0D09F12CDE5C410098122E /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0D09EE2CDE5C3B0098122E /* Helpers.swift */; };
 		AF0D09F22CDE5C410098122E /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0D09EE2CDE5C3B0098122E /* Helpers.swift */; };
 		AF0D09F42CDE64750098122E /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0D09EE2CDE5C3B0098122E /* Helpers.swift */; };
-		AF11D36F2AD35D2800527AF6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF11D36E2AD35D2800527AF6 /* SettingsView.swift */; };
 		AF15C2492AE8672700B79FD9 /* RoamWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF15C2482AE8672700B79FD9 /* RoamWatchApp.swift */; };
 		AF15C2532AE8672800B79FD9 /* Roam.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = AF15C2462AE8672700B79FD9 /* Roam.app */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AF1899F22C1CB204001EDA78 /* NavigationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1899F12C1CB200001EDA78 /* NavigationManager.swift */; };
@@ -93,6 +92,7 @@
 		AF27401B2AE02C26007C6208 /* RoamWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AF27400B2AE02C25007C6208 /* RoamWidgets.appex */; platformFilters = (ios, macos, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AF2AF23B2D3B0FDB00AAD5B0 /* StatelessDeviceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */; };
 		AF2AF23C2D3B0FDB00AAD5B0 /* StatelessDeviceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */; };
+		AF2C372F2D53D23E00D7B79F /* NetworkConnectivityBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C372E2D53D23700D7B79F /* NetworkConnectivityBanner.swift */; };
 		AF2C85A32D370DAF00A167B2 /* ECPWebsocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A22D370DA700A167B2 /* ECPWebsocket.swift */; };
 		AF2C85A42D370DAF00A167B2 /* ECPWebsocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A22D370DA700A167B2 /* ECPWebsocket.swift */; };
 		AF2C85A62D37183E00A167B2 /* ECPProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A52D37183600A167B2 /* ECPProtocol.swift */; };
@@ -101,6 +101,12 @@
 		AF2F54F02BCE58EF00BAE156 /* WorkersBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2F54EE2BCE58EF00BAE156 /* WorkersBackend.swift */; };
 		AF30DD2A2D39B1FF00FD8B9A /* ECPMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */; };
 		AF30DD2B2D39B1FF00FD8B9A /* ECPMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */; };
+		AF3446A62D5FE5D90037EFC8 /* AttachmentError.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3446A52D5FE5D50037EFC8 /* AttachmentError.swift */; };
+		AF3446A72D5FE5D90037EFC8 /* AttachmentError.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3446A52D5FE5D50037EFC8 /* AttachmentError.swift */; };
+		AF3446A92D5FE62A0037EFC8 /* Importers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3446A82D5FE6280037EFC8 /* Importers.swift */; };
+		AF3446AA2D5FE62A0037EFC8 /* Importers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3446A82D5FE6280037EFC8 /* Importers.swift */; };
+		AF3446AC2D5FE8CF0037EFC8 /* WrongAttempts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3446AB2D5FE8CC0037EFC8 /* WrongAttempts.swift */; };
+		AF3446AD2D5FE8CF0037EFC8 /* WrongAttempts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3446AB2D5FE8CC0037EFC8 /* WrongAttempts.swift */; };
 		AF344FE82D42D35000179FE0 /* RoamCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF344FE62D42D35000179FE0 /* RoamCLI.swift */; };
 		AF344FEB2D42D3BE00179FE0 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = AF344FEA2D42D3BE00179FE0 /* ArgumentParser */; };
 		AF344FEC2D42DB6C00179FE0 /* ECPWebsocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A22D370DA700A167B2 /* ECPWebsocket.swift */; };
@@ -142,10 +148,10 @@
 		AF42442E2BB1118700334AAF /* SchemaFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF42442D2BB1118700334AAF /* SchemaFile.swift */; };
 		AF42442F2BB1118700334AAF /* SchemaFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF42442D2BB1118700334AAF /* SchemaFile.swift */; };
 		AF4244302BB1118700334AAF /* SchemaFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF42442D2BB1118700334AAF /* SchemaFile.swift */; };
-		AF44021C2BFBEF2500004C15 /* LinkedTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF44021B2BFBEF2500004C15 /* LinkedTextView.swift */; };
 		AF468D372D333A9E00DF0F2E /* QSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF468D362D333A9C00DF0F2E /* QSocket.swift */; };
 		AF468D382D333A9E00DF0F2E /* QSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF468D362D333A9C00DF0F2E /* QSocket.swift */; };
 		AF468D392D333A9E00DF0F2E /* QSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF468D362D333A9C00DF0F2E /* QSocket.swift */; };
+		AF5853932D4BCD690027C279 /* GlobalHotkey.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5853922D4BCD660027C279 /* GlobalHotkey.swift */; };
 		AF5C23982C35DCD1004C7A63 /* GlowingButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5C23972C35DCC7004C7A63 /* GlowingButton.swift */; };
 		AF5C23992C35DCD1004C7A63 /* GlowingButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5C23972C35DCC7004C7A63 /* GlowingButton.swift */; };
 		AF5ED8D52AE984E9007DB2B8 /* WidgetColor.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AF5ED8D42AE984E9007DB2B8 /* WidgetColor.xcassets */; };
@@ -180,6 +186,7 @@
 		AF94AEF42C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AF94AEF22C0BEA8200D8D7CF /* Localizable.xcstrings */; };
 		AF94AEF52C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AF94AEF22C0BEA8200D8D7CF /* Localizable.xcstrings */; };
 		AF95B76F2ADF5BA1005FC338 /* AppLinksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF11D36A2AD2D0B800527AF6 /* AppLinksView.swift */; };
+		AF9DE5672D553DE300C50894 /* SelectedAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF9DE5662D553DDE00C50894 /* SelectedAttachment.swift */; };
 		AFA079DA2AE02561003E2754 /* DeviceAppEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6872ADDDE110036EC90 /* DeviceAppEntity.swift */; };
 		AFA079DB2AE02561003E2754 /* ButtonPressIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6862ADDDE110036EC90 /* ButtonPressIntents.swift */; };
 		AFA079DC2AE02561003E2754 /* RemoteButtonAppEnum.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF20ACFB2AE017B600D371C7 /* RemoteButtonAppEnum.swift */; };
@@ -211,7 +218,6 @@
 		AFD590D72AEC787700189620 /* ModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D52AEC787700189620 /* ModelContainer.swift */; };
 		AFD590D82AEC787700189620 /* ModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D52AEC787700189620 /* ModelContainer.swift */; };
 		AFD9C4D92AE97FA600C4079C /* Device.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF11D36C2AD2D41100527AF6 /* Device.swift */; };
-		AFD9C4DA2AE97FDA00C4079C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF11D36E2AD35D2800527AF6 /* SettingsView.swift */; };
 		AFD9C4DB2AE97FE100C4079C /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA165BF2AE92F92003F45ED /* AboutView.swift */; };
 		AFD9C4DF2AE9801400C4079C /* SmallAppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD9C4DC2AE9800500C4079C /* SmallAppView.swift */; };
 		AFD9C4E32AE9808E00C4079C /* DeviceAppEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6872ADDDE110036EC90 /* DeviceAppEntity.swift */; };
@@ -236,22 +242,44 @@
 		AFDB19A22C0D8D4E00C4DAB7 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AFDB19A12C0D8D4E00C4DAB7 /* InfoPlist.xcstrings */; };
 		AFDB19A62C0D8E7900C4DAB7 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AFDB19A12C0D8D4E00C4DAB7 /* InfoPlist.xcstrings */; };
 		AFDB19A72C0D8E7A00C4DAB7 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AFDB19A12C0D8D4E00C4DAB7 /* InfoPlist.xcstrings */; };
-		AFE6249D2BDCAA5000F4992E /* DataActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE6249C2BDCAA5000F4992E /* DataActor.swift */; };
-		AFE6249E2BDCAA5000F4992E /* DataActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE6249C2BDCAA5000F4992E /* DataActor.swift */; };
-		AFE6249F2BDCAA5000F4992E /* DataActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE6249C2BDCAA5000F4992E /* DataActor.swift */; };
+		AFDB4FEF2D53BB60004E27A4 /* WindowFocusMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDB4FEE2D53BB57004E27A4 /* WindowFocusMonitor.swift */; };
+		AFDB4FF72D53C09F004E27A4 /* DeviceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDB4FF42D53C09F004E27A4 /* DeviceDetailView.swift */; };
+		AFDB4FF82D53C09F004E27A4 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDB4FF52D53C09F004E27A4 /* SettingsView.swift */; };
+		AFDB4FF92D53C09F004E27A4 /* DeviceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDB4FF42D53C09F004E27A4 /* DeviceDetailView.swift */; };
+		AFDB4FFA2D53C09F004E27A4 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDB4FF52D53C09F004E27A4 /* SettingsView.swift */; };
+		AFDB4FFC2D53C0A8004E27A4 /* DeviceListItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDB4FFB2D53C0A5004E27A4 /* DeviceListItem.swift */; };
+		AFDB4FFD2D53C0A8004E27A4 /* DeviceListItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDB4FFB2D53C0A5004E27A4 /* DeviceListItem.swift */; };
+		AFDB4FFE2D53C7B7004E27A4 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
+		AFDB4FFF2D53C7B7004E27A4 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
+		AFDB50002D53C7B7004E27A4 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
+		AFDB50012D53C7BB004E27A4 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
+		AFE6249D2BDCAA5000F4992E /* DataHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE6249C2BDCAA5000F4992E /* DataHandler.swift */; };
+		AFE6249E2BDCAA5000F4992E /* DataHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE6249C2BDCAA5000F4992E /* DataHandler.swift */; };
+		AFE6249F2BDCAA5000F4992E /* DataHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE6249C2BDCAA5000F4992E /* DataHandler.swift */; };
 		AFE89A2D2B9E793E0078387C /* Debugger.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE89A2C2B9E793E0078387C /* Debugger.swift */; };
 		AFE89A2E2B9EBBD30078387C /* Debugger.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE89A2C2B9E793E0078387C /* Debugger.swift */; };
+		AFEBD9102D5D297F00E840FF /* MessagingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED45EC2D52BF3000FD53E2 /* MessagingView.swift */; };
+		AFEBD9112D5D489C00E840FF /* SelectedAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF9DE5662D553DDE00C50894 /* SelectedAttachment.swift */; };
+		AFEBD9132D5DACA100E840FF /* MessageBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED45EB2D52BF3000FD53E2 /* MessageBubble.swift */; };
+		AFEBD9172D5DAF7A00E840FF /* WatchOSAttachButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFEBD9152D5DAF7A00E840FF /* WatchOSAttachButton.swift */; };
 		AFECDE1A2AE184FE003F6676 /* XMLCoder in Frameworks */ = {isa = PBXBuildFile; productRef = AFECDE192AE184FE003F6676 /* XMLCoder */; };
 		AFECDE1D2AE18511003F6676 /* Opus in Frameworks */ = {isa = PBXBuildFile; productRef = AFECDE1C2AE18511003F6676 /* Opus */; };
 		AFECDE202AE18519003F6676 /* RTP in Frameworks */ = {isa = PBXBuildFile; productRef = AFECDE1F2AE18519003F6676 /* RTP */; };
 		AFED424A2AEE8F3B0023D684 /* VolumeListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED42492AEE8F3B0023D684 /* VolumeListener.swift */; };
+		AFED45EF2D52BF3000FD53E2 /* EmojiPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED45EA2D52BF3000FD53E2 /* EmojiPicker.swift */; };
+		AFED45F02D52BF3000FD53E2 /* MessageBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED45EB2D52BF3000FD53E2 /* MessageBubble.swift */; };
+		AFED45F12D52BF3000FD53E2 /* MessagingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED45EC2D52BF3000FD53E2 /* MessagingView.swift */; };
+		AFED45F22D52BF3000FD53E2 /* AttachButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED45ED2D52BF3000FD53E2 /* AttachButton.swift */; };
 		AFEDCDFD2CD134130001D959 /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */; };
+		AFF2B68D2D4DE6C100A6F3B0 /* GimmikScalarDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68C2D4DE6B600A6F3B0 /* GimmikScalarDelegate.swift */; };
+		AFF2B68F2D4FEBBE00A6F3B0 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
+		AFF2B6902D4FEBBE00A6F3B0 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
+		AFF2B6912D4FEBBE00A6F3B0 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
 		AFF6077F2ADFACBA00A7D657 /* AsyncSemaphore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E67E2ADCE5D80036EC90 /* AsyncSemaphore.swift */; };
 		AFF607802ADFACBA00A7D657 /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */; };
 		AFF607812ADFACBA00A7D657 /* DiscoveryActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF95B7532ADF4435005FC338 /* DiscoveryActor.swift */; };
 		AFF6DE0D2BCF0326002C13FC /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF6DE0C2BCF0326002C13FC /* Message.swift */; };
 		AFF6DE0E2BCF0326002C13FC /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF6DE0C2BCF0326002C13FC /* Message.swift */; };
-		AFF6DE112BCF0740002C13FC /* MessagingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF6DE102BCF0740002C13FC /* MessagingView.swift */; };
 		AFF6DE142BCF0A14002C13FC /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF6DE0C2BCF0326002C13FC /* Message.swift */; };
 		AFFC71E62AD1212100EE8EA0 /* RemoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFC71E52AD1212100EE8EA0 /* RemoteView.swift */; };
 /* End PBXBuildFile section */
@@ -392,7 +420,6 @@
 		AF0D09EE2CDE5C3B0098122E /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
 		AF11D36A2AD2D0B800527AF6 /* AppLinksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLinksView.swift; sourceTree = "<group>"; };
 		AF11D36C2AD2D41100527AF6 /* Device.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Device.swift; sourceTree = "<group>"; };
-		AF11D36E2AD35D2800527AF6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		AF15C2462AE8672700B79FD9 /* Roam.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Roam.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF15C2482AE8672700B79FD9 /* RoamWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamWatchApp.swift; sourceTree = "<group>"; };
 		AF1899F12C1CB200001EDA78 /* NavigationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationManager.swift; sourceTree = "<group>"; };
@@ -417,10 +444,14 @@
 		AF27400F2AE02C25007C6208 /* RoamWidgetsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamWidgetsApp.swift; sourceTree = "<group>"; };
 		AF2740172AE02C26007C6208 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AF2740182AE02C26007C6208 /* RoamWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RoamWidgets.entitlements; sourceTree = "<group>"; };
+		AF2C372E2D53D23700D7B79F /* NetworkConnectivityBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkConnectivityBanner.swift; sourceTree = "<group>"; };
 		AF2C85A22D370DA700A167B2 /* ECPWebsocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECPWebsocket.swift; sourceTree = "<group>"; };
 		AF2C85A52D37183600A167B2 /* ECPProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECPProtocol.swift; sourceTree = "<group>"; };
 		AF2F54EE2BCE58EF00BAE156 /* WorkersBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkersBackend.swift; sourceTree = "<group>"; };
 		AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECPMessages.swift; sourceTree = "<group>"; };
+		AF3446A52D5FE5D50037EFC8 /* AttachmentError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentError.swift; sourceTree = "<group>"; };
+		AF3446A82D5FE6280037EFC8 /* Importers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Importers.swift; sourceTree = "<group>"; };
+		AF3446AB2D5FE8CC0037EFC8 /* WrongAttempts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WrongAttempts.swift; sourceTree = "<group>"; };
 		AF344FDF2D42D34A00179FE0 /* roam-cli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "roam-cli"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF344FE62D42D35000179FE0 /* RoamCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamCLI.swift; sourceTree = "<group>"; };
 		AF35ACEA2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyboardMonitorUIKit.swift; sourceTree = "<group>"; };
@@ -435,9 +466,9 @@
 		AF3D62D62AE6F703006AB8E9 /* OpusDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpusDecoder.swift; sourceTree = "<group>"; };
 		AF3F35082D3E9230009AF2F8 /* ImageDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDecoder.swift; sourceTree = "<group>"; };
 		AF42442D2BB1118700334AAF /* SchemaFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaFile.swift; sourceTree = "<group>"; };
-		AF44021B2BFBEF2500004C15 /* LinkedTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedTextView.swift; sourceTree = "<group>"; };
 		AF468D362D333A9C00DF0F2E /* QSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QSocket.swift; sourceTree = "<group>"; };
 		AF56E3B02AD97AB100F5E6E0 /* AppLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLink.swift; sourceTree = "<group>"; };
+		AF5853922D4BCD660027C279 /* GlobalHotkey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotkey.swift; sourceTree = "<group>"; };
 		AF5B16E32AD5D5BB00053BDC /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		AF5C23972C35DCC7004C7A63 /* GlowingButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlowingButton.swift; sourceTree = "<group>"; };
 		AF5ED8D42AE984E9007DB2B8 /* WidgetColor.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = WidgetColor.xcassets; sourceTree = "<group>"; };
@@ -457,6 +488,7 @@
 		AF779BEF2BA4D82600231BC5 /* Badge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Badge.swift; sourceTree = "<group>"; };
 		AF779BF22BA4D91E00231BC5 /* CaptureScrollWheelModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureScrollWheelModifier.swift; sourceTree = "<group>"; };
 		AF779BF62BA4DDD000231BC5 /* WrappingHStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WrappingHStack.swift; sourceTree = "<group>"; };
+		AF7C85662D75661100725B2B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		AF8CB9ED2BDABE3000115C88 /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		AF8EF51C2BB60EAF002A4D6D /* NavigationDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationDestination.swift; sourceTree = "<group>"; };
 		AF90B5C52D3B52310063FADD /* ECPMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECPMonitor.swift; sourceTree = "<group>"; };
@@ -470,6 +502,7 @@
 		AF95B71D2ADF3BA7005FC338 /* MediumRemoteWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediumRemoteWidget.swift; sourceTree = "<group>"; };
 		AF95B74F2ADF43FD005FC338 /* NetworkHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkHelpers.swift; sourceTree = "<group>"; };
 		AF95B7532ADF4435005FC338 /* DiscoveryActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryActor.swift; sourceTree = "<group>"; };
+		AF9DE5662D553DDE00C50894 /* SelectedAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedAttachment.swift; sourceTree = "<group>"; };
 		AF9FC8232B9F9C9500109268 /* scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = scripts; sourceTree = "<group>"; };
 		AFA165BF2AE92F92003F45ED /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		AFA165C12AE933D7003F45ED /* LICENSE-APACHE */ = {isa = PBXFileReference; lastKnownFileType = text; path = "LICENSE-APACHE"; sourceTree = "<group>"; };
@@ -511,14 +544,24 @@
 		AFD9C4E02AE9802200C4079C /* SmallRemoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmallRemoteView.swift; sourceTree = "<group>"; };
 		AFDB19A12C0D8D4E00C4DAB7 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		AFDB19A52C0D8E4A00C4DAB7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		AFE6249C2BDCAA5000F4992E /* DataActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataActor.swift; sourceTree = "<group>"; };
+		AFDB4FEE2D53BB57004E27A4 /* WindowFocusMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowFocusMonitor.swift; sourceTree = "<group>"; };
+		AFDB4FF42D53C09F004E27A4 /* DeviceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceDetailView.swift; sourceTree = "<group>"; };
+		AFDB4FF52D53C09F004E27A4 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AFDB4FFB2D53C0A5004E27A4 /* DeviceListItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceListItem.swift; sourceTree = "<group>"; };
+		AFE6249C2BDCAA5000F4992E /* DataHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataHandler.swift; sourceTree = "<group>"; };
 		AFE699A12D47FD790083A956 /* SignalPipeError.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SignalPipeError.h; sourceTree = "<group>"; };
 		AFE89A2C2B9E793E0078387C /* Debugger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debugger.swift; sourceTree = "<group>"; };
+		AFEBD9152D5DAF7A00E840FF /* WatchOSAttachButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchOSAttachButton.swift; sourceTree = "<group>"; };
 		AFED42492AEE8F3B0023D684 /* VolumeListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VolumeListener.swift; sourceTree = "<group>"; };
+		AFED45EA2D52BF3000FD53E2 /* EmojiPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiPicker.swift; sourceTree = "<group>"; };
+		AFED45EB2D52BF3000FD53E2 /* MessageBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubble.swift; sourceTree = "<group>"; };
+		AFED45EC2D52BF3000FD53E2 /* MessagingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagingView.swift; sourceTree = "<group>"; };
+		AFED45ED2D52BF3000FD53E2 /* AttachButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachButton.swift; sourceTree = "<group>"; };
 		AFEDCDF42CD1331E0001D959 /* RoamSwiftTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RoamSwiftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AFF2B68C2D4DE6B600A6F3B0 /* GimmikScalarDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GimmikScalarDelegate.swift; sourceTree = "<group>"; };
+		AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Loggers.swift; sourceTree = "<group>"; };
 		AFF607892AE0037900A7D657 /* WidgetIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetIntents.swift; sourceTree = "<group>"; };
 		AFF6DE0C2BCF0326002C13FC /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
-		AFF6DE102BCF0740002C13FC /* MessagingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagingView.swift; sourceTree = "<group>"; };
 		AFFC71E52AD1212100EE8EA0 /* RemoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteView.swift; sourceTree = "<group>"; };
 		AFFED2502AD75EAF00357FA4 /* BinaryHeap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryHeap.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -622,6 +665,8 @@
 		AF0C82862AEB3AA500CBE7F8 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				AF2C372E2D53D23700D7B79F /* NetworkConnectivityBanner.swift */,
+				AFED45EE2D52BF3000FD53E2 /* Messaging */,
 				AF3AD5582AE2940A00E2D780 /* KeyboardMonitorAppKit.swift */,
 				AF35ACEA2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift */,
 				AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */,
@@ -634,9 +679,7 @@
 				AF3AD5562AE2928600E2D780 /* TopBar.swift */,
 				AF3AD55C2AE299BD00E2D780 /* DevicePicker.swift */,
 				AFCF22DD2B2A52190048FFD9 /* NotificationBanner.swift */,
-				AFF6DE102BCF0740002C13FC /* MessagingView.swift */,
 				AF65A88B2BB5AD02005ECF7F /* ExternalAboutView.swift */,
-				AF44021B2BFBEF2500004C15 /* LinkedTextView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -644,6 +687,7 @@
 		AF15C2472AE8672700B79FD9 /* RoamWatch */ = {
 			isa = PBXGroup;
 			children = (
+				AF7C85662D75661100725B2B /* Info.plist */,
 				AF2480642BDB4D9F00EF47AE /* RoamWatchRelease.entitlements */,
 				AF5ED8DB2AE987A3007DB2B8 /* RoamWatch.entitlements */,
 				AF15C2482AE8672700B79FD9 /* RoamWatchApp.swift */,
@@ -737,7 +781,7 @@
 				AF42442D2BB1118700334AAF /* SchemaFile.swift */,
 				AFF6DE0C2BCF0326002C13FC /* Message.swift */,
 				AF2480572BDB42F600EF47AE /* TestData.swift */,
-				AFE6249C2BDCAA5000F4992E /* DataActor.swift */,
+				AFE6249C2BDCAA5000F4992E /* DataHandler.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -745,10 +789,10 @@
 		AF56E3BA2AD9863100F5E6E0 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				AFDB4FF62D53C09F004E27A4 /* Settings */,
 				AF5C23972C35DCC7004C7A63 /* GlowingButton.swift */,
 				AF67C8F32C1D1A9000A6D077 /* UUIDUpdater.swift */,
 				AF1899F82C1CDFBC001EDA78 /* SettingsNavigationWrapper.swift */,
-				AF11D36E2AD35D2800527AF6 /* SettingsView.swift */,
 				AF8EF51C2BB60EAF002A4D6D /* NavigationDestination.swift */,
 				AF11D36A2AD2D0B800527AF6 /* AppLinksView.swift */,
 				AFC4A65E2AE8AF3F005DAC6C /* DataImage.swift */,
@@ -765,6 +809,7 @@
 		AF56E3BB2AD9865400F5E6E0 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
+				AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */,
 				AF468D362D333A9C00DF0F2E /* QSocket.swift */,
 				AF0D09EE2CDE5C3B0098122E /* Helpers.swift */,
 				AF6E29492C1A2ACB0062DFB3 /* ViewHelpers.swift */,
@@ -911,11 +956,40 @@
 				AF65A8892BB5ABF9005ECF7F /* RoamAppDelegate.swift */,
 				AFC4A6592AE88411005DAC6C /* LatencyListener.swift */,
 				AFED42492AEE8F3B0023D684 /* VolumeListener.swift */,
+				AFF2B68C2D4DE6B600A6F3B0 /* GimmikScalarDelegate.swift */,
+				AF5853922D4BCD660027C279 /* GlobalHotkey.swift */,
+				AFDB4FEE2D53BB57004E27A4 /* WindowFocusMonitor.swift */,
 				AFD590CF2AEC673C00189620 /* WatchConnector.swift */,
 				AF0C82862AEB3AA500CBE7F8 /* Views */,
 				AF95B74D2ADF43A4005FC338 /* AudioPlayer */,
 			);
 			path = Roam;
+			sourceTree = "<group>";
+		};
+		AFDB4FF62D53C09F004E27A4 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				AFDB4FFB2D53C0A5004E27A4 /* DeviceListItem.swift */,
+				AFDB4FF42D53C09F004E27A4 /* DeviceDetailView.swift */,
+				AFDB4FF52D53C09F004E27A4 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		AFED45EE2D52BF3000FD53E2 /* Messaging */ = {
+			isa = PBXGroup;
+			children = (
+				AF3446AB2D5FE8CC0037EFC8 /* WrongAttempts.swift */,
+				AF3446A82D5FE6280037EFC8 /* Importers.swift */,
+				AF3446A52D5FE5D50037EFC8 /* AttachmentError.swift */,
+				AF9DE5662D553DDE00C50894 /* SelectedAttachment.swift */,
+				AFED45EA2D52BF3000FD53E2 /* EmojiPicker.swift */,
+				AFED45EB2D52BF3000FD53E2 /* MessageBubble.swift */,
+				AFED45ED2D52BF3000FD53E2 /* AttachButton.swift */,
+				AFEBD9152D5DAF7A00E840FF /* WatchOSAttachButton.swift */,
+				AFED45EC2D52BF3000FD53E2 /* MessagingView.swift */,
+			);
+			path = Messaging;
 			sourceTree = "<group>";
 		};
 		AFF6077E2ADFAC4F00A7D657 /* Backend */ = {
@@ -1252,7 +1326,6 @@
 /* Begin PBXShellScriptBuildPhase section */
 		AF8CB9EC2BDAB90600115C88 /* Lint */ = {
 			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -1266,8 +1339,8 @@
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if [[ \"$(uname -m)\" == arm64 ]]; then\n    export PATH=\"/opt/homebrew/bin:$PATH\"\nfi\n\nif which swiftlint > /dev/null; then\n  swiftlint --lenient\nelse\n  echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
+			shellPath = /bin/bash;
+			shellScript = "ENABLE=\"false\"\n\nif [[ \"$ENABLE\" == \"false\" ]]; then\n   echo \"warning: Lint disabled manually\"\n   exit 0\nfi\n\nif [[ \"$(uname -m)\" == arm64 ]]; then\n    export PATH=\"/opt/homebrew/bin:$PATH\"\nfi\n\nif which swiftlint > /dev/null; then\n  swiftlint --lenient\nelse\n  echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1277,7 +1350,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AF70BB0B2BA7CBD3009A06EC /* PaddedHoverButtonStyle.swift in Sources */,
-				AFE6249E2BDCAA5000F4992E /* DataActor.swift in Sources */,
+				AFE6249E2BDCAA5000F4992E /* DataHandler.swift in Sources */,
 				AFE89A2E2B9EBBD30078387C /* Debugger.swift in Sources */,
 				AFD9C4FA2AE983B300C4079C /* SSDPDiscovery.swift in Sources */,
 				AF0042862AEABA9D0051BB1E /* CollectionHelpers.swift in Sources */,
@@ -1285,9 +1358,13 @@
 				AFD9C4E92AE980B200C4079C /* RemoteButton.swift in Sources */,
 				AFD9C4DB2AE97FE100C4079C /* AboutView.swift in Sources */,
 				AF67C8F42C1D1A9200A6D077 /* UUIDUpdater.swift in Sources */,
+				AFEBD9102D5D297F00E840FF /* MessagingView.swift in Sources */,
 				AF0C82962AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */,
+				AFEBD9132D5DACA100E840FF /* MessageBubble.swift in Sources */,
 				AF0D09F12CDE5C410098122E /* Helpers.swift in Sources */,
+				AF3446AC2D5FE8CF0037EFC8 /* WrongAttempts.swift in Sources */,
 				AF5ED8E52AE99D95007DB2B8 /* ButtonGridView.swift in Sources */,
+				AFEBD9172D5DAF7A00E840FF /* WatchOSAttachButton.swift in Sources */,
 				AF3F350B2D3E9234009AF2F8 /* ImageDecoder.swift in Sources */,
 				AF1C74872CE035480061E9F8 /* NetworkPermissionsCheck.swift in Sources */,
 				AF1899F42C1CB204001EDA78 /* NavigationManager.swift in Sources */,
@@ -1300,7 +1377,6 @@
 				AF2F54F02BCE58EF00BAE156 /* WorkersBackend.swift in Sources */,
 				AFD9C4EC2AE980BF00C4079C /* NetworkHelpers.swift in Sources */,
 				AFD9C4F82AE983A800C4079C /* NetworkUtils.swift in Sources */,
-				AFD9C4DA2AE97FDA00C4079C /* SettingsView.swift in Sources */,
 				AF0042762AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */,
 				AF2480592BDB42F600EF47AE /* TestData.swift in Sources */,
 				AFD9C4E42AE9809900C4079C /* AppLinkAppEntity.swift in Sources */,
@@ -1308,22 +1384,29 @@
 				AF15C2492AE8672700B79FD9 /* RoamWatchApp.swift in Sources */,
 				AFD9C4D92AE97FA600C4079C /* Device.swift in Sources */,
 				AFD9C4EA2AE980B500C4079C /* AppLink.swift in Sources */,
+				AF3446A92D5FE62A0037EFC8 /* Importers.swift in Sources */,
 				AFD590D72AEC787700189620 /* ModelContainer.swift in Sources */,
 				AF779BF12BA4D82600231BC5 /* Badge.swift in Sources */,
 				AFD9C4ED2AE980C300C4079C /* DataHelpers.swift in Sources */,
 				AF0532822D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift in Sources */,
 				AFF6DE0E2BCF0326002C13FC /* Message.swift in Sources */,
+				AFF2B6912D4FEBBE00A6F3B0 /* Loggers.swift in Sources */,
 				AF70BB0A2BA7CBD0009A06EC /* HoveredView.swift in Sources */,
+				AFDB4FFD2D53C0A8004E27A4 /* DeviceListItem.swift in Sources */,
 				AF0C82982AEBFBD500CBE7F8 /* StatelessDeviceAPI.swift in Sources */,
 				AF6E294B2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */,
 				AF1899FA2C1CDFC2001EDA78 /* SettingsNavigationWrapper.swift in Sources */,
 				AF8EF51E2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */,
+				AFDB4FF72D53C09F004E27A4 /* DeviceDetailView.swift in Sources */,
+				AFDB4FF82D53C09F004E27A4 /* SettingsView.swift in Sources */,
 				AF5ED8E32AE992D1007DB2B8 /* AppListView.swift in Sources */,
+				AFEBD9112D5D489C00E840FF /* SelectedAttachment.swift in Sources */,
 				AFD9C4EB2AE980BD00C4079C /* AsyncHelpers.swift in Sources */,
 				AFD9C4FC2AE983C700C4079C /* AsyncSemaphore.swift in Sources */,
 				AF0C82A82AEC0C2C00CBE7F8 /* Shortcuts.swift in Sources */,
 				AFD9C4E32AE9808E00C4079C /* DeviceAppEntity.swift in Sources */,
 				AFD9C4E82AE980AA00C4079C /* RemoteButtonAppEnum.swift in Sources */,
+				AF3446A72D5FE5D90037EFC8 /* AttachmentError.swift in Sources */,
 				AF5ED8E12AE98EE7007DB2B8 /* DevicePicker.swift in Sources */,
 				AF05B4712BFDA49D00FA3783 /* ObjcErrors.swift in Sources */,
 				AFD9C4E62AE980A500C4079C /* ButtonPressIntents.swift in Sources */,
@@ -1364,6 +1447,7 @@
 				AFD590D82AEC787700189620 /* ModelContainer.swift in Sources */,
 				AF4244302BB1118700334AAF /* SchemaFile.swift in Sources */,
 				AF205B2D2AE02D1C00041CDF /* DeviceAppEntity.swift in Sources */,
+				AFF2B68F2D4FEBBE00A6F3B0 /* Loggers.swift in Sources */,
 				AF205B202AE02CAF00041CDF /* WidgetHelpers.swift in Sources */,
 				AF0042772AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */,
 				AFA9F8972B1B878600829B7C /* Shortcuts.swift in Sources */,
@@ -1374,7 +1458,7 @@
 				AF30DD2A2D39B1FF00FD8B9A /* ECPMessages.swift in Sources */,
 				AF1C74842CE035480061E9F8 /* NetworkPermissionsCheck.swift in Sources */,
 				AFC4A6602AE8AF3F005DAC6C /* DataImage.swift in Sources */,
-				AFE6249F2BDCAA5000F4992E /* DataActor.swift in Sources */,
+				AFE6249F2BDCAA5000F4992E /* DataHandler.swift in Sources */,
 				AF205B242AE02D0100041CDF /* RemoteButton.swift in Sources */,
 				AF205B292AE02D1C00041CDF /* LaunchAppIntent.swift in Sources */,
 				AF205B2E2AE02D1C00041CDF /* AppLinkAppEntity.swift in Sources */,
@@ -1402,6 +1486,7 @@
 				AF344FEF2D42DB8C00179FE0 /* RemoteButton.swift in Sources */,
 				AF344FFC2D42E6BC00179FE0 /* AsyncHelpers.swift in Sources */,
 				AF344FEE2D42DB7F00179FE0 /* ECPProtocol.swift in Sources */,
+				AFDB50012D53C7BB004E27A4 /* Loggers.swift in Sources */,
 				AF344FFA2D42E32700179FE0 /* DeviceApi.swift in Sources */,
 				AF344FF92D42E30500179FE0 /* NetworkUtils.swift in Sources */,
 				AF344FF02D42E1C500179FE0 /* APIHelpers.swift in Sources */,
@@ -1413,6 +1498,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AFDB4FFE2D53C7B7004E27A4 /* Loggers.swift in Sources */,
 				AFA21D342C2C7C83008EF24A /* RoamWatchUITests.swift in Sources */,
 				AFA21D362C2C7C83008EF24A /* RoamWatchScreenshotTests.swift in Sources */,
 			);
@@ -1422,6 +1508,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AFDB4FFF2D53C7B7004E27A4 /* Loggers.swift in Sources */,
 				AFA21D432C2C7CB6008EF24A /* RoamUITests.swift in Sources */,
 				AFA21D452C2C7CB6008EF24A /* RoamScreenshotTests.swift in Sources */,
 			);
@@ -1435,10 +1522,12 @@
 				AF0532812D36DB2200D68F8E /* HeadphonesModeTip.swift in Sources */,
 				AFBBE16F2C764564002B7F68 /* RemoteViewContained.swift in Sources */,
 				AF0C82952AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */,
+				AF9DE5672D553DE300C50894 /* SelectedAttachment.swift in Sources */,
 				AF65A88A2BB5ABF9005ECF7F /* RoamAppDelegate.swift in Sources */,
 				AF90B5C62D3B52340063FADD /* ECPMonitor.swift in Sources */,
 				AF19CA2B2AE54AD100A42DFF /* SSDPDiscovery.swift in Sources */,
 				AF20AD0C2AE01E9100D371C7 /* AppLink.swift in Sources */,
+				AF3446AD2D5FE8CF0037EFC8 /* WrongAttempts.swift in Sources */,
 				AF2F54EF2BCE58EF00BAE156 /* WorkersBackend.swift in Sources */,
 				AF3AD5572AE2928600E2D780 /* TopBar.swift in Sources */,
 				AFF6077F2ADFACBA00A7D657 /* AsyncSemaphore.swift in Sources */,
@@ -1456,29 +1545,40 @@
 				AFF607802ADFACBA00A7D657 /* NetworkUtils.swift in Sources */,
 				AF35ACEB2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift in Sources */,
 				AFA079DE2AE02561003E2754 /* LaunchAppIntent.swift in Sources */,
-				AFE6249D2BDCAA5000F4992E /* DataActor.swift in Sources */,
+				AFE6249D2BDCAA5000F4992E /* DataHandler.swift in Sources */,
 				AF19CA232AE455B400A42DFF /* DataHelpers.swift in Sources */,
+				AFF2B6902D4FEBBE00A6F3B0 /* Loggers.swift in Sources */,
 				AF2AF23B2D3B0FDB00AAD5B0 /* StatelessDeviceAPI.swift in Sources */,
 				AFA079DA2AE02561003E2754 /* DeviceAppEntity.swift in Sources */,
 				AF1899F32C1CB204001EDA78 /* NavigationManager.swift in Sources */,
 				AF65A88C2BB5AD02005ECF7F /* ExternalAboutView.swift in Sources */,
 				AF0042752AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */,
+				AFF2B68D2D4DE6C100A6F3B0 /* GimmikScalarDelegate.swift in Sources */,
+				AF3446A62D5FE5D90037EFC8 /* AttachmentError.swift in Sources */,
 				AF20AD0D2AE01E9100D371C7 /* Device.swift in Sources */,
+				AFDB4FF92D53C09F004E27A4 /* DeviceDetailView.swift in Sources */,
+				AFDB4FFA2D53C09F004E27A4 /* SettingsView.swift in Sources */,
 				AF7BD44F2AE1789800F5E087 /* WidgetIntents.swift in Sources */,
 				AF26A22B2AF1A2B90070250F /* SmallAppView.swift in Sources */,
+				AFDB4FEF2D53BB60004E27A4 /* WindowFocusMonitor.swift in Sources */,
 				AFC4A65A2AE88411005DAC6C /* LatencyListener.swift in Sources */,
 				AF70BB072BA7C4D2009A06EC /* HoveredView.swift in Sources */,
 				AFA079DB2AE02561003E2754 /* ButtonPressIntents.swift in Sources */,
 				AF1C74862CE035480061E9F8 /* NetworkPermissionsCheck.swift in Sources */,
 				AF779BF72BA4DDD000231BC5 /* WrappingHStack.swift in Sources */,
-				AFF6DE112BCF0740002C13FC /* MessagingView.swift in Sources */,
 				AFE89A2D2B9E793E0078387C /* Debugger.swift in Sources */,
+				AFED45EF2D52BF3000FD53E2 /* EmojiPicker.swift in Sources */,
+				AFED45F02D52BF3000FD53E2 /* MessageBubble.swift in Sources */,
+				AFED45F12D52BF3000FD53E2 /* MessagingView.swift in Sources */,
+				AFED45F22D52BF3000FD53E2 /* AttachButton.swift in Sources */,
 				AF2480582BDB42F600EF47AE /* TestData.swift in Sources */,
+				AF5853932D4BCD690027C279 /* GlobalHotkey.swift in Sources */,
 				AF19CA312AE6947600A42DFF /* ManagedCriticalState.swift in Sources */,
 				AF3AD55B2AE2947E00E2D780 /* KeyboardEntry.swift in Sources */,
 				AF3AD5552AE2910B00E2D780 /* CenterController.swift in Sources */,
 				AF2C85A72D37183E00A167B2 /* ECPProtocol.swift in Sources */,
 				AFD590D62AEC787700189620 /* ModelContainer.swift in Sources */,
+				AF2C372F2D53D23E00D7B79F /* NetworkConnectivityBanner.swift in Sources */,
 				AFA079DF2AE0263F003E2754 /* Shortcuts.swift in Sources */,
 				AFF607812ADFACBA00A7D657 /* DiscoveryActor.swift in Sources */,
 				AF0C828C2AEB494D00CBE7F8 /* VolumeSliderView.swift in Sources */,
@@ -1486,7 +1586,6 @@
 				AF0D09F22CDE5C410098122E /* Helpers.swift in Sources */,
 				AFA165C02AE92F92003F45ED /* AboutView.swift in Sources */,
 				AF5C23982C35DCD1004C7A63 /* GlowingButton.swift in Sources */,
-				AF44021C2BFBEF2500004C15 /* LinkedTextView.swift in Sources */,
 				AF1899FB2C1CDFC2001EDA78 /* SettingsNavigationWrapper.swift in Sources */,
 				AF3EEF962AE0206E00B661F3 /* RokuSession.swift in Sources */,
 				AF95B76F2ADF5BA1005FC338 /* AppLinksView.swift in Sources */,
@@ -1498,8 +1597,8 @@
 				AFA9F8992B1D29E000829B7C /* KeyboardShortcutPanel.swift in Sources */,
 				AF30DD2B2D39B1FF00FD8B9A /* ECPMessages.swift in Sources */,
 				AF19CA282AE54ABC00A42DFF /* SSDPService.swift in Sources */,
-				AF11D36F2AD35D2800527AF6 /* SettingsView.swift in Sources */,
 				AFA079DC2AE02561003E2754 /* RemoteButtonAppEnum.swift in Sources */,
+				AFDB4FFC2D53C0A8004E27A4 /* DeviceListItem.swift in Sources */,
 				AFC4A65F2AE8AF3F005DAC6C /* DataImage.swift in Sources */,
 				AF0042852AEABA9D0051BB1E /* CollectionHelpers.swift in Sources */,
 				AF19CA352AE694E500A42DFF /* AsyncThrowingBufferedChannel.swift in Sources */,
@@ -1517,6 +1616,7 @@
 				AF67C8F62C1D1A9200A6D077 /* UUIDUpdater.swift in Sources */,
 				AF3EEF952AE0206E00B661F3 /* AudioPlayer.swift in Sources */,
 				AF8EF51D2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */,
+				AF3446AA2D5FE62A0037EFC8 /* Importers.swift in Sources */,
 				AF19CA2E2AE692E600A42DFF /* AsyncBufferedChannel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1528,6 +1628,7 @@
 				AF0D09F42CDE64750098122E /* Helpers.swift in Sources */,
 				AF68F2842D41EC2700F39530 /* DataHelpers.swift in Sources */,
 				AF0532852D36DB2B00D68F8E /* RoamSwiftTests.swift in Sources */,
+				AFDB50002D53C7B7004E27A4 /* Loggers.swift in Sources */,
 				AF3F350D2D3E99A2009AF2F8 /* ECPMessages.swift in Sources */,
 				AF3F350C2D3E98C9009AF2F8 /* ECPProtocol.swift in Sources */,
 				AFEDCDFD2CD134130001D959 /* NetworkUtils.swift in Sources */,
@@ -1589,6 +1690,7 @@
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RoamWatch/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = RoamWatch;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.msdrigg.roam;
@@ -1623,6 +1725,7 @@
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RoamWatch/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = RoamWatch;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.msdrigg.roam;
@@ -1772,7 +1875,7 @@
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.40;
+				MARKETING_VERSION = 1.42;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamWatchUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -1792,7 +1895,7 @@
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.40;
+				MARKETING_VERSION = 1.42;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamWatchUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -1814,7 +1917,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.40;
+				MARKETING_VERSION = 1.42;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1839,7 +1942,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.40;
+				MARKETING_VERSION = 1.42;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1893,9 +1996,9 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20250125.3007445.0;
+				CURRENT_PROJECT_VERSION = 20250129.5345670.0;
 				DEAD_CODE_STRIPPING = YES;
-				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -1917,10 +2020,11 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.40;
+				MARKETING_VERSION = 1.42;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				OTHER_SWIFT_FLAGS = "-Xfrontend -warn-long-function-bodies=100 -Xfrontend -warn-long-expression-type-checking=100";
 				SDKROOT = auto;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1975,7 +2079,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20250125.3007445.0;
+				CURRENT_PROJECT_VERSION = 20250129.5345670.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				EMBED_ASSET_PACKS_IN_PRODUCT_BUNDLE = NO;
@@ -1993,9 +2097,10 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.40;
+				MARKETING_VERSION = 1.42;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				OTHER_SWIFT_FLAGS = "";
 				SDKROOT = auto;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -2053,13 +2158,13 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = xros;
-				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,3,7";
+				TARGETED_DEVICE_FAMILY = "1,2,7";
 			};
 			name = Debug;
 		};
@@ -2103,13 +2208,13 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = xros;
-				SUPPORTED_PLATFORMS = "appletvos appletvsimulator iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,3,7";
+				TARGETED_DEVICE_FAMILY = "1,2,7";
 			};
 			name = Release;
 		};
@@ -2123,7 +2228,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
-				MARKETING_VERSION = 1.40;
+				MARKETING_VERSION = 1.42;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamSwiftTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2143,7 +2248,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
-				MARKETING_VERSION = 1.40;
+				MARKETING_VERSION = 1.42;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamSwiftTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;

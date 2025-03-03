@@ -1,1 +1,1 @@
--   Correzioni di bug e miglioramenti
+-   Aggiungendo scorciatoia per mostrare il menu roam (barra dei menu o finestra principale in background)

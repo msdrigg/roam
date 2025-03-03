@@ -4,11 +4,6 @@
     import OSLog
     import SwiftUI
 
-    private let logger = Logger(
-        subsystem: getLogSubsystem(),
-        category: "KeyboardMonitor"
-    )
-
     struct OnKeyPressModifier: ViewModifier {
         let onKeyPress: (KeyboardShortcut) -> Void
         let enabled: Bool
@@ -44,7 +39,7 @@
 
         func updateNSView(_: KeyHandlingView, context _: Context) {}
 
-        class KeyHandlingView: NSView {
+        final class KeyHandlingView: NSView {
             var onKeyPress: (KeyboardShortcut) -> Void
             var keyboardShortcuts: [CustomKeyboardShortcut]
             var observerTokens: [Any] = []
@@ -57,15 +52,18 @@
                 super.init(frame: .zero)
                 setupObservers()
                 becomeFirstResponder()
-
+                
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                     self.becomeFirstResponder()
-                    NSApp.mainWindow?.makeFirstResponder(self)
+                    if self.window?.isKeyWindow ?? false {
+                        self.window?.makeFirstResponder(self)
+                    }
                 }
             }
 
             override func resignFirstResponder() -> Bool {
-                logger.notice("Asked to resign first responder. Returning false")
+                super.resignFirstResponder()
+                Log.userInteraction.notice("Asked to resign first responder. Returning false")
                 return false
             }
 
@@ -80,7 +78,7 @@
                 if let ke = getKeyEquivalent(from: event) {
                     for shortcut in keyboardShortcuts {
                         if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
-                            logger.notice("Not handling key press because found shortcut with title \(shortcut.title, privacy: .public)")
+                            Log.userInteraction.notice("Not handling key press because found shortcut with title \(shortcut.title, privacy: .public)")
                             super.keyDown(with: event)
                             return
                         }
@@ -112,7 +110,7 @@
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
                     if let self {
                         becomeFirstResponder()
-                        NSApp.mainWindow?.makeFirstResponder(self)
+                        window?.makeFirstResponder(self)
                     }
                 }
             }

@@ -1,1 +1,1 @@
--   Bug fixes and improvements
+-   Fixing crash when scanning in background

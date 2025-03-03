@@ -2,7 +2,7 @@ import Foundation
 import os
 import SwiftData
 
-typealias Device = SchemaV3.Device
+typealias Device = SchemaV4.Device
 
 extension Device: Identifiable {
     public var id: PersistentIdentifier {
@@ -27,14 +27,14 @@ public extension Device {
     }
 
     internal static func fetchAllRequest() -> FetchDescriptor<Device> {
-        var fd = FetchDescriptor(
-            predicate: #Predicate {
+        var fd = FetchDescriptor<Device>(
+            predicate: #Predicate<Device> {
                 $0.deletedAt == nil
             },
-            sortBy: [SortDescriptor(\Device.name)]
+            sortBy: [SortDescriptor<Device>(\Device.name)]
         )
         fd.relationshipKeyPathsForPrefetching = []
-        fd.propertiesToFetch = [\.udn, \.location, \.name, \.lastOnlineAt, \.lastSelectedAt, \.lastScannedAt]
+        fd.propertiesToFetch = [\Device.udn, \Device.location, \Device.name, \Device.lastOnlineAt, \Device.lastSelectedAt, \Device.lastScannedAt]
 
         return fd
     }

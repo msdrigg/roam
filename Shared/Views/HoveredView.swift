@@ -40,7 +40,7 @@
                 return coordinator
             }
 
-            class Coordinator: NSResponder {
+            final class Coordinator: NSResponder {
                 var mouseIsInside: ((Bool) -> Void)?
 
                 override func mouseEntered(with _: NSEvent) {

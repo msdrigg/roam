@@ -29,8 +29,6 @@ struct HeadphonesModeTip: Tip {
         Text("Click here to play your TV audio through your computer!")
         #elseif os(visionOS)
         Text("Click here to play your TV audio through your Vision Pro!")
-        #elseif os(tvOS)
-        Text("Click here to play your TV audio through your Apple TV!")
         #else
         if interfaceIdiom == .pad {
             Text("Click here to play your TV audio through your iPad or connected headphones")

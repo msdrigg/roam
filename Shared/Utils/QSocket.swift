@@ -169,6 +169,17 @@ extension QSockAddr {
 }
 
 extension QSockAddr {
+    public static func interfaceIndex(_ interface: String, retryOnInterrupt: Bool = false) throws -> UInt32 {
+        let result = try errnoQ(retryOnInterrupt: retryOnInterrupt) {
+            let idx = if_nametoindex(interface)
+            if idx == 0 {
+                return -1
+            }
+            return Int(idx)
+        }
+
+        return UInt32(result)
+    }
 
     public static func interfaceNames() -> [String] {
         interfaceNamesAndAddresses()

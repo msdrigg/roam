@@ -2,20 +2,10 @@ import Foundation
 import os
 import SwiftUI
 
-#if os(tvOS)
-    let globalBaselineOffset: CGFloat = 4
-    let globalCircleIconSize: CGFloat = 16
-#else
-    let globalBaselineOffset: CGFloat = 2
-    let globalCircleIconSize: CGFloat = 10
-#endif
+let globalBaselineOffset: CGFloat = 2
+let globalCircleIconSize: CGFloat = 10
 
 struct DevicePicker: View {
-    private nonisolated static let logger = Logger(
-        subsystem: getLogSubsystem(),
-        category: String(describing: DevicePicker.self)
-    )
-
     @ScaledMetric var baselineOffset = globalBaselineOffset
     @ScaledMetric var circleIconSize = globalCircleIconSize
 

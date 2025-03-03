@@ -1,1 +1,1 @@
--   Sửa lỗi và cải tiến
+- Thêm phím tắt để hiển thị menu roam (thanh menu hoặc cửa sổ chính ở nền)

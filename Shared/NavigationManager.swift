@@ -1,12 +1,18 @@
 import Foundation
 import SwiftUI
 
+public enum WindowDestination: Equatable {
+    case settings
+    case keyboardShortcuts
+    case messages
+    case remote
+}
+
 @MainActor @Observable
 final class NavigationManager {
     var navigationPath: [NavigationDestination] = []
     var messagingWindowOpenTrigger: UUID?
-    var showingSettingsView: Bool = false
-    var showingMessagesView: Bool = false
+    var focusedWindow: WindowDestination?
 
     var last: NavigationDestination? {
         navigationPath.last

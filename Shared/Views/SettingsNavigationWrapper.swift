@@ -24,13 +24,11 @@ struct SettingsNavigationWrapper<Content>: View where Content: View {
                             updater?.update()
                         }
                     case .keyboardShortcutDestinaion:
-                        #if !os(watchOS) && !os(tvOS)
+                        #if !os(watchOS)
                             KeyboardShortcutPanel()
                         #endif
                     case .messageDestination:
-                        #if !os(watchOS)
                             MessageView()
-                        #endif
                     }
                 }
         }

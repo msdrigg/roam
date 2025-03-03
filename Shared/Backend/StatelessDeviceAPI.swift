@@ -2,11 +2,6 @@ import Foundation
 import Network
 import os.log
 
-private let logger = Logger(
-    subsystem: getLogSubsystem(),
-    category: String(describing: "StatelessAPI")
-)
-
 public func openApp(location: String, app: String) async throws {
     guard let url = URL(string: "\(location)launch/\(app)") else { return }
 
@@ -16,19 +11,19 @@ public func openApp(location: String, app: String) async throws {
     let (_, response) = try await URLSession.shared.data(for: request)
     if let httpResponse = response as? HTTPURLResponse {
         if httpResponse.statusCode == 200 {
-            logger.notice("Opened app \(app) to with location \(location, privacy: .public)")
+            Log.connection.notice("Opened app \(app) to with location \(location, privacy: .public)")
         } else {
-            logger.error("Error opening app \(app, privacy: .public) at \(location, privacy: .public)launch/\(app, privacy: .public): \(httpResponse.statusCode, privacy: .public)")
+            Log.connection.error("Error opening app \(app, privacy: .public) at \(location, privacy: .public)launch/\(app, privacy: .public): \(httpResponse.statusCode, privacy: .public)")
         }
     }
 }
 
 @discardableResult
 private func powerToggleDeviceStateless(location: String, macs: [String]) async -> Bool {
-    logger.info("Toggling power for device \(location, privacy: .public)")
+    Log.connection.notice("Toggling power for device \(location, privacy: .public)")
 
     // Attempt checking the device power mode
-    logger.info("Attempting to power toggle device with api first")
+    Log.connection.notice("Attempting to power toggle device with api first")
 
     let toggleResult = await internalSendKeyToDevice(
         location: location,
@@ -41,31 +36,31 @@ private func powerToggleDeviceStateless(location: String, macs: [String]) async 
         }
         let interfaceNames = interfaces.map(\.name)
 
-        logger.info("API toggle failed, trying to WOL to macs \(String(describing: macs), privacy: .public) on interfaces \(interfaceNames, privacy: .public)")
+        Log.connection.notice("API toggle failed, trying to WOL to macs \(String(describing: macs), privacy: .public) on interfaces \(interfaceNames, privacy: .public)")
 
         for mac in macs {
             for iface in interfaces {
-                logger.info("Sending wol packet to \(mac, privacy: .public) with interface \(iface.name, privacy: .public)")
+                Log.connection.notice("Sending wol packet to \(mac, privacy: .public) with interface \(iface.name, privacy: .public)")
                 await wakeOnLAN(macAddress: mac, interface: iface.nwInterface)
             }
             if interfaces.count == 0 {
-                logger.info("Sending wol packet to \(mac, privacy: .public) with no interface")
+                Log.connection.notice("Sending wol packet to \(mac, privacy: .public) with no interface")
                 await wakeOnLAN(macAddress: mac, interface: nil)
             }
         }
         return true
     } else {
-        logger.info("API toggle suceeded!")
+        Log.connection.notice("API toggle suceeded!")
         return true
     }
 }
 
 public func sendKeyToDeviceRawNotRecommended(location: String, key: String, macs: [String]) async -> Bool {
     if key == RemoteButton.power.apiValue {
-        logger.info("Toggling power on device \(location, privacy: .public) with mac \(String(describing: macs), privacy: .public)")
+        Log.connection.notice("Toggling power on device \(location, privacy: .public) with mac \(String(describing: macs), privacy: .public)")
         return await powerToggleDeviceStateless(location: location, macs: macs)
     } else {
-        logger.info("Sending key to device \(key, privacy: .public)")
+        Log.connection.notice("Sending key to device \(key, privacy: .public)")
         return await internalSendKeyToDevice(location: location, rawKey: key)
     }
 }
@@ -73,7 +68,7 @@ public func sendKeyToDeviceRawNotRecommended(location: String, key: String, macs
 private func internalSendKeyToDevice(location: String, rawKey: String, timeout: TimeInterval? = nil) async -> Bool {
     let keypressURL = "\(location)/keypress/\(rawKey)"
     guard let url = URL(string: keypressURL) else {
-        logger.error("Unable to send key due to bad url url `\(keypressURL, privacy: .public)`")
+        Log.connection.error("Unable to send key due to bad url url `\(keypressURL, privacy: .public)`")
         return false
     }
     var request = URLRequest(url: url, timeoutInterval: timeout ?? 3)
@@ -83,17 +78,17 @@ private func internalSendKeyToDevice(location: String, rawKey: String, timeout: 
         let (_, response) = try await URLSession.shared.data(for: request)
         if let httpResponse = response as? HTTPURLResponse {
             if httpResponse.statusCode == 200 {
-                logger.info("Sent \(rawKey, privacy: .public) to \(location, privacy: .public)")
+                Log.connection.notice("Sent \(rawKey, privacy: .public) to \(location, privacy: .public)")
                 return true
             } else {
-                logger.error("Error sending \(rawKey, privacy: .public) to \(location, privacy: .public): \(httpResponse.statusCode, privacy: .public)")
+                Log.connection.error("Error sending \(rawKey, privacy: .public) to \(location, privacy: .public): \(httpResponse.statusCode, privacy: .public)")
                 return false
             }
         }
 
         return false
     } catch {
-        logger.error("Error sending \(rawKey, privacy: .public) to \(location, privacy: .public): \(error, privacy: .public)")
+        Log.connection.error("Error sending \(rawKey, privacy: .public) to \(location, privacy: .public): \(error, privacy: .public)")
         return false
     }
 }
@@ -104,15 +99,15 @@ public func sendWolToDevice(macs: [String]) async {
     }
     let interfaceNames = interfaces.map(\.name)
 
-    logger.notice("Trying to WOL to macs \(String(describing: macs), privacy: .public) on interfaces \(interfaceNames, privacy: .public)")
+    Log.connection.notice("Trying to WOL to macs \(String(describing: macs), privacy: .public) on interfaces \(interfaceNames, privacy: .public)")
 
     for mac in macs {
         for iface in interfaces {
-            logger.info("Sending wol packet to \(mac, privacy: .public) with interface \(iface.name, privacy: .public)")
+            Log.connection.notice("Sending wol packet to \(mac, privacy: .public) with interface \(iface.name, privacy: .public)")
             await wakeOnLAN(macAddress: mac, interface: iface.nwInterface)
         }
         if interfaces.count == 0 {
-            logger.info("Sending wol packet to \(mac, privacy: .public) with no interface")
+            Log.connection.notice("Sending wol packet to \(mac, privacy: .public) with no interface")
             await wakeOnLAN(macAddress: mac, interface: nil)
         }
     }
@@ -138,7 +133,7 @@ private func wakeOnLAN(macAddress: String, interface: NWInterface?) async -> Boo
         // Parse MAC address and append it 16 times to the packet
         let macBytes = macAddress.split(separator: ":").compactMap { UInt8($0, radix: 16) }
         guard macBytes.count == 6 else {
-            logger.error("Invalid MAC address")
+            Log.connection.error("Invalid MAC address")
             return nil
         }
 
@@ -164,9 +159,9 @@ private func wakeOnLAN(macAddress: String, interface: NWInterface?) async -> Boo
             if state == .ready {
                 connection.send(content: packet, completion: NWConnection.SendCompletion.contentProcessed { error in
                     if let error {
-                        logger.error("Error sending WOL packet for MAC \(macAddress, privacy: .public): \(error, privacy: .public)")
+                        Log.connection.error("Error sending WOL packet for MAC \(macAddress, privacy: .public): \(error, privacy: .public)")
                     } else {
-                        logger.notice("Sent WOL packet for address \(macAddress, privacy: .public)")
+                        Log.connection.notice("Sent WOL packet for address \(macAddress, privacy: .public)")
                     }
                     connection.cancel()
                     continuation.yield(true)
@@ -189,7 +184,7 @@ private func wakeOnLAN(macAddress: String, interface: NWInterface?) async -> Boo
     let canSendPacket = await iterator.next() ?? false
 
     if !canSendPacket {
-        logger.error("Unable to send WOL packet within 5 sec")
+        Log.connection.error("Unable to send WOL packet within 5 sec")
     }
     return canSendPacket
 }

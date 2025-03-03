@@ -1,3 +1,5 @@
+public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+
 #if DEBUG
     import Foundation
     import SwiftData
@@ -33,7 +35,7 @@
     public func getTestingContainer() -> ModelContainer {
         do {
             let schema = Schema(
-                versionedSchema: SchemaV3.self
+                versionedSchema: SchemaV4.self
             )
             let modelConfiguration = ModelConfiguration(
                 schema: schema,
@@ -56,7 +58,7 @@
     @MainActor
     public let previewContainer: ModelContainer = {
         do {
-            let schema = Schema(versionedSchema: SchemaV3.self)
+            let schema = Schema(versionedSchema: SchemaV4.self)
             let container = try ModelContainer(
                 for: schema,
                 migrationPlan: RoamSchemaMigrationPlan.self,
@@ -106,20 +108,8 @@
         var links: [AppLink] = []
         for (idx, name) in appNames.enumerated() {
             let imageName = name
-            #if os(macOS)
-                let image = NSImage(named: imageName)
-                var data: Data?
-
-                if let tiffData = image?.tiffRepresentation,
-                   let bitmapImage = NSBitmapImageRep(data: tiffData)
-                {
-                    data = bitmapImage.representation(using: .png, properties: [:])
-                }
-            #else
-                let image = UIImage(named: imageName, in: Bundle.main, with: nil)
-                let data = image?.pngData()
-            #endif
-            let link = AppLink(id: String(idx), type: "appl", name: name, icon: data, deviceUid: deviceUid)
+            let pngData = Data(fromAssetImage: imageName)
+            let link = AppLink(id: String(idx), type: "appl", name: name, icon: pngData, deviceUid: deviceUid)
             link.lastSelected = Date().addingTimeInterval(-Double(idx))
             links.append(link)
         }
@@ -160,25 +150,13 @@
             for j in 0 ..< (i * 40) {
                 appCount += 1
                 let imageName = "\(j)"
-                #if os(macOS)
-                    let image = NSImage(named: imageName)
-                    var data: Data?
-
-                    if let tiffData = image?.tiffRepresentation,
-                       let bitmapImage = NSBitmapImageRep(data: tiffData)
-                    {
-                        data = bitmapImage.representation(using: .png, properties: [:])
-                    }
-                #else
-                    let image = UIImage(named: imageName, in: Bundle.main, with: nil)
-                    let data = image?.pngData()
-                #endif
+                let pngData = Data(fromAssetImage: imageName)
 
                 apps.append(AppLink(
                     id: "app.id.\(j)",
                     type: "appl",
                     name: "App \(j)",
-                    icon: data,
+                    icon: pngData,
                     deviceUid: device.udn
                 ))
             }

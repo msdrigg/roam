@@ -1,1 +1,1 @@
--   Mga pag-aayos ng bug at pagpapabuti
+-   Pagdaragdag ng hotkey para ipakita ang roam menu (menu bar o pangunahing window sa background)

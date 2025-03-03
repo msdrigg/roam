@@ -11,11 +11,12 @@
                     .padding(.horizontal, 20)
                     .padding(.vertical, 20)
 
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 5) {
                     Spacer()
                     Text("Roam", comment: "App name")
                         .font(.title)
                         .foregroundStyle(.accent)
+                    Spacer()
 
                     Group {
                         Text("App Version", comment: "Version label in About page for the app") + Text(" ") +
@@ -23,13 +24,14 @@
                     }
                     .font(.headline)
                     Group {
-                        Text("Build Version", comment: "Version label in About page for the app") + Text(" ")
+                        Text("Build Version", comment: "Version label in About page for the app") + Text(" ") +
                         Text("\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "--")")
                     }
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
-                    Spacer().frame(maxHeight: 10)
+                    Spacer()
+                    Spacer()
 
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Made with ❤️ by Scott Driggers", comment: "Text description within the About View for the app")

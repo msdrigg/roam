@@ -14,8 +14,4 @@ I also have seen that it appears my app is exiting with exit(0) so there's no cr
 
 ## Next Steps
 
--   Review captured sysdiagnose
--   See if I can attach a debugger to the running project and then open it in xcode while it crashes
--   Review secondary sysdiagnose + jetsam
--   See if current version crashes (without debugger attached...)
--   Wait for response from ios dev forums https://developer.apple.com/forums/thread/773205?login=true
+-   Writup post with this fix

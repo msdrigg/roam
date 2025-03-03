@@ -1,1 +1,1 @@
--   Mga ayus at pagpapabuti sa bug
+-   Pinapayos ang bug sa pag-scan ng device

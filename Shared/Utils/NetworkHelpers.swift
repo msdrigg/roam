@@ -2,11 +2,6 @@ import Foundation
 import Network
 import os
 
-private let logger = Logger(
-    subsystem: getLogSubsystem(),
-    category: "TCPConnectionChecker"
-)
-
 #if !os(watchOS)
 public func tryConnectTCP(
     location: String,
@@ -17,7 +12,7 @@ public func tryConnectTCP(
           let host = url.host,
           let port = url.port
     else {
-        logger.error("Cannot connect to url \(location, privacy: .public) bc url not valid")
+        Log.scanning.error("Cannot connect to url \(location, privacy: .public) bc url not valid")
         return nil
     }
 
@@ -30,7 +25,7 @@ public func tryConnectTCP(
     timeout: TimeInterval,
     interface: NWInterface? = nil
 ) async -> NWInterface? {
-    logger.debug("Checking can connect to url (\(host, privacy: .public):\(port, privacy: .public)) with interface \(interface?.name ?? "--", privacy: .public)")
+    Log.scanning.debug("Checking can connect to url (\(host, privacy: .public):\(port, privacy: .public)) with interface \(interface?.name ?? "--", privacy: .public)")
     let tcpParams = NWProtocolTCP.Options()
     let params = NWParameters(tls: nil, tcp: tcpParams)
     if let interface {
@@ -50,7 +45,7 @@ public func tryConnectTCP(
                     connection.stateUpdateHandler = { state in
                         switch state {
                         case .ready:
-                            logger
+                            Log.scanning
                                 .debug(
                                     "Connected to \(host, privacy: .public):\(port, privacy: .public) with ifaces \(String(describing: connection.currentPath?.availableInterfaces), privacy: .public)"
                                 )
@@ -77,7 +72,7 @@ public func tryConnectTCP(
             }
         }
     } catch {
-        logger.warning("Cannot connect to \(host, privacy: .public):\(port, privacy: .public) on interface \(interface?.name ?? "--", privacy: .public) because of error \(error, privacy: .public)")
+        Log.scanning.warning("Cannot connect to \(host, privacy: .public):\(port, privacy: .public) on interface \(interface?.name ?? "--", privacy: .public) because of error \(error, privacy: .public)")
         return nil
     }
 }
@@ -121,4 +116,5 @@ public func canConnectHTTP(location: String, timeout: TimeInterval) async -> Boo
 enum APIError: Swift.Error, LocalizedError {
     case badURLError(_ url: String)
     case missingHeader(_ header: String)
+    case wrongContext(_ message: String)
 }

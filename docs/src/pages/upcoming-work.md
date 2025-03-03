@@ -12,12 +12,6 @@ hide_table_of_contents: true
     -   Add macOS tip for keyboard entry
     -   Add tip for keyboard Shortcuts
 
--   Figure out what’s causing the iOS shutdowns — have a crash log but nothing seems to be helping
-
-    -   Says process exits (added atexit)
-    -   Reproduce with open, close (without quitting), swipe to side menu, open again (not every time)
-    -   Need to reproduce with other item
-
 -   Add long-press options to keys
 
     -   Long-press right arrow to ff
@@ -30,12 +24,15 @@ hide_table_of_contents: true
 
 -   Fix bug in nextPacket loop
 
--   Automate screenshot upload to macOS
+-   Automate screenshot upload with sync-metadata
 
--   Future: Provide an optional Minimalist view on iOS that replicates siri remote's view closely
+-   Provide an optional Minimalist view on iOS that replicates siri remote's view closely
+
     -   https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
     -   Support visionos gestures as well...
     -   Make standard buttons larger
+
+-   Look into optimizing bundle size for ios app? What is making the size bigger now??
 
 ## General Future Ideas
 

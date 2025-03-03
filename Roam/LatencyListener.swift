@@ -1,22 +1,17 @@
 import Foundation
 import os.log
 
-#if os(iOS) || os(tvOS) || os(visionOS)
+#if os(iOS) || os(visionOS)
     import AVFoundation
 
     @MainActor
-    class LatencyListener {
-        private static nonisolated let logger = Logger(
-            subsystem: getLogSubsystem(),
-            category: String(describing: LatencyListener.self)
-        )
-
+    final class LatencyListener {
         var latencyChangeHandler: ((Double) -> Void)?
         var observerTokens: [Any] = []
         let audioSession = AVAudioSession.sharedInstance()
 
         func startListening() throws {
-            Self.logger.notice("Starting Latency observations")
+            Log.headphones.notice("Starting Latency observations")
             // Get the default notification center instance.
             let token = NotificationCenter.default.addObserver(
                 forName: AVAudioSession.routeChangeNotification,
@@ -34,7 +29,7 @@ import os.log
         }
 
         func stopListening() {
-            Self.logger.notice("Stoping Latency observations")
+            Log.headphones.notice("Stoping Latency observations")
 
             let ot = self.observerTokens
             self.observerTokens = []
@@ -65,11 +60,6 @@ import os.log
     import CoreAudio
 
     actor LatencyListener {
-        private static nonisolated let logger = Logger(
-            subsystem: getLogSubsystem(),
-            category: String(describing: LatencyListener.self)
-        )
-
         var latencyChangeHandler: ((Double) -> Void)?
         var audioDeviceChangeListener: AudioObjectPropertyListenerBlock?
 
@@ -92,7 +82,7 @@ import os.log
 
             let err = AudioObjectGetPropertyData(deviceID, &address, 0, nil, &propSize, &latency)
             if err != kAudioHardwareNoError {
-                Self.logger.error("Failed to get latency for device \(deviceID, privacy: .public), error: \(err, privacy: .public)")
+                Log.headphones.error("Failed to get latency for device \(deviceID, privacy: .public), error: \(err, privacy: .public)")
                 return nil
             }
 
@@ -106,7 +96,7 @@ import os.log
 
             let sampleRateErr = AudioObjectGetPropertyData(deviceID, &sampleRateAddress, 0, nil, &size, &sampleRate)
             if sampleRateErr != kAudioHardwareNoError {
-                Self.logger
+                Log.headphones
                     .error("Failed to get sample rate for device \(deviceID, privacy: .public), error: \(err, privacy: .public). Defaulting to 48000")
                 sampleRate = 48000
             }
@@ -119,7 +109,7 @@ import os.log
         }
 
         func startListening() {
-            Self.logger.notice("Starting Latency observations")
+            Log.headphones.notice("Starting Latency observations")
 
             var defaultDeviceAddress = defaultDeviceAddress
 
@@ -148,12 +138,12 @@ import os.log
             )
 
             if err != kAudioHardwareNoError {
-                Self.logger.error("Error adding audio property listener for default output device: \(err, privacy: .public)")
+                Log.headphones.error("Error adding audio property listener for default output device: \(err, privacy: .public)")
             }
         }
 
         func stopListening() {
-            Self.logger.notice("Stopping Latency observations")
+            Log.headphones.notice("Stopping Latency observations")
 
             var defaultDeviceAddress = defaultDeviceAddress
 
