@@ -98,7 +98,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
             .volumeDown: KeyboardShortcut(.downArrow, modifiers: .command),
             .volumeUp: KeyboardShortcut(.upArrow, modifiers: .command),
             .mute: KeyboardShortcut(KeyEquivalent("m"), modifiers: .command),
-            .home: KeyboardShortcut(KeyEquivalent("h"), modifiers: [.command, .shift]),
+            .home: KeyboardShortcut(KeyEquivalent("h"), modifiers: [.command]),
             .playPause: KeyboardShortcut(KeyEquivalent("p"), modifiers: .command),
             .ok: KeyboardShortcut(.return, modifiers: .command),
             .left: KeyboardShortcut(.leftArrow, modifiers: []),
@@ -141,6 +141,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
     }
 
     func reset() {
+        Log.userInteraction.notice("Removing hidden shortcut \(self.title, privacy: .public)")
         UserDefaults.standard.removeObject(forKey: "keyboard-shortcut-\(title)")
     }
 

@@ -15,13 +15,15 @@ public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING
                 name: String(localized: "Living Room TV"),
                 location: "http://192.168.0.1:8060/",
                 lastSelectedAt: Date(timeIntervalSince1970: 1_696_767_580.0),
-                udn: "TD1"
+                udn: "TD1",
+                serial: "1234567890"
             ),
             Device(
                 name: String(localized: "Mom's TV"),
                 location: "http://192.168.0.2:8060/",
                 lastSelectedAt: Date(timeIntervalSince1970: 1_696_767_580.0 - 24 * 60 * 60),
-                udn: "TD2"
+                udn: "TD2",
+                serial: "1234567891"
             ),
         ]
 
@@ -144,7 +146,8 @@ public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING
                 location: "http://192.168.8.24\(i):8060/)",
                 lastSelectedAt: Date.now - TimeInterval(i * 400),
                 lastOnlineAt: Date.now - TimeInterval(i * 300),
-                udn: UUID().uuidString
+                udn: UUID().uuidString,
+                serial: UUID().uuidString
             )
             devices.append(device)
             for j in 0 ..< (i * 40) {

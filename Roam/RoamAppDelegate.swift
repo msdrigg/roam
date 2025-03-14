@@ -5,119 +5,144 @@ import SwiftUI
 import UserNotifications
 
 #if os(macOS)
-    import AppKit
+import AppKit
 
-    final class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject {
-        @Published var navigationPath: NavigationManager
-        @Published var ecpMonitor: ECPMonitor
-        @Published var networkMonitor: NetworkMonitor
-        @Published var uuidUpdater: UUIDUpdater
+final class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate, ObservableObject {
+    @Published var navigationPath: NavigationManager
+    @Published var ecpMonitor: ECPMonitor
+    @Published var networkMonitor: NetworkMonitor
+    @Published var uuidUpdater: UUIDUpdater
 
-        var delegates: [String: AnyObject] = [:]
+    var delegates: [String: AnyObject] = [:]
 
-        @MainActor
-        override init() {
-            self.navigationPath = NavigationManager()
-            self.ecpMonitor = ECPMonitor()
-            self.networkMonitor = NetworkMonitor()
-            self.uuidUpdater = UUIDUpdater()
-            super.init()
-            UNUserNotificationCenter.current().delegate = self
-            Log.lifecycle.notice("Setting Notifications delegate to self")
+    @MainActor
+    override init() {
+        self.navigationPath = NavigationManager()
+        self.ecpMonitor = ECPMonitor()
+        self.networkMonitor = NetworkMonitor()
+        self.uuidUpdater = UUIDUpdater()
+        super.init()
+        UNUserNotificationCenter.current().delegate = self
+        Log.lifecycle.notice("Setting Notifications delegate to self")
+    }
+
+    @MainActor
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let hasSentFirstMessage = UserDefaults.standard.bool(forKey: UserDefaultKeys.hasSentFirstMessage)
+        self.networkMonitor.startMonitoring()
+
+        if hasSentFirstMessage {
+            UserDefaults.standard.setValue(Date.now.timeIntervalSince1970, forKey: UserDefaultKeys.lastApnsRequestTime)
+            requestNotificationPermission()
         }
 
-        @MainActor
-        func applicationDidFinishLaunching(_ notification: Notification) {
-            let hasSentFirstMessage = UserDefaults.standard.bool(forKey: "hasSentFirstMessage")
-            self.networkMonitor.startMonitoring()
-
-            if hasSentFirstMessage {
-                UserDefaults.standard.setValue(Date.now.timeIntervalSince1970, forKey: "lastApnsRequestTime")
-                requestNotificationPermission()
+        if UserDefaults.standard.string(forKey: UserDefaultKeys.firstInstallVersion) == nil {
+            if let version = Bundle.main.infoDictionary?["CURRENT_PROJECT_VERSION"] as? String {
+                Log.lifecycle.notice("Setting first install version to \(version, privacy: .public)")
+                UserDefaults.standard.set(version, forKey: UserDefaultKeys.firstInstallVersion)
             }
+        }
 
-            Task {
-                do {
-                    let selectedDevice = await DataHandler(modelContainer: getSharedModelContainer()).fetchSelectedDeviceAppEntity()
+        if initialInstallationAfter("20250412.5345670.3") {
+            if UserDefaults.standard.value(forKey: UserDefaultKeys.alreadyResetHideShortcut) == nil {
+                Log.lifecycle.info("Setting hidden shortcut to be cmd+shift+h")
+                CustomKeyboardShortcut(title: .home, key: KeyEquivalent("h"), modifiers: [.command, .shift]).persist()
+                UserDefaults.standard.setValue(true, forKey: UserDefaultKeys.alreadyResetHideShortcut)
+            }
+        }
 
-                    if let selectedDevice, ecpMonitor.ecpClient == nil {
-                        ecpMonitor.setDevice(selectedDevice)
-                    }
+        Task {
+            do {
+                let selectedDevice = await DataHandler(modelContainer: getSharedModelContainer()).fetchSelectedDeviceAppEntity()
+
+                if let selectedDevice, ecpMonitor.ecpClient == nil {
+                    ecpMonitor.setDevice(selectedDevice)
                 }
             }
-        }
-        func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-            return !UserDefaults.standard.bool(forKey: UserDefaultKeys.showMenuBar)
-        }
-
-        func application(_: NSApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-            let tokenParts = deviceToken.map { data -> String in
-                String(format: "%02.2hhx", data)
-            }
-            let token = tokenParts.joined()
-            Log.notifications.notice("Device Token: \(token, privacy: .public)")
-
-            Task {
-                do {
-                    try await uploadApnsToken(token)
-                } catch {
-                    Log.notifications.error("Error sending apns token to server \(error, privacy: .public)")
-                }
-                UserDefaults.standard.set(true, forKey: "hasSentFirstMessage")
-            }
-        }
-
-        func application(_ application: NSApplication, didReceiveRemoteNotification userInfo: [String: Any]) {
-            Log.notifications.notice("Received remote notification \(userInfo, privacy: .public)")
-            
-            refreshMessages()
-            if let aps = userInfo["aps"] as? [String: Any],
-               let alert = aps["alert"] as? String,
-               alert == "TYPING" {
-                Log.notifications.notice("Received TYPING notification")
-                handleTypingNotification()
-            }
-        }
-
-        func userNotificationCenter(
-            _: UNUserNotificationCenter,
-            didReceive _: UNNotificationResponse,
-            withCompletionHandler completionHandler: @escaping () -> Void
-        ) {
-            Log.notifications.notice("didReceive notification. Showing Messages...")
-            refreshMessages()
-            let navigationPath = self.navigationPath
-            DispatchQueue.main.async {
-                navigationPath.messagingWindowOpenTrigger = UUID()
-            }
-            completionHandler()
-        }
-
-        func refreshMessages() {
-            Task {
-                let dataHandler = await DataHandler(modelContainer: getSharedModelContainer())
-                await dataHandler.refreshMessagesIfExpectingNewMessages()
-            }
-        }
-
-        func handleTypingNotification() {
-            UserDefaults.standard.set(Date.now.timeIntervalSince1970, forKey: UserDefaultKeys.lastSupportTypingTime)
-        }
-
-        func userNotificationCenter(
-            _: UNUserNotificationCenter,
-            willPresent _: UNNotification,
-            withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
-        ) {
-            Log.notifications.notice("WillPresent notification. Refreshing messages...")
-            refreshMessages()
-            completionHandler(.badge)
-        }
-
-        func application(_: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {
-            Log.notifications.error("Failed to register with Error \(error, privacy: .public)")
         }
     }
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        return !UserDefaults.standard.bool(forKey: UserDefaultKeys.showMenuBar)
+    }
+
+    func application(_: NSApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let tokenParts = deviceToken.map { data -> String in
+            String(format: "%02.2hhx", data)
+        }
+        let token = tokenParts.joined()
+        Log.notifications.notice("Device Token: \(token, privacy: .public)")
+
+        Task {
+            do {
+                try await uploadApnsToken(token)
+            } catch {
+                Log.notifications.error("Error sending apns token to server \(error, privacy: .public)")
+            }
+            UserDefaults.standard.set(true, forKey: UserDefaultKeys.hasSentFirstMessage)
+        }
+    }
+
+    func application(_ application: NSApplication, didReceiveRemoteNotification userInfo: [String: Any]) {
+        Log.notifications.notice("Received remote notification \(userInfo, privacy: .public)")
+        
+        refreshMessages()
+        if let aps = userInfo["aps"] as? [String: Any],
+           let alert = aps["alert"] as? String,
+           alert == "TYPING" {
+            Log.notifications.notice("Received TYPING notification")
+            handleTypingNotification()
+        }
+    }
+
+    func userNotificationCenter(
+        _: UNUserNotificationCenter,
+        didReceive _: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        Log.notifications.notice("didReceive notification. Showing Messages...")
+        refreshMessages()
+        let navigationPath = self.navigationPath
+        DispatchQueue.main.async {
+            navigationPath.messagingWindowOpenTrigger = UUID()
+        }
+        completionHandler()
+    }
+
+    func refreshMessages() {
+        Task {
+            let dataHandler = await DataHandler(modelContainer: getSharedModelContainer())
+            await dataHandler.refreshMessagesIfExpectingNewMessages()
+        }
+    }
+
+    func handleTypingNotification() {
+        UserDefaults.standard.set(Date.now.timeIntervalSince1970, forKey: UserDefaultKeys.lastSupportTypingTime)
+    }
+
+    func userNotificationCenter(
+        _: UNUserNotificationCenter,
+        willPresent _: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        Log.notifications.notice("WillPresent notification. Refreshing messages...")
+        refreshMessages()
+        completionHandler(.badge)
+    }
+
+    func application(_: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {
+        Log.notifications.error("Failed to register with Error \(error, privacy: .public)")
+    }
+}
+
+func initialInstallationAfter(_ version: String) -> Bool {
+    if let initialVersion = UserDefaults.standard.string(forKey: UserDefaultKeys.firstInstallVersion) {
+        let after = initialVersion > version
+        Log.lifecycle.notice("Getting install version after \(version, privacy: .public) after=\(after, privacy: .public)")
+        return after
+    } else {
+        return false
+    }
+}
 
 extension NSApplication {
     func forceFront(_ id: String) {
@@ -267,7 +292,7 @@ extension NSApplication {
                 } catch {
                     Log.notifications.error("Error sending apns token to server \(error, privacy: .public)")
                 }
-                UserDefaults.standard.set(true, forKey: "hasSentFirstMessage")
+                UserDefaults.standard.set(true, forKey: UserDefaultKeys.hasSentFirstMessage)
             }
         }
 
@@ -314,11 +339,27 @@ extension NSApplication {
 
         func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
             self.networkMonitor.startMonitoring()
-            let hasSentFirstMessage = UserDefaults.standard.bool(forKey: "hasSentFirstMessage")
+            let hasSentFirstMessage = UserDefaults.standard.bool(forKey: UserDefaultKeys.hasSentFirstMessage)
             if hasSentFirstMessage {
-                UserDefaults.standard.setValue(Date.now.timeIntervalSince1970, forKey: "lastApnsRequestTime")
+                UserDefaults.standard.setValue(Date.now.timeIntervalSince1970, forKey: UserDefaultKeys.lastApnsRequestTime)
                 requestNotificationPermission()
             }
+
+            if UserDefaults.standard.string(forKey: UserDefaultKeys.firstInstallVersion) == nil {
+                if let version = Bundle.main.infoDictionary?["CURRENT_PROJECT_VERSION"] as? String {
+                    UserDefaults.standard.set(version, forKey: UserDefaultKeys.firstInstallVersion)
+                }
+            }
+
+            if initialInstallationAfter("20250412.5345670.3") {
+                if UserDefaults.standard.string(forKey: UserDefaultKeys.alreadyResetHideShortcut) == nil {
+                    setHideShortcut()
+                    CustomKeyboardShortcut(title: .home, key: KeyEquivalent("h"), modifiers: [.command, .shift])
+                    
+                    UserDefaults.standard.setValue(true, forKey: UserDefaultKeys.alreadyResetHideShortcut)
+                }
+            }
+
             Task {
                 do {
                     let selectedDevice = await DataHandler(modelContainer: getSharedModelContainer()).fetchSelectedDeviceAppEntity()

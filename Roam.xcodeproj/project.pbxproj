@@ -176,6 +176,7 @@
 		AF779BF32BA4D91E00231BC5 /* CaptureScrollWheelModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF779BF22BA4D91E00231BC5 /* CaptureScrollWheelModifier.swift */; };
 		AF779BF72BA4DDD000231BC5 /* WrappingHStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF779BF62BA4DDD000231BC5 /* WrappingHStack.swift */; };
 		AF779BF82BA4DE2200231BC5 /* WrappingHStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF779BF62BA4DDD000231BC5 /* WrappingHStack.swift */; };
+		AF7A6C572D762F800008DB05 /* WatchOSNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF7A6C552D762F7D0008DB05 /* WatchOSNote.swift */; };
 		AF7BD44F2AE1789800F5E087 /* WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF607892AE0037900A7D657 /* WidgetIntents.swift */; };
 		AF842A5D2BA554E5005D52D2 /* CaptureScrollWheelModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF779BF22BA4D91E00231BC5 /* CaptureScrollWheelModifier.swift */; };
 		AF8EF51D2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF8EF51C2BB60EAF002A4D6D /* NavigationDestination.swift */; };
@@ -201,6 +202,12 @@
 		AFA9F8972B1B878600829B7C /* Shortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6B72ADE28C80036EC90 /* Shortcuts.swift */; };
 		AFA9F8992B1D29E000829B7C /* KeyboardShortcutPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */; };
 		AFBBE16F2C764564002B7F68 /* RemoteViewContained.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBBE16D2C76455E002B7F68 /* RemoteViewContained.swift */; };
+		AFBDEA2F2D7D122000C15B18 /* AddDeviceFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDEA2E2D7D121D00C15B18 /* AddDeviceFlow.swift */; };
+		AFBDEA302D7D122000C15B18 /* AddDeviceFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDEA2E2D7D121D00C15B18 /* AddDeviceFlow.swift */; };
+		AFBDEA322D7D157500C15B18 /* StandardDislosureGroupStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDEA312D7D157100C15B18 /* StandardDislosureGroupStyle.swift */; };
+		AFBDEA332D7D157500C15B18 /* StandardDislosureGroupStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDEA312D7D157100C15B18 /* StandardDislosureGroupStyle.swift */; };
+		AFBDEA352D7D181F00C15B18 /* HiddenDeviceListItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDEA342D7D181100C15B18 /* HiddenDeviceListItem.swift */; };
+		AFBDEA362D7D181F00C15B18 /* HiddenDeviceListItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDEA342D7D181100C15B18 /* HiddenDeviceListItem.swift */; };
 		AFC24EFF2AD0E5A1002AB66C /* RoamApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC24EFE2AD0E5A1002AB66C /* RoamApp.swift */; };
 		AFC24F052AD0E5A2002AB66C /* AppIcon.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AFC24F042AD0E5A2002AB66C /* AppIcon.xcassets */; };
 		AFC4A6582AE867A3005DAC6C /* AppIcon.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AFC24F042AD0E5A2002AB66C /* AppIcon.xcassets */; };
@@ -271,7 +278,6 @@
 		AFED45F12D52BF3000FD53E2 /* MessagingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED45EC2D52BF3000FD53E2 /* MessagingView.swift */; };
 		AFED45F22D52BF3000FD53E2 /* AttachButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED45ED2D52BF3000FD53E2 /* AttachButton.swift */; };
 		AFEDCDFD2CD134130001D959 /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */; };
-		AFF2B68D2D4DE6C100A6F3B0 /* GimmikScalarDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68C2D4DE6B600A6F3B0 /* GimmikScalarDelegate.swift */; };
 		AFF2B68F2D4FEBBE00A6F3B0 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
 		AFF2B6902D4FEBBE00A6F3B0 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
 		AFF2B6912D4FEBBE00A6F3B0 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
@@ -488,6 +494,7 @@
 		AF779BEF2BA4D82600231BC5 /* Badge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Badge.swift; sourceTree = "<group>"; };
 		AF779BF22BA4D91E00231BC5 /* CaptureScrollWheelModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureScrollWheelModifier.swift; sourceTree = "<group>"; };
 		AF779BF62BA4DDD000231BC5 /* WrappingHStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WrappingHStack.swift; sourceTree = "<group>"; };
+		AF7A6C552D762F7D0008DB05 /* WatchOSNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchOSNote.swift; sourceTree = "<group>"; };
 		AF7C85662D75661100725B2B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		AF8CB9ED2BDABE3000115C88 /* .swiftlint.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = .swiftlint.yml; sourceTree = "<group>"; };
 		AF8EF51C2BB60EAF002A4D6D /* NavigationDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationDestination.swift; sourceTree = "<group>"; };
@@ -518,6 +525,9 @@
 		AFA68FE72BD06474005A102E /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = docs/src; sourceTree = "<group>"; };
 		AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutPanel.swift; sourceTree = "<group>"; };
 		AFBBE16D2C76455E002B7F68 /* RemoteViewContained.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteViewContained.swift; sourceTree = "<group>"; };
+		AFBDEA2E2D7D121D00C15B18 /* AddDeviceFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddDeviceFlow.swift; sourceTree = "<group>"; };
+		AFBDEA312D7D157100C15B18 /* StandardDislosureGroupStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandardDislosureGroupStyle.swift; sourceTree = "<group>"; };
+		AFBDEA342D7D181100C15B18 /* HiddenDeviceListItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HiddenDeviceListItem.swift; sourceTree = "<group>"; };
 		AFC24EFB2AD0E5A1002AB66C /* Roam.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Roam.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AFC24EFE2AD0E5A1002AB66C /* RoamApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamApp.swift; sourceTree = "<group>"; };
 		AFC24F042AD0E5A2002AB66C /* AppIcon.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AppIcon.xcassets; sourceTree = "<group>"; };
@@ -558,7 +568,6 @@
 		AFED45EC2D52BF3000FD53E2 /* MessagingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagingView.swift; sourceTree = "<group>"; };
 		AFED45ED2D52BF3000FD53E2 /* AttachButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachButton.swift; sourceTree = "<group>"; };
 		AFEDCDF42CD1331E0001D959 /* RoamSwiftTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RoamSwiftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		AFF2B68C2D4DE6B600A6F3B0 /* GimmikScalarDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GimmikScalarDelegate.swift; sourceTree = "<group>"; };
 		AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Loggers.swift; sourceTree = "<group>"; };
 		AFF607892AE0037900A7D657 /* WidgetIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetIntents.swift; sourceTree = "<group>"; };
 		AFF6DE0C2BCF0326002C13FC /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
@@ -956,7 +965,6 @@
 				AF65A8892BB5ABF9005ECF7F /* RoamAppDelegate.swift */,
 				AFC4A6592AE88411005DAC6C /* LatencyListener.swift */,
 				AFED42492AEE8F3B0023D684 /* VolumeListener.swift */,
-				AFF2B68C2D4DE6B600A6F3B0 /* GimmikScalarDelegate.swift */,
 				AF5853922D4BCD660027C279 /* GlobalHotkey.swift */,
 				AFDB4FEE2D53BB57004E27A4 /* WindowFocusMonitor.swift */,
 				AFD590CF2AEC673C00189620 /* WatchConnector.swift */,
@@ -969,6 +977,10 @@
 		AFDB4FF62D53C09F004E27A4 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				AFBDEA342D7D181100C15B18 /* HiddenDeviceListItem.swift */,
+				AFBDEA312D7D157100C15B18 /* StandardDislosureGroupStyle.swift */,
+				AFBDEA2E2D7D121D00C15B18 /* AddDeviceFlow.swift */,
+				AF7A6C552D762F7D0008DB05 /* WatchOSNote.swift */,
 				AFDB4FFB2D53C0A5004E27A4 /* DeviceListItem.swift */,
 				AFDB4FF42D53C09F004E27A4 /* DeviceDetailView.swift */,
 				AFDB4FF52D53C09F004E27A4 /* SettingsView.swift */,
@@ -1380,6 +1392,7 @@
 				AF0042762AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */,
 				AF2480592BDB42F600EF47AE /* TestData.swift in Sources */,
 				AFD9C4E42AE9809900C4079C /* AppLinkAppEntity.swift in Sources */,
+				AFBDEA2F2D7D122000C15B18 /* AddDeviceFlow.swift in Sources */,
 				AFD9C4F92AE983AE00C4079C /* SSDPService.swift in Sources */,
 				AF15C2492AE8672700B79FD9 /* RoamWatchApp.swift in Sources */,
 				AFD9C4D92AE97FA600C4079C /* Device.swift in Sources */,
@@ -1392,9 +1405,11 @@
 				AFF6DE0E2BCF0326002C13FC /* Message.swift in Sources */,
 				AFF2B6912D4FEBBE00A6F3B0 /* Loggers.swift in Sources */,
 				AF70BB0A2BA7CBD0009A06EC /* HoveredView.swift in Sources */,
+				AFBDEA362D7D181F00C15B18 /* HiddenDeviceListItem.swift in Sources */,
 				AFDB4FFD2D53C0A8004E27A4 /* DeviceListItem.swift in Sources */,
 				AF0C82982AEBFBD500CBE7F8 /* StatelessDeviceAPI.swift in Sources */,
 				AF6E294B2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */,
+				AFBDEA332D7D157500C15B18 /* StandardDislosureGroupStyle.swift in Sources */,
 				AF1899FA2C1CDFC2001EDA78 /* SettingsNavigationWrapper.swift in Sources */,
 				AF8EF51E2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */,
 				AFDB4FF72D53C09F004E27A4 /* DeviceDetailView.swift in Sources */,
@@ -1403,6 +1418,7 @@
 				AFEBD9112D5D489C00E840FF /* SelectedAttachment.swift in Sources */,
 				AFD9C4EB2AE980BD00C4079C /* AsyncHelpers.swift in Sources */,
 				AFD9C4FC2AE983C700C4079C /* AsyncSemaphore.swift in Sources */,
+				AF7A6C572D762F800008DB05 /* WatchOSNote.swift in Sources */,
 				AF0C82A82AEC0C2C00CBE7F8 /* Shortcuts.swift in Sources */,
 				AFD9C4E32AE9808E00C4079C /* DeviceAppEntity.swift in Sources */,
 				AFD9C4E82AE980AA00C4079C /* RemoteButtonAppEnum.swift in Sources */,
@@ -1519,6 +1535,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AF0532802D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift in Sources */,
+				AFBDEA322D7D157500C15B18 /* StandardDislosureGroupStyle.swift in Sources */,
 				AF0532812D36DB2200D68F8E /* HeadphonesModeTip.swift in Sources */,
 				AFBBE16F2C764564002B7F68 /* RemoteViewContained.swift in Sources */,
 				AF0C82952AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */,
@@ -1553,7 +1570,7 @@
 				AF1899F32C1CB204001EDA78 /* NavigationManager.swift in Sources */,
 				AF65A88C2BB5AD02005ECF7F /* ExternalAboutView.swift in Sources */,
 				AF0042752AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */,
-				AFF2B68D2D4DE6C100A6F3B0 /* GimmikScalarDelegate.swift in Sources */,
+				AFBDEA302D7D122000C15B18 /* AddDeviceFlow.swift in Sources */,
 				AF3446A62D5FE5D90037EFC8 /* AttachmentError.swift in Sources */,
 				AF20AD0D2AE01E9100D371C7 /* Device.swift in Sources */,
 				AFDB4FF92D53C09F004E27A4 /* DeviceDetailView.swift in Sources */,
@@ -1561,6 +1578,7 @@
 				AF7BD44F2AE1789800F5E087 /* WidgetIntents.swift in Sources */,
 				AF26A22B2AF1A2B90070250F /* SmallAppView.swift in Sources */,
 				AFDB4FEF2D53BB60004E27A4 /* WindowFocusMonitor.swift in Sources */,
+				AFBDEA352D7D181F00C15B18 /* HiddenDeviceListItem.swift in Sources */,
 				AFC4A65A2AE88411005DAC6C /* LatencyListener.swift in Sources */,
 				AF70BB072BA7C4D2009A06EC /* HoveredView.swift in Sources */,
 				AFA079DB2AE02561003E2754 /* ButtonPressIntents.swift in Sources */,

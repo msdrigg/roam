@@ -6,6 +6,16 @@ import UniformTypeIdentifiers
 public typealias Message = SchemaV4.Message
 
 extension Message {
+    var timestamp: Date? {
+        return parseDiscordSnowflake(self.id)
+    }
+
+    func cycleAttachments(_ attachments: [SentAttachment]) {
+        let encoder = PropertyListEncoder()
+        self.attachmentsData = try? encoder.encode(attachments)
+        self.unsentAttachmentData = nil
+    }
+    
     internal static func fetchAllRequest() -> FetchDescriptor<Message> {
         var fd = FetchDescriptor(
             predicate: #Predicate<Message> { _ in

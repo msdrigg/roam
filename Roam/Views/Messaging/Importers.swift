@@ -47,6 +47,7 @@ struct DiagnosticsImport: PendingAttachment {
             message += "   - **UDN**: \(device.device.udn)\n"
             message += "   - **ID**: \(device.device.id)\n"
             message += "   - **Deleted At**: \(device.device.deletedAt?.ISO8601Format() ?? "--")\n"
+            message += "   - **Hidden At**: \(device.device.hiddenAt?.ISO8601Format() ?? "--")\n"
             message += "   - **Ethernet MAC**: \(device.device.ethernetMAC ?? "--")\n"
             message += "   - **Wifi MAC**: \(device.device.wifiMAC ?? "--")\n"
             message += "   - **Network Type**: \(device.device.networkType ?? "--")\n"

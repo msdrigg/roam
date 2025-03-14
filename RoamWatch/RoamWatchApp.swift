@@ -52,7 +52,7 @@ let CONTROLS: [[RemoteButton?]] = [
 private let deviceFetchDescriptor: FetchDescriptor<Device> = {
     var fd = FetchDescriptor<Device>(
         predicate: #Predicate<Device> {
-            $0.deletedAt == nil
+            $0.deletedAt == nil && $0.hiddenAt == nil
         },
         sortBy: [SortDescriptor(\Device.name)]
     )
@@ -121,7 +121,7 @@ struct WatchAppView: View {
             .toolbar(id: "watch") {
                 ToolbarItem(id: "device-picker", placement: .topBarLeading) {
                     DevicePicker(
-                        devices: devices,
+                        devices: devices.filter({$0.visible}),
                         device: Binding(get: {
                             manuallySelectedDevice ?? selectedDevice
                         }, set: { device in
@@ -144,11 +144,6 @@ struct WatchAppView: View {
             mainBody
         } else {
             mainBody
-                .task(id: selectedDevice?.persistentModelID, priority: .medium) {
-                    if let devId = selectedDevice?.persistentModelID {
-                        await scanningActor.refreshSelectedDeviceContinually(id: devId)
-                    }
-                }
                 .task {
                     if loadTestingData() {
                         // swiftlint:disable:next force_try
@@ -156,6 +151,22 @@ struct WatchAppView: View {
                     } else if usingTestingDataContainer() {
                         // swiftlint:disable:next force_try
                         try! await DataHandler(modelContainer: getSharedModelContainer()).clearData()
+                    }
+                }
+                .task(id: selectedDevice?.persistentModelID, priority: .medium) {
+                    for await _ in exponentialBackoff(min: 30, max: 3600) {
+                        if let selectedDevice {
+                            Log.connection
+                                .info("Refreshing device \(selectedDevice.location, privacy: .public) after backoff")
+                            if Task.isCancelled {
+                                return
+                            }
+                            let handler = DataHandler(modelContainer: getSharedModelContainer())
+                            await handler.refreshDevice(client: WatchOSRefreshClient(id: selectedDevice.persistentModelID, location: selectedDevice.location))
+                        } else {
+                            Log.connection.info("No selected device to refresh")
+                            return
+                        }
                     }
                 }
         }

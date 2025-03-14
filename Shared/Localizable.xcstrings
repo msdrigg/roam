@@ -166,6 +166,9 @@
         }
       }
     },
+    " · " : {
+
+    },
     ":help-share-diagnostics:" : {
       "comment" : "Help text. Note that the URL can be localized with https://roam.msd3.io/<lang>/manually-add-tv/",
       "localizations" : {
@@ -1511,6 +1514,9 @@
         }
       }
     },
+    "Adding Device!" : {
+
+    },
     "Additinoally, WatchOS prevents us from discovering TV's on the local network." : {
       "comment" : "WatchOS indicator showing that watchOS can't auto-discover TV's due to network restrictions",
       "localizations" : {
@@ -2092,7 +2098,7 @@
       }
     },
     "App Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2588,7 +2594,7 @@
       }
     },
     "Back" : {
-      "comment" : "Keyboard shortcut to go back\nRemote button to go back",
+      "comment" : "Keyboard shortcut to go back\nRemote button to go back\nText on a button to save the device settings",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2837,7 +2843,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6313,6 +6319,9 @@
         }
       }
     },
+    "Getting in Touch" : {
+
+    },
     "Gift Roam to a friend" : {
       "comment" : "Description on a button to share the link to this application",
       "localizations" : {
@@ -6727,6 +6736,12 @@
           }
         }
       }
+    },
+    "Hidden Devices" : {
+
+    },
+    "Hide Device" : {
+
     },
     "Home" : {
       "comment" : "Keyboard shortcut to go to the home screen\nRemote button to go to home screen",
@@ -9884,6 +9899,9 @@
         }
       }
     },
+    "Manually Adding TVs" : {
+
+    },
     "Manually select which apps to show" : {
       "comment" : "Configuration field title controlling whether or not apps are manually selected",
       "localizations" : {
@@ -12366,6 +12384,9 @@
         }
       }
     },
+    "Permissive Mode" : {
+
+    },
     "Play or pause the media on the connected device" : {
       "comment" : "Description for play intent",
       "localizations" : {
@@ -12616,6 +12637,7 @@
     },
     "Please be patient, because I don't have an apple watch so I can't test how effective this is. Please reach out if you aren't able to get this to work :). You can email me at roam-support@msd3.io" : {
       "comment" : "Description of watchOS discovery alternatives",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -12696,6 +12718,9 @@
           }
         }
       }
+    },
+    "Please be patient, because I don't have an apple watch so I can't test how effective this is. Please reach out if you aren't able to get this to work :). You message me by clicking \"Chat with developer\" from Roam settings" : {
+      "comment" : "Description of watchOS discovery alternatives"
     },
     "Power" : {
       "comment" : "Keyboard shortcut to power on/off the TV\nSiri shortcut to power on/off the device",
@@ -15102,7 +15127,7 @@
       }
     },
     "Roku Apps" : {
-      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
+      "comment" : "Siri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -15185,7 +15210,7 @@
       }
     },
     "Roku Controls" : {
-      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
+      "comment" : "Siri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -15269,6 +15294,7 @@
     },
     "Save" : {
       "comment" : "Text on a button to save the device settings",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -16426,6 +16452,9 @@
           }
         }
       }
+    },
+    "Shared Diagnostics" : {
+
     },
     "Show menu bar icon" : {
       "comment" : "Label on a settings toggle",
@@ -17917,6 +17946,9 @@
           }
         }
       }
+    },
+    "Unhide" : {
+
     },
     "Unknown" : {
       "comment" : "Placeholder for unknown information",

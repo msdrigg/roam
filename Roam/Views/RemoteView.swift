@@ -13,7 +13,7 @@ import TipKit
 private func deviceFetchDescriptor() -> FetchDescriptor<Device> {
     var fd = FetchDescriptor<Device>(
         predicate: #Predicate<Device> {
-            $0.deletedAt == nil
+            $0.deletedAt == nil && $0.hiddenAt == nil
         },
         sortBy: [SortDescriptor(\Device.name)]
     )
@@ -52,6 +52,7 @@ struct RemoteView: View {
     @State var buttonPresses: [RemoteButton: Int] = [:]
     @State private var headphonesModeEnabled: Bool = false
     @State private var errorTrigger: Int = 0
+    @State private var showingAddDeviceSheet: Bool = false
     @AllCustomKeyboardShortcuts private var allKeyboardShortcuts: [CustomKeyboardShortcut]
 
     var headphonesModeDisabled: Bool {
@@ -71,11 +72,11 @@ struct RemoteView: View {
     }
 
     private var selectedDevice: Device? {
-        if manuallySelectedDevice != nil && manuallySelectedDevice?.deletedAt == nil {
+        if let manuallySelectedDevice, manuallySelectedDevice.visible {
             manuallySelectedDevice
         } else {
             devices.filter{
-                $0.deletedAt == nil
+                $0.visible
             }.min { d1, d2 in
                 (d1.lastSelectedAt?.timeIntervalSince1970 ?? 0) > (d2.lastSelectedAt?.timeIntervalSince1970 ?? 0)
             }
@@ -106,10 +107,16 @@ struct RemoteView: View {
         if runningInPreview {
             SettingsNavigationWrapper(path: $appDelegate.navigationPath.navigationPath) {
                 RemoteViewContained()
+                    .sheet(isPresented: $showingAddDeviceSheet) {
+                        AddDeviceFlow()
+                    }
             }
         } else {
             SettingsNavigationWrapper(path: $appDelegate.navigationPath.navigationPath) {
                 RemoteViewContained()
+                    .sheet(isPresented: $showingAddDeviceSheet) {
+                        AddDeviceFlow()
+                    }
                     .onOpenURL { incomingURL in
                         Log.lifecycle.notice("App was opened via URL: \(incomingURL, privacy: .public)")
                         handleIncomingURL(incomingURL)
@@ -149,7 +156,6 @@ struct RemoteView: View {
 
         if action == "add-device" || action == "scan" {
             let queryParams = URLComponents(string: url.absoluteString)?.queryItems
-            let name = queryParams?.first(where: { $0.name == "name" })?.value ?? getGlobalNewDeviceName()
             // Get location param as location=IP or p=IPV4Hex
             guard let location = queryParams?.first(where: { $0.name == "location" })?.value ??
                 queryParams?.first(where: { $0.name == "p" })?.value.flatMap({ hex in
@@ -166,10 +172,12 @@ struct RemoteView: View {
                 return
             }
 
-            Task.detached {
-                let udn = queryParams?.first(where: { $0.name == "udn" })?.value ?? "roam:newdevice-\(UUID().uuidString)"
-                // TODO: Fix this
-//                await DataHandler(modelContainer: getSharedModelContainer()).addOrReplaceDevice(PreconnectionDeviceInfo())
+            Task {
+                let dh = DataHandler(modelContainer: getSharedModelContainer())
+                if let pid = await dh.addOrReplaceDevice(location: location) {
+                    Log.lifecycle.notice("Added device with PID \(pid.described(), privacy: .public)")
+                    await dh.setSelectedDevice(pid)
+                }
             }
         }
         if action == "settings" {

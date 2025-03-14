@@ -15,8 +15,12 @@ public extension Device {
         powerMode == "PowerOn"
     }
 
+    var visible: Bool {
+        return self.deletedAt == nil && self.hiddenAt == nil
+    }
+
     var displayHash: String {
-        "\(name)-\(udn)-\(isOnline())-\(location)-\(String(describing: supportsDatagram))"
+        "\(name)-\(udn)-\(isOnline())-\(location)-\(String(describing: supportsDatagram))-\(id.described())"
     }
 
     func isOnline() -> Bool {

@@ -7,20 +7,15 @@ struct PreconnectionDeviceInfo: Codable {
     let udn: String
     let friendlyName: String
     let location: String
+    let serial: String
     let deviceImagePath: String?
 
     fileprivate init(service: DeviceServiceRoot, location: String) {
         self.udn = service.device.UDN.stripPrefix("uuid:")
         self.friendlyName = service.device.friendlyName
         self.location = location
+        self.serial = service.device.serialNumber
         self.deviceImagePath = service.device.iconList.icon.first?.url
-    }
-
-    init(location: String, udn: String?, friendlyName: String?, deviceImagePath: String?) {
-        self.location = location
-        self.udn = udn ?? ""
-        self.friendlyName = friendlyName ?? getGlobalNewDeviceName()
-        self.deviceImagePath = deviceImagePath
     }
 }
 
@@ -32,9 +27,48 @@ struct DeviceInfo: Codable {
     let friendlyDeviceName: String?
     let uptime: Int?
     let udn: String
+    let serialNumber: String
 
     func isPowerOn() -> Bool {
         powerMode == "PowerOn"
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(powerMode, forKey: .powerMode)
+        try container.encodeIfPresent(networkType, forKey: .networkType)
+        try container.encodeIfPresent(ethernetMac, forKey: .ethernetMac)
+        try container.encodeIfPresent(wifiMac, forKey: .wifiMac)
+        try container.encodeIfPresent(friendlyDeviceName, forKey: .userDeviceName)
+        try container.encodeIfPresent(friendlyDeviceName, forKey: .friendlyDeviceName)
+        try container.encodeIfPresent(uptime, forKey: .uptime)
+        try container.encode(udn, forKey: .udn)
+        try container.encode(serialNumber, forKey: .serialNumber)
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.powerMode = try container.decodeIfPresent(String.self, forKey: .powerMode)
+        self.networkType = try container.decodeIfPresent(String.self, forKey: .networkType)
+        self.ethernetMac = try container.decodeIfPresent(String.self, forKey: .ethernetMac)
+        self.wifiMac = try container.decodeIfPresent(String.self, forKey: .wifiMac)
+        self.friendlyDeviceName = try container.decodeIfPresent(String.self, forKey: .userDeviceName)
+            ?? container.decodeIfPresent(String.self, forKey: .friendlyDeviceName)
+        self.uptime = try container.decodeIfPresent(Int.self, forKey: .uptime)
+        self.udn = try container.decode(String.self, forKey: .udn)
+        self.serialNumber = try container.decode(String.self, forKey: .serialNumber)
+    }
+
+    enum CodingKeys: CodingKey {
+        case powerMode
+        case networkType
+        case ethernetMac
+        case wifiMac
+        case friendlyDeviceName
+        case userDeviceName
+        case uptime
+        case udn
+        case serialNumber
     }
 }
 
@@ -45,6 +79,7 @@ private struct DeviceServiceRoot: Codable {
         let iconList: IconList
         let friendlyName: String
         let UDN: String
+        let serialNumber: String
 
         struct IconList: Codable {
             let icon: [Icon]
@@ -151,11 +186,11 @@ func fetchDeviceCapabilities(location: String) async throws -> DeviceCapabilitie
     return DeviceCapabilities(supportsDatagram: isDatagramSupported ?? false, rtcpPort: rtcpPort)
 }
 
-func fetchDeviceInfo(location: String) async -> DeviceInfo? {
+func fetchDeviceInfo(location: String) async throws -> DeviceInfo {
     let deviceInfoURL = "\(location)query/device-info"
     guard let url = URL(string: deviceInfoURL) else {
         Log.connection.error("Unable to get device info due to bad url \(deviceInfoURL, privacy: .public)")
-        return nil
+        throw APIError.badURLError(location)
     }
     var request = URLRequest(url: url)
     request.timeoutInterval = 1.5
@@ -174,8 +209,8 @@ func fetchDeviceInfo(location: String) async -> DeviceInfo? {
         }
     } catch {
         Log.connection.error("Error getting device info: \(error, privacy: .public)")
+        throw error
     }
-    return nil
 }
 
 func fetchDeviceApps(location: String) async throws -> [AppLinkAppEntity] {

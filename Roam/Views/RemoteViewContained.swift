@@ -21,7 +21,7 @@ let globalMajorActions: [RemoteButton] = [.power, .playPause, .mute, .headphones
 private func deviceFetchDescriptor() -> FetchDescriptor<Device> {
     var fd = FetchDescriptor<Device>(
         predicate: #Predicate {
-            $0.deletedAt == nil
+            $0.deletedAt == nil && $0.hiddenAt == nil
         },
         sortBy: [SortDescriptor(\Device.name)]
     )
@@ -59,9 +59,9 @@ struct RemoteViewContained: View {
     @Query(messageFetchDescriptor()) private var unreadMessages: [Message]
     @Environment(\.dismiss) var dismiss
 
+    @State private var showingAddDeviceSheet: Bool = false
     @State private var scanningActor: DeviceDiscoveryActor?
     @State private var ssdpActor: DeviceDiscoveryActor?
-    @State private var refreshActor: DeviceDiscoveryActor?
     @State private var manuallySelectedDevice: Device?
     @State private var showKeyboardEntryManual: Bool = false
     @State private var keyboardLeaving: Bool = false
@@ -152,11 +152,11 @@ struct RemoteViewContained: View {
     #endif
 
     private var selectedDevice: Device? {
-        if manuallySelectedDevice != nil && manuallySelectedDevice?.deletedAt == nil {
+        if let manuallySelectedDevice, manuallySelectedDevice.visible {
             manuallySelectedDevice
         } else {
             devices.filter{
-                $0.deletedAt == nil
+                $0.visible
             }.min { d1, d2 in
                 (d1.lastSelectedAt?.timeIntervalSince1970 ?? 0) > (d2.lastSelectedAt?.timeIntervalSince1970 ?? 0)
             }
@@ -309,21 +309,29 @@ struct RemoteViewContained: View {
                         await scanningActor?.scanIPV4Once()
                     }
                 }
+                .task(id: selectedDevice?.persistentModelID, priority: .medium) {
+                    for await _ in exponentialBackoff(min: 30, max: 3600) {
+                        if let selectedDevice, let ecpSession {
+                            Log.connection
+                                .info("Refreshing device \(selectedDevice.location, privacy: .public) after backoff")
+                            if Task.isCancelled {
+                                return
+                            }
+                            let handler = DataHandler(modelContainer: getSharedModelContainer())
+                            await handler.refreshDevice(client: ECPWebsocketRefreshClient(id: selectedDevice.persistentModelID, client: ecpSession, location: selectedDevice.location))
+                        } else {
+                            Log.connection
+                                .info("No selected device to refresh")
+                            return
+                        }
+                    }
+                }
                 .task(id: selectedDevice?.location, priority: .medium) {
-                    Log.connection
-                        .notice("Creating ecp session with location \(String(describing: selectedDevice?.location), privacy: .public)")
+                    Log.connection.notice("Creating ecp session with location \(String(describing: selectedDevice?.location), privacy: .public)")
                     if let device = selectedDevice?.toAppEntity() {
                         self.ecpSessionState.setDevice(device)
                     } else {
                         self.ecpSessionState.setDevice(nil)
-                    }
-                }
-                .task(id: refreshActor == nil ? nil : selectedDevice?.persistentModelID, priority: .medium) {
-                    guard let refreshActor else {
-                        return
-                    }
-                    if let devId = selectedDevice?.persistentModelID {
-                        await refreshActor.refreshSelectedDeviceContinually(id: devId)
                     }
                 }
                 .task(id: "\(headphonesModeEnabled),\(selectedDevice?.location ?? "--")") {
@@ -366,9 +374,6 @@ struct RemoteViewContained: View {
                 }
                 .onAppear {
                     scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
-                        updater?.update()
-                    })
-                    refreshActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
                         updater?.update()
                     })
                     ssdpActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
@@ -787,6 +792,9 @@ struct RemoteViewContained: View {
 #if !os(visionOS)
                 .sensoryFeedback(.error, trigger: errorTrigger)
 #endif
+        }
+        .sheet(isPresented: $showingAddDeviceSheet) {
+            AddDeviceFlow()
         }
         .font(.title2)
         .fontDesign(.rounded)

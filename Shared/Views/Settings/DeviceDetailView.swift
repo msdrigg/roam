@@ -7,6 +7,7 @@ struct DeviceDetailView: View {
     var deviceId: PersistentIdentifier
     @State var deviceName: String = getGlobalNewDeviceName()
     @State var deviceIP: String = "192.168.0.1"
+    @State var hidden: Bool = false
 
     @State var showHeadphonesModeDescription: Bool = false
 
@@ -30,7 +31,7 @@ struct DeviceDetailView: View {
         ]
         descriptor.propertiesToFetch = [
             \Device.udn, \Device.location, \Device.lastOnlineAt, \Device.lastSelectedAt,
-             \Device.name, \Device.deletedAt, \Device.lastSentToWatch, \Device.lastScannedAt,
+             \Device.name, \Device.deletedAt, \.hiddenAt, \Device.lastSentToWatch, \Device.lastScannedAt,
              \Device.ethernetMAC, \Device.rtcpPort, \Device.supportsDatagram, \Device.wifiMAC,
              \Device.networkType, \Device.powerMode
         ]
@@ -78,6 +79,9 @@ struct DeviceDetailView: View {
                         deviceIP = host
                     }
                 }
+                .onChange(of: device?.hiddenAt) { _, newHiddenAt in
+                    hidden = newHiddenAt != nil
+                }
                 .onAppear {
                     scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
                         updater?.update()
@@ -89,6 +93,7 @@ struct DeviceDetailView: View {
 
                     Log.userInteraction.notice("Seeing host \(host, privacy: .public)")
                     deviceIP = host
+                    hidden = device?.hiddenAt != nil
                 }
                 .onDisappear {
                     if addressValidation != nil || nameValidation != nil {
@@ -208,6 +213,11 @@ struct DeviceDetailView: View {
                 }
             }
 #endif
+            Toggle(
+                "Hide Device",
+                systemImage: "eye.slash",
+                isOn: $hidden
+            )
 
             Button(role: .destructive, action: {
                 // Don't block the dismiss waiting for save
@@ -249,9 +259,10 @@ struct DeviceDetailView: View {
             #endif
         }
         .formStyle(.grouped)
+        .navigationBarBackButtonHidden(true)
         .toolbar(id: "settings-detail") {
             ToolbarItem(id: "save-device", placement: .primaryAction) {
-                Button(String(localized: "Save", comment: "Text on a button to save the device settings"), systemImage: "checkmark", action: {
+                Button(String(localized: "Back", comment: "Text on a button to save the device settings"), systemImage: "chevron.left", action: {
                     save()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                         dismiss()
@@ -263,18 +274,16 @@ struct DeviceDetailView: View {
     
     func save() {
         if let device = device {
-            let pid = device.persistentModelID
-            let udn = device.udn
-            Task.detached {
-                await saveDevice(
-                    existingDeviceId: pid,
-                    existingUDN: udn,
-                    newIP: deviceIP,
-                    newDeviceName: deviceName,
-                    dataHandler: DataHandler(
-                        modelContainer: getSharedModelContainer()
-                    )
-                )
+            // Try to get device id
+            // Watchos can't check tcp connection, so just do the request
+            let cleanedString = deviceIP.trimmingCharacters(in: .whitespacesAndNewlines)
+                .replacingOccurrences(of: "\"", with: "").replacingOccurrences(of: "'", with: "")
+            let deviceUrl = addSchemeAndPort(to: cleanedString)
+            Log.data.notice("Getting device url \(deviceUrl, privacy: .public)")
+
+            let dh = DataHandler(modelContainer: getSharedModelContainer())
+            Task {
+                await dh.updateDevice(device.persistentModelID, name: deviceName, location: deviceUrl, hidden: hidden)
 
                 DispatchQueue.main.async {
                     updater?.update()

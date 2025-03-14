@@ -38,6 +38,7 @@ public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Enc
     public var lastOnlineAt: Date?
     public var lastScannedAt: Date?
     public var deletedAt: Date?
+    public var hiddenAt: Date?
 
     // DisplayOff or PowerOn or Suspend
     public var powerMode: String?
@@ -73,6 +74,7 @@ public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Enc
         lastOnlineAt = device.lastOnlineAt
         lastScannedAt = device.lastScannedAt
         deletedAt = device.deletedAt
+        hiddenAt = device.hiddenAt
         icon = device.deviceIcon
     }
 
@@ -87,6 +89,7 @@ public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Enc
         try container.encodeIfPresent(lastScannedAt, forKey: .lastScannedAt)
         try container.encodeIfPresent(lastSentToWatch, forKey: .lastSentToWatch)
         try container.encodeIfPresent(deletedAt, forKey: .deletedAt)
+        try container.encodeIfPresent(hiddenAt, forKey: .hiddenAt)
 
         try container.encodeIfPresent(powerMode, forKey: .powerMode)
         try container.encodeIfPresent(networkType, forKey: .networkType)
@@ -106,6 +109,7 @@ public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Enc
         case lastScannedAt
         case lastSentToWatch
         case deletedAt
+        case hiddenAt
         case powerMode
         case networkType
         case wifiMAC

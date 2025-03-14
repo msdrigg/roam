@@ -58,15 +58,6 @@ struct RoamApp: App {
         }
     }
 
-    // TODO: Come back to this b/c it can't change...https://developer.apple.com/documentation/swiftui/menubarextra.
-//    var remoteWindowId: String {
-//        if showMenuBar {
-//            "remote"
-//        } else {
-//            "main"
-//        }
-//    }
-
     var body: some Scene {
         #if os(macOS)
             Window("Roam", id: "main") {

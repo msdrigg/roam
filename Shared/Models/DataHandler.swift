@@ -59,25 +59,35 @@ public actor DataHandler {
         }
     }
 
-    func updateDevice(_ id: PersistentIdentifier, name: String, location: String, udn: String) {
-        Log.data.notice("Updating device at \(location, privacy: .public)")
+    func updateDevice(_ id: PersistentIdentifier, name: String? = nil, location: String? = nil, hidden: Bool? = nil) {
+        Log.data.notice("Updating device at \(id.described(), privacy: .public)")
         if let device = modelContext.existingDevice(for: id) {
             Log.data.notice("Found device to update with id \(id.described(), privacy: .public))")
-            device.location = location
-            device.name = name
-            device.udn = udn
+            if let location {
+                device.location = location
+            }
+            if let name {
+                device.name = name
+            }
             device.lastSentToWatch = nil
+            if let hidden {
+                if hidden {
+                    device.hiddenAt = device.hiddenAt ?? Date.now
+                } else {
+                    device.hiddenAt = nil
+                }
+            }
             do {
                 try modelContext.save()
             } catch {
-                Log.data.warning("Error updating device at location \(location, privacy: .public)")
+                Log.data.warning("Error updating device at location \(device.location, privacy: .public)")
             }
         }
-        Log.data.notice("Updated device at \(location, privacy: .public)")
+        Log.data.notice("Updated device at \(id.described(), privacy: .public)")
     }
-
+    
     @discardableResult
-    func addOrReplaceDevice(location: String, friendlyDeviceName: String, udn: String) -> PersistentIdentifier? {
+    func addDeviceIndistriminantly(location: String, friendlyDeviceName: String, udn: String, serial: String) -> PersistentIdentifier? {
         if let device = deviceForUdn(udn: udn) {
             device.location = location
             device.name = friendlyDeviceName
@@ -87,25 +97,113 @@ public actor DataHandler {
                 Log.data.warning("Error updating device fields \(error, privacy: .public)")
             }
             return device.persistentModelID
+        } else {
+            Log.data.notice("Adding device at \(location, privacy: .public)")
+            let device = Device(
+                name: friendlyDeviceName,
+                location: location,
+                udn: udn,
+                serial: serial
+            )
+            modelContext.insert(device)
+            
+            do {
+                try modelContext.save()
+                Log.data.notice("Added device \(String(describing: device.persistentModelID), privacy: .public)")
+                return device.persistentModelID
+            } catch {
+                Log.data.warning("Error adding device at \(location, privacy: .public), \(error, privacy: .public)")
+                return nil
+            }
         }
-        var lastOnlineAt: Date? = Date.now
+    }
 
-        if udn.hasPrefix("roam:") {
-            lastOnlineAt = nil
+    @discardableResult
+    func addOrReplaceDevice(location: String, udn: String? = nil, serial: String? = nil) async -> PersistentIdentifier? {
+        if let udn, let device = deviceForUdn(udn: udn) {
+            device.location = location
+            do {
+                try modelContext.save()
+            } catch {
+                Log.data.warning("Error updating device fields \(error, privacy: .public)")
+            }
+            return device.persistentModelID
         }
 
-        Log.data.notice("Adding device at \(location, privacy: .public)")
-        let device = Device(
-            name: friendlyDeviceName,
-            location: location,
-            lastOnlineAt: lastOnlineAt,
-            udn: udn
-        )
-        modelContext.insert(device)
+        if let serial, let device = deviceForSerial(serial: serial) {
+            device.location = location
+            do {
+                try modelContext.save()
+            } catch {
+                Log.data.warning("Error updating device fields \(error, privacy: .public)")
+            }
+            return device.persistentModelID
+        }
+
+        let info: PreconnectionDeviceInfo
+        var foundDevice: Device?
+        do {
+            info = try await fetchPreconnectionInfo(location: location)
+            if let device = deviceForUdn(udn: info.udn) {
+                Log.data.info("Found device for udn \(info.udn, privacy: .public), updating")
+                device.serial = info.serial
+                device.location = location
+                foundDevice = device
+            } else if let device = deviceForSerial(serial: info.serial) {
+                Log.data.info("Found device for serial \(info.serial, privacy: .public), updating")
+                device.udn = info.udn
+                device.location = location
+                foundDevice = device
+            }
+        } catch {
+            Log.data.warning("Trying to add device but no preconnection info available \(location, privacy: .public). Error: \(error, privacy: .public)")
+            return nil
+        }
+
+        let device: Device
+
+        if let foundDevice {
+            device = foundDevice
+        } else {
+            Log.data.notice("Adding device at \(location, privacy: .public)")
+            let addedDevice = Device(
+                name: info.friendlyName,
+                location: location,
+                udn: info.udn,
+                serial: info.serial
+            )
+            modelContext.insert(addedDevice)
+            device = addedDevice
+        }
 
         do {
             try modelContext.save()
             Log.data.notice("Added device \(String(describing: device.persistentModelID), privacy: .public)")
+            Task {
+                #if os(watchOS)
+                let refreshClient = WatchOSRefreshClient()
+                #else
+                let ecpClient: ECPWebsocketClient
+                do {
+                    guard let location = URL(string: location) else {
+                        throw APIError.badURLError(location)
+                    }
+                    ecpClient = ECPWebsocketClient(location: location)
+                    await ecpClient.start()
+                } catch {
+                    Log.data.warning("Error refreshing device b/c no ECP Session: \(error, privacy: .public)")
+                    return
+                }
+                defer {
+                    Task {
+                        await ecpClient.cancel()
+                    }
+                }
+                let refreshClient = ECPWebsocketRefreshClient(id: device.persistentModelID, client: ecpClient, location: device.location)
+                #endif
+                await self.refreshDevice(client: refreshClient)
+            }
+
             return device.persistentModelID
         } catch {
             Log.data.warning("Error adding device at \(location, privacy: .public), \(error, privacy: .public)")
@@ -163,6 +261,19 @@ public actor DataHandler {
         }
     }
 
+    func hide(_ id: PersistentIdentifier) async throws {
+        Log.data.notice("Hiding device \(String(describing: id), privacy: .public)")
+        if let device = modelContext.existingDevice(for: id) {
+            device.hiddenAt = .now
+            do {
+                try modelContext.save()
+            } catch {
+                Log.data.error("Error hiding device with id \(id.described(), privacy: .public)")
+                return
+            }
+        }
+    }
+
     func delete(_ id: PersistentIdentifier) async throws {
         Log.data.notice("Soft deleting device \(String(describing: id), privacy: .public)")
         if let device = modelContext.existingDevice(for: id) {
@@ -192,7 +303,8 @@ public actor DataHandler {
              \.lastSentToWatch, \.lastScannedAt,
              \.ethernetMAC, \.rtcpPort,
              \.supportsDatagram, \.wifiMAC,
-             \.networkType, \.powerMode
+             \.networkType, \.powerMode,
+             \.serial
         ]
         do {
             let matchingIds = try modelContext.fetchIdentifiers(matchingIds)
@@ -208,13 +320,55 @@ public actor DataHandler {
         return nil
     }
 
+    private func deviceForSerialUnchecked(serial: String) -> Device? {
+        var matchingIds = FetchDescriptor<Device>(
+            predicate: #Predicate {
+                $0.deletedAt == nil && $0.serial == serial
+            }
+        )
+        matchingIds.fetchLimit = 1
+        matchingIds.includePendingChanges = true
+        matchingIds.propertiesToFetch = [
+            \.udn, \.location, \.lastOnlineAt,
+             \.lastSelectedAt, \.name, \.deletedAt,
+             \.lastSentToWatch, \.lastScannedAt,
+             \.ethernetMAC, \.rtcpPort,
+             \.supportsDatagram, \.wifiMAC,
+             \.networkType, \.powerMode,
+             \.serial
+        ]
+        do {
+            let matchingIds = try modelContext.fetchIdentifiers(matchingIds)
+
+            if let matchingPid = matchingIds.first {
+                if let device = modelContext.existingDevice(for: matchingPid) {
+                    return device
+                }
+            }
+        } catch {
+            Log.data.error("Error checking if device exists \(serial, privacy: .public): \(error, privacy: .public)")
+        }
+        return nil
+    }
+
     private func deviceForUdn(udn: String) -> Device? {
         do {
             return try catchObjc {
                 return deviceForUdnUnchecked(udn: udn)
             }
         } catch {
-            Log.data.warning("Objc error getting device \(error, privacy: .public)")
+            Log.data.warning("Objc error getting device for udn \(error, privacy: .public)")
+            return nil
+        }
+    }
+
+    private func deviceForSerial(serial: String) -> Device? {
+        do {
+            return try catchObjc {
+                return deviceForSerialUnchecked(serial: serial)
+            }
+        } catch {
+            Log.data.warning("Objc error getting device for serial \(error, privacy: .public)")
             return nil
         }
     }
@@ -474,53 +628,112 @@ extension DataHandler {
     }
 }
 
-extension DataHandler {
-    func refreshDevice(_ id: PersistentIdentifier) async {
-        Log.data.notice("Refreshing device with id \(String(describing: id), privacy: .public)")
-        guard let location = (modelContext.existingDevice(for: id))?.location else {
-            Log.data.error("Trying to refresh device that doeesn't exist \(String(describing: id), privacy: .public)")
-            return
-        }
-        #if !os(watchOS)
-        let ecpSession: ECPWebsocketClient
-        do {
-            guard let location = URL(string: location) else {
-                throw APIError.badURLError(location)
-            }
-            ecpSession = ECPWebsocketClient(location: location)
-            await ecpSession.start()
-        } catch {
-            Log.data.warning("Error refreshing device b/c no ECP Session: \(error, privacy: .public)")
-            return
-        }
-        defer {
-            Task {
-                await ecpSession.cancel()
-            }
-        }
-        #endif
+protocol RefreshClient: Sendable {
+    func getId() async throws -> PersistentIdentifier
+    func getDeviceInfo() async throws -> DeviceInfo
+    func getDeviceCapabilities() async throws -> DeviceCapabilities
+    func getDeviceApps() async throws -> [AppLinkAppEntity]
+    func getDeviceAppIcon(_ appId: String) async throws -> Data
+    func getDeviceIcon() async throws -> Data
+}
 
-        #if os(watchOS)
-        guard let deviceInfo = await fetchDeviceInfo(location: location) else {
-            Log.data.warning("Error getting device info")
+#if os(watchOS)
+actor WatchOSRefreshClient: RefreshClient {
+    let id: PersistentIdentifier
+    let location: String
+
+    init(id: PersistentIdentifier, location: String) {
+        self.id = id
+        self.location = location
+    }
+
+    func getId() throws -> PersistentIdentifier {
+        return self.id
+    }
+
+    func getDeviceInfo() async throws -> DeviceInfo {
+        return try await fetchDeviceInfo(location: location)
+    }
+
+    func getDeviceCapabilities() async throws -> DeviceCapabilities {
+        return try await fetchDeviceCapabilities(location: location)
+    }
+
+    func getDeviceApps() async throws -> [AppLinkAppEntity] {
+        return try await fetchDeviceApps(location: location)
+    }
+    
+    func getDeviceAppIcon(_ appId: String) async throws -> Data {
+        return try await fetchAppIcon(location: location, appId: appId)
+    }
+
+    func getDeviceIcon() async throws -> Data {
+        let info = try await fetchPreconnectionInfo(location: location)
+        return try await fetchDeviceIcon(info: info)
+    }
+}
+#else
+actor ECPWebsocketRefreshClient: RefreshClient {
+    let id: PersistentIdentifier
+    let client: ECPWebsocketClient
+    let location: String
+
+    init(id: PersistentIdentifier, client: ECPWebsocketClient, location: String) {
+        self.id = id
+        self.client = client
+        self.location = location
+    }
+
+    func getId() throws -> PersistentIdentifier {
+        return self.id
+    }
+
+    func getDeviceInfo() async throws -> DeviceInfo {
+        return try await client.getDeviceInfo()
+    }
+
+    func getDeviceCapabilities() async throws -> DeviceCapabilities {
+        return try await client.getDeviceCapabilities()
+    }
+
+    func getDeviceApps() async throws -> [AppLinkAppEntity] {
+        return try await client.getDeviceApps()
+    }
+    
+    func getDeviceAppIcon(_ appId: String) async throws -> Data {
+        return try await client.getDeviceAppIcon(appId)
+    }
+
+    func getDeviceIcon() async throws -> Data {
+        let info = try await fetchPreconnectionInfo(location: location)
+        return try await fetchDeviceIcon(info: info)
+    }
+}
+#endif
+
+extension DataHandler {
+    func refreshDevice(client: any RefreshClient) async {
+        let id: PersistentIdentifier
+        do {
+            id = try await client.getId()
+            Log.data.notice("Refreshing device with id \(String(describing: id), privacy: .public)")
+        } catch {
+             Log.data.error("Failed to refresh device because couldn't get id")
             return
         }
-        Log.data.notice("Successfully refreshed device info")
-        #else
+        Log.data.notice("Refreshing device with id \(String(describing: id), privacy: .public)")
+
         let deviceInfo: DeviceInfo
         do {
-            deviceInfo = try await ecpSession.getDeviceInfo()
+            deviceInfo = try await client.getDeviceInfo()
             Log.data.notice("Successfully refreshed device info")
         } catch {
-            Log.data.notice("Failed to get device info \(location, privacy: .public), \(error, privacy: .public)")
+            Log.data.notice("Failed to get device info \(id.described(), privacy: .public), \(error, privacy: .public)")
             return
         }
-        #endif
 
         if let device = modelContext.existingDevice(for: id) {
-            if device.udn.starts(with: "roam:newdevice-") {
-                device.udn = deviceInfo.udn
-            } else if deviceInfo.udn != device.udn {
+            if deviceInfo.udn != device.udn {
                 Log.data.warning("Error: trying to refresh device with udn \(deviceInfo.udn, privacy: .public), but device already has udn \(device.udn, privacy: .public)")
                 return
             }
@@ -564,12 +777,7 @@ extension DataHandler {
 
         var capabilities: DeviceCapabilities?
         do {
-            #if os(watchOS)
-            capabilities = try await fetchDeviceCapabilities(location: location)
-            #else
-            capabilities = try await ecpSession.getDeviceCapabilities()
-            #endif
-            Log.data.notice("Successful refreshed capabilities")
+            capabilities = try await client.getDeviceCapabilities()
             Log.data.notice("Successful refreshed capabilities")
         } catch {
             Log.data.error("Error getting capabilities \(error, privacy: .public)")
@@ -577,11 +785,7 @@ extension DataHandler {
 
         var sortedApps: [AppLinkAppEntity]?
         do {
-            #if os(watchOS)
-            sortedApps = try await fetchDeviceApps(location: location)
-            #else
-            sortedApps = try await ecpSession.getDeviceApps()
-            #endif
+            sortedApps = try await client.getDeviceApps()
             Log.data.notice("Successfully refreshed device apps")
         } catch {
             Log.data.error("Error getting device apps \(error, privacy: .public)")
@@ -632,25 +836,20 @@ extension DataHandler {
         }
 
         var deviceIcon: Data?
-        // TODO: Fix this
-//        if deviceNeedsIcon {
-//            Log.data.notice("Getting icon for device \(location, privacy: .public)")
-//            do {
-//                deviceIcon = try await fetchDeviceIcon(location: location)
-//            } catch {
-//                Log.data.warning("Error getting device icon \(error, privacy: .public)")
-//            }
-//        }
+        if deviceNeedsIcon {
+            Log.data.notice("Getting icon for device")
+            do {
+                deviceIcon = try await client.getDeviceIcon()
+            } catch {
+                Log.data.warning("Error getting device icon \(error, privacy: .public)")
+            }
+        }
 
         var appIcons: [String: Data] = [:]
         for appId in appsNeedingIcons {
             do {
                 Log.data.error("Getting device app icon for id \(appId, privacy: .public)")
-                #if os(watchOS)
-                let iconData = try await fetchAppIcon(location: location, appId: appId)
-                #else
-                let iconData = try await ecpSession.getDeviceAppIcon(appId)
-                #endif
+                let iconData = try await client.getDeviceAppIcon(appId)
                 Log.data.notice("Successfully refreshed device app icon")
                 appIcons[appId] = iconData
             } catch {
@@ -748,7 +947,7 @@ extension DataHandler {
                 )
             }
         )
-        descriptor.propertiesToFetch = [\.id, \.message, \.attachments, \.lastSendAttempt]
+        descriptor.propertiesToFetch = [\.id, \.message, \.unsentAttachmentData, \.lastSendAttempt]
         let foundModels = try modelContext.fetchSafer(descriptor)
         for model in foundModels {
             model.lastSendAttempt = Date.now
@@ -771,10 +970,9 @@ extension DataHandler {
                 let messageResult = try await sendMessageDirect(message: message.message, attachment: message.unsentAttachment).get()
                 message.id = messageResult.id
                 message.lastSendAttempt = Date.distantFuture
-                message.attachments = messageResult.attachments?.map({ a in
+                message.cycleAttachments(messageResult.attachments?.map({ a in
                     return Message.SentAttachment(id: a.id, data: a.data, filename: a.filename, mimetype: a.contentType)
-                })
-                message.unsentAttachments = []
+                }) ?? [])
                 try self.modelContext.save()
             } catch {
                 Log.backend.notice("Error sending message \(message.id, privacy: .public), \(error, privacy: .public)")
@@ -843,54 +1041,3 @@ extension DataHandler {
     }
 }
 #endif
-
-func saveDevice(
-    existingDeviceId modelId: PersistentIdentifier,
-    existingUDN: String,
-    newIP deviceIP: String,
-    newDeviceName deviceName: String,
-    dataHandler: DataHandler
-) async {
-    // Try to get device id
-    // Watchos can't check tcp connection, so just do the request
-    let cleanedString = deviceIP.trimmingCharacters(in: .whitespacesAndNewlines)
-        .replacingOccurrences(of: "\"", with: "").replacingOccurrences(of: "'", with: "")
-    let deviceUrl = addSchemeAndPort(to: cleanedString)
-    Log.data.notice("Getting device url \(deviceUrl, privacy: .public)")
-    // Save device id and location early
-    await dataHandler.updateDevice(
-        modelId, name: deviceName, location: deviceUrl, udn: existingUDN
-    )
-
-    let deviceInfo: PreconnectionDeviceInfo
-    do {
-        deviceInfo = try await fetchPreconnectionInfo(location: deviceUrl)
-        Log.data.notice("Got device info to save device")
-    } catch {
-        Log.data.warning("Failed to get device info for new device \(deviceUrl, privacy: .public): \(error, privacy: .public)")
-    }
-
-    // If we get a device with a different UDN, replace the device
-    // TODO: Fix this!
-//    if deviceInfo.udn != existingUDN {
-//        Log.data.notice("Replacing device \(deviceUrl, privacy: .public)")
-//        do {
-//            try await dataHandler.delete(modelId)
-//            await dataHandler.addOrReplaceDevice(deviceInfo)
-//
-//        } catch {
-//            Log.data.error("Error saving device \(error, privacy: .public)")
-//        }
-//        return
-//    } else {
-//        Log.data.notice("Saving device \(deviceUrl, privacy: .public) with id \(String(describing: modelId), privacy: .public)")
-//        await dataHandler.updateDevice(
-//            modelId,
-//            name: deviceName,
-//            location: deviceUrl,
-//            udn: existingUDN
-//        )
-//    }
-
-    Log.data.notice("Saved device \(deviceUrl, privacy: .public)")
-}

@@ -43,7 +43,7 @@ struct SettingsView: View {
     @Environment(\.openWindow) private var openWindow
 #endif
 
-    @Query(deviceFetchDescriptor) private var devices: [Device]
+    @Query(deviceFetchDescriptor) private var allDevices: [Device]
     @Query(messageFetchDescriptor) private var unreadMessages: [Message]
     @Binding var path: [NavigationDestination]
     let destination: SettingsDestination
@@ -51,7 +51,8 @@ struct SettingsView: View {
     @State private var scanningActor: DeviceDiscoveryActor!
     @State private var ssdpActor: DeviceDiscoveryActor!
     @State private var isScanning: Bool = false
-    
+    @State private var showingAddDeviceSheet: Bool = false
+
     private var runningInPreview: Bool {
         ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
     }
@@ -83,14 +84,22 @@ struct SettingsView: View {
         }
     }
     #endif
-    
+
+    var devices: [Device] {
+        allDevices.filter { $0.visible }
+    }
+
+    var hiddenDevices: [Device] {
+        allDevices.filter { $0.hiddenAt != nil}
+    }
+
     var body: some View {
         if runningInPreview {
             bodyContent
         } else {
             bodyContent
                 .onChange(of: self.updater?.uuid.uuidString) { _, _ in
-                    self._devices.update()
+                    self._allDevices.update()
                 }
                 .onAppear {
                     Log.lifecycle.notice("Showing \(#fileID, privacy: .public) view")
@@ -108,13 +117,6 @@ struct SettingsView: View {
 
                 }
 #if !os(watchOS)
-                .task(priority: .background) {
-                    if !scanIpAutomatically {
-                        return
-                    }
-
-                    initiateScan()
-                }
                 .task(id: "\(scanIpAutomatically)", priority: .background) {
                     if !scanIpAutomatically {
                         return
@@ -220,37 +222,12 @@ struct SettingsView: View {
                 EmptyView()
 #endif
             }
+            .id(updater?.uuid.uuidString ?? "--")
 
 #if os(watchOS)
             Button(String(localized: "WatchOS Note", comment: "Description on a button to see info about watchOS limitations"), systemImage: "info.circle.fill", action: { showWatchOSNote = true })
                 .sheet(isPresented: $showWatchOSNote) {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(
-                                // swiftlint:disable:next line_length
-                                "Due to WatchOS limitations, you may need to enable \"Permissive\" Network Access on your Roku TV. You can do this by going to Settings -> System -> Advanced System Settings -> Control by mobile apps",
-                                comment: "WatchOS indicator showing that watchOS can't auto-discover TV's due to network restrictions"
-                            )
-                            .font(.caption).foregroundStyle(.secondary)
-                            Text(
-                                "Additinoally, WatchOS prevents us from discovering TV's on the local network.",
-                                comment: "WatchOS indicator showing that watchOS can't auto-discover TV's due to network restrictions"
-                            )
-                            .font(.caption).foregroundStyle(.secondary)
-                            Text(
-                                // swiftlint:disable:next line_length
-                                "To work around this limitation, first discover devices on the iPhone app and then the devices will be transferred in the background from the iPhone to the watch (or you can manually add the TV if you can get it's IP address).",
-                                comment: "Description of watchOS discovery alternatives"
-                            )
-                            .font(.caption).foregroundStyle(.secondary)
-                            Text(
-                                // swiftlint:disable:next line_length
-                                "Please be patient, because I don't have an apple watch so I can't test how effective this is. Please reach out if you aren't able to get this to work :). You can email me at roam-support@msd3.io",
-                                comment: "Description of watchOS discovery alternatives"
-                            )
-                            .font(.caption).foregroundStyle(.secondary)
-                        }
-                    }
+                    WatchOSNote()
                 }
 #endif
 
@@ -293,22 +270,22 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
 #endif
 #endif
-            if majorActionsCount > 5 {
-                ShareLink(
-                    item: URL(string: "https://apps.apple.com/us/app/roam-a-better-remote-for-roku/id6469834197")!
-                ) {
-                    HStack {
-                        Label(String(localized: "Gift Roam to a friend", comment: "Description on a button to share the link to this application"), systemImage: "app.gift")
-                        Spacer()
+                if majorActionsCount > 5 {
+                    ShareLink(
+                        item: URL(string: "https://apps.apple.com/us/app/roam-a-better-remote-for-roku/id6469834197")!
+                    ) {
+                        HStack {
+                            Label(String(localized: "Gift Roam to a friend", comment: "Description on a button to share the link to this application"), systemImage: "app.gift")
+                            Spacer()
+                        }
                     }
-                }
 #if os(macOS)
-                .frame(maxWidth: .infinity)
-                .contentShape(Rectangle())
-                .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity)
+                    .contentShape(Rectangle())
+                    .buttonStyle(.plain)
 #endif
-            }
-
+                }
+                
                 Button(action: {
 #if os(macOS)
                     openWindow(id: "messages")
@@ -322,9 +299,9 @@ struct SettingsView: View {
                     HStack {
                         if unreadMessages.count > 0 {
                             Label(String(localized: "Chat with the Developer", comment: "Label on a button to open the chat window"), systemImage: "message")
-                            #if !os(watchOS)
+#if !os(watchOS)
                                 .badge(unreadMessages.count)
-                            #endif
+#endif
                         } else {
                             Label(String(localized: "Chat with the Developer", comment: "Label on a button to open the chat window"), systemImage: "message")
                         }
@@ -338,13 +315,48 @@ struct SettingsView: View {
 #if os(macOS)
                 .buttonStyle(.plain)
 #endif
+                
+                if !hiddenDevices.isEmpty {
+                    DisclosureGroup {
+                        List {
+                            ForEach(hiddenDevices, id: \.displayHash) { device in
+                                HiddenDeviceListItem(device: device)
+                            }
+                            .onDelete { indexSet in
+                                for index in indexSet {
+                                    if let model = devices[safe: index] {
+                                        let pid = model.persistentModelID
+                                        Task.detached {
+                                            do {
+                                                try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
+                                                DispatchQueue.main.async {
+                                                    self.updater?.update()
+                                                }
+                                            } catch {
+                                                Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .id(updater?.uuid.uuidString ?? "--")
+                    } label: {
+                        Label("Hidden Devices", systemImage: "eye.slash")
+                    }
+                    #if !os(watchOS)
+                    .disclosureGroupStyle(StandardDisclosureGroupStyle())
+                    #endif
+                }
             }
 
             Section {
                 NavigationLink(String(localized: "About", comment: "Text on a navigation link to the about page"), value: NavigationDestination.aboutDestination)
             }
         }
-        .id(updater?.uuid.uuidString ?? "--")
+        .sheet(isPresented: $showingAddDeviceSheet) {
+            AddDeviceFlow()
+        }
 #if !os(watchOS) && !os(macOS)
         .refreshable {
             initiateScan()
@@ -364,14 +376,7 @@ struct SettingsView: View {
     @ViewBuilder
     var addDeviceButton: some View {
         Button(String(localized: "Add a device manually", comment: "Label on a button to add a device"), systemImage: "plus") {
-            Task {
-                let persistentId = await DataHandler(modelContainer: getSharedModelContainer()).addOrReplaceDevice(location: "http://192.168.0.1:8060/", friendlyDeviceName: getGlobalNewDeviceName(), udn: "roam:newdevice-\(UUID().uuidString)"
-                )
-                Log.userInteraction.notice("Added empty device with persistent ID \(String(describing: persistentId), privacy: .public)")
-                if let persistentId {
-                    path.append(.deviceSettingsDestination(persistentId))
-                }
-            }
+            showingAddDeviceSheet = true
         }
     }
 }

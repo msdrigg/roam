@@ -14,65 +14,17 @@ actor DeviceDiscoveryActor {
         self.updater = updater
     }
 
-    func refreshDevice(id: PersistentIdentifier) async {
-        await dataHandler.refreshDevice(id)
-        let updater = updater
-        await MainActor.run {
-            updater()
-        }
-    }
-    func refreshSelectedDeviceContinually(id: PersistentIdentifier) async {
-        // Refresh every 20 minutes
-        do {
-            try await Task.sleep(duration: 1)
-            Log.scanning.notice("Refreshing device initially \(String(describing: id), privacy: .public)")
-            await refreshDevice(id: id)
-        } catch {}
-        for await _ in interval(time: 1200) {
-            if Task.isCancelled {
-                return
-            }
-            Log.scanning.notice("Refreshing device \(String(describing: id), privacy: .public)")
-            await refreshDevice(id: id)
-        }
-    }
-
     #if !os(watchOS)
     @discardableResult
-    func addDevice(location: String) async -> Bool {
+    func addDevice(location: String, serial: String?) async -> Bool {
+        guard URL(string: location) != nil else {
+            Log.scanning.error("Not adding device with location \(location, privacy: .public) b/c it's not a valid url")
+            return false
+        }
         Log.scanning.notice("Trying to add device with location \(location, privacy: .public)")
-        var deviceInfo: DeviceInfo?
-        do {
-            guard let url = URL(string: location) else {
-                return false
-            }
-//            deviceInfo = try await ECPWebsocketClient(location: url).oneOff { session in
-//                return try await session.getDeviceInfo()
-//            }
-        } catch {
-            Log.scanning.error("Error creating ECPSession getting device info: \(error, privacy: .public)")
-            return false
-        }
 
-        guard let deviceInfo else {
-            Log.scanning.error("Error getting device info for found device \(location, privacy: .public)")
-            return false
-        }
-        Log.scanning.notice("Got device info to add device with location \(location, privacy: .public)")
-
-        if let device = await dataHandler.deviceEntityForUdn(udn: deviceInfo.udn) {
-            if device.location == location {
-                return false
-            }
-        }
-
-        if let pid = await dataHandler.addOrReplaceDevice(
-            location: location,
-            friendlyDeviceName: deviceInfo.friendlyDeviceName ?? getGlobalNewDeviceName(),
-            udn: deviceInfo.udn
-        ) {
-            Log.scanning.notice("Saved new device \(deviceInfo.udn, privacy: .public), \(location, privacy: .public)")
-            await refreshDevice(id: pid)
+        if await dataHandler.addOrReplaceDevice(location: location, serial: serial) != nil {
+            Log.scanning.notice("Saved new device \(location, privacy: .public), \(location, privacy: .public)")
             return true
         } else {
             return false
@@ -133,7 +85,7 @@ actor DeviceDiscoveryActor {
                             return
                         }
 
-                        await self.addDevice(location: location)
+                        await self.addDevice(location: location, serial: nil)
                     }
 
                     if idx > 1024 {
@@ -173,7 +125,7 @@ actor DeviceDiscoveryActor {
                                 Log.scanning.notice("Found SSDP service at \(device.location ?? "--", privacy: .public)")
                                 if let location = device.location {
                                     taskGroup.addTask {
-                                        await self.addDevice(location: location)
+                                        await self.addDevice(location: location, serial: device.uniqueServiceName?.stripPrefix("uuid:").stripPrefix("roku:ecp:"))
                                     }
                                 }
                             }
@@ -218,7 +170,6 @@ actor DeviceDiscoveryActor {
           }
         }
         await withDiscardingTaskGroup { taskGroup in
-            // TODO: How to restart whenever getting new oen?
             for await paths in pathStream {
                 Log.scanning.notice("Paths changed to \(paths, privacy: .public), restarting scanning")
                 taskGroup.cancelAll()

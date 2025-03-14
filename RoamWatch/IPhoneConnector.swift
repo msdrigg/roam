@@ -55,6 +55,7 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
                 let modelContainer = await getSharedModelContainer()
                 let dataHandler = DataHandler(modelContainer: modelContainer)
                 for device in deviceMap {
+                    // TODO: Refactor this!!
                     if let existingDevice = await dataHandler.deviceEntityForUdn(udn: device.key) {
                         Log.watch
                             .notice("Device aleady exists, only updating name, location \(device.key, privacy: .public)")
@@ -64,21 +65,19 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
                                 existingDevice.modelId,
                                 name: name,
                                 location: location,
-                                udn: existingDevice.udn
+                                hidden: existingDevice.hiddenAt != nil
                             )
-                            await dataHandler.refreshDevice(existingDevice.modelId)
                         }
                         continue
                     }
-                    if let location = device.value["location"] {
+                    if let location = device.value["location"], let name = device.value["name"], let udn = device.value["udn"], let serial = device.value["serial"] {
                         let name = device.value["name"] ?? getGlobalNewDeviceName()
-                        if let pid = await dataHandler.addOrReplaceDevice(
+                        await dataHandler.addDeviceIndistriminantly(
                             location: location,
                             friendlyDeviceName: name,
-                            udn: device.key
-                        ) {
-                            await dataHandler.refreshDevice(pid)
-                        }
+                            udn: udn,
+                            serial: serial
+                        )
                     }
                 }
             }

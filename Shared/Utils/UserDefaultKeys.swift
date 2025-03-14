@@ -21,5 +21,6 @@ enum UserDefaultKeys {
     static let hasSentFirstMessage = "hasSentFirstMessage"
 
     // Records
-    static let usingNewAppGroup: String = "usingNewAppGroup"
+    static let firstInstallVersion: String = "firstInstallVersion"
+    static let alreadyResetHideShortcut: String = "alreadyResetHideShortcut"
 }

@@ -281,15 +281,18 @@ public enum SchemaV4: VersionedSchema {
 
     @Model
     public final class Device: Hashable {
-        @Attribute(.unique, originalName: "id") public var udn: String
+        @Attribute(originalName: "id") public var udn: String
         public var name: String
         public var location: String
+        public var serial: String?
 
         public var lastSelectedAt: Date?
         public var lastOnlineAt: Date?
         public var lastScannedAt: Date?
         public var lastSentToWatch: Date?
         public var deletedAt: Date?
+
+        public var hiddenAt: Date?
 
         public var powerMode: String?
         public var networkType: String?
@@ -306,13 +309,15 @@ public enum SchemaV4: VersionedSchema {
             location: String,
             lastSelectedAt: Date? = nil,
             lastOnlineAt: Date? = nil,
-            udn: String
+            udn: String,
+            serial: String
         ) {
             self.name = name
             self.lastSelectedAt = lastSelectedAt
             self.lastOnlineAt = lastOnlineAt
             self.udn = udn
             self.location = location
+            self.serial = serial
         }
     }
 
@@ -339,7 +344,7 @@ public enum SchemaV4: VersionedSchema {
 
     @Model
     public final class Message: Identifiable {
-        @Attribute(.unique) public var id: String
+        public var id: String
         var message: String
         var author: AuthorType
         var viewed: Bool = false
@@ -348,14 +353,14 @@ public enum SchemaV4: VersionedSchema {
         // Handle sending
         var fetchedBackend: Bool
         var lastSendAttempt: Date?
-        @Attribute(.unique) var nonce: String?
+        var nonce: String?
 
         // Send photos, videos or files
         @Attribute(.externalStorage)
-        var attachments: [SentAttachment]? = []
+        var attachmentsData: Data?
 
         @Attribute(.externalStorage)
-        var unsentAttachments: [AttachmentUpload]? = []
+        var unsentAttachmentData: Data?
         
         // Used for auto-reply messages
         var messageTitle: String?
@@ -373,11 +378,28 @@ public enum SchemaV4: VersionedSchema {
             case support
         }
 
-        var unsentAttachment: AttachmentUpload? {
-            self.unsentAttachments?.first
-        }
+        @Transient
+        lazy var attachments: [SentAttachment] = {
+            guard let data = self.attachmentsData else {
+                return []
+            }
+
+            let decoder = PropertyListDecoder()
+            return (try? decoder.decode([SentAttachment].self, from: data)) ?? []
+        }()
+
+        @Transient
+        lazy var unsentAttachment: AttachmentUpload? = {
+            guard let data = self.unsentAttachmentData else {
+                return nil
+            }
+
+            let decoder = PropertyListDecoder()
+            return try? decoder.decode(AttachmentUpload.self, from: data)
+        }()
 
         init(id: String, message: String, author: AuthorType, fetchedBackend: Bool = true, viewed: Bool = false, messageTitle: String? = nil, robotMessage: Bool = false, attachments: [SentAttachment] = [], unsentAttachment: AttachmentUpload? = nil, nonce: String? = nil) {
+            let encoder = PropertyListEncoder()
             self.id = id
             self.message = message
             self.author = author
@@ -387,7 +409,12 @@ public enum SchemaV4: VersionedSchema {
             self.messageTitle = messageTitle
             self.attachments = attachments
             self.hidden = isHiddenMessage(message)
-            self.unsentAttachments = [unsentAttachment].compactMap({$0})
+            if let unsentAttachment {
+                self.unsentAttachmentData = try? encoder.encode(unsentAttachment)
+            } else {
+                self.unsentAttachmentData = nil
+            }
+            self.attachmentsData = try? encoder.encode(attachments)
             self.nonce = nonce
         }
     }

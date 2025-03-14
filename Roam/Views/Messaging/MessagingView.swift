@@ -23,9 +23,18 @@ struct MessageView: View {
     @Environment(\.colorScheme) var colorScheme
 
     private var showSupportTypingIndicator: Bool {
-        Date(timeIntervalSince1970: lastSupportTypingTimeInterval) > Date.now.advanced(by: -8)
+        let lastSupportTypingDate = Date(timeIntervalSince1970: lastSupportTypingTimeInterval)
+        
+        if lastSupportTypingDate > Date.now.addingTimeInterval(-8) {
+            if let lastSupportMessage = baseMessages.last(where: { $0.author == .support })?.timestamp {
+                return lastSupportMessage < lastSupportTypingDate.addingTimeInterval(-2)
+            } else {
+                return true
+            }
+        } else {
+            return false
+        }
     }
-
     #if !os(watchOS)
     @EnvironmentObject private var appDelegate: RoamAppDelegate
     #endif
@@ -65,7 +74,7 @@ struct MessageView: View {
             + baseMessages
                 .filter{!$0.hidden}
             + [roboMessage].compactMap({$0})
-        ).filter { !$0.message.isEmpty || !($0.attachments?.isEmpty ?? true) }
+        ).filter { !$0.message.isEmpty || !$0.attachments.isEmpty }
     }
     
     var zippedMessages: [(Message, Message?)] {
@@ -399,6 +408,7 @@ struct MessageView: View {
                         }
                     }
 #if os(watchOS)
+                    self.messageFieldText = String(localized: "Shared Diagnostics")
                     self.sendTypedMessage()
 #endif
                 }

@@ -89,7 +89,7 @@ struct MessageBubble: View {
                 }
             }
             
-            ForEach(message.attachments ?? [], id: \.id) { attachment in
+            ForEach(message.attachments, id: \.id) { attachment in
                 MessageFraming(message: message) {
                     AttachmentView(attachment: attachment, message: message)
                         .background(color)
