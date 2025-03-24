@@ -53,23 +53,7 @@ struct HiddenDeviceListItem: View {
             }
         }
 #endif
-        .swipeActions(edge: .trailing) {
-            Button(role: .destructive) {
-                let pid = device.persistentModelID
-                Task.detached {
-                    do {
-                        try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
-                        DispatchQueue.main.async {
-                            self.updater?.update()
-                        }
-                    } catch {
-                        Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
-                    }
-                }
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-
+        .swipeActions(edge: .leading) {
             Button {
                 let pid = device.persistentModelID
                 Task.detached {

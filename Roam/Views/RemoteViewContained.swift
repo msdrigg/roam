@@ -611,7 +611,7 @@ struct RemoteViewContained: View {
             #if !os(macOS)
             .overlay {
                 #if os(iOS)
-                    if controlVolumeWithHWButtons, !headphonesModeEnabled {
+                    if controlVolumeWithHWButtons && !headphonesModeEnabled {
                         CustomVolumeSliderOverlay(volume: $volume) { volumeEvent in
                             let key: RemoteButton = switch volumeEvent.direction {
                             case .up:
@@ -619,12 +619,12 @@ struct RemoteViewContained: View {
                             case .down:
                                 .volumeDown
                             }
-                            Log.connection
-                                .notice(
-                                    "Pressing button \(String(describing: key), privacy: .public) with volume \(volume, privacy: .public) after volume event \(String(describing: volumeEvent), privacy: .public)"
-                                )
+                            Log.connection.notice(
+                                "Pressing button \(String(describing: key), privacy: .public) with volume \(volume, privacy: .public) after volume event \(String(describing: volumeEvent), privacy: .public)"
+                            )
                             pressButton(key)
-                        }.id("VolumeOverlay")
+                        }
+                            .id("VolumeOverlay")
                             .frame(maxWidth: 1)
                     }
                 #endif

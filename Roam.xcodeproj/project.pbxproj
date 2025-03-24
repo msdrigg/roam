@@ -205,7 +205,6 @@
 		AFBDEA2F2D7D122000C15B18 /* AddDeviceFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDEA2E2D7D121D00C15B18 /* AddDeviceFlow.swift */; };
 		AFBDEA302D7D122000C15B18 /* AddDeviceFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDEA2E2D7D121D00C15B18 /* AddDeviceFlow.swift */; };
 		AFBDEA322D7D157500C15B18 /* StandardDislosureGroupStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDEA312D7D157100C15B18 /* StandardDislosureGroupStyle.swift */; };
-		AFBDEA332D7D157500C15B18 /* StandardDislosureGroupStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDEA312D7D157100C15B18 /* StandardDislosureGroupStyle.swift */; };
 		AFBDEA352D7D181F00C15B18 /* HiddenDeviceListItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDEA342D7D181100C15B18 /* HiddenDeviceListItem.swift */; };
 		AFBDEA362D7D181F00C15B18 /* HiddenDeviceListItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDEA342D7D181100C15B18 /* HiddenDeviceListItem.swift */; };
 		AFC24EFF2AD0E5A1002AB66C /* RoamApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC24EFE2AD0E5A1002AB66C /* RoamApp.swift */; };
@@ -1409,7 +1408,6 @@
 				AFDB4FFD2D53C0A8004E27A4 /* DeviceListItem.swift in Sources */,
 				AF0C82982AEBFBD500CBE7F8 /* StatelessDeviceAPI.swift in Sources */,
 				AF6E294B2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */,
-				AFBDEA332D7D157500C15B18 /* StandardDislosureGroupStyle.swift in Sources */,
 				AF1899FA2C1CDFC2001EDA78 /* SettingsNavigationWrapper.swift in Sources */,
 				AF8EF51E2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */,
 				AFDB4FF72D53C09F004E27A4 /* DeviceDetailView.swift in Sources */,

@@ -201,12 +201,9 @@ func fetchDeviceInfo(location: String) async throws -> DeviceInfo {
         if let xmlString = String(data: data, encoding: .utf8) {
             let decoder = XMLDecoder()
             decoder.keyDecodingStrategy = .convertFromKebabCase
-            do {
-                return try decoder.decode(DeviceInfo.self, from: Data(xmlString.utf8))
-            } catch {
-                Log.connection.error("Error decoding DeviceInfo response \(error, privacy: .public)")
-            }
+            return try decoder.decode(DeviceInfo.self, from: Data(xmlString.utf8))
         }
+        throw APIError.badData("No valid string returned")
     } catch {
         Log.connection.error("Error getting device info: \(error, privacy: .public)")
         throw error

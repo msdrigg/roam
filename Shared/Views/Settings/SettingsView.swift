@@ -316,6 +316,7 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
 #endif
                 
+#if !os(watchOS)
                 if !hiddenDevices.isEmpty {
                     DisclosureGroup {
                         List {
@@ -344,10 +345,9 @@ struct SettingsView: View {
                     } label: {
                         Label("Hidden Devices", systemImage: "eye.slash")
                     }
-                    #if !os(watchOS)
                     .disclosureGroupStyle(StandardDisclosureGroupStyle())
-                    #endif
                 }
+#endif
             }
 
             Section {

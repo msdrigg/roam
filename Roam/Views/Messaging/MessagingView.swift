@@ -41,7 +41,7 @@ struct MessageView: View {
 
     var roboMessage: Message? {
         // swiftlint:disable:next line_length force_try
-        let connectRegex = try! Regex("\\bconne|\\badd|\\bpair|\\bfind my tv\\b|\\bscan|\\bencuentra|\\bpick up|\\btrouver ma télé\\b|\\bconexión\\b|\\bconecta\\b|\\bsuche|\\bauftauch|\\bno puedo\\b|\\b无法连接\\b|\\b连接\\b|\\bconexão\\b|\\bconectar\\b|\\bnão consigo\\b|\\bkết nối\\b|\\bلا أستطيع\\b|\\bالاتصال\\b|\\bਕਨੈਕਟ\\b|\\bਹੋ ਨਹੀਂ ਸਕਦਾ\\b|\\bmaghanap ng tv\\b|\\bmagkonekta\\b|\\bverbinden\\b|\\btrovare la tv\\b").ignoresCase()
+        let connectRegex = try! Regex("\\bconne|\\badd|\\bpair|\\bfind my tv\\b|\\bscan|\\bencuentra|\\bpick up|\\btrouver ma télé\\b|\\bconexión\\b|\\bconecta\\b|\\bsuche|\\bauftauch|\\bno puedo\\b|\\b无法连接\\b|\\b连接\\b|\\bconexão\\b|\\bconectar\\b|\\bnão consigo\\b|\\bkết nối\\b|\\bلا أستطيع\\b|\\bالاتصال\\b|\\bਕਨੈਕਟ\\b|\\bਹੋ ਨਹੀਂ ਸਕਦਾ\\b|\\bmaghanap ng tv\\b|\\bmagkonekta\\b|\\bverbinden\\b|\\btrovare la tv\\b|اشغل").ignoresCase()
         if messageFieldText.firstMatch(of: connectRegex) != nil {
             return Message(
                 id: "connect-help",

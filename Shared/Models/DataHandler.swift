@@ -39,7 +39,7 @@ public actor DataHandler {
             Log.data.notice("Setting appId selected to now")
             appLink.lastSelected = Date.now
             do {
-                try modelContext.save()
+                try modelContext.saveSafer()
             } catch {
                 Log.data.error("Error marking app as selected \(appLink.id, privacy: .public)")
             }
@@ -52,7 +52,7 @@ public actor DataHandler {
             Log.data.notice("Found device to update with location \(device.location, privacy: .public)")
             device.lastSelectedAt = Date.now
             do {
-                try modelContext.save()
+                try modelContext.saveSafer()
             } catch {
                 Log.data.error("Error marking device as selected \(device.location, privacy: .public)")
             }
@@ -78,7 +78,7 @@ public actor DataHandler {
                 }
             }
             do {
-                try modelContext.save()
+                try modelContext.saveSafer()
             } catch {
                 Log.data.warning("Error updating device at location \(device.location, privacy: .public)")
             }
@@ -92,7 +92,7 @@ public actor DataHandler {
             device.location = location
             device.name = friendlyDeviceName
             do {
-                try modelContext.save()
+                try modelContext.saveSafer()
             } catch {
                 Log.data.warning("Error updating device fields \(error, privacy: .public)")
             }
@@ -108,7 +108,7 @@ public actor DataHandler {
             modelContext.insert(device)
             
             do {
-                try modelContext.save()
+                try modelContext.saveSafer()
                 Log.data.notice("Added device \(String(describing: device.persistentModelID), privacy: .public)")
                 return device.persistentModelID
             } catch {
@@ -123,7 +123,7 @@ public actor DataHandler {
         if let udn, let device = deviceForUdn(udn: udn) {
             device.location = location
             do {
-                try modelContext.save()
+                try modelContext.saveSafer()
             } catch {
                 Log.data.warning("Error updating device fields \(error, privacy: .public)")
             }
@@ -133,7 +133,7 @@ public actor DataHandler {
         if let serial, let device = deviceForSerial(serial: serial) {
             device.location = location
             do {
-                try modelContext.save()
+                try modelContext.saveSafer()
             } catch {
                 Log.data.warning("Error updating device fields \(error, privacy: .public)")
             }
@@ -177,11 +177,11 @@ public actor DataHandler {
         }
 
         do {
-            try modelContext.save()
+            try modelContext.saveSafer()
             Log.data.notice("Added device \(String(describing: device.persistentModelID), privacy: .public)")
             Task {
                 #if os(watchOS)
-                let refreshClient = WatchOSRefreshClient()
+                let refreshClient = WatchOSRefreshClient(id: device.persistentModelID, location: location)
                 #else
                 let ecpClient: ECPWebsocketClient
                 do {
@@ -215,7 +215,7 @@ public actor DataHandler {
         do {
             if let device = modelContext.existingDevice(for: deviceId) {
                 device.lastSentToWatch = Date.now
-                try modelContext.save()
+                try modelContext.saveSafer()
             }
         } catch {
             Log.data.warning("Error marking device \(deviceId.described(), privacy: .public) as sent to watch \(error, privacy: .public)")
@@ -228,7 +228,7 @@ public actor DataHandler {
             device.lastSentToWatch = nil
         }
         do {
-            try modelContext.save()
+            try modelContext.saveSafer()
         } catch {
             Log.data.warning("Error marking devices as not sent to watch \(error, privacy: .public)")
         }
@@ -255,7 +255,7 @@ public actor DataHandler {
                 modelContext.delete(model)
             }
 
-            try modelContext.save()
+            try modelContext.saveSafer()
         } catch {
             Log.data.warning("Error deleting past devices \(error, privacy: .public)")
         }
@@ -266,7 +266,7 @@ public actor DataHandler {
         if let device = modelContext.existingDevice(for: id) {
             device.hiddenAt = .now
             do {
-                try modelContext.save()
+                try modelContext.saveSafer()
             } catch {
                 Log.data.error("Error hiding device with id \(id.described(), privacy: .public)")
                 return
@@ -279,7 +279,7 @@ public actor DataHandler {
         if let device = modelContext.existingDevice(for: id) {
             device.deletedAt = .now
             do {
-                try modelContext.save()
+                try modelContext.saveSafer()
             } catch {
                 Log.data.error("Error deleting device with id \(id.described(), privacy: .public)")
                 return
@@ -477,7 +477,7 @@ extension DataHandler {
             modelContext.insert(message)
         }
 
-        try modelContext.save()
+        try modelContext.saveSafer()
         #endif
     }
 
@@ -492,6 +492,12 @@ public extension ModelContext {
     func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) throws -> [T] {
         return try catchObjc {
             return try self.fetch(descriptor)
+        }
+    }
+
+    func saveSafer() throws {
+        return try catchObjc {
+            try self.save()
         }
     }
 }
@@ -754,7 +760,7 @@ extension DataHandler {
             if (device.lastScannedAt?.timeIntervalSinceNow) ?? -10000 > -minRescanInterval,
                deviceApps.allSatisfy({ $0.icon != nil }), deviceApps.count > 0
             {
-                try? modelContext.save()
+                try? modelContext.saveSafer()
                 Log.data.notice("Returning early from refresh")
                 return
             }
@@ -770,7 +776,7 @@ extension DataHandler {
                 }
             }
 
-            try? modelContext.save()
+            try? modelContext.saveSafer()
         }
 
         Log.data.notice("Refreshing capabilities and apps")
@@ -832,7 +838,7 @@ extension DataHandler {
                 }
             }
 
-            try? modelContext.save()
+            try? modelContext.saveSafer()
         }
 
         var deviceIcon: Data?
@@ -877,7 +883,7 @@ extension DataHandler {
                     deviceApp.icon = app.value
                 }
             }
-            try? modelContext.save()
+            try? modelContext.saveSafer()
         }
 
         await deleteInPast()
@@ -953,7 +959,7 @@ extension DataHandler {
             model.lastSendAttempt = Date.now
         }
         Log.data.notice("Got \(foundModels.count, privacy: .public) sendable messages")
-        try modelContext.save()
+        try modelContext.saveSafer()
         return foundModels
     }
 
@@ -973,11 +979,11 @@ extension DataHandler {
                 message.cycleAttachments(messageResult.attachments?.map({ a in
                     return Message.SentAttachment(id: a.id, data: a.data, filename: a.filename, mimetype: a.contentType)
                 }) ?? [])
-                try self.modelContext.save()
+                try self.modelContext.saveSafer()
             } catch {
                 Log.backend.notice("Error sending message \(message.id, privacy: .public), \(error, privacy: .public)")
                 message.lastSendAttempt = nil
-                try? self.modelContext.save()
+                try? self.modelContext.saveSafer()
             }
         }
     }
@@ -996,7 +1002,7 @@ extension DataHandler {
             unsentAttachment: firstAttachment,
             nonce: nonce
         ))
-        try self.modelContext.save()
+        try self.modelContext.saveSafer()
         Log.backend.info("Saved message to send queue: \(message, privacy: .public), id: \(id, privacy: .public)")
         await self.trySendMessages()
     }
@@ -1031,7 +1037,7 @@ extension DataHandler {
                 }
             }
 
-            try modelContext.save()
+            try modelContext.saveSafer()
 
             return count
         } catch {

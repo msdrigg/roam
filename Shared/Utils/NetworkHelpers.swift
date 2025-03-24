@@ -117,4 +117,5 @@ enum APIError: Swift.Error, LocalizedError {
     case badURLError(_ url: String)
     case missingHeader(_ header: String)
     case wrongContext(_ message: String)
+    case badData(_ message: String)
 }

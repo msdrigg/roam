@@ -12,7 +12,7 @@ struct DeviceListItem: View {
                 VStack(alignment: .center) {
                     DataImage(from: device.deviceIcon, fallback: "tv")
                         .frame(maxHeight: 60)
-                        .padding(.horizontal, 12)
+                        .padding(.trailing, 12)
                 }
 
                 VStack(alignment: .leading) {
@@ -70,23 +70,6 @@ struct DeviceListItem: View {
             }
         }
 #endif
-        .swipeActions(edge: .trailing) {
-            Button(role: .destructive) {
-                let pid = device.persistentModelID
-                Task.detached {
-                    do {
-                        try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
-                        DispatchQueue.main.async {
-                            self.updater?.update()
-                        }
-                    } catch {
-                        Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
-                    }
-                }
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
     }
 }
 

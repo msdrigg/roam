@@ -3,6 +3,8 @@
     import os.log
     import SwiftUI
 
+    let MAX_LENGTH_CHARS = 64
+
     private struct StrTransformation {
         let old: String
         let new: String
@@ -81,8 +83,13 @@
                         }
                     }
                 } else {
-                    if str.count > strSent.count {
-                        if let char = str.unicodeScalars.last {
+                    let charDifference = str.count - strSent.count
+                    
+                    if charDifference > 0 {
+                        let startIndex = str.index(str.endIndex, offsetBy: -charDifference)
+                        let newChars = str[startIndex..<str.endIndex]
+                        
+                        for char in newChars.unicodeScalars {
                             onKeyPress(KeyEquivalent(Character(char)))
                         }
                     }
@@ -90,6 +97,7 @@
                 strSent = str
             }
             .onChange(of: texteditId) {
+                Log.userInteraction.notice("Text edit id changed to \(texteditId ?? "nil")")
                 if texteditId != nil && (texteditText ?? "" != str) {
                     str = texteditText ?? ""
                 }
@@ -132,10 +140,11 @@
         }
 
         override func deleteBackward() {
-            if self.fullFeatures != true {
+            if self.fullFeatures == true {
+                super.deleteBackward()
+            } else {
                 didDelete?()
             }
-            super.deleteBackward()
         }
 
         override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
@@ -154,10 +163,9 @@
         override func selectionRects(for range: UITextRange) -> [UITextSelectionRect] {
             if self.fullFeatures == true {
                 return super.selectionRects(for: range)
-            } else {
-                // Return empty array to prevent selection
-                return []
             }
+
+            return []
         }
 
         override func caretRect(for position: UITextPosition) -> CGRect {
@@ -204,7 +212,7 @@
             innertTextField.delegate = context.coordinator
             innertTextField.didDelete = onDelete
             innertTextField.fullFeatures = fullFeatures
-
+            
             context.coordinator.setup(innertTextField)
 
             return innertTextField
@@ -240,8 +248,20 @@
                 return true
             }
 
+            func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+                let maxLength = MAX_LENGTH_CHARS
+                let currentString = (textField.text ?? "") as NSString
+                let newString = currentString.replacingCharacters(in: range, with: string)
+
+                return newString.count <= maxLength
+            }
+
             @objc func textFieldDidChange(_ textField: UITextField) {
                 parent.text.wrappedValue = textField.text ?? ""
+
+                if parent.fullFeatures == true {
+                    return
+                }
 
                 let newPosition = textField.endOfDocument
                 textField.selectedTextRange = textField.textRange(from: newPosition, to: newPosition)

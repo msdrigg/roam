@@ -75,9 +75,12 @@ private func _getSharedModelContainer() throws -> ModelContainer {
         groupContainer: .identifier(mainAppGroup)
     )
 
-    return try ModelContainer(
-        for: schema,
-        migrationPlan: RoamSchemaMigrationPlan.self,
-        configurations: [modelConfiguration]
-    )
+    
+    return try catchObjc {
+        return try ModelContainer(
+            for: schema,
+            migrationPlan: RoamSchemaMigrationPlan.self,
+            configurations: [modelConfiguration]
+        )
+    }
 }

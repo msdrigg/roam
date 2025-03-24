@@ -119,8 +119,8 @@ struct MessageMetadataOverlay: View {
             }
             #endif
             if message.showSending {
-                Image(systemName: "rays")
-                    .symbolEffect(.variableColor)
+                ProgressView()
+                    .progressViewStyle(.circular)
             }
         }
         .font(.caption)

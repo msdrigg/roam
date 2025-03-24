@@ -213,11 +213,13 @@ struct DeviceDetailView: View {
                 }
             }
 #endif
+#if !os(watchOS)
             Toggle(
                 "Hide Device",
                 systemImage: "eye.slash",
                 isOn: $hidden
             )
+#endif
 
             Button(role: .destructive, action: {
                 // Don't block the dismiss waiting for save

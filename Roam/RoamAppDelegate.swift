@@ -134,16 +134,6 @@ final class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
     }
 }
 
-func initialInstallationAfter(_ version: String) -> Bool {
-    if let initialVersion = UserDefaults.standard.string(forKey: UserDefaultKeys.firstInstallVersion) {
-        let after = initialVersion > version
-        Log.lifecycle.notice("Getting install version after \(version, privacy: .public) after=\(after, privacy: .public)")
-        return after
-    } else {
-        return false
-    }
-}
-
 extension NSApplication {
     func forceFront(_ id: String) {
         let mainWindow: NSWindow? = self.windows.first {
@@ -353,9 +343,8 @@ extension NSApplication {
 
             if initialInstallationAfter("20250412.5345670.3") {
                 if UserDefaults.standard.string(forKey: UserDefaultKeys.alreadyResetHideShortcut) == nil {
-                    setHideShortcut()
-                    CustomKeyboardShortcut(title: .home, key: KeyEquivalent("h"), modifiers: [.command, .shift])
-                    
+                    Log.lifecycle.info("Setting hidden shortcut to be cmd+shift+h")
+                    CustomKeyboardShortcut(title: .home, key: KeyEquivalent("h"), modifiers: [.command, .shift]).persist()
                     UserDefaults.standard.setValue(true, forKey: UserDefaultKeys.alreadyResetHideShortcut)
                 }
             }
@@ -387,3 +376,13 @@ extension NSApplication {
         }
     }
 #endif
+
+func initialInstallationAfter(_ version: String) -> Bool {
+    if let initialVersion = UserDefaults.standard.string(forKey: UserDefaultKeys.firstInstallVersion) {
+        let after = initialVersion > version
+        Log.lifecycle.notice("Getting install version after \(version, privacy: .public) after=\(after, privacy: .public)")
+        return after
+    } else {
+        return false
+    }
+}
