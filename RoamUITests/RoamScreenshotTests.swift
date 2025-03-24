@@ -35,19 +35,11 @@ final class RoamUITestsScreenshotTests: XCTestCase {
 
         app.terminate()
 
-        XCUIDevice.shared.appearance = .light
-
         app.launchArguments += ["-SwiftDataLoadTestingData"]
         app.launchArguments += ["-ScreenshotTesting"]
         app.launch()
         try await Task.sleep(nanoseconds: 2_000_000_000)
 
-        let lightModeAttachment = XCTAttachment(screenshot: app.screenshot())
-        lightModeAttachment.lifetime = .keepAlways
-        lightModeAttachment.name = "\(locale.identifier)/2/LightPrimary"
-        add(lightModeAttachment)
-
-        XCUIDevice.shared.appearance = .dark
         XCUIDevice.shared.orientation = .landscapeLeft
 
         // Wait for 0.8 s
@@ -134,22 +126,10 @@ final class RoamUITestsScreenshotTests: XCTestCase {
 
         app.terminate()
 
-        XCUIDevice.shared.appearance = .light
-
         app.launchArguments += ["-SwiftDataLoadTestingData"]
         app.launchArguments += ["-ScreenshotTesting"]
         app.launch()
         try await Task.sleep(nanoseconds: 2_000_000_000)
-
-        let lightModeAttachment = XCTAttachment(screenshot: app.screenshot())
-        lightModeAttachment.lifetime = .keepAlways
-        lightModeAttachment.name = "\(locale.identifier)/2/LightPrimary"
-        add(lightModeAttachment)
-
-        XCUIDevice.shared.appearance = .dark
-
-        // Wait for 0.8 s
-        try await Task.sleep(nanoseconds: 800_000_000)
 
         let primaryAttachment = XCTAttachment(screenshot: app.screenshot())
         primaryAttachment.lifetime = .keepAlways
@@ -233,22 +213,10 @@ final class RoamUITestsScreenshotTests: XCTestCase {
 
         app.terminate()
 
-        XCUIDevice.shared.appearance = .light
-
         app.launchArguments += ["-SwiftDataLoadTestingData"]
         app.launchArguments += ["-ScreenshotTesting"]
         app.launch()
         try await Task.sleep(nanoseconds: 2_000_000_000)
-
-        let lightModeAttachment = XCTAttachment(screenshot: app.screenshot())
-        lightModeAttachment.lifetime = .keepAlways
-        lightModeAttachment.name = "\(locale.identifier)/2/LightPrimary"
-        add(lightModeAttachment)
-
-        XCUIDevice.shared.appearance = .dark
-
-        // Wait for 0.8 s
-        try await Task.sleep(nanoseconds: 800_000_000)
 
         let primaryAttachment = XCTAttachment(screenshot: app.screenshot())
         primaryAttachment.lifetime = .keepAlways
