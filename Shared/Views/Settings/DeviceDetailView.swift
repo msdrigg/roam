@@ -253,6 +253,7 @@ struct DeviceDetailView: View {
                 return
             }
 
+            Log.userInteraction.notice("Saving device settings due to submit--\(deviceIP)-\(hidden)-\(deviceName)")
             save()
             #if !os(watchOS)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
@@ -260,18 +261,11 @@ struct DeviceDetailView: View {
             }
             #endif
         }
-        .formStyle(.grouped)
-        .navigationBarBackButtonHidden(true)
-        .toolbar(id: "settings-detail") {
-            ToolbarItem(id: "save-device", placement: .primaryAction) {
-                Button(String(localized: "Back", comment: "Text on a button to save the device settings"), systemImage: "chevron.left", action: {
-                    save()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        dismiss()
-                    }
-                })
-            }
+        .onChange(of: "\(deviceIP)-\(hidden)-\(deviceName)", initial: false) { old, new in
+            Log.userInteraction.notice("Autosaving device settings--\(deviceIP)-\(hidden)-\(deviceName)")
+            save()
         }
+        .formStyle(.grouped)
     }
     
     func save() {
