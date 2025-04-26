@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::{SpanExporter, WithExportConfig};
-use opentelemetry_sdk::{runtime, trace as sdktrace};
+use opentelemetry_sdk::trace::SdkTracerProvider;
 use tracing_subscriber::Registry;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
@@ -25,8 +25,11 @@ pub fn setup_logging(cli: &RoamCli) {
             .build()
             .expect("Failed to create Jaeger exporter");
 
-        let provider = sdktrace::TracerProvider::builder()
-            .with_batch_exporter(exporter, runtime::Tokio)
+        let batch_processor =
+            opentelemetry_sdk::trace::BatchSpanProcessor::builder(exporter).build();
+
+        let provider = SdkTracerProvider::builder()
+            .with_span_processor(batch_processor)
             .build();
 
         let telemetry = tracing_opentelemetry::layer().with_tracer(provider.tracer(SERVICE_NAME));
