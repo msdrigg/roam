@@ -31,7 +31,7 @@ Roam offers everything you want and nothing you don't
         -   Click "Send feedback". This will generate a diagnostic report that can be shared with roam support (roam-support@msd3.io)
         -   If your app is crashing, also make sure your analytics are turned on in Settings -> Privacy & Security -> Analytics & Improvments
             -   Turn on "Share iPhone & Watch Analytics" and then turn on "Share With App Developers" so apple will report to me when your app crashes
-    -   If it's a request for a new feature, you can send an email directly (roam-support@msd3.io) or chat with me directly in the Roam app (Settings -> Chat with the Developer)
+    -   If it's a request for a new feature, you can send an email (roam-support@msd3.io), chat with me directly in the Roam app (Settings -> Chat with the Developer) or or join the [Roam Discord](https://discord.gg/FqaTNRccbG).
 -   Why don't the arrow keys sometimes work on iPad?
     -   This is caused because iPadOS sometimes takes control of the arrow keys and uses them for navigating the screen buttons before we can detect them
     -   You can work arround this by going into Settings -> Accessiblity -> Keyboards and disabling "Full Keyboard Access" or alternatively going to Settings -> Accessiblity -> Keyboards -> Full Keyboard Access -> Commands -> Basic and disabling the "Move Up", "Move Down", "Move Left" and "Move Right" commands
@@ -44,7 +44,7 @@ Roam offers everything you want and nothing you don't
 
 ## Other Resources
 
-If you have any questions or issues, please contact me at: [roam-support@msd3.io](mailto:roam-support@msd3.io). You can also chat with me directly in the Roam app (Settings -> Chat with the Developer).
+If you have any questions or issues, please contact me at: [roam-support@msd3.io](mailto:roam-support@msd3.io). You can also chat with me directly in the Roam app (Settings -> Chat with the Developer) or join the [Roam Discord](https://discord.gg/FqaTNRccbG).
 
 -   [Privacy Policy](/privacy)
 -   [Core Repository on GitHub](https://github.com/msdrigg/roam)

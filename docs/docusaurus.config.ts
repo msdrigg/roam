@@ -72,7 +72,7 @@ const config: Config = {
           href: 'https://discord.gg/FqaTNRccbG',
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Roam, Inc.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Scott Driggers`,
     },
     prism: {
       theme: prismThemes.github,
