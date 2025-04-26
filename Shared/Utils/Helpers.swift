@@ -659,4 +659,3 @@ func getNotificationSettings() {
     }
 }
 #endif
-

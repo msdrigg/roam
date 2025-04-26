@@ -194,7 +194,7 @@ struct AppListViewWrapper: View {
 
         _apps = Query(
             filter: #Predicate<AppLink> {
-                pid != nil && $0.deviceUid == pid
+                $0.deviceUid == pid
             },
             sort: \AppLink.lastSelected,
             order: .reverse

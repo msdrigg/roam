@@ -12,10 +12,12 @@
 
     @available(iOS, introduced: 17.0)
     struct KeyboardEntry: View {
-        @Binding var str: String
+        @State var str: String = ""
         @State var strSent: String = ""
         @Binding var showing: Bool
         @FocusState private var keyboardFocused: Bool
+
+        let semaphore: AsyncSemaphore = AsyncSemaphore(value: 1)
 
         @State private var transformations: [StrTransformation] = []
 
@@ -34,12 +36,14 @@
             appDelegate.ecpMonitor.ecpClient
         }
 
-        let onKeyPress: (_ press: KeyEquivalent) -> Void
+        let onKeyPress: @Sendable (_ press: KeyEquivalent) async -> Void
         let leaving: Bool
 
         var body: some View {
             TextFieldContainer(String(localized: "Enter some text...", comment: "Placeholder for a text field"), text: $str, onDelete: {
-                onKeyPress(.delete)
+                Task {
+                    await onKeyPress(.delete)
+                }
             }, onDone: {
                 withAnimation {
                     keyboardFocused = false
@@ -83,14 +87,25 @@
                         }
                     }
                 } else {
-                    let charDifference = str.count - strSent.count
-                    
-                    if charDifference > 0 {
-                        let startIndex = str.index(str.endIndex, offsetBy: -charDifference)
-                        let newChars = str[startIndex..<str.endIndex]
-                        
-                        for char in newChars.unicodeScalars {
-                            onKeyPress(KeyEquivalent(Character(char)))
+                    let strSentNow = strSent
+                    Task {
+                        let charDifference = str.count - strSentNow.count
+
+                        if charDifference > 0 {
+                            let startIndex = str.index(str.endIndex, offsetBy: -charDifference)
+                            let newChars = str[startIndex..<str.endIndex]
+
+                            try await semaphore.waitUnlessCancelled()
+                            do {
+                                try await withTimeout(delay: 2.0) {
+                                    for char in newChars.unicodeScalars {
+                                        await onKeyPress(KeyEquivalent(Character(char)))
+                                    }
+                                }
+                            } catch {
+                                Log.userInteraction.warning("Couldn't send kb input within 2s")
+                            }
+                            semaphore.signal()
                         }
                     }
                 }
@@ -140,11 +155,10 @@
         }
 
         override func deleteBackward() {
-            if self.fullFeatures == true {
-                super.deleteBackward()
-            } else {
+            if self.fullFeatures != true {
                 didDelete?()
             }
+            super.deleteBackward()
         }
 
         override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
@@ -152,8 +166,7 @@
                 return super.canPerformAction(action, withSender: sender)
             }
             // Disable cut, copy, paste, select, selectAll
-            if action == #selector(cut(_:)) || action == #selector(copy(_:)) || action == #selector(paste(_:)) ||
-                action == #selector(select(_:)) || action == #selector(selectAll(_:))
+            if action == #selector(select(_:)) || action == #selector(selectAll(_:))
             {
                 return false
             }
@@ -234,7 +247,8 @@
             }
 
             func setup(_ textField: UITextField) {
-                textField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
+                Log.userInteraction.debug("Getting setup")
+                textField.addTarget(self, action: #selector(textFieldDidChange), for: .allEditingEvents)
                 textField.becomeFirstResponder()
             }
 

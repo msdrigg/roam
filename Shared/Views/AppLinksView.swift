@@ -59,7 +59,7 @@ struct AppLinksView: View {
                 SortDescriptor<AppLink>(\.lastSelected, order: .reverse),
                 SortDescriptor<AppLink>(\.deviceSortOrder, order: .forward),
                 SortDescriptor<AppLink>(\.id)
-            ]
+            ],
         )
         cachedAppLinks = []
     }
@@ -98,14 +98,25 @@ struct AppLinksView: View {
             .frame(height: gridHeight * CGFloat(rows))
             .fixedSize(horizontal: false, vertical: true)
             .onAppear {
-                cachedAppLinks = appLinks
+                var appLinksUnique: [String: AppLink] = [:]
+                
+                for appLink in appLinks {
+                    appLinksUnique[appLink.id] = appLink
+                }
+                
+                cachedAppLinks = Array(appLinksUnique.values)
             }
             .onChange(of: appIdsIconsHashed) {
                 withAnimation(.interpolatingSpring) {
-                    cachedAppLinks = appLinks
+                    var appLinksUnique: [String: AppLink] = [:]
+                    
+                    for appLink in appLinks {
+                        appLinksUnique[appLink.id] = appLink
+                    }
+                    
+                    cachedAppLinks = Array(appLinksUnique.values)
                 }
-            }
-    }
+            }    }
 }
 
 struct AppLinkButton: View {

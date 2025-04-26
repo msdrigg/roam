@@ -114,7 +114,11 @@ struct DeviceDetailView: View {
                 VStack {
                     HStack(alignment: .center) {
                         DataImage(from: device?.deviceIcon, fallback: "tv")
+#if os(macOS)
                             .frame(maxHeight: 45)
+#else
+                            .frame(maxHeight: 85)
+#endif
                             .padding(.horizontal, 12)
                             .padding(4)
                     }
@@ -122,7 +126,11 @@ struct DeviceDetailView: View {
                     .padding(.top, 8)
                     
                     Text(device?.name ?? getGlobalNewDeviceName())
+                    #if os(macOS)
                         .font(.title3.bold())
+                    #else
+                        .font(.body.monospaced())
+                    #endif
                 }
             })
 
@@ -216,7 +224,6 @@ struct DeviceDetailView: View {
 #if !os(watchOS)
             Toggle(
                 "Hide Device",
-                systemImage: "eye.slash",
                 isOn: $hidden
             )
 #endif

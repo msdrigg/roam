@@ -48,7 +48,6 @@ struct RemoteView: View {
     @State private var manuallySelectedDevice: Device?
     @State private var showKeyboardEntry: Bool = false
     @State private var keyboardLeaving: Bool = false
-    @State private var keyboardEntryText: String = ""
     @State var buttonPresses: [RemoteButton: Int] = [:]
     @State private var headphonesModeEnabled: Bool = false
     @State private var errorTrigger: Int = 0

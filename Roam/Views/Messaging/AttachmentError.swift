@@ -9,7 +9,7 @@ enum AttachmentError: Error {
 
     var errorDescription: String {
         switch self {
-        case .fileTooLarge(let size):
+        case .fileTooLarge(_):
             let style = ByteCountFormatStyle(
                 style: .file,
                 allowedUnits: [.kb, .mb],

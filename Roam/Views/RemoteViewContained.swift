@@ -65,7 +65,6 @@ struct RemoteViewContained: View {
     @State private var manuallySelectedDevice: Device?
     @State private var showKeyboardEntryManual: Bool = false
     @State private var keyboardLeaving: Bool = false
-    @State private var keyboardEntryText: String = ""
     @State var buttonPresses: [RemoteButton: Int] = [:]
     @State private var headphonesModeEnabled: Bool = false
     @State private var errorTrigger: Int = 0
@@ -650,14 +649,13 @@ struct RemoteViewContained: View {
                                 .buttonStyle(.plain)
 
                                 KeyboardEntry(
-                                    str: $keyboardEntryText,
                                     showing: Binding<Bool>(get: {
                                         showKeyboardEntry
                                     }, set: { newVal in
                                         showKeyboardEntryManual = newVal
                                     }),
-                                    onKeyPress: { char in
-                                        pressKey(char, modifiers: EventModifiers())
+                                    onKeyPress: { char async in
+                                        await self.pressKeyAsync(char, modifiers: EventModifiers())
                                     },
                                     leaving: keyboardLeaving
                                 )
@@ -1039,7 +1037,7 @@ struct RemoteViewContained: View {
         }
     }
 
-    func pressKey(_ key: KeyEquivalent, modifiers: EventModifiers) {
+    func pressKeyAsync(_ key: KeyEquivalent, modifiers: EventModifiers) async {
         let character = key.character
         Log.userInteraction.debug("Getting keyboard press \(character, privacy: .public)")
         if let button = RemoteButton.fromCharacter(character: character) {
@@ -1052,14 +1050,17 @@ struct RemoteViewContained: View {
 
         if let ecpSession {
             Log.connection.notice("Getting ecp session to send data to: \(true)")
-            Task {
-                do {
-                    try await ecpSession.pressCharacter(getModifiedCharacter(key, modifiers: modifiers))
-                } catch {
-                    Log.connection.error("Error pressing character \(key.character, privacy: .public) on device \(error, privacy: .public)")
-                }
+            do {
+                try await ecpSession.pressCharacter(getModifiedCharacter(key, modifiers: modifiers))
+            } catch {
+                Log.connection.error("Error pressing character \(key.character, privacy: .public) on device \(error, privacy: .public)")
             }
-            return
+        }
+    }
+
+    func pressKey(_ key: KeyEquivalent, modifiers: EventModifiers) {
+        Task {
+            await pressKeyAsync(key, modifiers: modifiers)
         }
     }
 
