@@ -110,6 +110,7 @@ struct MessageBubble: View {
 
 struct MessageMetadataOverlay: View {
     let message: Message
+    @ScaledMetric var fontSize: CGFloat = 12
 
     var body: some View {
         HStack(alignment: .center, spacing: 3) {
@@ -119,8 +120,8 @@ struct MessageMetadataOverlay: View {
             }
             #endif
             if message.showSending {
-                ProgressView()
-                    .progressViewStyle(.circular)
+                Image(systemName: "rays")
+                    .symbolEffect(.variableColor)
             }
         }
         .font(.caption)

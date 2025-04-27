@@ -55,28 +55,38 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
                 let modelContainer = await getSharedModelContainer()
                 let dataHandler = DataHandler(modelContainer: modelContainer)
                 for device in deviceMap {
-                    // TODO: Refactor this!!
                     if let existingDevice = await dataHandler.deviceEntityForUdn(udn: device.key) {
                         Log.watch
                             .notice("Device aleady exists, only updating name, location \(device.key, privacy: .public)")
                         if let location = device.value["location"] {
                             let name = device.value["name"] ?? existingDevice.name
+                            let hiddenAtIso8601 = device.value["hiddenAt"]
+                            let hiddenAt = hiddenAtIso8601.flatMap {
+                                let formatter = ISO8601DateFormatter()
+                                return formatter.date(from: $0)
+                            }
                             await dataHandler.updateDevice(
                                 existingDevice.modelId,
                                 name: name,
                                 location: location,
-                                hidden: existingDevice.hiddenAt != nil
+                                hidden: hiddenAt != nil
                             )
                         }
                         continue
                     }
                     if let location = device.value["location"], let name = device.value["name"], let udn = device.value["udn"], let serial = device.value["serial"] {
+                        let hiddenAtIso8601 = device.value["hiddenAt"]
+                        let hiddenAt = hiddenAtIso8601.flatMap {
+                            let formatter = ISO8601DateFormatter()
+                            return formatter.date(from: $0)
+                        }
                         let name = device.value["name"] ?? getGlobalNewDeviceName()
                         await dataHandler.addDeviceIndistriminantly(
                             location: location,
                             friendlyDeviceName: name,
                             udn: udn,
-                            serial: serial
+                            serial: serial,
+                            hidden: hiddenAt != nil
                         )
                     }
                 }

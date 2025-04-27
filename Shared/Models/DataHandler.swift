@@ -87,10 +87,11 @@ public actor DataHandler {
     }
     
     @discardableResult
-    func addDeviceIndistriminantly(location: String, friendlyDeviceName: String, udn: String, serial: String) -> PersistentIdentifier? {
+    func addDeviceIndistriminantly(location: String, friendlyDeviceName: String, udn: String, serial: String, hidden: Bool) -> PersistentIdentifier? {
         if let device = deviceForUdn(udn: udn) {
             device.location = location
             device.name = friendlyDeviceName
+            device.hiddenAt = hidden ? Date.now : nil
             do {
                 try modelContext.saveSafer()
             } catch {
@@ -103,8 +104,9 @@ public actor DataHandler {
                 name: friendlyDeviceName,
                 location: location,
                 udn: udn,
-                serial: serial
+                serial: serial,
             )
+            device.hiddenAt = hidden ? Date.now : nil
             modelContext.insert(device)
             
             do {
@@ -1019,19 +1021,36 @@ extension DataHandler {
 
                 for message in newMessages {
                     message.viewed = viewed
+                    
+                    let id = message.id
+                    let existingMessageDescriptor = FetchDescriptor<Message>(
+                        predicate: #Predicate { $0.id == id }
+                    )
+                    
+                    let existingMessages = try modelContext.fetchSafer(existingMessageDescriptor)
+                    for message in existingMessages {
+                        modelContext.delete(message)
+                    }
                     modelContext.insert(message)
+                    
                     message.triggerAction()
                 }
                 count = newMessages.count
+                
+                let savingMessages = try modelContext.fetchSafer(FetchDescriptor<Message>(
+                    predicate: #Predicate { $0.fetchedBackend == false || $0.lastSendAttempt != nil }
+                ))
+                for message in savingMessages {
+                    modelContext.delete(message)
+                }
             } catch {
                 Log.data.error("Error getting latest messages \(error, privacy: .public)")
             }
-
             if viewed == true {
                 let unviewedMessagesDescriptor = FetchDescriptor<Message>(predicate: #Predicate {
                     !$0.viewed
                 })
-                let unviewedMessages = try modelContext.fetch<Message>(unviewedMessagesDescriptor)
+                let unviewedMessages = try modelContext.fetch(unviewedMessagesDescriptor)
                 for message in unviewedMessages {
                     message.viewed = true
                 }
