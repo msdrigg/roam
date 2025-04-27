@@ -19,6 +19,20 @@ pub struct DiscordClient {
     semaphore: Arc<tokio::sync::Semaphore>,
 }
 
+pub struct DiscordMessageOptions {
+    pub nonce: Option<String>,
+    pub notify: bool,
+}
+
+impl Default for DiscordMessageOptions {
+    fn default() -> Self {
+        Self {
+            nonce: Default::default(),
+            notify: true,
+        }
+    }
+}
+
 #[derive(Debug, thiserror::Error, Serialize)]
 pub enum DiscordError {
     #[error("Rate limited for {retry_after} seconds. {message}")]
@@ -43,6 +57,18 @@ impl DiscordClient {
     const DISCORD_API_BASE_URL: &str = "https://discord.com/api/v10";
     const DEFAULT_AUTO_ARCHIVE_DURATION: i64 = 10080;
     const DISCORD_CONCURRENT_REQUESTS: usize = 3;
+
+    fn get_flags(options: Option<&DiscordMessageOptions>) -> u32 {
+        let notify = options.map(|o| o.notify).unwrap_or(true);
+        let mut flags: u32 = 0;
+
+        // Set SUPPRESS_NOTIFICATIONS flag (1 << 12) if notify is false
+        if !notify {
+            flags |= 1 << 12;
+        }
+
+        flags
+    }
 
     async fn acquire(&self) -> Result<tokio::sync::SemaphorePermit<'_>, AcquireError> {
         self.semaphore.acquire().await
@@ -251,8 +277,9 @@ impl DiscordClient {
         &self,
         thread_id: i64,
         content: &str,
-        nonce: Option<&str>,
+        options: Option<&DiscordMessageOptions>,
     ) -> Result<reqwest::Response, DiscordError> {
+        let nonce = options.and_then(|o| o.nonce.as_deref());
         let _permit = self.acquire().await.expect("Semaphore should never close");
         self.error_on_locked()?;
         let url = format!(
@@ -265,6 +292,7 @@ impl DiscordClient {
             "content": content,
             "nonce": nonce,
             "enforce_nonce": true,
+            "flags": Self::get_flags(options)
         });
 
         let response = self
@@ -284,8 +312,9 @@ impl DiscordClient {
         thread_id: i64,
         content: Option<&str>,
         attachments: &[&DiscordFileUpload],
-        nonce: Option<&str>,
+        options: Option<&DiscordMessageOptions>,
     ) -> Result<reqwest::Response, DiscordError> {
+        let nonce = options.and_then(|o| o.nonce.as_deref());
         let _permit = self.acquire().await.expect("Semaphore should never close");
         self.error_on_locked()?;
         let url = format!(
@@ -365,9 +394,9 @@ impl DiscordClient {
         thread_id: i64,
         content: &str,
         attachment: Option<DiscordFileUpload>,
-        nonce: Option<&str>,
+        options: Option<&DiscordMessageOptions>,
     ) -> Result<DiscordMessage, DiscordError> {
-        if let Some(nonce) = nonce {
+        if let Some(nonce) = options.and_then(|o| o.nonce.as_deref()) {
             if nonce.len() > 25 {
                 return Err(DiscordError::InvalidInput(
                     "Nonce must be at most 25 characters".to_string(),
@@ -401,13 +430,13 @@ impl DiscordClient {
 
             // Split off first attachment
             let response = self
-                ._send_message_multipart(thread_id, Some(content), &[&attachment], nonce)
+                ._send_message_multipart(thread_id, Some(content), &[&attachment], options)
                 .await?;
 
             handle_response(response).await?
         } else {
             let response = self
-                ._send_message_no_attachments(thread_id, content, nonce)
+                ._send_message_no_attachments(thread_id, content, options)
                 .await?;
             handle_response(response).await?
         };
@@ -422,8 +451,9 @@ impl DiscordClient {
         thread_id: i64,
         content: &str,
         attachments: Vec<DiscordFileUpload>,
-        nonce: Option<&str>,
+        options: Option<&DiscordMessageOptions>,
     ) -> Result<(), DiscordError> {
+        let nonce = options.as_ref().and_then(|o| o.nonce.as_deref());
         if let Some(nonce) = nonce {
             if nonce.len() > 25 {
                 return Err(DiscordError::InvalidInput(
@@ -460,19 +490,19 @@ impl DiscordClient {
 
             // Split off first attachment
             let response = self
-                ._send_message_multipart(thread_id, Some(content), &[first], nonce)
+                ._send_message_multipart(thread_id, Some(content), &[first], options)
                 .await?;
 
             handle_response(response).await?;
             for attachment in rest {
                 let response = self
-                    ._send_message_multipart(thread_id, None, &[attachment], None)
+                    ._send_message_multipart(thread_id, None, &[attachment], options)
                     .await?;
                 handle_response(response).await?;
             }
         } else {
             let response = self
-                ._send_message_no_attachments(thread_id, content, nonce)
+                ._send_message_no_attachments(thread_id, content, options)
                 .await?;
             handle_response(response).await?;
         }

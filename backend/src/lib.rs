@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::Context;
 use apns::ApnsClient;
 use database::{DatabaseClient, DeviceInfo, User, UserUpdate};
-use discord::{DiscordClient, DiscordMessage};
+use discord::{DiscordClient, DiscordMessage, DiscordMessageOptions};
 use presence::{PresenceClient, UserPresenceInfo};
 use server::ApiError;
 
@@ -318,7 +318,6 @@ impl AppContext {
             os_version,
             user_locale,
         } = &device_info.0;
-        // let message = `:ninja:\n\n### Device info\n\n- **User ID**: ${userId}\n- **Build version**: ${buildVersion}\n- **OS platform**: ${osPlatform}\n- **OS version**: ${osVersion}\n- **User Locale**: ${userLocale}`;
         let message = format!(
             ":ninja:\n\n### Device info\n\n- **User ID**: {}\n- **Build version**: {}\n- **OS platform**: {}\n- **OS version**: {}\n- **User Locale**: {}\n- **APNS Token**: {}",
             user_id.as_deref().unwrap_or("--"),
@@ -329,7 +328,15 @@ impl AppContext {
             user.apns_token.as_deref().unwrap_or("--"),
         );
         self.discord_client()
-            .send_message_multiple_attachments(user.thread_id, &message, vec![], None)
+            .send_message(
+                user.thread_id,
+                &message,
+                None,
+                Some(&DiscordMessageOptions {
+                    notify: false,
+                    ..Default::default()
+                }),
+            )
             .await
             .map_err(ApiError::DiscordError)?;
         Ok(())

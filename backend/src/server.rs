@@ -1,6 +1,6 @@
 use crate::{
     database::{DeviceInfo, User, UserUpdate},
-    discord::{DiscordAuthor, DiscordFile, DiscordFileUpload},
+    discord::{DiscordAuthor, DiscordFile, DiscordFileUpload, DiscordMessageOptions},
     presence::UserPresenceInfo,
     utils::{i64_to_string, string_to_i64_optional},
 };
@@ -373,6 +373,10 @@ async fn new_message(
         attachment,
         nonce,
     } = message_request;
+    let options = DiscordMessageOptions {
+        nonce,
+        ..Default::default()
+    };
 
     if content.is_empty() && attachment.is_none() {
         return Err(ApiError::BadRequest(
@@ -396,7 +400,7 @@ async fn new_message(
         .await?;
     let message_result = app_context
         .discord_client()
-        .send_message(user.thread_id, &content, attachment, nonce.as_deref())
+        .send_message(user.thread_id, &content, attachment, Some(&options))
         .await?;
     Ok(Json(DiscordMessageDownload::prepare(message_result).await?))
 }
@@ -413,6 +417,10 @@ async fn new_message_old(
         attachments,
         nonce,
     } = message_request;
+    let options = DiscordMessageOptions {
+        nonce,
+        ..Default::default()
+    };
 
     if content.is_none()
         && apns_token.is_none()
@@ -446,7 +454,7 @@ async fn new_message_old(
                 user.thread_id,
                 &content.unwrap_or_default(),
                 attachments.unwrap_or_default(),
-                nonce.as_deref(),
+                Some(&options),
             )
             .await?;
         return Ok(());
