@@ -141,7 +141,7 @@ func trimmedDebugInfoIfNeeded(_ debugInfo: DebugInfo, maxFileSize: Int = 9 * 102
         // If removing all logs still doesn't fit, return the struct without logs
         trimmedDebugInfo.logs = []
         data = try encoder.encode(trimmedDebugInfo)
-        
+
         return data.count <= maxFileSize ? data : nil
     } catch {
         return nil

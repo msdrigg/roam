@@ -1,1 +1,5 @@
--   Hinzufügen einer Hotkey-Taste zur Anzeige des Roam-Menüs (Menüleiste oder Hauptfenster im Hintergrund)
+-   Hinzufügen einer Hotkey-Funktion zum Anzeigen des Roam-Menüs (Menüleiste oder Hauptfenster im Hintergrund)
+-   Mehrere Verbesserungen bei den Mitteilungen
+-   Konsistentere Menüelemente
+-   Verbesserter Ablauf beim Hinzufügen von Geräten
+-   Fehlerbehebungen und Verbesserungen

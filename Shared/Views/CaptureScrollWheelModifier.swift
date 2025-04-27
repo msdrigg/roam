@@ -23,10 +23,6 @@
 
             override var acceptsFirstResponder: Bool { true }
 
-            override func viewDidMoveToWindow() {
-                super.viewDidMoveToWindow()
-            }
-
             override func scrollWheel(with event: NSEvent) {
                 if event.hasPreciseScrollingDeltas || abs(event.scrollingDeltaX) > 0.000001 || abs(event.deltaX) > 0.000001 {
                     super.scrollWheel(with: event)

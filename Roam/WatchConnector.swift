@@ -69,7 +69,7 @@
                         map["hiddenAt"] = hiddenAt
                     }
                     deviceMap[device.id] = map
-                    
+
                     transferingDevicesBuilder.append(device.modelId)
                 }
                 let transferingDevices = transferingDevicesBuilder

@@ -1,1 +1,5 @@
--   Pag-aayos ng crash kapag nag-scan sa background
+-   Pagdaragdag ng hotkey para ipakita ang roam menu (menu bar o pangunahing window sa background)
+-   Maraming pagpapabuti sa messaging
+-   Mas pantay na mga item sa menu
+-   Mas maayos na pagdaragdag ng device flow
+-   Mga pag-ayos ng bug at mga pagpapabuti

@@ -5,16 +5,16 @@ struct MessageBubble: View {
     let previous: Message?
 
     @Environment(\.colorScheme) var colorScheme
-    
+
     var shownWeekday: String? {
         if message.robotMessage || message.id == "start" {
             return nil
         }
-        
+
         guard let currentDate = parseDiscordSnowflake(message.id) else {
             return nil
         }
-        
+
         let calendar = Calendar.current
         let currentComponents = calendar.dateComponents([.year, .month, .day], from: currentDate)
         let formatter = DateFormatter()
@@ -74,7 +74,6 @@ struct MessageBubble: View {
                         .contextMenu {
                             Button(action: {
                                 let copying = [message.messageTitle, message.message].compactMap{$0}.joined(separator: "\n")
-                                
 #if os(macOS)
                                 NSPasteboard.general.clearContents()
                                 NSPasteboard.general.setString(copying, forType: .string)
@@ -88,7 +87,7 @@ struct MessageBubble: View {
 #endif
                 }
             }
-            
+
             ForEach(message.attachments, id: \.id) { attachment in
                 MessageFraming(message: message) {
                     AttachmentView(attachment: attachment, message: message)
@@ -96,7 +95,7 @@ struct MessageBubble: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            
+
             if let attachment = message.unsentAttachment {
                 MessageFraming(message: message) {
                     AttachmentView(attachment: attachment, message: message)
@@ -149,7 +148,7 @@ struct MessageFraming<C: View>: View {
                 #if !os(watchOS)
                     .containerRelativeFrame(
                         .horizontal, alignment: .topTrailing
-                    ) { length, axis in
+                    ) { length, _ in
                         return length / 3.0 * 2.0
                     }
                 #endif
@@ -160,7 +159,7 @@ struct MessageFraming<C: View>: View {
                 #if !os(watchOS)
                     .containerRelativeFrame(
                         .horizontal, alignment: .topLeading
-                    ) { length, axis in
+                    ) { length, _ in
                         return length / 3.0 * 2.0
                     }
                 #endif
@@ -303,7 +302,7 @@ extension Message {
         if self.robotMessage || self.id == "start" {
             return nil
         }
-        
+
         let time = parseDiscordSnowflake(self.id)
         return time?.formatted(date: .omitted, time: .shortened)
     }

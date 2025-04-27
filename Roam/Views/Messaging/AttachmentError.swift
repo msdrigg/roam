@@ -9,7 +9,7 @@ enum AttachmentError: Error {
 
     var errorDescription: String {
         switch self {
-        case .fileTooLarge(_):
+        case .fileTooLarge:
             let style = ByteCountFormatStyle(
                 style: .file,
                 allowedUnits: [.kb, .mb],
@@ -17,7 +17,6 @@ enum AttachmentError: Error {
                 includesActualByteCount: false,
                 locale: Locale.current
             )
-//            let sizeString = style.format(Int64(size))
             let maxSizeString = style.format(Int64(1000000 * 10))
             return String(localized: "Max upload size \(maxSizeString)")
         case .cancelled:

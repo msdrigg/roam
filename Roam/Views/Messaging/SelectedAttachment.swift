@@ -63,7 +63,7 @@ struct AttachmentPreviewView: View {
 #endif
             .clipShape(RoundedRectangle(cornerRadius: 15))
             .overlay(alignment: .topTrailing) {
-                Button(action:delete) {
+                Button(action: delete) {
                     Label("Delete", systemImage: "xmark.circle.fill")
                         .padding(.all, 2)
                 }
@@ -209,7 +209,6 @@ struct AttachmentView: View {
                     }, label: {
                         Label(String(localized: "Save to files", comment: "Label on a button to download an attachment"), systemImage: "square.and.arrow.down")
                     })
-                    
 #if !os(macOS)
                     if let data = attachment.attachment?.data, let image = UIImage(data: data) {
                         Button(action: {
@@ -405,12 +404,40 @@ struct DataImageInset<Fallback, IM>: View  where Fallback: View, IM: ViewModifie
 #if DEBUG
 @MainActor
 let previewAttachments = [
-    SelectedAttachment(attachment: nil,name: "a6", type: .pdf, failure: "Image too large (10mb max)", loading: false),
-    SelectedAttachment(attachment: AttachmentUpload(filename: "a1.png", data: Data(fromAssetImage: "Netflix")!, contentType: "image/png", id: UUID().uuidString), name: "a1.png", type: .png, failure: nil, loading: false),
-    SelectedAttachment(attachment: AttachmentUpload(filename: "a2.png", data: Data(fromAssetImage: "Hulu")!, contentType: "image/png", id: UUID().uuidString), name: "a2.png", type: .png, failure: nil, loading: false),
-    SelectedAttachment(attachment: AttachmentUpload(filename: "a3", data: Data(fromAssetImage: "Hulu")!, contentType: "image/png", id: UUID().uuidString), name: "a3", type: .png, failure: nil, loading: false),
-    SelectedAttachment(attachment: AttachmentUpload(filename: "a4", data: Data(hexString: "001223")!, contentType: "image/png", id: UUID().uuidString), name: "a1", type: .png, failure: nil, loading: false),
-    SelectedAttachment(attachment: nil,name: "a5", type: .pdf, failure: nil, loading: true)
+    SelectedAttachment(
+        attachment: nil, name: "a6", type: .pdf,
+        failure: "Image too large (10mb max)", loading: false
+    ),
+    SelectedAttachment(
+        attachment:
+            AttachmentUpload(
+                filename: "a1.png", data: Data(fromAssetImage: "Netflix")!,
+                contentType: "image/png", id: UUID().uuidString
+            ),
+        name: "a1.png", type: .png, failure: nil, loading: false
+    ),
+    SelectedAttachment(
+        attachment: AttachmentUpload(
+            filename: "a2.png", data: Data(fromAssetImage: "Hulu")!,
+            contentType: "image/png", id: UUID().uuidString
+        ),
+        name: "a2.png", type: .png, failure: nil, loading: false
+    ),
+    SelectedAttachment(
+        attachment: AttachmentUpload(
+            filename: "a3", data: Data(fromAssetImage: "Hulu")!,
+            contentType: "image/png", id: UUID().uuidString
+        ),
+        name: "a3", type: .png, failure: nil, loading: false
+    ),
+    SelectedAttachment(
+        attachment: AttachmentUpload(
+            filename: "a4", data: Data(hexString: "001223")!,
+            contentType: "image/png", id: UUID().uuidString
+        ),
+        name: "a1", type: .png, failure: nil, loading: false
+    ),
+    SelectedAttachment(attachment: nil, name: "a5", type: .pdf, failure: nil, loading: true)
 ]
 #Preview("Attachment Row") {
     @Previewable @State var attachments = previewAttachments
@@ -419,7 +446,13 @@ let previewAttachments = [
 
 #Preview("Attachment") {
     AttachmentPreviewView(
-        attachment: SelectedAttachment(attachment: AttachmentUpload(filename: "a1", data: Data(fromAssetImage: "Netflix")!, contentType: "image/png", id: UUID().uuidString), name: "a1", type: .png, failure: nil, loading: false),
+        attachment: SelectedAttachment(
+            attachment: AttachmentUpload(
+                filename: "a1", data: Data(fromAssetImage: "Netflix")!,
+                contentType: "image/png", id: UUID().uuidString
+            ),
+            name: "a1", type: .png, failure: nil, loading: false
+        ),
         delete: {},
         scrollToSelf: {}
     )

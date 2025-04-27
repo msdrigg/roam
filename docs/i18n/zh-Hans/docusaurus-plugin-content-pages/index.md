@@ -8,48 +8,48 @@ hide_table_of_contents: true
 
 ## 关于 Roam
 
-Roam提供您所想要的一切，没有您不需要的
+Roam 满足您想要的一切，且没有您不需要的
 
--   可在 Mac、iPhone、iPad、Apple Watch、Vision Pro 或 Apple TV上运行！
--   智能平台集成，包括在 Mac 上的键盘快捷键，以及在 iOS 中使用硬件音量按钮控制 TV 音量
--   使用快捷方法和小插件控制您的 TV，不需要每次都打开应用程序！
--   在 Mac、iPad、iPhone、VisionOS 和 Apple TV上支持耳机模式（又名私人聆听）（通过您的设备播放电视的音频）
--   一旦打开应用程序，就可以发现本地网络上的设备
--   使用苹果原生的 SwiftUI 设计系统，设计直观
--   快速且轻量，所有设备上少于8 MB，且无需半秒即可打开！
--   开源（https://github.com/msdrigg/roam）
+-   支持 Mac，iPhone，iPad，Apple Watch，Vision Pro 或 Apple TV！
+-   智能平台集成，Mac 上的键盘快捷键，使用 iOS 的硬件音量键控制电视音量
+-   使用快捷键和小组件即可在不打开应用的情况下控制您的电视！
+-   Mac，iPad，iPhone，VisionOS 和 Apple TV（通过设备播放电视的音频）都支持耳机模式（也称为私人听听）功能
+-   打开应用时立即发现本地网络上的设备
+-   使用苹果原生的 SwiftUI 设计系统则设计直观
+-   快速且轻量，对所有设备来说均不足 8 MB，并能在半秒内打开！
+-   开源 （https://github.com/msdrigg/roam）
 
 ## 常见问题
 
--   如果 Roam 无法自动发现我的 TV 我应该做什么
-    -   [点击这里](/manually-add-tv)
--   我的 TV 上为什么无法使用耳机模式（又名私人聆听）？
-    -   耳机模式目前在某些 TV 上无法使用。如果耳机模式无法在 Roam 中使用，但是可以在官方 Roku 应用程序中使用，请通过电子邮件向 [roam-support@msd3.io](mailto:roam-support@msd3.io) 分享您的 Roku 模型名称及任何其他相关信息。您的报告将帮助我找到修复此 bug 的方向。
--   如果我遇到另一个问题或只是想提供反馈怎么办？
-    -   如果是 bug，最好从应用程序启动反馈报告
+-   如果 Roam 没有自动发现我的电视，我能做些什么
+    -   [查看这里](/manually-add-tv)
+-   为什么我的电视上的耳机模式（也称为私人收听）不起作用？
+    -   目前耳机模式在一些电视上不能工作。如果 Roam 的耳机模式无法工作，但是 Roku 官方应用的耳机模式可以工作，那么请通过邮件将您的 Roku 模型名称及任何其他相关的信息分享至 [roam-support@msd3.io](mailto:roam-support@msd3.io)。您的报告将有助于我确定在修复此 bug 时，该从哪里入手查找。
+-   如果我有其他问题或只是想提供反馈该怎么办？
+    -   如果是 bug，最好从应用程序中生成反馈报告
         -   进入 Roam 应用程序并打开设置页面
-        -   单击“发送反馈”。这将生成可以与 roam 支持（roam-support@msd3.io）共享的诊断报告
-        -   如果您的应用程序崩溃，也确保在设置 -> 隐私 & 安全 -> 分析 &改进中打开您的分析功能
-            -   打开 "分享 iPhone & Watch 分析"，然后打开 "分享给应用开发者"，这样苹果就会在您的应用程序崩溃时向我报告
-    -   如果是请求新功能，您可以直接发送电子邮件（roam-support@msd3.io），或者直接在 Roam 应用程序中与我聊天（设置 -> 与开发人员聊天）
--   为什么在 iPad 上箭头键有时不起作用？
-    -   这是因为 iPadOS 有时会接管箭头键，并在我们能检测到它们之前用它们来导航屏幕按钮
-    -   您可以通过进入设置 -> 辅助功能 -> 键盘并禁用 "全键盘访问" 或者进入设置 -> 辅助功能 -> 键盘 -> 全键盘访问 -> 命令 -> 基础并禁用 "向上移动"，"向下移动"，"向左移动" 和 "向右移动" 的命令来解决这个问题
--   为什么我在键盘上打字不会显示在电视上？
-    -   在一些 Roku Apps 中，程序会忽略硬件键盘输入。如果这是 Roam 的 bug 还是程序的 bug，您可以在官方的 Roku App 中尝试使用键盘输入特性并检查是否有效
-    -   已知存在 bug 的应用程序
+        -   点击“发送反馈”。这将生成一个可以和 roam_support（roam-support@msd3.io）分享的诊断报告
+        -   如果你的应用程序崩溃，请确保在设置 -> 隐私和安全 -> 分析和改进中的分析功能已打开
+            -   打开 "Share iPhone & Watch Analytics" 并打开 "Share With App Developers"，这样苹果会在您的应用崩溃时通知我
+    -   如果是新功能的请求，您可以发送电子邮件（roam-support@msd3.io），直接在 Roam 应用中与我聊天（设置 -> 与开发人员聊天）或加入 [Roam Discord](https://discord.gg/FqaTNRccbG)。
+-   为什么 iPad 的箭头键有时候不能工作？
+    -   这是因为 iPadOS 有时会接管箭头键，把它们用来在我们可以检测到它们之前导航屏幕按钮
+    -   您可以通过进入 设置 -> 无障碍 -> 键盘，禁用 "全键盘访问" 来解决此问题，另一种解决方案是转到 设置 -> 无障碍 -> 键盘 -> 全键盘访问 -> 命令 -> 基础，然后禁用 "Move Up"，"Move Down"，"Move Left" 和 "Move Right" 命令。  
+-   为什么我在键盘上输入的内容不会显示在电视上？
+    -   在一些 Roku App 中，应用程序会忽略硬件键盘的输入。您可以通过尝试在官方的 Roku App 中使用键盘输入功能来测试这是否是 Roam 的 bug 或者是应用的 bug
+    -   已知存在 bug 的应用
         -   Prime Video
--   为什么 Roam 在我的 iPhone 和 mac 应用程序上有效，但是在我的 Apple Watch 上无效？
-    -   WatchOS 应用程序通过 TV 的 ECP API 连接到 TV，某些 Roku TV 必须启用它。要启用，请转到 **设置 -> 系统 -> 高级系统设置 -> 通过移动应用程序控制**，并确保 "网络访问" 被设置为 "宽容"
+-   为什么 Roam 在我的 iPhone 和 mac 应用程序上可以工作，但是在我的 Apple Watch 上不能工作？
+    -   WatchOS 应用通过电视的 ECP API 连接到电视，该 API 在某些 Roku TV 上必须启用。要启用它，请转到 **设置 -> 系统 -> 高级系统设置 -> 由移动应用控制**，然后确保 "网络访问" 已设置为 "许可"。
 
 ## 其他资源
 
-如果您有任何问题或问题，请联系我：[roam-support@msd3.io](mailto:roam-support@msd3.io). 您也可以直接在 Roam 应用程序中与我聊天（设置 -> 与开发人员聊天）。
+如果您有任何问题或问题，请通过 [roam-support@msd3.io](mailto:roam-support@msd3.io) 与我联系。您也可以在 Roam 应用中直接和我聊天（设置 -> 与开发人员聊天）或者加入 [Roam Discord](https://discord.gg/FqaTNRccbG)。
 
 -   [隐私政策](/privacy)
--   [GitHub上的核心存储库](https://github.com/msdrigg/roam)
+-   [GitHub 上的核心代码库](https://github.com/msdrigg/roam)
 -   [Roam Discord](https://discord.gg/FqaTNRccbG)
--   [在App Store上下载](https://apps.apple.com/us/app/roam/6469834197)
+-   [在应用商店下载](https://apps.apple.com/us/app/roam/6469834197)
 -   [路线图](/upcoming-work)
 -   [更新日志](/changes)
--   [测试过的Roku设备](/tested-tvs)
+-   [已测试的 Roku 设备](/tested-tvs)

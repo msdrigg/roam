@@ -84,7 +84,7 @@ final class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
 
     func application(_ application: NSApplication, didReceiveRemoteNotification userInfo: [String: Any]) {
         Log.notifications.notice("Received remote notification \(userInfo, privacy: .public)")
-        
+
         refreshMessages()
         if let aps = userInfo["aps"] as? [String: Any],
            let alert = aps["alert"] as? String,

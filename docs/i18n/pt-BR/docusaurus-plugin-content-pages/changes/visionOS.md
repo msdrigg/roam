@@ -1,1 +1,5 @@
-- Corrigindo falha ao escanear em segundo plano
+-   Adicionando atalho para exibir o menu roam (barra de menu ou janela principal em segundo plano)
+-   Várias melhorias na troca de mensagens
+-   Itens de menu mais consistentes
+-   Melhor fluxo de adição de dispositivo
+-   Correções de bugs e melhorias

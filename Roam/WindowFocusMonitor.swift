@@ -20,7 +20,7 @@ struct WindowFocusedModifier: ViewModifier {
                     forName: NSWindow.didBecomeKeyNotification,
                     object: nil,
                     queue: .main
-                ) { notification in
+                ) { _ in
                     DispatchQueue.main.async {
                         if window?.isKeyWindow == true {
                             onFocus()

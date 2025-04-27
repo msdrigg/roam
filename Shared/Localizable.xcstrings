@@ -167,7 +167,86 @@
       }
     },
     " · " : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "·"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "·"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "·"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " ·"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "·"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "·"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "·"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Punto"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਦੇ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "·"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "·"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " ·"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "·"
+          }
+        }
+      }
     },
     ":help-share-diagnostics:" : {
       "comment" : "Help text. Note that the URL can be localized with https://roam.msd3.io/<lang>/manually-add-tv/",
@@ -1350,7 +1429,7 @@
       }
     },
     "Add a device manually" : {
-      "comment" : "Label on a button to add a device\nLabel on a button to open the device setup page",
+      "comment" : "Label on a button to add a device",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1515,10 +1594,168 @@
       }
     },
     "Add Device" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أضف جهاز"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerät hinzufügen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir dispositivo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregar dispositivo"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magdagdag ng Aparato"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter un appareil"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter un appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi dispositivo"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਉਪਕਰਣ ਜੋੜੋ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar Dispositivo"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar Dispositivo"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thêm Thiết bị"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加设备"
+          }
+        }
+      }
     },
     "Added device successfully" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تمت إضافة الجهاز بنجاح"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerät erfolgreich hinzugefügt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivo agregado exitosamente"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivo agregado con éxito"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Matagumpay na naidagdag ang aparato"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appareil ajouté avec succès"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appareil ajouté avec succès"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivo aggiunto con successo"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਡਿਵਾਈਸ ਸਫਲਤਾਪੂਰਵਕ ਜੋੜੀ ਗਈ ਹੈ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivo adicionado com sucesso"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivo adicionado com sucesso"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đã thêm thiết bị thành công"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "成功添加设备"
+          }
+        }
+      }
     },
     "Additinoally, WatchOS prevents us from discovering TV's on the local network." : {
       "comment" : "WatchOS indicator showing that watchOS can't auto-discover TV's due to network restrictions",
@@ -1604,7 +1841,87 @@
       }
     },
     "An unknown error occurred: %@" : {
-      "comment" : "Unknown error with message"
+      "comment" : "Unknown error with message",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "حدث خطأ غير معروف: %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein unbekannter Fehler ist aufgetreten: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocurrió un error desconocido: %@"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocurrió un error desconocido: %@"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Naganap ang isang hindi kilalang error: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une erreur inconnue est survenue : %@"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une erreur inconnue est survenue: %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si è verificato un errore sconosciuto: %@"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਅਣਜਾਣ ਤਰੁੱਟੀ ਉਤਪੰਨ ਹੋਈ: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocorreu um erro desconhecido: %@"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocorreu um erro desconhecido: %@"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đã xảy ra lỗi không xác định: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发生了未知错误：%@"
+          }
+        }
+      }
     },
     "App" : {
       "comment" : "Description on a configuration field\nPlaceholder label for an app",
@@ -2104,7 +2421,7 @@
       }
     },
     "App Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2849,7 +3166,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3264,7 +3581,87 @@
       }
     },
     "Chat %@" : {
-      "comment" : "Text entry field for a new message"
+      "comment" : "Text entry field for a new message",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "دردشة %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat %@"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat %@"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Makipag-usap %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat %@"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chatta %@"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'ਗੱਲ-ਬਾਤ %@'"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chat %@"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversa %@"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trò chuyện %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "聊天 %@"
+          }
+        }
+      }
     },
     "Chat with the Developer" : {
       "comment" : "Keyboard shortcut to open the chat window\nLabel on a button to open the chat window",
@@ -3350,10 +3747,170 @@
       }
     },
     "Check the IP address you entered and try again" : {
-      "comment" : "Recovery suggestion for invalid IP address"
+      "comment" : "Recovery suggestion for invalid IP address",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تحقق من عنوان IP الذي أدخلته وحاول مرة أخرى"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Überprüfen Sie die eingegebene IP-Adresse und versuchen Sie es erneut"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifica la dirección IP que ingresaste e intenta de nuevo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifica la dirección IP que ingresaste e intenta de nuevo"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suriin ang IP address na iyong naipasok at subukan muli"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérifiez l'adresse IP que vous avez entrée et essayez à nouveau"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérifiez l'adresse IP que vous avez entrée et essayez de nouveau"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlla l'indirizzo IP che hai inserito e prova di nuovo"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਜੋ ਆਈਪੀ ਪਤਾ ਤੁਸੀਂ ਦਰਜ ਕੀਤਾ ਹੈ ਉਸਨੂੰ ਜਾਂਚੋ ਅਤੇ ਮੁੜ ਕੋਸ਼ਿਸ ਕਰੋ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifique o endereço IP que você inseriu e tente novamente"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifique o endereço IP que inseriu e tente novamente"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kiểm tra địa chỉ IP bạn đã nhập và thử lại"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "检查你输入的IP地址，然后再试一次"
+          }
+        }
+      }
     },
     "Check the IP address you entered is correct, and ensure that you and the device are connected to the same WiFi network" : {
-      "comment" : "Recovery suggestion for device not found"
+      "comment" : "Recovery suggestion for device not found",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تأكد من أن عنوان ال IP الذي أدخلته صحيح ، وتأكد من أنك والجهاز متصلين بنفس شبكة ال WiFi"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Überprüfen Sie, ob die eingegebene IP-Adresse korrekt ist und stellen Sie sicher, dass Sie und das Gerät mit demselben WiFi-Netzwerk verbunden sind."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifique que la dirección IP que ingresó sea correcta y asegúrese de que usted y el dispositivo estén conectados a la misma red WiFi"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifica que la dirección IP que ingresaste sea correcta, y asegúrate de que tú y el dispositivo estén conectados a la misma red WiFi."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suriin kung tama ang IP address na iyong naipasok, at siguraduhing ikaw at ang device ay konektado sa parehong WiFi network"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérifiez que l'adresse IP que vous avez saisie est correcte et assurez-vous que vous et l'appareil êtes connectés au même réseau WiFi"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérifiez que l'adresse IP que vous avez saisie est correcte et assurez-vous que vous et l'appareil êtes connectés au même réseau WiFi"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controlla che l'indirizzo IP che hai inserito sia corretto e assicurati che tu e il dispositivo siate connessi alla stessa rete WiFi"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਕਿਰਪਾ ਕਰਕੇ ਜਾਂਚੋ ਕਿ ਤੁਸੀਂ ਦਿੱਤੇ ਗਏ IP ਪਤੇ ਸਹੀ ਹਨ ਅਤੇ ਯਕੀਨੀ ਬਣਾਓ ਕਿ ਤੁਸੀਂ ਅਤੇ ਡਿਵਾਈਸ ਇਕੋ ਵਾਈਫਾਈ ਨੈੱਟਵਰਕ ਨਾਲ ਜੁੜੇ ਹੋਏ ਹੋ।"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifique se o endereço IP que você inseriu está correto e certifique-se de que você e o dispositivo estão conectados à mesma rede WiFi"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifique se o endereço IP que inseriu está correto e certifique-se de que você e o dispositivo estão conectados à mesma rede WiFi"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kiểm tra địa chỉ IP bạn đã nhập có đúng không, và đảm bảo rằng bạn và thiết bị đang kết nối cùng một mạng WiFi"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请检查您输入的IP地址是否正确，并确保您和设备连接的是同一WiFi网络"
+          }
+        }
+      }
     },
     "Choose a device" : {
       "comment" : "Configuration title for a settings page",
@@ -4596,13 +5153,250 @@
       }
     },
     "Close" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إغلاق"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schließen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Isara"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fermer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiudi"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਬੰਦ ਕਰੋ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đóng"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
+          }
+        }
+      }
     },
     "Connecting to device..." : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "جارٍ الاتصال بالجهاز..."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbindung zum Gerät wird hergestellt..."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectando al dispositivo..."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectando al dispositivo..."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kumukonekta sa aparato..."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connexion à l'appareil..."
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connexion à l'appareil..."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collegamento al dispositivo..."
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਉਪਕਰਣ ਨਾਲ ਜੋੜ੍ਹ ਰਹੇ ਹਾਂ..."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectando ao dispositivo..."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A conectar ao dispositivo..."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang kết nối với thiết bị..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在连接设备..."
+          }
+        }
+      }
     },
     "Connection failed" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "فشل الاتصال"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbindung fehlgeschlagen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La conexión ha fallado"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La conexión falló"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nabigo ang koneksyon"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La connexion a échoué"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La connexion a échoué"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connessione fallita"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'ਕਨੈਕਸ਼ਨ ਫੇਲ੍ਹ ਹੋ ਗਿਆ'"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conexão falhou"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falha na conexão"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kết nối thất bại"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接失败"
+          }
+        }
+      }
     },
     "Copy" : {
       "comment" : "Keyboard shortcut to copy\nLabel on a button to copy the text",
@@ -5103,7 +5897,87 @@
       }
     },
     "Device not found at the specified IP address" : {
-      "comment" : "Error when device not found"
+      "comment" : "Error when device not found",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الجهاز غير موجود على العنوان IP المحدد"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerät unter der angegebenen IP-Adresse nicht gefunden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivo no encontrado en la dirección IP especificada"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivo no encontrado en la dirección IP especificada"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hindi natagpuan ang device sa tinukoy na IP address"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appareil non trouvé à l'adresse IP spécifiée"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appareil non trouvé à l'adresse IP spécifiée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivo non trovato all'indirizzo IP specificato"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਨਿਰਦੇਸ਼ਿਤ IP ਪਤੇ 'ਤੇ ਉਪਕਰਣ ਨਹੀਂ ਮਿਲਿਆ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivo não encontrado no endereço IP especificado"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivo não encontrado no endereço IP especificado"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thiết bị không tìm thấy tại địa chỉ IP đã chỉ định"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在指定的IP地址上找不到设备"
+          }
+        }
+      }
     },
     "Devices" : {
       "comment" : "Header in device selection menu",
@@ -6344,10 +7218,168 @@
       }
     },
     "Find the IP address of your Roku by going to **Settings > Network > About**. Your IP address will look something like **%@**" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "العثور على عنوان IP الخاص بـ Roku الخاص بك عن طريق الذهاب إلى **الإعدادات > الشبكة > حول**. سوف يبدو عنوان IP الخاص بك مثل هذا **%@**"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finden Sie die IP-Adresse Ihres Roku, indem Sie zu **Einstellungen > Netzwerk > Über** gehen. Ihre IP-Adresse sieht ungefähr so aus: **%@**"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encuentra la dirección IP de tu Roku yendo a **Configuración > Red > Acerca de**. Tu dirección IP se verá algo como **%@**."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encuentra la dirección IP de tu Roku yendo a **Configuración > Red > Acerca de**. Tu dirección IP se verá algo así como **%@**."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hanapin ang IP address ng iyong Roku sa pamamagitan ng pagpunta sa **Mga Setting > Network > Tungkol sa**. Magmumukha ang iyong IP address na parang **%@**"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouvez l'adresse IP de votre Roku en allant à **Paramètres > Réseau > À propos**. Votre adresse IP ressemblera à quelque chose comme **%@**"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trouvez l'adresse IP de votre Roku en allant à **Paramètres > Réseau > À propos**. Votre adresse IP ressemblera à quelque chose comme **%@**"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trova l'indirizzo IP del tuo Roku andando su **Impostazioni > Rete > Informazioni**. Il tuo indirizzo IP sembrerà qualcosa come **%@**"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਆਪਣੇ ਰੋਕੂ ਦਾ IP ਪਤਾ ਲੱਭਣ ਲਈ **ਸੈਟਿੰਗ > ਨੈੱਟਵਰਕ > ਬਾਰੇ 'ਤੇ ਜਾਓ**. ਤੁਹਾਡਾ IP ਪਤਾ ਕੁਝ ਇਹ ਵਰਗਾ ਦਿਖੈਗਾ **%@**"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre o endereço IP do seu Roku indo em **Configurações > Rede > Sobre**. Seu endereço IP parecerá algo como **%@**."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encontre o endereço IP do seu Roku indo a **Definições > Rede > Sobre**. O seu endereço IP parecerá algo como **%@**."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tìm địa chỉ IP của Roku của bạn bằng cách đi đến **Cài đặt > Mạng > Giới thiệu**. Địa chỉ IP của bạn sẽ trông giống như **%@**"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过转到**设置>网络>关于**来找到您的Roku的IP地址。您的IP地址看起来会像**%@**这样。"
+          }
+        }
+      }
     },
     "Getting in Touch" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "التواصل"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Kontakt treten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ponerse en Contacto"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poniéndose en Contacto"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Makipag-ugnayan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prendre Contact"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrer en contact"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrare in contatto"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਸੰਪਰਕ ਕਰਨਾ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrando em Contato"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrando em Contato"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liên lạc"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取得联系"
+          }
+        }
+      }
     },
     "Gift Roam to a friend" : {
       "comment" : "Description on a button to share the link to this application",
@@ -6765,10 +7797,168 @@
       }
     },
     "Hidden Devices" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الأجهزة المخفية"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versteckte Geräte"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivos ocultos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivos ocultos"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mga Nakatagong Device"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appareils cachés"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appareils cachés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivi nascosti"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਛੁਪੇ ਹੋਏ ਉਪਕਰਣ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivos Ocultos"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dispositivos Ocultos"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thiết bị ẩn"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏设备"
+          }
+        }
+      }
     },
     "Hide Device" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إخفاء الجهاز"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gerät verstecken"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar dispositivo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar dispositivo"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Itago ang Device"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer l'appareil"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer l'appareil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi dispositivo"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਉਪਕਰਣ ਓਹਲੇ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar Dispositivo"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar dispositivo"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ẩn thiết bị"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏设备"
+          }
+        }
+      }
     },
     "Home" : {
       "comment" : "Keyboard shortcut to go to the home screen\nRemote button to go to home screen",
@@ -8095,7 +9285,87 @@
       }
     },
     "Invalid IP address format" : {
-      "comment" : "Error for invalid IP address format"
+      "comment" : "Error for invalid IP address format",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تنسيق عنوان IP غير صالح"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ungültiges IP-Adressformat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato de dirección IP no válido"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato de dirección IP no válido"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hindi wastong format ng IP address"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format d'adresse IP invalide"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format d'adresse IP non valide"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato dell'indirizzo IP non valido"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਅਮਾਨਯ IP ਪਤੇ ਦਾ ਫਾਰਮੈਟ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato de endereço IP inválido"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formato de endereço IP inválido"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Định dạng địa chỉ IP không hợp lệ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无效的IP地址格式"
+          }
+        }
+      }
     },
     "IP Address" : {
       "comment" : "Settings field label for the device's IP address",
@@ -9930,10 +11200,169 @@
       }
     },
     "Make sure you are connected to a WiFi network and try agai" : {
-      "comment" : "Recovery suggestion for network error"
+      "comment" : "Recovery suggestion for network error",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تأكد من أنك متصل بشبكة WiFi وحاول مرة أخرى"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stellen Sie sicher, dass Sie mit einem WiFi-Netzwerk verbunden sind und versuchen Sie es erneut"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asegúrate de estar conectado a una red WiFi e intenta de nuevo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asegúrate de estar conectado a una red WiFi e intenta de nuevo"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siguraduhin na nakakonekta ka sa isang WiFi network at subukang muli"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assurez-vous d'être connecté à un réseau WiFi et essayez à nouveau"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assurez-vous d'être connecté à un réseau WiFi et essayez à nouveau"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assicurati di essere connesso a una rete WiFi e prova di nuovo"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਤੁਹਾਨੂੰ ਯਕੀਨੀ ਬਣਾਓ ਕਿ ਤੁਸੀਂ WiFi ਨੈਟਵਰਕ ਨਾਲ ਜੁੜੇ ਹੋਏ ਹੋ ਅਤੇ ਫੇਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certifique-se de estar conectado a uma rede WiFi e tente novamente"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certifique-se de que está ligado a uma rede WiFi e tente novamente"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đảm bảo bạn đã kết nối với mạng WiFi và thử lại"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确保您已连接到WiFi网络，然后再试一次"
+          }
+        }
+      }
     },
     "Manually Adding TVs" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إضافة تلفزيونات يدويا"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manuelles Hinzufügen von TVs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregando TVs manualmente"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregando TVs manualmente"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manual na Pagdaragdag ng TVs"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajout manuel de téléviseurs"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajout manuel de téléviseurs"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungendo manualmente le TV"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਟੀਵੀਆਂ ਨੂੰ ਮੈਨੁਅਲੀ ਜੋੜਨਾ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionando TVs Manualmente"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionando TVs Manualmente"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thêm TV Thủ công"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手动添加电视"
+          }
+        }
+      }
     },
     "Manually select which apps to show" : {
       "comment" : "Configuration field title controlling whether or not apps are manually selected",
@@ -11508,7 +12937,87 @@
       }
     },
     "No WiFi network connection" : {
-      "comment" : "Network error with message"
+      "comment" : "Network error with message",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لا يوجد اتصال بشبكة الواي فاي"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine WLAN-Netzwerkverbindung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin conexión a la red WiFi"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay conexión a la red WiFi"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Walang koneksyon sa WiFi network"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune connexion réseau WiFi"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune connexion réseau WiFi"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna connessione alla rete WiFi"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'WiFi ਨੈਟਵਰਕ ਕੁਨੈਕਸ਼ਨ ਨਹੀਂ ਹੈ'"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem conexão com a rede WiFi"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem conexão à rede WiFi"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không có kết nối mạng WiFi"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有WiFi网络连接"
+          }
+        }
+      }
     },
     "Not Supported" : {
       "comment" : "Label indicating headphones mode is not supported",
@@ -12421,7 +13930,86 @@
       }
     },
     "Permissive Mode" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "وضع التساهل"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permissiver Modus"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modo permisivo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modo permisivo"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pahintulot na Mode"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode permissif"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode permissif"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modalità permissiva"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਆਗਿਆਦਾਰੀ ਮੋਡ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modo Permissivo"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modo Permissivo"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chế độ cho phép"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "宽松模式"
+          }
+        }
+      }
     },
     "Play or pause the media on the connected device" : {
       "comment" : "Description for play intent",
@@ -12756,7 +14344,87 @@
       }
     },
     "Please be patient, because I don't have an apple watch so I can't test how effective this is. Please reach out if you aren't able to get this to work :). You message me by clicking \"Chat with developer\" from Roam settings" : {
-      "comment" : "Description of watchOS discovery alternatives"
+      "comment" : "Description of watchOS discovery alternatives",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يرجى التحلي بالصبر، لأنني لا أملك ساعة آبل لذا لا أستطيع اختبار مدى فعالية هذا. يرجى التواصل معي إذا لم تتمكن من القدرة على جعل هذا يعمل :). يمكنك مراسلتي بالنقر على \"الدردشة مع المطور\" من إعدادات Roam."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitte haben Sie Geduld, denn ich habe keine Apple Watch, also kann ich nicht testen, wie effektiv das ist. Bitte melden Sie sich, wenn Sie das nicht zum Laufen bringen können :). Sie können mir eine Nachricht senden, indem Sie in den Roam-Einstellungen auf \"Chat mit Entwickler\" klicken."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por favor ten paciencia, porque no tengo un Apple Watch, por lo tanto no puedo probar qué tan efectivo es esto. Por favor, ponte en contacto si no puedes hacer que esto funcione :). Puedes enviarme un mensaje haciendo clic en \"Chatear con el desarrollador\" desde la configuración de Roam."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por favor, ten paciencia, porque no tengo un Apple Watch y por lo tanto no puedo probar qué tan efectivo es esto. Si no logras que esto funcione, por favor escríbeme. Puedes enviarme un mensaje haciendo clic en \"Chatear con el desarrollador\" desde la configuración de Roam."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mangyaring maging pasensyoso, dahil wala akong apple watch kaya hindi ko masusubukan kung gaano ito epektibo. Mangyaring makipag-ugnay kung hindi mo ito magawang gumana :). Maaring magmensahe sa akin sa pamamagitan ng pag-click sa \"Makipag-chat sa developer\" mula sa mga setting ng Roam."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veuillez être patient, car je n'ai pas de montre Apple donc je ne peux pas tester son efficacité. Veuillez me contacter si vous n'arrivez pas à le faire fonctionner :). Vous pouvez me contacter en cliquant sur \"Discuter avec le développeur\" depuis les paramètres de Roam."
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veuillez être patient, car je n'ai pas de Apple Watch donc je ne peux pas tester son efficacité. Veuillez me contacter si vous n'arrivez pas à faire fonctionner ceci :). Vous pouvez m'envoyer un message en cliquant sur \"Discuter avec le développeur\" depuis les paramètres de Roam."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per favore sii paziente, perché non ho un Apple Watch quindi non posso testare quanto sia efficace. Per favore contattami se non riesci a farlo funzionare :). Puoi inviarmi un messaggio cliccando su \"Chatta con lo sviluppatore\" dalle impostazioni di Roam."
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "कृपया धैर्य रखो, क्योंकि मेरे पास एप्पल वॉच नहीं है, इसलिए मैं यह नहीं जांच सकता कि यह कितना प्रभावी है। यदि आप इसे काम करने में सक्षम नहीं हैं तो कृपया संपर्क करें :). आप रोम सेटिंग्स से \"डेवलपर के साथ चैट करें\" पर क्लिक करके मुझसे संदेश भेजते हैं।"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por favor, tenha paciência, porque eu não tenho um Apple Watch, então não posso testar a eficácia disso. Entre em contato se você não conseguir fazer isso funcionar :). Você pode me enviar uma mensagem clicando em \"Conversar com o desenvolvedor\" nas configurações do Roam."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por favor, seja paciente, porque eu não tenho um Apple Watch para poder testar quão eficaz isto é. Por favor, contacte-me se não conseguir colocar isto a funcionar :). Pode enviar-me uma mensagem clicando em \"Conversar com o desenvolvedor\" nas configurações do Roam."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vui lòng kiên nhẫn, vì tôi không sở hữu một chiếc đồng hồ apple nên tôi không thể kiểm tra được hiệu quả của nó. Hãy liên hệ với tôi nếu bạn không thể làm cho nó hoạt động :). Bạn có thể nhắn cho tôi bằng cách nhấp vào \"Trò chuyện với nhà phát triển\" từ cài đặt Roam."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请耐心等待，因为我没有苹果手表，所以无法测试这个的效果。如果你无法使它工作，请与我取得联系:)。你可以通过点击Roam设置中的“与开发者聊天”来给我发消息。"
+          }
+        }
+      }
     },
     "Power" : {
       "comment" : "Keyboard shortcut to power on/off the TV\nSiri shortcut to power on/off the device",
@@ -15163,7 +16831,7 @@
       }
     },
     "Roku Apps" : {
-      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
+      "comment" : "Siri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -15246,7 +16914,7 @@
       }
     },
     "Roku Controls" : {
-      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
+      "comment" : "Siri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -16491,7 +18159,86 @@
       }
     },
     "Shared Diagnostics" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "التشخيص المشترك"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geteilte Diagnose"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnósticos Compartidos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnósticos Compartidos"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ibinahaging Diagnostiko"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnostics Partagés"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnostics Partagés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnostica Condivisa"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਸਾਂਝਾ ਨਿਦਾਨ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnósticos Compartilhados"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diagnósticos Partilhados"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chia sẻ Chẩn đoán"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共享诊断"
+          }
+        }
+      }
     },
     "Show menu bar icon" : {
       "comment" : "Label on a settings toggle",
@@ -17820,7 +19567,87 @@
       }
     },
     "Try again later or contact support" : {
-      "comment" : "Recovery suggestion for unknown error"
+      "comment" : "Recovery suggestion for unknown error",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "حاول مرة أخرى لاحقاً أو اتصل بالدعم"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versuchen Sie es später erneut oder wenden Sie sich an den Support"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intenta de nuevo más tarde o contacta al soporte"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intenta de nuevo más tarde o contacta al soporte"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subukang muli mamaya o makipag-ugnayan sa suporta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réessayez plus tard ou contactez le support"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réessayez plus tard ou contactez le support"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prova di nuovo più tardi o contatta il supporto"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਬਾਅਦ ਵਿੱਚ ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ ਜਾਂ ਸਹਿਯੋਗ ਨਾਲ ਸੰਪਰਕ ਕਰੋ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tente novamente mais tarde ou entre em contato com o suporte"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tente novamente mais tarde ou contacte o suporte"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thử lại sau hoặc liên hệ hỗ trợ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "稍后再试或联系支持"
+          }
+        }
+      }
     },
     "Turns on or off your TV" : {
       "localizations" : {
@@ -17988,7 +19815,86 @@
       }
     },
     "Unhide" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إظهار"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einblenden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ipakita"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਅਨਹਾਈਡ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hiện lại"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消隐藏"
+          }
+        }
+      }
     },
     "Unknown" : {
       "comment" : "Placeholder for unknown information",
@@ -18654,7 +20560,86 @@
       }
     },
     "Waiting to connect" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "في انتظار الاتصال"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warten auf Verbindung"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esperando conectar"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esperando para conectar"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Naghihintay na makakonekta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En attente de connexion"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En attente de connexion"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In attesa di connettersi"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਕਨੈਕਟ ਹੋਣ ਦੀ ਉਡੀਕ ਵਿੱਚ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aguardando para conectar"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À espera de conectar"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang chờ kết nối"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "等待连接"
+          }
+        }
+      }
     },
     "Want a keyboard shortcut that works everywhere?" : {
       "localizations" : {

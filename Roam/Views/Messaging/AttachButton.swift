@@ -48,7 +48,7 @@ struct AttachButton: View {
             .sensoryFeedback(.impact, trigger: diagnosticsPressCounter)
 #endif
             .labelStyle(.titleAndIcon)
-            
+
             Button(action: {
                 pickingFiles = true
                 filePressCounter += 1

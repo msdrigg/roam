@@ -1,1 +1,5 @@
--   Risoluzione del crash durante la scansione in background
+-   Aggiunta di una scorciatoia per mostrare il menu di roam (barra dei menu o finestra principale in background)
+-   Diversi miglioramenti della messaggistica
+-   Elementi del menu più coerenti
+-   Miglior flusso di aggiunta dispositivo
+-   Risoluzione di bug e miglioramenti

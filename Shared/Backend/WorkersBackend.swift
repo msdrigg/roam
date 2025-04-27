@@ -6,7 +6,7 @@ import SwiftData
 import UniformTypeIdentifiers
 
 private let globalBackendURL = "https://backend.roam.msd3.io"
-//private let globalBackendURL = "http://localhost:8080"
+// private let globalBackendURL = "http://localhost:8080"
 
 private func getAPIKey() -> String? {
     let apiKey = Bundle.main.infoDictionary?["BACKEND_API_KEY"] as? String
@@ -51,7 +51,7 @@ public struct AttachmentDownload: Decodable, Sendable {
     let data: Data
     let contentType: String
     let id: String
-    
+
     enum CodingKeys: String, CodingKey {
         case filename = "filename"
         case data = "data"
@@ -144,7 +144,7 @@ public struct MessageModelResponse: Decodable, Sendable {
             attachmentsData = nil
         }
         self.attachments = attachmentsData
-        
+
         nonce = try container.decodeIfPresent(String.self, forKey: .nonce)
     }
 
@@ -283,7 +283,7 @@ public func uploadApnsToken(_ token: String) async throws {
 
     do {
         let (data, response) = try await URLSession.shared.data(for: request)
-        
+
         guard let httpResponse = response as? HTTPURLResponse else {
             Log.backend.error("Received non-http response \(String(describing: response), privacy: .public)")
             throw UploadError.failed(.badResponse(nil))
@@ -332,7 +332,7 @@ public func sendMessageDirect(message: String?, attachment: AttachmentUpload?) a
 
     do {
         let (data, response) = try await URLSession.shared.data(for: request)
-        
+
         guard let httpResponse = response as? HTTPURLResponse else {
             Log.backend.error("Received non-http response \(String(describing: response), privacy: .public)")
             return .failure(.failed(.badResponse(nil)))

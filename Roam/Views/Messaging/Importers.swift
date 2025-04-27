@@ -26,7 +26,7 @@ struct DiagnosticsImport: PendingAttachment {
             return .failure(.failedToEncode)
         }
     }
-    
+
     private static func getDebugLogMessageString(_ debugInfo: DebugInfo) -> String {
         var message: String = ":ninja:\n\n"
 
@@ -105,7 +105,7 @@ struct PhotoImport: PendingAttachment {
     func load() async -> Result<AttachmentUpload, AttachmentError> {
         do {
             let filename = rewriteName(.png, self.filename)
-            
+
             guard let data = try await item.loadTransferable(type: Data.self) else {
                 return .failure(.loadingFailed)
             }
@@ -149,7 +149,7 @@ struct ItemProviderAttachment: PendingAttachment {
     let utType: UTType
     let id: String
     let provider: ItemProvider
-    
+
     init?(_ provider: ItemProvider, name: String) {
         guard let contentType = provider.registeredContentTypes.first else {
             Log.userInteraction.warning("Unsupported file type for \(provider, privacy: .public)")
@@ -192,7 +192,7 @@ struct FileImport: PendingAttachment {
 
         // Get file type (UTType)
         let type: UTType?
-        
+
         guard url.startAccessingSecurityScopedResource() else {
             Log.userInteraction.notice("Failed to access security scoped resource at \(url, privacy: .public)")
             return nil
@@ -208,7 +208,7 @@ struct FileImport: PendingAttachment {
         self.filename = rewriteName(utType, url.lastPathComponent)
         self.utType = utType
     }
-    
+
     func load() async -> Result<AttachmentUpload, AttachmentError> {
         do {
             guard url.startAccessingSecurityScopedResource() else {
@@ -218,9 +218,9 @@ struct FileImport: PendingAttachment {
             // Read file data asynchronously for local files
             // Handle remote URLs
             let (data, _) = try await URLSession.shared.data(from: url)
-            
+
             let filename = url.lastPathComponent
-            
+
             return .success(AttachmentUpload(filename: filename, data: data, contentType: utType.preferredMIMEType ?? "application/octet-stream", id: self.id))
         } catch {
             return .failure(.loadingFailed)
@@ -237,4 +237,3 @@ func rewriteName(_ utType: UTType, _ filename: String) -> String {
         return filename
     }
 }
-

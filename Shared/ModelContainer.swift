@@ -75,7 +75,6 @@ private func _getSharedModelContainer() throws -> ModelContainer {
         groupContainer: .identifier(mainAppGroup)
     )
 
-    
     return try catchObjc {
         return try ModelContainer(
             for: schema,

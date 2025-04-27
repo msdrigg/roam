@@ -285,7 +285,7 @@ struct SettingsView: View {
                     .buttonStyle(.plain)
 #endif
                 }
-                
+
                 Button(action: {
 #if os(macOS)
                     openWindow(id: "messages")
@@ -315,7 +315,7 @@ struct SettingsView: View {
 #if os(macOS)
                 .buttonStyle(.plain)
 #endif
-                
+
 #if !os(watchOS)
                 if !hiddenDevices.isEmpty {
                     DisclosureGroup {
@@ -389,7 +389,6 @@ struct MacSettings: View {
         }
     }
 }
-
 
 #if DEBUG
 #Preview(

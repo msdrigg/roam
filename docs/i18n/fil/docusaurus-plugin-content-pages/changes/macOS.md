@@ -1,1 +1,5 @@
--   Pagdaragdag ng hotkey para ipakita ang roam menu (menu bar o pangunahing window sa background)
+-   Pagdadagdag ng hotkey para ipakita ang roam menu (menu bar o pangunahing window sa background)
+-   Maraming pagpapabuti sa messaging
+-   Mas konsistenteng mga item sa menu
+-   Mas mahusay na flow ng pagdagdag ng device
+-   Mga pag-ayos ng bug at mga pagpapabuti

@@ -1,1 +1,5 @@
--   Beheben des Absturzes beim Scannen im Hintergrund
+-   Hinzufügen einer Hotkey-Funktion, um das Roam-Menü anzuzeigen (Menüleiste oder Hauptfenster im Hintergrund)
+-   Mehrere Verbesserungen der Nachrichtenübermittlung
+-   Konsistentere Menüelemente
+-   Besserer Gerätehinzufügungs-Flow
+-   Fehlerbehebungen und Verbesserungen

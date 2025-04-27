@@ -15,7 +15,7 @@ extension Message {
         self.attachmentsData = try? encoder.encode(attachments)
         self.unsentAttachmentData = nil
     }
-    
+
     internal static func fetchAllRequest() -> FetchDescriptor<Message> {
         var fd = FetchDescriptor(
             predicate: #Predicate<Message> { _ in
@@ -23,10 +23,10 @@ extension Message {
             }
         )
         fd.relationshipKeyPathsForPrefetching = []
-        
+
         return fd
     }
-    
+
     func triggerAction() {
 #if !WIDGET
         if self.message.hasPrefix(":command-share-diagnostics:") {
@@ -42,21 +42,38 @@ extension Message {
         }
 #endif
     }
-    
+
     func expandMessage() -> String {
         let replacements: [String: String] = [
-            ":manually-add-tv:": String(localized: ":manually-add-tv:", defaultValue: "You can find the instructions for how to manually add a TV here: https://roam.msd3.io/manually-add-tv/", comment: "Help text. Note that the URL can be localized with https://roam.msd3.io/<lang>/manually-add-tv/"),
-            ":manually-add-tv-full:": String(localized: ":manually-add-tv-full:", defaultValue: "Hi, it sounds like you are having trouble connecting to your Roku TV. If the Roam app isn't automatically detecting your TV, you can manually add it by following the instructions here: https://roam.msd3.io/manually-add-tv/", comment: "Help text. Note that the URL can be localized with https://roam.msd3.io/<lang>/manually-add-tv/"),
-            ":help-share-diagnostics:": String(localized: ":help-share-diagnostics:", defaultValue: "To share diagnostics, click the plus button at the bottom of the messaging window and then click \"Attach diagnostics\"", comment: "Help text. Note that the URL can be localized with https://roam.msd3.io/<lang>/manually-add-tv/"),
-            ":message-from-roam-title:": String(localized: ":message-from-roam-title:", defaultValue: "Message from Roam", comment: "Localize as 'Message from Roam'")
+            ":manually-add-tv:": String(
+                localized: ":manually-add-tv:",
+                defaultValue: "You can find the instructions for how to manually add a TV here: https://roam.msd3.io/manually-add-tv/",
+                comment: "Help text. Note that the URL can be localized with https://roam.msd3.io/<lang>/manually-add-tv/"
+            ),
+            ":manually-add-tv-full:": String(
+                localized: ":manually-add-tv-full:",
+                // swiftlint:disable:next line_length
+                defaultValue: "Hi, it sounds like you are having trouble connecting to your Roku TV. If the Roam app isn't automatically detecting your TV, you can manually add it by following the instructions here: https://roam.msd3.io/manually-add-tv/",
+                comment: "Help text. Note that the URL can be localized with https://roam.msd3.io/<lang>/manually-add-tv/"
+            ),
+            ":help-share-diagnostics:": String(
+                localized: ":help-share-diagnostics:",
+                defaultValue: "To share diagnostics, click the plus button at the bottom of the messaging window and then click \"Attach diagnostics\"",
+                comment: "Help text. Note that the URL can be localized with https://roam.msd3.io/<lang>/manually-add-tv/"
+            ),
+            ":message-from-roam-title:": String(
+                localized: ":message-from-roam-title:",
+                defaultValue: "Message from Roam",
+                comment: "Localize as 'Message from Roam'"
+            )
         ]
-        
+
         var expandedMessage = self.message
-        
+
         for (key, value) in replacements {
             expandedMessage = expandedMessage.replacingOccurrences(of: key, with: value)
         }
-        
+
         return expandedMessage
     }
 }
@@ -99,7 +116,7 @@ public struct AttachmentUpload: Codable, Sendable, Hashable {
         self.pairedMessages = pairedMessages
         self.id = id
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case filename = "filename"
         case data = "data"
@@ -142,7 +159,7 @@ public struct AttachmentUpload: Codable, Sendable, Hashable {
         if let type = UTType(tag: self.filenameExtension, tagClass: .filenameExtension, conformingTo: nil), type.isPublic {
             return type
         }
-        
+
         return .data
     }
 }

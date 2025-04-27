@@ -1,1 +1,5 @@
-- Ajout de raccourci pour afficher le menu roam (barre de menu ou fenêtre principale en arrière-plan)
+-   Ajout de raccourci pour afficher le menu roam (barre de menu ou fenêtre principale en arrière-plan)
+-   Plusieurs améliorations de messagerie
+-   Éléments de menu plus cohérents
+-   Meilleur flux d'ajout de périphérique
+-   Corrections de bugs et améliorations

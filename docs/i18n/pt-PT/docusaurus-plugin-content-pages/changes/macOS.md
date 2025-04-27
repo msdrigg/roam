@@ -1,1 +1,5 @@
--   Adicionando tecla de atalho para mostrar o menu do roam (barra de menu ou janela principal em segundo plano)
+- Adicionar atalho para mostrar o menu roam (barra de menu ou janela principal em segundo plano)
+- Várias melhorias nas mensagens
+- Itens de menu mais consistentes
+- Melhor fluxo de adição de dispositivo
+- Correções de bugs e melhorias

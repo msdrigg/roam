@@ -24,7 +24,7 @@ struct MessageView: View {
 
     private var showSupportTypingIndicator: Bool {
         let lastSupportTypingDate = Date(timeIntervalSince1970: lastSupportTypingTimeInterval)
-        
+
         if lastSupportTypingDate > Date.now.addingTimeInterval(-8) {
             if let lastSupportMessage = baseMessages.last(where: { $0.author == .support })?.timestamp {
                 return lastSupportMessage < lastSupportTypingDate.addingTimeInterval(-2)
@@ -76,7 +76,7 @@ struct MessageView: View {
             + [roboMessage].compactMap({$0})
         ).filter { !$0.message.isEmpty || !$0.attachments.isEmpty }
     }
-    
+
     var zippedMessages: [(Message, Message?)] {
         Array(zip(messages, [nil] + messages.dropLast()))
     }
@@ -96,7 +96,7 @@ struct MessageView: View {
             }
         }
     }
-    
+
     var body: some View {
         if runningInPreview {
             bodyContent
@@ -183,7 +183,7 @@ struct MessageView: View {
 #elseif os(visionOS)
                 .padding(.bottom, 12)
 #endif
-            
+
             VStack(spacing: 0) {
 #if !os(watchOS)
                 if attachedFiles.count > 0 {
@@ -238,7 +238,6 @@ struct MessageView: View {
                 )
 #endif
 
-            
 #if os(macOS)
             EmojiPicker().padding(.bottom, 2)
 #elseif !os(watchOS)
@@ -292,7 +291,7 @@ struct MessageView: View {
         )
 #endif
     }
-    
+
     @ViewBuilder
     var messageList: some View {
         ScrollViewReader { scrollValue in
@@ -374,7 +373,7 @@ struct MessageView: View {
             } else {
                 "Attachment \(attachmentCount + 1)"
             }
-            
+
             if let attachment = ItemProviderAttachment(provider, name: name) {
                 self.handleAttachment(attachment)
                 anySucceeded = true

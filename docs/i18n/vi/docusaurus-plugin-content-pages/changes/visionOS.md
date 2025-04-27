@@ -1,1 +1,5 @@
-- Sửa lỗi sập khi quét ở chế độ nền
+-   Thêm phím tắt để hiện thực đơn roam (thanh menu hoặc cửa sổ chính ở nền)
+-   Cải thiện nhiều hơn về tin nhắn
+-   Các mục trong thực đơn nhất quán hơn
+-   Luồng thêm thiết bị tốt hơn
+-   Sửa lỗi và cải tiến

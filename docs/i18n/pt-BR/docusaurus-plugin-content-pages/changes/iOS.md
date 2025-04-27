@@ -1,1 +1,5 @@
--   Corrigindo o bug de varredura de dispositivo
+- Adicionando tecla de atalho para mostrar o menu roam (barra de menu ou janela principal em segundo plano)
+- Várias melhorias na mensagens
+- Itens de menu mais consistentes
+- Melhor fluxo para adicionar dispositivo
+- Correções de bugs e melhorias

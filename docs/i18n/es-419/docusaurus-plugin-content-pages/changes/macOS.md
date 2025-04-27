@@ -1,1 +1,5 @@
-- Agregando tecla de acceso rápido para mostrar el menú de roam (barra de menú o ventana principal en segundo plano)
+-   Agregar tecla de acceso rápido para mostrar el menú de roam (barra de menú o ventana principal en segundo plano)
+-   Varias mejoras en los mensajes
+-   Artículos de menú más consistentes
+-   Mejor flujo de añadir dispositivo
+-   Correcciones de errores y mejoras

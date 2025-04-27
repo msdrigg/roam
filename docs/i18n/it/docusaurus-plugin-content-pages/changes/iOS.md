@@ -1,1 +1,5 @@
--   Risoluzione del bug di scansione del dispositivo
+-   Aggiunta di un tasto di scelta rapida per mostrare il menu roam (barra dei menu o finestra principale in background)
+-   Diversi miglioramenti alla messaggistica
+-   Elementi del menu più coerenti
+-   Miglior flusso di aggiunta dispositivo
+-   Correzioni di bug e miglioramenti

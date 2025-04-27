@@ -61,7 +61,7 @@ struct DeviceDetailView: View {
             nil
         }
     }
-    
+
     var body: some View {
         if runningInPreview {
             bodyContent
@@ -124,7 +124,7 @@ struct DeviceDetailView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.top, 8)
-                    
+
                     Text(device?.name ?? getGlobalNewDeviceName())
                     #if os(macOS)
                         .font(.title3.bold())
@@ -270,13 +270,13 @@ struct DeviceDetailView: View {
             }
             #endif
         }
-        .onChange(of: "\(deviceIP)-\(hidden)-\(deviceName)", initial: false) { old, new in
-            Log.userInteraction.notice("Autosaving device settings--\(deviceIP)-\(hidden)-\(deviceName)")
+        .onChange(of: "\(deviceIP)-\(hidden)-\(deviceName)", initial: false) {
+            Log.userInteraction.notice("Autosaving device settings")
             save()
         }
         .formStyle(.grouped)
     }
-    
+
     func save() {
         if let device = device {
             // Try to get device id

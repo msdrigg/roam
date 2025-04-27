@@ -349,7 +349,7 @@ public enum SchemaV4: VersionedSchema {
         var author: AuthorType
         var viewed: Bool = false
         var hidden: Bool = false
-        
+
         // Handle sending
         var fetchedBackend: Bool
         var lastSendAttempt: Date?
@@ -361,7 +361,7 @@ public enum SchemaV4: VersionedSchema {
 
         @Attribute(.externalStorage)
         var unsentAttachmentData: Data?
-        
+
         // Used for auto-reply messages
         var messageTitle: String?
         var robotMessage: Bool = false
@@ -372,7 +372,7 @@ public enum SchemaV4: VersionedSchema {
             let filename: String
             let mimetype: String
         }
-        
+
         enum AuthorType: String, Codable {
             case me
             case support
@@ -398,7 +398,13 @@ public enum SchemaV4: VersionedSchema {
             return try? decoder.decode(AttachmentUpload.self, from: data)
         }()
 
-        init(id: String, message: String, author: AuthorType, fetchedBackend: Bool = true, viewed: Bool = false, messageTitle: String? = nil, robotMessage: Bool = false, attachments: [SentAttachment] = [], unsentAttachment: AttachmentUpload? = nil, nonce: String? = nil) {
+        init(
+            id: String, message: String, author: AuthorType,
+            fetchedBackend: Bool = true, viewed: Bool = false,
+            messageTitle: String? = nil, robotMessage: Bool = false,
+            attachments: [SentAttachment] = [],
+            unsentAttachment: AttachmentUpload? = nil, nonce: String? = nil
+        ) {
             let encoder = PropertyListEncoder()
             self.id = id
             self.message = message

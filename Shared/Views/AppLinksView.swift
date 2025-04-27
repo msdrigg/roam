@@ -99,21 +99,21 @@ struct AppLinksView: View {
             .fixedSize(horizontal: false, vertical: true)
             .onAppear {
                 var appLinksUnique: [String: AppLink] = [:]
-                
+
                 for appLink in appLinks {
                     appLinksUnique[appLink.id] = appLink
                 }
-                
+
                 cachedAppLinks = Array(appLinksUnique.values)
             }
             .onChange(of: appIdsIconsHashed) {
                 withAnimation(.interpolatingSpring) {
                     var appLinksUnique: [String: AppLink] = [:]
-                    
+
                     for appLink in appLinks {
                         appLinksUnique[appLink.id] = appLink
                     }
-                    
+
                     cachedAppLinks = Array(appLinksUnique.values)
                 }
             }    }

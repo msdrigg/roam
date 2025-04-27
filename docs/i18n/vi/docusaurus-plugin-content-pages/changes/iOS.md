@@ -1,1 +1,5 @@
-- Sửa lỗi quét thiết bị
+-   Thêm phím tắt để hiển thị menu roam (thanh menu hoặc cửa sổ chính phía sau)
+-   Nhiều cải tiến về thông báo
+-   Mục menu nhất quán hơn
+-   Dòng thêm thiết bị tốt hơn
+-   Sửa lỗi và cải tiến

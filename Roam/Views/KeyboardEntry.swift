@@ -3,7 +3,7 @@
     import os.log
     import SwiftUI
 
-    let MAX_LENGTH_CHARS = 64
+    let globalMaxLengthChars = 64
 
     private struct StrTransformation {
         let old: String
@@ -225,7 +225,7 @@
             innertTextField.delegate = context.coordinator
             innertTextField.didDelete = onDelete
             innertTextField.fullFeatures = fullFeatures
-            
+
             context.coordinator.setup(innertTextField)
 
             return innertTextField
@@ -263,7 +263,7 @@
             }
 
             func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-                let maxLength = MAX_LENGTH_CHARS
+                let maxLength = globalMaxLengthChars
                 let currentString = (textField.text ?? "") as NSString
                 let newString = currentString.replacingCharacters(in: range, with: string)
 

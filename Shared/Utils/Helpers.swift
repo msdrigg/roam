@@ -423,7 +423,6 @@ public extension Binding where Value == Bool {
     }
 }
 
-
 #if os(macOS)
 import AppKit
 #else
@@ -473,7 +472,7 @@ func compressPNG(image: CGImage, maxFileSize: Int = 9 * 1024 * 1024) -> Data? {
            finalPNGData.count <= maxFileSize {
             return finalPNGData
         }
-        
+
         compressionQuality -= 0.1
     }
 
@@ -485,34 +484,33 @@ func cgImageFromJPEGData(_ data: Data) -> CGImage? {
           let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
         return nil
     }
-    
+
     return cgImage
 }
 
 func jpegData(from image: CGImage, quality: CGFloat) -> Data? {
     let options: [CFString: Any] = [kCGImageDestinationLossyCompressionQuality: quality]
     let data = NSMutableData()
-    
+
     guard let destination = CGImageDestinationCreateWithData(data, UTType.jpeg.identifier as CFString, 1, nil) else {
         return nil
     }
-    
+
     CGImageDestinationAddImage(destination, image, options as CFDictionary)
     CGImageDestinationFinalize(destination)
-    
+
     return data as Data
 }
-
 
 func pngData(from image: CGImage) -> Data? {
     let data = NSMutableData()
     guard let destination = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil) else {
         return nil
     }
-    
+
     CGImageDestinationAddImage(destination, image, nil)
     CGImageDestinationFinalize(destination)
-    
+
     return data as Data
 }
 
@@ -529,7 +527,7 @@ func pngData(from jpegData: Data) -> Data? {
 
     CGImageDestinationAddImage(destination, cgImage, nil)
     CGImageDestinationFinalize(destination)
-    
+
     return data as Data
 }
 
@@ -575,7 +573,6 @@ extension Data {
 import Combine
 import UIKit
 
-
 /// Publisher to read keyboard changes.
 enum KeyboardReadable { }
 
@@ -600,22 +597,16 @@ extension KeyboardReadable {
 
 func isHiddenMessage(_ message: String) -> Bool {
     let hiddenPatterns = [":ninja:", ":command-share-diagnostics:"]
-    
-    for pattern in hiddenPatterns {
-        if message.hasPrefix(pattern) {
-            return true
-        }
-    }
-    
-    return false
+
+    return hiddenPatterns.contains(where: message.hasPrefix)
 }
 
 func parseDiscordSnowflake(_ id: String) -> Date? {
     guard let snowflake = UInt64(id) else { return nil }
-    
+
     let discordEpoch: UInt64 = 1_420_070_400_000 // Discord epoch in milliseconds (2015-01-01T00:00:00Z)
     let timestamp = (snowflake >> 22) + discordEpoch
-    
+
     return Date(timeIntervalSince1970: TimeInterval(timestamp) / 1000)
 }
 
@@ -627,7 +618,6 @@ func generateDiscordSnowflake(_ date: Date) -> String {
     let snowflake = (timestamp << 22) | randomBits
     return String(snowflake)
 }
-
 
 #if !WIDGET
 func requestNotificationPermission() {

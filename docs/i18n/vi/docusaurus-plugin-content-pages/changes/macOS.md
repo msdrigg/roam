@@ -1,1 +1,5 @@
-- Thêm phím tắt để hiển thị menu roam (thanh menu hoặc cửa sổ chính ở nền)
+-   Thêm phím tắt để hiển thị menu roam (thanh menu hoặc cửa sổ chính ở nền)
+-   Cải tiến tin nhắn ở một số phần
+-   Các mục trong menu thống nhất hơn
+-   Quy trình thêm thiết bị tốt hơn
+-   Sửa lỗi và cải tiến

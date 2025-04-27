@@ -1,1 +1,5 @@
--   Pinapayos ang bug sa pag-scan ng device
+-   Pagdagdag ng hotkey para ipakita ang roam menu (menu bar o pangunahing bintana sa likod)
+-   Ilang pagpapabuti sa messaging
+-   Mas pantay na mga item sa menu
+-   Mas maayos na pagdagdag ng daloy ng device
+-   Mga pag-aayos ng bug at pagpapabuti

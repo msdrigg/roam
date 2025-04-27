@@ -85,7 +85,7 @@ public actor DataHandler {
         }
         Log.data.notice("Updated device at \(id.described(), privacy: .public)")
     }
-    
+
     @discardableResult
     func addDeviceIndistriminantly(location: String, friendlyDeviceName: String, udn: String, serial: String, hidden: Bool) -> PersistentIdentifier? {
         if let device = deviceForUdn(udn: udn) {
@@ -108,7 +108,7 @@ public actor DataHandler {
             )
             device.hiddenAt = hidden ? Date.now : nil
             modelContext.insert(device)
-            
+
             do {
                 try modelContext.saveSafer()
                 Log.data.notice("Added device \(String(describing: device.persistentModelID), privacy: .public)")
@@ -670,7 +670,7 @@ actor WatchOSRefreshClient: RefreshClient {
     func getDeviceApps() async throws -> [AppLinkAppEntity] {
         return try await fetchDeviceApps(location: location)
     }
-    
+
     func getDeviceAppIcon(_ appId: String) async throws -> Data {
         return try await fetchAppIcon(location: location, appId: appId)
     }
@@ -707,7 +707,7 @@ actor ECPWebsocketRefreshClient: RefreshClient {
     func getDeviceApps() async throws -> [AppLinkAppEntity] {
         return try await client.getDeviceApps()
     }
-    
+
     func getDeviceAppIcon(_ appId: String) async throws -> Data {
         return try await client.getDeviceAppIcon(appId)
     }
@@ -906,7 +906,7 @@ extension DataHandler {
         descriptor.fetchLimit = 1
         descriptor.propertiesToFetch = [\.id]
 
-        var lastMessage: Message? = nil
+        var lastMessage: Message?
         do {
             lastMessage = try modelContext.fetchSafer(descriptor).last
         } catch {
@@ -923,7 +923,7 @@ extension DataHandler {
             viewed: false
         )
     }
-    
+
     @discardableResult
     public func refreshMessages(latestMessageId: String?, viewed: Bool) async -> Int {
         Log.data.notice("Refreshing messages with last message \(String(describing: latestMessageId), privacy: .public)")
@@ -1021,22 +1021,22 @@ extension DataHandler {
 
                 for message in newMessages {
                     message.viewed = viewed
-                    
+
                     let id = message.id
                     let existingMessageDescriptor = FetchDescriptor<Message>(
                         predicate: #Predicate { $0.id == id }
                     )
-                    
+
                     let existingMessages = try modelContext.fetchSafer(existingMessageDescriptor)
                     for message in existingMessages {
                         modelContext.delete(message)
                     }
                     modelContext.insert(message)
-                    
+
                     message.triggerAction()
                 }
                 count = newMessages.count
-                
+
                 let savingMessages = try modelContext.fetchSafer(FetchDescriptor<Message>(
                     predicate: #Predicate { $0.fetchedBackend == false || $0.lastSendAttempt != nil }
                 ))

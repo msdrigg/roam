@@ -1,1 +1,5 @@
--   Solucionando fallo cuando se escanea en segundo plano
+-   Agregando tecla de acceso rápido para mostrar el menú roam (barra de menú o ventana principal en segundo plano)
+-   Varias mejoras en la mensajería
+-   Elementos de menú más consistentes
+-   Mejor flujo para agregar dispositivo
+-   Correcciones de errores y mejoras

@@ -1,1 +1,5 @@
--   Behebung des Gerätescan-Fehlers
+-   Hinzufügen einer Tastenkombination zum Anzeigen des Roam-Menüs (Menüleiste oder Hauptfenster im Hintergrund)
+-   Mehrere Verbesserungen in der Kommunikation
+-   Konsistentere Menüpunkte
+-   Verbesserter Geräte hinzufügen Flow
+-   Bugfixes und Verbesserungen
