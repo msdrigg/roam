@@ -441,7 +441,7 @@ struct RemoteViewContained: View {
 
             HStack {
                 Spacer()
-                VStack(alignment: .center, spacing: 10) {
+                VStack(alignment: .center, spacing: 0) {
                     #if os(macOS)
                     HStack(alignment: .center) {
                         Spacer()
@@ -572,12 +572,40 @@ struct RemoteViewContained: View {
                     }
                     #endif
 
+                    if selectedDevice == nil {
+                        Button(String(localized: "Add a device manually", comment: "Label on a button to add a device"), systemImage: "plus") {
+                            showingAddDeviceSheet = true
+                        }
+                        .labelStyle(.titleAndIcon)
+                        .font(.body)
+#if os(iOS)
+                        .offset(y: -20)
+                        .buttonStyle(.bordered)
+                        .foregroundStyle(Color.accentColor)
+#else
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(Color.secondary)
+#endif
+                    }
+
                     if isHorizontal {
                         horizontalBody()
                             .disabled(selectedDevice == nil)
+                            .font(.title2)
+                            .fontDesign(.rounded)
+                            .controlSize(.extraLarge)
+                            .buttonStyle(.bordered)
+                            .buttonBorderShape(.roundedRectangle)
+                            .labelStyle(.iconOnly)
                     } else {
                         verticalBody()
                             .disabled(selectedDevice == nil)
+                            .font(.title2)
+                            .fontDesign(.rounded)
+                            .controlSize(.extraLarge)
+                            .buttonStyle(.bordered)
+                            .buttonBorderShape(.roundedRectangle)
+                            .labelStyle(.iconOnly)
                     }
 
                     if !hideUIForKeyboardEntry {
@@ -794,12 +822,6 @@ struct RemoteViewContained: View {
         .sheet(isPresented: $showingAddDeviceSheet) {
             AddDeviceFlow()
         }
-        .font(.title2)
-        .fontDesign(.rounded)
-        .controlSize(.extraLarge)
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.roundedRectangle)
-        .labelStyle(.iconOnly)
         .defaultFocus($focusKeyboardMonitor, .monitor, priority: .userInitiated)
     }
 

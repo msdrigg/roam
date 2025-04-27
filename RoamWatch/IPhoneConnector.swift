@@ -74,7 +74,7 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
                         }
                         continue
                     }
-                    if let location = device.value["location"], let name = device.value["name"], let udn = device.value["udn"], let serial = device.value["serial"] {
+                    if let location = device.value["location"], let udn = device.value["udn"], let serial = device.value["serial"] {
                         let hiddenAtIso8601 = device.value["hiddenAt"]
                         let hiddenAt = hiddenAtIso8601.flatMap {
                             let formatter = ISO8601DateFormatter()

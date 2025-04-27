@@ -129,7 +129,7 @@ struct DeviceDetailView: View {
                     #if os(macOS)
                         .font(.title3.bold())
                     #else
-                        .font(.body.monospaced())
+                        .font(.headline)
                     #endif
                 }
             })
@@ -148,6 +148,9 @@ struct DeviceDetailView: View {
                     HStack {
                         TextField(String(localized: "IP Address", comment: "Settings field label for the device's IP address"), text: $deviceIP)
                             .frame(maxWidth: .infinity)
+#if !os(macOS) && !os(watchOS)
+                            .keyboardType(.numbersAndPunctuation)
+#endif
                         #if !os(watchOS)
                         Spacer()
                             .frame(maxWidth: 10)
@@ -250,9 +253,8 @@ struct DeviceDetailView: View {
             }, label: {
               Text("Delete Device", comment: "Text on a button to delete the device")
             })
-            #if !os(macOS)
             .frame(maxWidth: .infinity)
-            #endif
+            .buttonStyle(.borderless)
             .foregroundStyle(Color.red)
         }
         .onSubmit {

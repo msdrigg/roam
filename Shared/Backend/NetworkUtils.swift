@@ -57,6 +57,10 @@ struct Addressed4NetworkInterface: Encodable {
         family == AF_INET
     }
 
+    var isNormal: Bool {
+        isIPv4 && (self.nwInterface?.type == .wifi || self.nwInterface?.type == .wiredEthernet)
+    }
+
     var familyDescription: String {
         switch family {
            case AF_INET:

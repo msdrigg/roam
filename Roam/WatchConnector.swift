@@ -64,7 +64,12 @@
                 var transferingDevicesBuilder: [PersistentIdentifier] = []
                 let sendTimeout = Date(timeIntervalSinceNow: 60 * 60 * 24 * 7)
                 for device in devices.filter({ $0.lastSentToWatch ?? Date.distantPast < sendTimeout }) {
-                    deviceMap[device.id] = ["location": device.location, "name": device.name, "hiddenAt": device.hiddenAt?.ISO8601Format()]
+                    var map = ["location": device.location, "name": device.name]
+                    if let hiddenAt = device.hiddenAt?.ISO8601Format() {
+                        map["hiddenAt"] = hiddenAt
+                    }
+                    deviceMap[device.id] = map
+                    
                     transferingDevicesBuilder.append(device.modelId)
                 }
                 let transferingDevices = transferingDevicesBuilder

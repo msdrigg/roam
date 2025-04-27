@@ -1350,7 +1350,7 @@
       }
     },
     "Add a device manually" : {
-      "comment" : "Label on a button to add a device",
+      "comment" : "Label on a button to add a device\nLabel on a button to open the device setup page",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1517,6 +1517,9 @@
     "Add Device" : {
 
     },
+    "Added device successfully" : {
+
+    },
     "Additinoally, WatchOS prevents us from discovering TV's on the local network." : {
       "comment" : "WatchOS indicator showing that watchOS can't auto-discover TV's due to network restrictions",
       "localizations" : {
@@ -1599,6 +1602,9 @@
           }
         }
       }
+    },
+    "An unknown error occurred: %@" : {
+      "comment" : "Unknown error with message"
     },
     "App" : {
       "comment" : "Description on a configuration field\nPlaceholder label for an app",
@@ -2098,7 +2104,7 @@
       }
     },
     "App Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2843,7 +2849,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3342,6 +3348,12 @@
           }
         }
       }
+    },
+    "Check the IP address you entered and try again" : {
+      "comment" : "Recovery suggestion for invalid IP address"
+    },
+    "Check the IP address you entered is correct, and ensure that you and the device are connected to the same WiFi network" : {
+      "comment" : "Recovery suggestion for device not found"
     },
     "Choose a device" : {
       "comment" : "Configuration title for a settings page",
@@ -4583,6 +4595,15 @@
         }
       }
     },
+    "Close" : {
+
+    },
+    "Connecting to device..." : {
+
+    },
+    "Connection failed" : {
+
+    },
     "Copy" : {
       "comment" : "Keyboard shortcut to copy\nLabel on a button to copy the text",
       "localizations" : {
@@ -5080,6 +5101,9 @@
           }
         }
       }
+    },
+    "Device not found at the specified IP address" : {
+      "comment" : "Error when device not found"
     },
     "Devices" : {
       "comment" : "Header in device selection menu",
@@ -6318,6 +6342,9 @@
           }
         }
       }
+    },
+    "Find the IP address of your Roku by going to **Settings > Network > About**. Your IP address will look something like **%@**" : {
+
     },
     "Getting in Touch" : {
 
@@ -8066,6 +8093,9 @@
           }
         }
       }
+    },
+    "Invalid IP address format" : {
+      "comment" : "Error for invalid IP address format"
     },
     "IP Address" : {
       "comment" : "Settings field label for the device's IP address",
@@ -9899,6 +9929,9 @@
         }
       }
     },
+    "Make sure you are connected to a WiFi network and try agai" : {
+      "comment" : "Recovery suggestion for network error"
+    },
     "Manually Adding TVs" : {
 
     },
@@ -11473,6 +11506,9 @@
           }
         }
       }
+    },
+    "No WiFi network connection" : {
+      "comment" : "Network error with message"
     },
     "Not Supported" : {
       "comment" : "Label indicating headphones mode is not supported",
@@ -15127,7 +15163,7 @@
       }
     },
     "Roku Apps" : {
-      "comment" : "Siri spotlight recommendation",
+      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -15210,7 +15246,7 @@
       }
     },
     "Roku Controls" : {
-      "comment" : "Siri spotlight recommendation",
+      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -16372,6 +16408,7 @@
     },
     "Setup a device to get started :)" : {
       "comment" : "Label on a button to open the device setup page",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -17782,6 +17819,9 @@
         }
       }
     },
+    "Try again later or contact support" : {
+      "comment" : "Recovery suggestion for unknown error"
+    },
     "Turns on or off your TV" : {
       "localizations" : {
         "ar" : {
@@ -18612,6 +18652,9 @@
           }
         }
       }
+    },
+    "Waiting to connect" : {
+
     },
     "Want a keyboard shortcut that works everywhere?" : {
       "localizations" : {

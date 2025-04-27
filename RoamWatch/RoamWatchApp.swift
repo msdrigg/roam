@@ -71,6 +71,7 @@ struct WatchAppView: View {
     @Query(deviceFetchDescriptor) private var devices: [Device]
     @State private var manuallySelectedDevice: Device?
     @State private var showDeviceList: Bool = false
+    @State private var showingAddDeviceSheet: Bool = false
 
     @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanIpAutomatically: Bool = true
 
@@ -93,9 +94,9 @@ struct WatchAppView: View {
                 if selectedDevice == nil {
                     VStack {
                         Button(action: {
-                            navPath.append(NavigationDestination.settingsDestination(.global))
+                            showingAddDeviceSheet = true
                         }, label: {
-                            Label(String(localized: "Setup a device to get started :)", comment: "Label on a button to open the device setup page"), systemImage: "gear")
+                            Label(String(localized: "Add a device manually", comment: "Label on a button to open the device setup page"), systemImage: "plus")
                                 .frame(maxWidth: .infinity)
                         })
 
@@ -115,6 +116,9 @@ struct WatchAppView: View {
                 if let device = selectedDevice {
                     AppListViewWrapper(device: device.toAppEntity())
                 }
+            }
+            .sheet(isPresented: $showingAddDeviceSheet) {
+                AddDeviceFlow()
             }
             .accessibilityIdentifier("MainTabView")
             .navigationTitle(selectedDevice?.name ?? String(localized: "No device"))
