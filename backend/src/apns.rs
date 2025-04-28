@@ -98,7 +98,7 @@ impl ApnsClient {
     pub async fn send_background_push_notification(
         &self,
         device_token: &str,
-        message: &str,
+        identifier: &str,
     ) -> Result<(), ApnsError> {
         let opt = NotificationOptions {
             apns_id: None,
@@ -108,9 +108,10 @@ impl ApnsClient {
             apns_topic: Some(&self.topic),
             apns_push_type: Some(a2::PushType::Background),
         };
+
         let notification_payload = a2::DefaultNotificationBuilder::new()
             .set_content_available()
-            .set_body(message)
+            .set_category(identifier)
             .build(device_token, opt);
 
         let result = self.client.send(notification_payload).await?;
