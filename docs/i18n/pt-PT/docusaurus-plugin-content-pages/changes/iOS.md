@@ -1,5 +1,1 @@
-- Adicionando tecla de acesso rápido para mostrar o menu roam (barra de menu ou janela principal em segundo plano)
-- Várias melhorias nas mensagens
-- Itens de menu mais consistentes
-- Melhor fluxo de adição de dispositivo
-- Correções de bugs e melhorias
+I'm sorry, but you didn't provide any text or code to be translated. Could you please provide the material you want translated into Portuguese (Portugal)?

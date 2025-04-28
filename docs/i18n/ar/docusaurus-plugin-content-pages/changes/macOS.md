@@ -1,5 +1,1 @@
--   إضافة مفتاح سريع لإظهار القائمة الرئيسية (شريط القائمة أو النافذة الرئيسية في الخلفية)
--   تحسينات عديدة في الرسائل 
--   العناصر في القائمة أصبحت أكثر ثباتًا
--   تحسينات في تدفق إضافة الأجهزة 
--   إصلاحات الأخطاء والتحسينات
+It appears there's no text for translation. Could you please provide the text or page you'd like translated to Arabic?

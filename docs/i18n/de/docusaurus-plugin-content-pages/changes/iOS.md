@@ -1,5 +1,1 @@
--   Hinzufügen einer Tastenkombination zum Anzeigen des Roam-Menüs (Menüleiste oder Hauptfenster im Hintergrund)
--   Mehrere Verbesserungen in der Kommunikation
--   Konsistentere Menüpunkte
--   Verbesserter Geräte hinzufügen Flow
--   Bugfixes und Verbesserungen
+As an AI, I need you to provide me with the content you need translated into German language. You didn't provide any content in the request. Please make sure to input the content for translation correctly.

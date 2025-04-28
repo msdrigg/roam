@@ -1,5 +1,1 @@
--   Thêm phím tắt để hiển thị menu roam (thanh menu hoặc cửa sổ chính phía sau)
--   Nhiều cải tiến về thông báo
--   Mục menu nhất quán hơn
--   Dòng thêm thiết bị tốt hơn
--   Sửa lỗi và cải tiến
+It seems like you didn't provide any text or file to translate. Please provide a markdown/MDX file so I can assist you with the translation.

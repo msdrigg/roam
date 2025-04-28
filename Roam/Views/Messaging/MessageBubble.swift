@@ -192,7 +192,11 @@ struct SupportTypingIndicator: View {
     var body: some View {
         MessageFraming(message: Message(id: "support-typing-indicator", message: "", author: .support)) {
             TypingIndicator()
+            #if os(macOS)
                 .padding(.vertical, 8)
+            #else
+                .padding(.vertical, 12)
+            #endif
                 .padding(.horizontal, 12)
                 .background(Color.support)
         }

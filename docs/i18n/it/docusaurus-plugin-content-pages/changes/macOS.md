@@ -1,5 +1,1 @@
-- Aggiunta di un tasto di scelta rapida per mostrare il menu roam (barra dei menu o finestra principale in background)
-- Diversi miglioramenti della messaggistica
-- Elementi del menu più coerenti
-- Miglior flusso di aggiunta del dispositivo
-- Correzioni di bug e miglioramenti
+It seems like you forgot to provide the content that needs to be translated. Could you please provide the mdx content that you want to be translated into Italian?

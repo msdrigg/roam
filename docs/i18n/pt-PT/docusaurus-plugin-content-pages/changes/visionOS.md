@@ -1,5 +1,1 @@
-- Adicionando tecla de atalho para mostrar o menu roam (barra de menu ou janela principal em segundo plano)
-- Várias melhorias nas mensagens
-- Itens de menu mais consistentes
-- Melhor fluxo de adição de dispositivo
-- Correções de bugs e melhorias
+It seems that there's no page or content provided for translation. Could you please provide the markdown or JSX content for translation?

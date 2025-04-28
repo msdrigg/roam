@@ -1,5 +1,1 @@
-- 添加热键显示 roam 菜单（菜单栏或后台的主窗口）
-- 多项消息改进
-- 更一致的菜单项目
-- 更好的添加设备流程
-- Bug 修复和改进
+You have not provided any page to translate. Please provide the mdx file content that you would like to be translated into simplified Chinese (zh-Hans).

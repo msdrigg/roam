@@ -1,5 +1,1 @@
--   添加快捷键以显示 roam 菜单（菜单栏或背景中的主窗口）
--   若干消息改进
--   更一致的菜单项
--   更好的添加设备流程
--   Bug修复和改进
+It appears there's no content provided for translation. Please provide the content you'd like to have translated into Simplified Chinese (zh-Hans).

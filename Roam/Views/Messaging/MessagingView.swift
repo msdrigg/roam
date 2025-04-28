@@ -74,7 +74,7 @@ struct MessageView: View {
             + baseMessages
                 .filter{!$0.hidden}
             + [roboMessage].compactMap({$0})
-        ).filter { !$0.message.isEmpty || !$0.attachments.isEmpty }
+        ).filter { !$0.message.isEmpty || !$0.attachments.isEmpty || $0.unsentAttachment != nil }
     }
 
     var zippedMessages: [(Message, Message?)] {

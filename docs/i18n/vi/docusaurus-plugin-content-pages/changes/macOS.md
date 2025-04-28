@@ -1,5 +1,1 @@
--   Thêm phím tắt để hiển thị menu roam (thanh menu hoặc cửa sổ chính ở nền)
--   Cải tiến tin nhắn ở một số phần
--   Các mục trong menu thống nhất hơn
--   Quy trình thêm thiết bị tốt hơn
--   Sửa lỗi và cải tiến
+As an AI model developed by OpenAI, I would be glad to assist you. However, you haven't provided any text for translation. Can you please provide the required details to proceed with the translation?

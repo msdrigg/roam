@@ -1,5 +1,1 @@
--   Pagdaragdag ng hotkey para ipakita ang roam menu (menu bar o pangunahing window sa background)
--   Maraming pagpapabuti sa messaging
--   Mas pantay na mga item sa menu
--   Mas maayos na pagdaragdag ng device flow
--   Mga pag-ayos ng bug at mga pagpapabuti
+I apologize, but there seems to be no content provided for translation. Please provide the necessary mdx file or text so that I can assist you with the translation.

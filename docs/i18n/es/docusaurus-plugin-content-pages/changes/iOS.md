@@ -1,5 +1,1 @@
-- Agregando tecla de acceso rápido para mostrar el menú de roam (barra de menú o ventana principal en segundo plano)
-- Varias mejoras en la mensajería
-- Elementos de menú más consistentes
-- Mejor flujo para agregar dispositivo
-- Correcciones de errores y mejoras
+Como asistente, necesito un texto específico para poder trabajar en la traducción. Sin embargo, no proporcionaste ningún contenido concreto en tu solicitud. Por favor, proporciona el contenido exacto del archivo .mdx que necesita ser traducido al español. Estoy aquí para ayudarte.

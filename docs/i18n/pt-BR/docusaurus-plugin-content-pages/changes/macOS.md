@@ -1,5 +1,1 @@
-- Adicionando tecla de atalho para mostrar o menu roam (barra de menus ou janela principal em segundo plano)
-- Várias melhorias de mensagens
-- Itens de menu mais consistentes
-- Melhor fluxo para adicionar dispositivo
-- Correções de bugs e melhorias
+It looks like you haven't provided any text to translate. Could you please provide the MDX file content to translate into pt-BR?

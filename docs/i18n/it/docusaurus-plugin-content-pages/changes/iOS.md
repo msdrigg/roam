@@ -1,5 +1,1 @@
--   Aggiunta di un tasto di scelta rapida per mostrare il menu roam (barra dei menu o finestra principale in background)
--   Diversi miglioramenti alla messaggistica
--   Elementi del menu più coerenti
--   Miglior flusso di aggiunta dispositivo
--   Correzioni di bug e miglioramenti
+As there is no text provided to be translated, I cannot perform a translation. Please provide a text for the translation.

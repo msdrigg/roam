@@ -1,5 +1,1 @@
--   Agregar tecla de acceso rápido para mostrar el menú de roam (barra de menú o ventana principal en segundo plano)
--   Varias mejoras en los mensajes
--   Artículos de menú más consistentes
--   Mejor flujo de añadir dispositivo
--   Correcciones de errores y mejoras
+Como asistente virtual, necesito más contexto para ayudar efectivamente con tu solicitud. No proporcionaste ninguna página de archivo mdx para traducir al es-419. Por favor, proporciona el texto que necesita ser traducido o una página de archivo de mdx.

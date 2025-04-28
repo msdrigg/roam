@@ -442,10 +442,33 @@ extension NSImage {
         }
         return pngData
     }
+
+    func jpegData(compressionQuality: CGFloat = 0.8) -> Data? {
+        guard let tiffData = self.tiffRepresentation,
+              let bitmapImage = NSBitmapImageRep(data: tiffData)
+        else {
+            return nil
+        }
+        
+        // The compression quality for JPEG in NSBitmapImageRep is passed as a property
+        // Value should be between 0.0 (maximum compression, lowest quality) and 1.0 (least compression, best quality)
+        let properties: [NSBitmapImageRep.PropertyKey: Any] = [
+            .compressionFactor: compressionQuality
+        ]
+        
+        guard let jpegData = bitmapImage.representation(using: .jpeg, properties: properties) else {
+            return nil
+        }
+        
+        return jpegData
+    }
 }
+typealias UnifiedImage = NSImage
+#else
+typealias UnifiedImage = UIImage
 #endif
 
-func compressPNGOffthread(image: CGImage, maxFileSize: Int = 9 * 1024 * 1024) async -> Data? {
+func compressPNGOffthread(image: UnifiedImage, maxFileSize: Int = 9 * 1024 * 1024) async -> Data? {
     return await withCheckedContinuation { continuation in
         DispatchQueue.global(qos: .userInitiated).async {
             let compressedData = compressPNG(image: image, maxFileSize: maxFileSize)
@@ -454,8 +477,8 @@ func compressPNGOffthread(image: CGImage, maxFileSize: Int = 9 * 1024 * 1024) as
     }
 }
 
-func compressPNG(image: CGImage, maxFileSize: Int = 9 * 1024 * 1024) -> Data? {
-    guard let originalPNGData = pngData(from: image) else {
+func compressPNG(image: UnifiedImage, maxFileSize: Int = 9 * 1024 * 1024) -> Data? {
+    guard let originalPNGData = image.pngData() else {
         return nil
     }
 
@@ -466,9 +489,8 @@ func compressPNG(image: CGImage, maxFileSize: Int = 9 * 1024 * 1024) -> Data? {
     var compressionQuality: CGFloat = 1.0
 
     while compressionQuality > 0.1 {
-        if let compressedJPEG = jpegData(from: image, quality: compressionQuality),
-           let normalizedJPEGImage = cgImageFromJPEGData(compressedJPEG), // Re-normalize after each cycle
-           let finalPNGData = pngData(from: normalizedJPEGImage),
+        if let compressedJPEG = image.jpegData(compressionQuality: compressionQuality),
+           let finalPNGData = pngData(from: compressedJPEG),
            finalPNGData.count <= maxFileSize {
             return finalPNGData
         }
@@ -479,72 +501,24 @@ func compressPNG(image: CGImage, maxFileSize: Int = 9 * 1024 * 1024) -> Data? {
     return nil
 }
 
-func cgImageFromJPEGData(_ data: Data) -> CGImage? {
-    guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-          let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
-        return nil
-    }
-
-    return cgImage
-}
-
-func jpegData(from image: CGImage, quality: CGFloat) -> Data? {
-    let options: [CFString: Any] = [kCGImageDestinationLossyCompressionQuality: quality]
-    let data = NSMutableData()
-
-    guard let destination = CGImageDestinationCreateWithData(data, UTType.jpeg.identifier as CFString, 1, nil) else {
-        return nil
-    }
-
-    CGImageDestinationAddImage(destination, image, options as CFDictionary)
-    CGImageDestinationFinalize(destination)
-
-    return data as Data
-}
-
-func pngData(from image: CGImage) -> Data? {
-    let data = NSMutableData()
-    guard let destination = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil) else {
-        return nil
-    }
-
-    CGImageDestinationAddImage(destination, image, nil)
-    CGImageDestinationFinalize(destination)
-
-    return data as Data
-}
-
 func pngData(from jpegData: Data) -> Data? {
-    guard let imageSource = CGImageSourceCreateWithData(jpegData as CFData, nil),
-          let cgImage = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) else {
+    guard let uiImage = UnifiedImage(data: jpegData) else {
         return nil
     }
-
-    let data = NSMutableData()
-    guard let destination = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil) else {
-        return nil
-    }
-
-    CGImageDestinationAddImage(destination, cgImage, nil)
-    CGImageDestinationFinalize(destination)
-
-    return data as Data
+    
+    return uiImage.pngData()
 }
 
 #if os(macOS)
 extension NSImage {
     func compressedPNGData() async -> Data? {
-        guard let cgImage = self.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-            return nil
-        }
-        return await compressPNGOffthread(image: cgImage)
+        return await compressPNGOffthread(image: self)
     }
 }
 #else
 extension UIImage {
     func compressedPNGData() async -> Data? {
-        guard let cgImage = self.cgImage else { return nil }
-        return await compressPNGOffthread(image: cgImage)
+        return await compressPNGOffthread(image: self)
     }
 }
 #endif

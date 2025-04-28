@@ -1,5 +1,1 @@
--   roam ਮੇਨੂ ਦਿਖਾਉਣ ਲਈ ਹਾਟਕੀ ਦਾ ਜੋੜ ਕਰਨਾ (ਮੇਨੂ ਬਾਰ ਜਾਂ ਮੁੱਖ ਵਿੰਡੋ ਵਿੱਚ ਪਿਛੋਕਾਰ)
--   ਕਈ ਸੰਦੇਸ਼ ਦੇ ਸੁਧਾਰ
--   ਹੋਰ ਇਕਰਾਰਯੋਗ ਮੇਨੂ ਆਈਟਮਜ਼
--   ਬਿਹਤਰ ਜੋੜ ਉਪਕਰਣ ਪ੍ਰਵਾਹ
--   ਬੱਗ ਠੀਕ ਕਰਨ ਅਤੇ ਸੁਧਾਰ
+Sorry, there's no content given here for translation. Please provide the text content from the MDX file that you need to be translated into Punjabi.

@@ -1,5 +1,1 @@
--   إضافة مفتاح سريع لإظهار قائمة roam (شريط القائمة أو النافذة الرئيسية في الخلفية)
--   عدة تحسينات في المراسلة
--   عناصر قائمة أكثر اتساقًا
--   تدفق أفضل لإضافة الجهاز
--   إصلاحات الأخطاء والتحسينات
+It seems like you haven't provided any content for translation. Could you please provide the MDX file content that you would like me to translate into Arabic?

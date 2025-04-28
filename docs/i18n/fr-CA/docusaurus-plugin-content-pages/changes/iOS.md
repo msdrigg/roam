@@ -1,5 +1,1 @@
--   Ajout d'un raccourci pour afficher le menu roam (barre de menu ou fenêtre principale en arrière-plan)
--   Plusieurs améliorations de la messagerie
--   Éléments de menu plus cohérents
--   Meilleur processus d'ajout d'appareil
--   Corrections de bugs et améliorations
+Your input appears to be empty. Could you provide the content that needs to be translated, please?

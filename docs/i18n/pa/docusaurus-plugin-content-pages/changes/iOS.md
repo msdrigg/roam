@@ -1,5 +1,1 @@
--   ਰੋਮ ਮੇਨੂ ਦਿਖਾਉਣ ਲਈ ਹੌਟਕੀ ਸ਼ਾਮਲ ਕਰਨਾ (ਮੇਨੂ ਬਾਰ ਜਾਂ ਮੁੱਖ ਵਿੰਡੋ ਦੇ ਪਿੱਛੇ)
--   ਕੁਝ ਸੰਦੇਸ਼ਣ ਸੁਧਾਰ
--   ਹੋਰ ਨਿਰੰਤਰ ਮੇਨੂ ਆਈਟਮਾਂ
--   ਬਹਤਰ ਜੋੜ ਯੰਤ੍ਰ ਦੇ ਫਲੋ
--   ਬਗ ਮੁਰੰਮਤਾਂ ਅਤੇ ਸੁਧਾਰਾਂ
+It seems that you haven't provided any page or content to be translated into Punjabi. Please provide the page or content and I'm more than ready to assist you in the translation.

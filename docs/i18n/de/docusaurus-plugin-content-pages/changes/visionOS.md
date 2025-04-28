@@ -1,5 +1,1 @@
--   Hinzufügen einer Hotkey-Funktion, um das Roam-Menü anzuzeigen (Menüleiste oder Hauptfenster im Hintergrund)
--   Mehrere Verbesserungen der Nachrichtenübermittlung
--   Konsistentere Menüelemente
--   Besserer Gerätehinzufügungs-Flow
--   Fehlerbehebungen und Verbesserungen
+It seems like you forgot to provide the content needed for a translation. Can you please provide the mdx content that you need to be translated into German?

@@ -616,7 +616,7 @@ mod types {
 
         pub fn is_hidden(&self) -> bool {
             !Self::ALLOWED_MESSAGE_TYPES.contains(&self.message_type)
-                || self.content.is_empty()
+                || (self.content.is_empty() && self.attachments.is_empty())
                 || self.content.starts_with("!HiddenMessage")
                 || self.content.starts_with(":ninja:")
         }

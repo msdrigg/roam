@@ -1,5 +1,1 @@
--   Aggiunta di una scorciatoia per mostrare il menu di roam (barra dei menu o finestra principale in background)
--   Diversi miglioramenti della messaggistica
--   Elementi del menu più coerenti
--   Miglior flusso di aggiunta dispositivo
--   Risoluzione di bug e miglioramenti
+Could you provide the actual mdx content that needs translation? It looks like the content you wanted to include for translation was not provided in your message.
