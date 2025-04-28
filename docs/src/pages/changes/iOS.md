@@ -1,5 +1,1 @@
--   Adding hotkey to show roam menu (menu bar or main window in background)
--   Several messaging improvements
--   More consistent menu items
--   Better add device flow
--   Bug fixes and improvements
+

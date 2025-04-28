@@ -1,17 +1,9 @@
 import SwiftData
 import OSLog
 
-#if os(macOS)
-let mainAppGroup = "2865NTZ7H3.com.msdrigg.roam.models"
-let tipsAppGroup = "2865NTZ7H3.com.msdrigg.roam.tips"
-let loadAppGroup = "2865NTZ7H3.com.msdrigg.roam.load"
-let mainAppGroupBackup: String? = "group.com.msdrigg.roam.models"
-#else
 let mainAppGroup = "group.com.msdrigg.roam.models"
 let tipsAppGroup = "group.com.msdrigg.roam.tips"
 let loadAppGroup = "group.com.msdrigg.roam.load"
-let mainAppGroupBackup: String? = nil
-#endif
 
 public final class GlobalModelContainer {
     @MainActor
