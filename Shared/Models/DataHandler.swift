@@ -913,19 +913,28 @@ extension DataHandler {
             Log.data.notice("Error loading messages \(error, privacy: .public)")
         }
 
-        let lastMessageId = lastMessage?.id
         if lastMessage == nil {
             Log.data.notice("Not refreshing messages with last message nil")
             return 0
         }
         return await self.refreshMessages(
-            latestMessageId: lastMessageId,
             viewed: false
         )
     }
 
     @discardableResult
-    public func refreshMessages(latestMessageId: String?, viewed: Bool) async -> Int {
+    public func refreshMessages(viewed: Bool) async -> Int {
+        Log.data.notice("Querying for message to fetch new")
+        var descriptor = FetchDescriptor(
+            predicate: #Predicate<Message> { model in
+                model.fetchedBackend == true
+            }
+        )
+        descriptor.propertiesToFetch = [\Message.id]
+        descriptor.sortBy = [SortDescriptor(\Message.id, order: .reverse)]
+        descriptor.fetchLimit = 1
+        let latestMessageId = (try? modelContext.fetchSafer(descriptor))?.first?.id
+
         Log.data.notice("Refreshing messages with last message \(String(describing: latestMessageId), privacy: .public)")
 
         return await withTaskGroup(of: Int.self) { taskGroup in

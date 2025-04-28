@@ -341,7 +341,6 @@ struct MessageView: View {
             if latestMessageId != nil {
                 let result = await Task.detached {
                     return await DataHandler(modelContainer: getSharedModelContainer()).refreshMessages(
-                        latestMessageId: latestMessageId,
                         viewed: true
                     )
                 }.value
@@ -435,14 +434,12 @@ struct MessageView: View {
             return
         }
         Log.userInteraction.notice("Sending message \"\(messageText, privacy: .public)\" -- \(attachments.count, privacy: .public) attachments")
-        let latestMessageId = messages.last { $0.fetchedBackend == true }?.id
         Task {
             do {
                 try await DataHandler(modelContainer: getSharedModelContainer()).sendChatMessage(message: messageCopy, attachments: attachments)
 
                 Task {
                     let result = await DataHandler(modelContainer: getSharedModelContainer()).refreshMessages(
-                        latestMessageId: latestMessageId,
                         viewed: true
                     )
                     if result > 0 {
@@ -454,7 +451,6 @@ struct MessageView: View {
             }
         }
         if !hasSentFirstMessage {
-            // Request notification permissions on first message
             lastApnsRequestTime = Date.now.timeIntervalSince1970
             requestNotificationPermission()
         }

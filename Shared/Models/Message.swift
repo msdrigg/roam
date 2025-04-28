@@ -58,7 +58,7 @@ extension Message {
             ),
             ":help-share-diagnostics:": String(
                 localized: ":help-share-diagnostics:",
-                defaultValue: "To share diagnostics, click the plus button at the bottom of the messaging window and then click \"Attach diagnostics\"",
+                defaultValue: "To share diagnostics, click the plus button at the bottom of the chat window and then click \"Attach diagnostics\"",
                 comment: "Help text. Note that the URL can be localized with https://roam.msd3.io/<lang>/manually-add-tv/"
             ),
             ":message-from-roam-title:": String(
