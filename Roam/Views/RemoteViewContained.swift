@@ -20,8 +20,8 @@ let globalMajorActions: [RemoteButton] = [.power, .playPause, .mute, .headphones
 @MainActor
 private func deviceFetchDescriptor() -> FetchDescriptor<Device> {
     var fd = FetchDescriptor<Device>(
-        predicate: #Predicate {
-            $0.deletedAt == nil && $0.hiddenAt == nil
+        predicate: #Predicate { device in
+            device.deletedAt == nil && device.hiddenAt == nil
         },
         sortBy: [SortDescriptor(\Device.name)]
     )

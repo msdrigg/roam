@@ -449,17 +449,15 @@ extension NSImage {
         else {
             return nil
         }
-        
-        // The compression quality for JPEG in NSBitmapImageRep is passed as a property
-        // Value should be between 0.0 (maximum compression, lowest quality) and 1.0 (least compression, best quality)
+
         let properties: [NSBitmapImageRep.PropertyKey: Any] = [
             .compressionFactor: compressionQuality
         ]
-        
+
         guard let jpegData = bitmapImage.representation(using: .jpeg, properties: properties) else {
             return nil
         }
-        
+
         return jpegData
     }
 }
@@ -469,18 +467,19 @@ typealias UnifiedImage = UIImage
 #endif
 
 func compressPNGOffthread(image: UnifiedImage, maxFileSize: Int = 9 * 1024 * 1024) async -> Data? {
+    guard let data = image.pngData() else {
+        return nil
+    }
     return await withCheckedContinuation { continuation in
         DispatchQueue.global(qos: .userInitiated).async {
-            let compressedData = compressPNG(image: image, maxFileSize: maxFileSize)
+            let compressedData = compressPNG(image: data, maxFileSize: maxFileSize)
             continuation.resume(returning: compressedData)
         }
     }
 }
 
-func compressPNG(image: UnifiedImage, maxFileSize: Int = 9 * 1024 * 1024) -> Data? {
-    guard let originalPNGData = image.pngData() else {
-        return nil
-    }
+func compressPNG(image: Data, maxFileSize: Int = 9 * 1024 * 1024) -> Data? {
+    let originalPNGData = image
 
     if originalPNGData.count <= maxFileSize {
         return originalPNGData
@@ -489,7 +488,7 @@ func compressPNG(image: UnifiedImage, maxFileSize: Int = 9 * 1024 * 1024) -> Dat
     var compressionQuality: CGFloat = 1.0
 
     while compressionQuality > 0.1 {
-        if let compressedJPEG = image.jpegData(compressionQuality: compressionQuality),
+        if let compressedJPEG = UnifiedImage(data: image)?.jpegData(compressionQuality: compressionQuality),
            let finalPNGData = pngData(from: compressedJPEG),
            finalPNGData.count <= maxFileSize {
             return finalPNGData
@@ -505,7 +504,7 @@ func pngData(from jpegData: Data) -> Data? {
     guard let uiImage = UnifiedImage(data: jpegData) else {
         return nil
     }
-    
+
     return uiImage.pngData()
 }
 
