@@ -1,1 +1,1 @@
-You have not provided any page to translate. Please provide the mdx file content that you would like to be translated into simplified Chinese (zh-Hans).
+- 错误修复和改进

@@ -1,1 +1,1 @@
-Il semble qu'il n'y ait aucun contenu à traduire. Veuillez fournir le contenu que vous souhaitez traduire.
+- Corrections de bugs et améliorations

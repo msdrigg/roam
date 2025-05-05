@@ -51,9 +51,7 @@ let CONTROLS: [[RemoteButton?]] = [
 
 private let deviceFetchDescriptor: FetchDescriptor<Device> = {
     var fd = FetchDescriptor<Device>(
-        predicate: #Predicate<Device> { d in
-            d.deletedAt == nil && d.hiddenAt == nil
-        },
+        predicate: globalMainDevicePredicate,
         sortBy: [SortDescriptor(\Device.name)]
     )
     fd.propertiesToFetch = [

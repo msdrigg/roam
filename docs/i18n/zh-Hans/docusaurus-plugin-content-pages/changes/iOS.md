@@ -1,1 +1,1 @@
-It appears you've not provided any text or content for translation. Could you please submit the MDX file or the content you wish to have translated into Simplified Chinese (zh-Hans)?
+- 修复错误和改进

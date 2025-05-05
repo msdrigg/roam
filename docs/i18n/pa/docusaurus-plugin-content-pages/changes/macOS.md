@@ -1,1 +1,1 @@
-Sorry, there's no content given here for translation. Please provide the text content from the MDX file that you need to be translated into Punjabi.
+- ਬੱਗ ਠੀਕ-ਠਾਕ ਅਤੇ ਸੁਧਾਰ

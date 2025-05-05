@@ -1,1 +1,1 @@
-It appears you did not provide any text to be translated. Could you please provide the content in mdx format for translation into Vietnamese?
+- Sửa lỗi và cải tiến

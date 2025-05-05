@@ -1,1 +1,1 @@
-It seems like there's nothing to translate here. Could you please provide the text you'd like translated?
+- Corrections de bugs et améliorations

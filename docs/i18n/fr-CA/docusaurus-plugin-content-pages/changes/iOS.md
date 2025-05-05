@@ -1,1 +1,1 @@
-Your input appears to be empty. Could you provide the content that needs to be translated, please?
+- Corrections de bugs et améliorations

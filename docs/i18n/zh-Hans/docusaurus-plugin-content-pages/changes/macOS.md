@@ -1,1 +1,1 @@
-It appears there's no content provided for translation. Please provide the content you'd like to have translated into Simplified Chinese (zh-Hans).
+- 修复错误和改进

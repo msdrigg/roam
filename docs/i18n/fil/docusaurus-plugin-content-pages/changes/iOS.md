@@ -1,1 +1,1 @@
-Mukhang wala namang laman ang pahinang gustong isalin.
+- Mga pag-ayos ng bug at mga pagpapabuti

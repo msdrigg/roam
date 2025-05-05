@@ -1,1 +1,1 @@
-As there is no text provided to be translated, I cannot perform a translation. Please provide a text for the translation.
+- Correzioni di bug e miglioramenti

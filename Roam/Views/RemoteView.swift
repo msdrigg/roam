@@ -12,9 +12,7 @@ import TipKit
 @MainActor
 private func deviceFetchDescriptor() -> FetchDescriptor<Device> {
     var fd = FetchDescriptor<Device>(
-        predicate: #Predicate<Device> {
-            $0.deletedAt == nil && $0.hiddenAt == nil
-        },
+        predicate: globalMainDevicePredicate,
         sortBy: [SortDescriptor(\Device.name)]
     )
     fd.relationshipKeyPathsForPrefetching = []

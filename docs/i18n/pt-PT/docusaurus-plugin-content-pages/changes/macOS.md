@@ -1,1 +1,1 @@
-As informações que você passou são insuficientes para iniciar a tradução. Por favor, forneça o conteúdo da página que precisa ser traduzido.
+- Correções de bugs e melhorias

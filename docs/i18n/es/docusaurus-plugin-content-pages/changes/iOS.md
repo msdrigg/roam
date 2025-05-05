@@ -1,1 +1,1 @@
-Como asistente, necesito un texto específico para poder trabajar en la traducción. Sin embargo, no proporcionaste ningún contenido concreto en tu solicitud. Por favor, proporciona el contenido exacto del archivo .mdx que necesita ser traducido al español. Estoy aquí para ayudarte.
+- Correcciones de errores y mejoras

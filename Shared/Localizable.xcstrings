@@ -1429,7 +1429,7 @@
       }
     },
     "Add a device manually" : {
-      "comment" : "Label on a button to add a device\nLabel on a button to open the device setup page",
+      "comment" : "Label on a button to add a device",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -16747,7 +16747,7 @@
       }
     },
     "Roku Apps" : {
-      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
+      "comment" : "Siri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -16830,7 +16830,7 @@
       }
     },
     "Roku Controls" : {
-      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
+      "comment" : "Siri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

@@ -1,1 +1,1 @@
-I'm sorry, but you didn't provide any text or code to be translated. Could you please provide the material you want translated into Portuguese (Portugal)?
+- Correções de bugs e melhorias

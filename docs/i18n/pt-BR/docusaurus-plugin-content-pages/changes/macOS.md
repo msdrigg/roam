@@ -1,1 +1,1 @@
-It looks like you haven't provided any text to translate. Could you please provide the MDX file content to translate into pt-BR?
+- Correções de bugs e melhorias

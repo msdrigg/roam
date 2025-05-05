@@ -1,1 +1,1 @@
-Could you provide the actual mdx content that needs translation? It looks like the content you wanted to include for translation was not provided in your message.
+- Correzioni di bug e miglioramenti

@@ -19,9 +19,10 @@ final class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
     override init() {
         self.navigationPath = NavigationManager()
         self.ecpMonitor = ECPMonitor()
-        self.networkMonitor = NetworkMonitor()
         self.uuidUpdater = UUIDUpdater()
+        self.networkMonitor = NetworkMonitor()
         super.init()
+        networkMonitor.appDelegate = self
         UNUserNotificationCenter.current().delegate = self
         Log.lifecycle.notice("Setting Notifications delegate to self")
     }

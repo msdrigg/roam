@@ -34,7 +34,7 @@ struct DevicePicker: View {
             case .connected:
                     .green
             case let .disconnected(date):
-                if currentDate.timeIntervalSince(date) < 1 {
+                if currentDate.timeIntervalSince(date) < 0.2 {
                     .green
                 } else {
                     .secondary

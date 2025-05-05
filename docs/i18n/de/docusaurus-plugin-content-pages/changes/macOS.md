@@ -1,1 +1,1 @@
-Your text doesn't include anything to translate. Could you please provide a text, text snippet, or a file that you want to translate into German?
+- Fehlerbehebungen und Verbesserungen

@@ -1,1 +1,1 @@
-It seems like you didn't provide any text or file to translate. Please provide a markdown/MDX file so I can assist you with the translation.
+- Sửa lỗi và cải tiến

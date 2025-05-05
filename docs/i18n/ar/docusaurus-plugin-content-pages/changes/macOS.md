@@ -1,1 +1,1 @@
-It appears there's no text for translation. Could you please provide the text or page you'd like translated to Arabic?
+- إصلاحات الأخطاء والتحسينات

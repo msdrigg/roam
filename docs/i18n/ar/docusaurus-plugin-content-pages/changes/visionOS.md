@@ -1,1 +1,1 @@
-It seems that you've forgotten to provide the page you want to translate into Arabic. Please provide the content of the mdx file for translation.
+- إصلاحات الأخطاء والتحسينات

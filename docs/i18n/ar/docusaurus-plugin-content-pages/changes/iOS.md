@@ -1,1 +1,1 @@
-It seems like you haven't provided any content for translation. Could you please provide the MDX file content that you would like me to translate into Arabic?
+- إصلاحات الأخطاء والتحسينات

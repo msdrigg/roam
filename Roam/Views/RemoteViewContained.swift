@@ -20,9 +20,7 @@ let globalMajorActions: [RemoteButton] = [.power, .playPause, .mute, .headphones
 @MainActor
 private func deviceFetchDescriptor() -> FetchDescriptor<Device> {
     var fd = FetchDescriptor<Device>(
-        predicate: #Predicate { device in
-            device.deletedAt == nil && device.hiddenAt == nil
-        },
+        predicate: globalMainDevicePredicate,
         sortBy: [SortDescriptor(\Device.name)]
     )
     fd.relationshipKeyPathsForPrefetching = []

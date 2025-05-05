@@ -1,1 +1,1 @@
-It seems that there's no page or content provided for translation. Could you please provide the markdown or JSX content for translation?
+- Correções de bugs e melhorias

@@ -4,6 +4,10 @@ import SwiftData
 
 typealias Device = SchemaV4.Device
 
+let globalMainDevicePredicate = #Predicate<Device> {
+    $0.deletedAt == nil && $0.hiddenAt == nil
+}
+
 extension Device: Identifiable {
     public var id: PersistentIdentifier {
         persistentModelID

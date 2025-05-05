@@ -373,7 +373,7 @@ actor ECPWebsocketClient: Sendable {
             }
         }
 
-        self.reportStateChange(.connecting(.now))
+        self.reportStateChange(.connecting(.distantPast))
         connection.start(queue: connectionQueue)
         self.listen()
     }

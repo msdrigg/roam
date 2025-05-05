@@ -1,1 +1,1 @@
-It seems that there is no content provided for translation. Please provide an mdx file content for translation.
+- Correcciones de errores y mejoras

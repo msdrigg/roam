@@ -1,1 +1,1 @@
-It seems like you forgot to provide the content needed for a translation. Can you please provide the mdx content that you need to be translated into German?
+- Fehlerbehebungen und Verbesserungen

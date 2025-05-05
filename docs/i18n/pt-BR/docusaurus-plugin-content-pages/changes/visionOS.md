@@ -1,1 +1,1 @@
-You haven't provided any content to translate. Could you please input the page you would like to translate?
+- Correções de erros e melhorias

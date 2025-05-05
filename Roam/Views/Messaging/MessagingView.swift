@@ -181,7 +181,7 @@ struct MessageView: View {
 #elseif os(iOS) || os(watchOS)
                 .padding(.bottom, 4)
 #elseif os(visionOS)
-                .padding(.bottom, 12)
+                .padding(.bottom, 20)
 #endif
 
             VStack(spacing: 0) {
@@ -221,7 +221,8 @@ struct MessageView: View {
                     .scrollIndicators(.hidden)
                     .animation(nil, value: messageFieldText)
 #if os(visionOS)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .textFieldStyle(PaddedRoundedTextFieldStyle())
+                    .controlSize(.large)
                     .padding(.bottom, 6)
 #else
                     .textFieldStyle(PlainTextFieldStyle())
@@ -249,7 +250,7 @@ struct MessageView: View {
             .labelStyle(.iconOnly)
             .help(String(localized: "Send the message", comment: "Help text on a button to send a chat message"))
 #if os(visionOS)
-            .padding(.bottom, 2)
+            .padding(.bottom, 12)
 #endif
 #endif
         }
@@ -467,6 +468,46 @@ struct MessageView: View {
         self.lastSelfTypingTime = Date.distantPast
     }
 }
+
+#if os(visionOS)
+import SwiftUI
+
+struct PaddedRoundedTextFieldStyle: TextFieldStyle {
+    // swiftlint:disable:next identifier_name
+    func _body(configuration: TextField<Self._Label>) -> some View {
+        configuration
+            .padding(.vertical, 10)
+            .padding(.horizontal, 12)
+            .foregroundColor(.secondary)
+            .allowsHitTesting(true)
+            .hoverEffectDisabled()
+            .background(
+                Rectangle()
+                    .fill(Color(.systemGray6).opacity(0.5))
+                    .shadow(color: Color.black.opacity(0.1), radius: 1, x: 0, y: 1)
+                    .shadow(color: Color.white.opacity(0.3), radius: 2, x: 0, y: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .contentShape(RoundedRectangle(cornerRadius: 10))
+            .focusable()
+            .hoverEffect(.highlight)
+    }
+}
+
+#if DEBUG
+#Preview(
+    "Padded Rounded Style",
+    traits: .fixedLayout(width: 400, height: 300)
+) {
+    TextField("Test textfield", text: Binding(
+        get: {"hi dude"},
+        set: {_ in }
+    ))
+        .textFieldStyle(PaddedRoundedTextFieldStyle())
+        .padding()
+}
+#endif
+#endif
 
 #if DEBUG
 #Preview(

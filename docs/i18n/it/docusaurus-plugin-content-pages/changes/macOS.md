@@ -1,1 +1,1 @@
-It seems like you forgot to provide the content that needs to be translated. Could you please provide the mdx content that you want to be translated into Italian?
+- Correzioni di bug e miglioramenti

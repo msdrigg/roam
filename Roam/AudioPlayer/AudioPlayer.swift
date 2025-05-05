@@ -231,7 +231,7 @@ func machTimeToSeconds(_ machTime: UInt64) -> Double {
 func secondsToMachTime(_ seconds: Double) -> UInt64 {
     var timebaseInfo = mach_timebase_info()
     mach_timebase_info(&timebaseInfo)
-    let machTimeInNanoseconds = seconds * 1_000_000_000.0
+    let machTimeInNanoseconds = max(seconds * 1_000_000_000.0, 0.0)
     let machTime = UInt64(machTimeInNanoseconds) * UInt64(timebaseInfo.denom) / UInt64(timebaseInfo.numer)
     return machTime
 }

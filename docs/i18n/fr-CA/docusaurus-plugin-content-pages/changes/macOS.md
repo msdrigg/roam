@@ -1,1 +1,1 @@
-You didn't provide any text or content to translate. Could you provide the MDX file or text that you want to translate into fr-CA?
+- Corrections de bugs et améliorations

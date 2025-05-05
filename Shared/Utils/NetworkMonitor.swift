@@ -7,11 +7,13 @@ final class NetworkMonitor {
     var networkConnection: NetworkType = .local
     private let monitor: NWPathMonitor
     private let queue = DispatchQueue(label: "NetworkMonitor")
+    var appDelegate: RoamAppDelegate?
 
     init() {
         monitor = NWPathMonitor()
         monitor.pathUpdateHandler = { [weak self] path in
             DispatchQueue.main.async { [weak self] in
+                let previouslySatisfied = self?.networkConnection == .local
                 if path.status == .satisfied {
                     if path.usesInterfaceType(.wifi) {
                         if path.isExpensive {
@@ -35,6 +37,13 @@ final class NetworkMonitor {
                     .notice(
                         "Getting new network \(String(describing: path), privacy: .public). Updating self type to \(String(describing: self?.networkConnection), privacy: .public)"
                     )
+                let nowSatisfied = self?.networkConnection == .local
+
+                if !previouslySatisfied && nowSatisfied {
+                    Task {
+                        try? await self?.appDelegate?.ecpMonitor.ecpClient?.getDeviceInfo()
+                    }
+                }
             }
         }
     }

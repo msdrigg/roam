@@ -1,1 +1,1 @@
-As an AI language model, I am unable to perform tasks if no content is provided. Could you please provide the content you want to translate into pt-BR?
+- Correções de bugs e melhorias
