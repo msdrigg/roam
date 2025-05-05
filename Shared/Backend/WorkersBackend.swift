@@ -5,8 +5,8 @@ import OSLog
 import SwiftData
 import UniformTypeIdentifiers
 
-// private let globalBackendURL = "https://backend.roam.msd3.io"
-private let globalBackendURL = "http://localhost:8080"
+ private let globalBackendURL = "https://backend.roam.msd3.io"
+//private let globalBackendURL = "http://localhost:8080"
 
 private func getAPIKey() -> String? {
     let apiKey = Bundle.main.infoDictionary?["BACKEND_API_KEY"] as? String
