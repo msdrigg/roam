@@ -17,7 +17,7 @@ struct DiagnosticsImport: PendingAttachment {
     func load() async -> Result<AttachmentUpload, AttachmentError> {
         let loggingAt = Date.now
         Log.userInteraction.notice("Starting to send logs \(loggingAt, privacy: .public)")
-        let logs = await getDebugInfo(container: getSharedModelContainer())
+        let logs = await getDebugInfo()
         Log.userInteraction.notice("Sending logs \(logs.installationInfo.userId, privacy: .public)")
 
         if let data = trimmedDebugInfoIfNeeded(logs) {

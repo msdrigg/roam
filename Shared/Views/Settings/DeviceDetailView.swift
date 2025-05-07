@@ -83,7 +83,7 @@ struct DeviceDetailView: View {
                     hidden = newHiddenAt != nil
                 }
                 .onAppear {
-                    scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                    scanningActor = DeviceDiscoveryActor(updater: {
                         updater?.update()
                     })
 
@@ -240,7 +240,7 @@ struct DeviceDetailView: View {
                         dismiss()
                     }
                     do {
-                        try await DataHandler(modelContainer: getSharedModelContainer()).delete(deviceId)
+                        try await DataHandler().delete(deviceId)
 
                         Log.userInteraction.notice("Deleted device with id \(String(describing: deviceId), privacy: .public)")
                     } catch {
@@ -286,7 +286,7 @@ struct DeviceDetailView: View {
             let deviceUrl = addSchemeAndPort(to: cleanedString)
             Log.data.notice("Getting device url \(deviceUrl, privacy: .public)")
 
-            let dh = DataHandler(modelContainer: getSharedModelContainer())
+            let dh = DataHandler()
             Task {
                 await dh.updateDevice(device.persistentModelID, name: deviceName, location: deviceUrl, hidden: hidden)
 

@@ -108,10 +108,10 @@ struct SettingsView: View {
                     Log.lifecycle.notice("Closing \(#fileID, privacy: .public) view")
                 }
                 .onAppear {
-                    scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                    scanningActor = DeviceDiscoveryActor(updater: {
                         updater?.update()
                     })
-                    ssdpActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                    ssdpActor = DeviceDiscoveryActor(updater: {
                         updater?.update()
                     })
 
@@ -155,7 +155,7 @@ struct SettingsView: View {
                                 let pid = model.persistentModelID
                                 Task.detached {
                                     do {
-                                        try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
+                                        try await DataHandler().delete(pid)
                                         DispatchQueue.main.async {
                                             self.updater?.update()
                                         }
@@ -329,7 +329,7 @@ struct SettingsView: View {
                                         let pid = model.persistentModelID
                                         Task.detached {
                                             do {
-                                                try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
+                                                try await DataHandler().delete(pid)
                                                 DispatchQueue.main.async {
                                                     self.updater?.update()
                                                 }

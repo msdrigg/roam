@@ -52,10 +52,11 @@ private func demandSharedModelContainer() -> ModelContainer {
         return try _getSharedModelContainer()
         #endif
     } catch {
-        fatalError("Error getting shared model container \(error))")
+        loggedFatalError("Error getting shared model container \(error))")
     }
 }
 
+@MainActor
 private func _getSharedModelContainer() throws -> ModelContainer {
     let schema = Schema(
         versionedSchema: SchemaV4.self
@@ -67,11 +68,14 @@ private func _getSharedModelContainer() throws -> ModelContainer {
         groupContainer: .identifier(mainAppGroup)
     )
 
-    return try catchObjc {
+    let mc = try catchObjc {
         return try ModelContainer(
             for: schema,
             migrationPlan: RoamSchemaMigrationPlan.self,
             configurations: [modelConfiguration]
         )
     }
+    
+    mc.mainContext.autosaveEnabled = false
+    return mc
 }

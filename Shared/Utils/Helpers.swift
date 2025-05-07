@@ -622,3 +622,37 @@ func getNotificationSettings() {
     }
 }
 #endif
+
+public func loggedFatalError(_ message: @autoclosure () -> String = String(), file: StaticString = #file, line: UInt = #line) -> Never {
+    let message = message()
+
+#if !TEST && !CLI
+    let group = DispatchGroup()
+    group.enter()
+
+    var didComplete = false
+
+    Task {
+        let sendingMessage = ":ninja:\nFatal error logged: \(message)\n\nFile: \(file)\nLine: \(line)\n\nThis is likely a bug in the app."
+
+        do {
+            _ = try await sendMessageDirect(message: sendingMessage, attachment: nil).get()
+        } catch {
+            Log.lifecycle.warning("Error sending fatal log to backend: \(error, privacy: .public)")
+        }
+
+        didComplete = true
+        group.leave()
+    }
+
+    _ = group.wait(timeout: .now() + 5.0)
+
+    if didComplete {
+        Log.lifecycle.warning("Error logged to backend before fatal error: \(message, privacy: .public)")
+    } else {
+        Log.lifecycle.warning("Backend logging timed out after 5 seconds")
+    }
+#endif
+
+    fatalError(message, file: file, line: line)
+}

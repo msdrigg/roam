@@ -168,6 +168,8 @@ struct PresenceInfo: Decodable, Sendable {
     }
 }
 
+
+
 func getMessagingUpdates(after: String?) async throws -> MessagingUpdateResponse {
     let userId = getSystemInstallID()
 

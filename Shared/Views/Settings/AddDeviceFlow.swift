@@ -297,8 +297,7 @@ struct AddDeviceFlow: View {
     }
 
     private func completeConnection(preConnectInfo: PreconnectionDeviceInfo, location: String) async {
-        let modelContainer = getSharedModelContainer()
-        let dataHandler = DataHandler(modelContainer: modelContainer)
+        let dataHandler = DataHandler()
 
         let device = await dataHandler.addDeviceIndistriminantly(
             location: location,

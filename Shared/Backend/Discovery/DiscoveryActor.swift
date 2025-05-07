@@ -9,8 +9,9 @@ actor DeviceDiscoveryActor {
     let dataHandler: DataHandler
     let updater: @Sendable @MainActor () -> Void
 
-    init(modelContainer: ModelContainer, updater: @Sendable @MainActor @escaping () -> Void) {
-        dataHandler = DataHandler(modelContainer: modelContainer)
+    @MainActor
+    init(updater: @Sendable @MainActor @escaping () -> Void) {
+        dataHandler = DataHandler()
         self.updater = updater
     }
 
@@ -66,7 +67,11 @@ actor DeviceDiscoveryActor {
                         break
                     }
                     taskGroup.addTask {
-                        try? await sem.waitUnlessCancelled()
+                        do {
+                            try await sem.waitUnlessCancelled()
+                        } catch {
+                            return
+                        }
                         defer {
                             sem.signal()
                         }

@@ -215,6 +215,11 @@
 		AFC4A65D2AE8AF16005DAC6C /* AppLinksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF11D36A2AD2D0B800527AF6 /* AppLinksView.swift */; };
 		AFC4A65F2AE8AF3F005DAC6C /* DataImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC4A65E2AE8AF3F005DAC6C /* DataImage.swift */; };
 		AFC4A6602AE8AF3F005DAC6C /* DataImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC4A65E2AE8AF3F005DAC6C /* DataImage.swift */; };
+		AFCD235B2DCAA6530000E80E /* WorkersBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2F54EE2BCE58EF00BAE156 /* WorkersBackend.swift */; };
+		AFCD235C2DCAA7040000E80E /* Debugger.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE89A2C2B9E793E0078387C /* Debugger.swift */; };
+		AFCD235E2DCBC6270000E80E /* QBackgroundExecution.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCD235D2DCBC6210000E80E /* QBackgroundExecution.swift */; };
+		AFCD235F2DCBC6270000E80E /* QBackgroundExecution.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCD235D2DCBC6210000E80E /* QBackgroundExecution.swift */; };
+		AFCD23602DCBC6270000E80E /* QBackgroundExecution.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCD235D2DCBC6210000E80E /* QBackgroundExecution.swift */; };
 		AFCF22DE2B2A52190048FFD9 /* NotificationBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCF22DD2B2A52190048FFD9 /* NotificationBanner.swift */; };
 		AFCF22E02B2A6A720048FFD9 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCF22DF2B2A6A720048FFD9 /* NetworkMonitor.swift */; };
 		AFD395042D2F9C710017B2A0 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = AFD395032D2F9C710017B2A0 /* AsyncAlgorithms */; };
@@ -543,6 +548,7 @@
 		AFC6E6962ADDF6BB0036EC90 /* Intents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Intents.framework; path = System/Library/Frameworks/Intents.framework; sourceTree = SDKROOT; };
 		AFC6E6A12ADDF6BC0036EC90 /* IntentsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IntentsUI.framework; path = System/Library/Frameworks/IntentsUI.framework; sourceTree = SDKROOT; };
 		AFC6E6B72ADE28C80036EC90 /* Shortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shortcuts.swift; sourceTree = "<group>"; };
+		AFCD235D2DCBC6210000E80E /* QBackgroundExecution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QBackgroundExecution.swift; sourceTree = "<group>"; };
 		AFCF22DD2B2A52190048FFD9 /* NotificationBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationBanner.swift; sourceTree = "<group>"; };
 		AFCF22DF2B2A6A720048FFD9 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		AFD590CF2AEC673C00189620 /* WatchConnector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnector.swift; sourceTree = "<group>"; };
@@ -810,6 +816,7 @@
 		AF56E3BB2AD9865400F5E6E0 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
+				AFCD235D2DCBC6210000E80E /* QBackgroundExecution.swift */,
 				AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */,
 				AF468D362D333A9C00DF0F2E /* QSocket.swift */,
 				AF0D09EE2CDE5C3B0098122E /* Helpers.swift */,
@@ -1382,6 +1389,7 @@
 				AFD9C4F82AE983A800C4079C /* NetworkUtils.swift in Sources */,
 				AF0042762AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */,
 				AF2480592BDB42F600EF47AE /* TestData.swift in Sources */,
+				AFCD235F2DCBC6270000E80E /* QBackgroundExecution.swift in Sources */,
 				AFD9C4E42AE9809900C4079C /* AppLinkAppEntity.swift in Sources */,
 				AFBDEA2F2D7D122000C15B18 /* AddDeviceFlow.swift in Sources */,
 				AFD9C4F92AE983AE00C4079C /* SSDPService.swift in Sources */,
@@ -1456,9 +1464,11 @@
 				AFF2B68F2D4FEBBE00A6F3B0 /* Loggers.swift in Sources */,
 				AF205B202AE02CAF00041CDF /* WidgetHelpers.swift in Sources */,
 				AF0042772AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */,
+				AFCD235E2DCBC6270000E80E /* QBackgroundExecution.swift in Sources */,
 				AFA9F8972B1B878600829B7C /* Shortcuts.swift in Sources */,
 				AF6A8F942D060834004AB1D2 /* NetworkUtils.swift in Sources */,
 				AF0042872AEABA9F0051BB1E /* CollectionHelpers.swift in Sources */,
+				AFCD235B2DCAA6530000E80E /* WorkersBackend.swift in Sources */,
 				AFF6DE142BCF0A14002C13FC /* Message.swift in Sources */,
 				AF1899F22C1CB204001EDA78 /* NavigationManager.swift in Sources */,
 				AF30DD2A2D39B1FF00FD8B9A /* ECPMessages.swift in Sources */,
@@ -1473,6 +1483,7 @@
 				AFC4A65D2AE8AF16005DAC6C /* AppLinksView.swift in Sources */,
 				AF842A5D2BA554E5005D52D2 /* CaptureScrollWheelModifier.swift in Sources */,
 				AF19CA152AE4471200A42DFF /* AsyncHelpers.swift in Sources */,
+				AFCD235C2DCAA7040000E80E /* Debugger.swift in Sources */,
 				AF205B262AE02D0100041CDF /* Device.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1621,6 +1632,7 @@
 				AF6E294A2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */,
 				AFF6DE0D2BCF0326002C13FC /* Message.swift in Sources */,
 				AF42442E2BB1118700334AAF /* SchemaFile.swift in Sources */,
+				AFCD23602DCBC6270000E80E /* QBackgroundExecution.swift in Sources */,
 				AF67C8F62C1D1A9200A6D077 /* UUIDUpdater.swift in Sources */,
 				AF3EEF952AE0206E00B661F3 /* AudioPlayer.swift in Sources */,
 				AF8EF51D2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */,
@@ -1854,6 +1866,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG CLI $(inherited)";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -1867,6 +1880,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = CLI;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
@@ -1878,10 +1892,11 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.43;
+				MARKETING_VERSION = 1.44;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamWatchUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG TEST $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -1897,10 +1912,11 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.43;
+				MARKETING_VERSION = 1.44;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamWatchUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = TEST;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -1918,7 +1934,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.43;
+				MARKETING_VERSION = 1.44;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1927,6 +1943,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG TEST $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,3,7";
@@ -1942,7 +1959,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.43;
+				MARKETING_VERSION = 1.44;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1951,6 +1968,7 @@
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = TEST;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,3,7";
@@ -1996,7 +2014,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20250504.7480460.0;
+				CURRENT_PROJECT_VERSION = 20250504.7047842.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
@@ -2021,7 +2039,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.43;
+				MARKETING_VERSION = 1.44;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -2080,7 +2098,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20250504.7480460.0;
+				CURRENT_PROJECT_VERSION = 20250504.7047842.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
@@ -2099,7 +2117,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.43;
+				MARKETING_VERSION = 1.44;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "";
@@ -2231,10 +2249,11 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
-				MARKETING_VERSION = 1.43;
+				MARKETING_VERSION = 1.44;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamSwiftTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = TEST;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Roam.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Roam";
@@ -2250,10 +2269,11 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
-				MARKETING_VERSION = 1.43;
+				MARKETING_VERSION = 1.44;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamSwiftTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = TEST;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Roam.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Roam";

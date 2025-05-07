@@ -34,7 +34,7 @@ public extension Task where Success == Never, Failure == Never {
                 return firstToResolve
             } else {
                 // There will be at least 1 task.
-                fatalError("At least 1 task should be scheduled.")
+                loggedFatalError("At least 1 task should be scheduled.")
             }
         }
     }

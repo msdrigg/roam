@@ -69,7 +69,7 @@
 
             @available(*, unavailable)
             required init?(coder _: NSCoder) {
-                fatalError("init(coder:) has not been implemented")
+                loggedFatalError("init(coder:) has not been implemented")
             }
 
             override var acceptsFirstResponder: Bool { true }

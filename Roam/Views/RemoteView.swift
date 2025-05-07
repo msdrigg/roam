@@ -170,7 +170,7 @@ struct RemoteView: View {
             }
 
             Task {
-                let dh = DataHandler(modelContainer: getSharedModelContainer())
+                let dh = DataHandler()
                 if let pid = await dh.addOrReplaceDevice(location: location) {
                     Log.lifecycle.notice("Added device with PID \(pid.described(), privacy: .public)")
                     await dh.setSelectedDevice(pid)
