@@ -75,7 +75,7 @@ private func _getSharedModelContainer() throws -> ModelContainer {
             configurations: [modelConfiguration]
         )
     }
-    
+
     mc.mainContext.autosaveEnabled = false
     return mc
 }
