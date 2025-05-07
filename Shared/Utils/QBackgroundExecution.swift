@@ -69,9 +69,12 @@ import UIKit
 
     deinit {
         guard self.taskID != .invalid else { return }
-        UIApplication.shared.endBackgroundTask(self.taskID)
+        let task = self.taskID
         self.taskID = .invalid
         self.systemDidReleaseAssertion = nil
+        DispatchQueue.main.async {
+            UIApplication.shared.endBackgroundTask(task)
+        }
     }
 
     private func consumeValidTaskID(_ body: () -> Void) {
@@ -132,7 +135,7 @@ final class QRunInBackgroundAssertion {
     ///
     /// To help avoid retain cycles, the object sets this to `nil` whenever the
     /// assertion is released.
-    var systemDidReleaseAssertion:  (@Sendable () -> Void)? {
+    var systemDidReleaseAssertion: (@Sendable () -> Void)? {
         willSet { dispatchPrecondition(condition: .onQueue(.main)) }
     }
 
