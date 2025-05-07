@@ -96,6 +96,9 @@
                             let newChars = str[startIndex..<str.endIndex]
 
                             try await semaphore.waitUnlessCancelled()
+                            defer {
+                                semaphore.signal()
+                            }
                             do {
                                 try await withTimeout(delay: 2.0) {
                                     for char in newChars.unicodeScalars {
@@ -105,7 +108,6 @@
                             } catch {
                                 Log.userInteraction.warning("Couldn't send kb input within 2s")
                             }
-                            semaphore.signal()
                         }
                     }
                 }

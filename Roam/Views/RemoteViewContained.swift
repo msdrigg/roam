@@ -252,17 +252,17 @@ struct RemoteViewContained: View {
                 }
                 .task {
                     while !Task.isCancelled {
-                        await DataHandler(modelContainer: getSharedModelContainer()).refreshMessagesIfExpectingNewMessages()
+                        await DataHandler().refreshMessagesIfExpectingNewMessages()
                         try? await Task.sleep(nanoseconds: 1000 * 1000 * 1000 * 3600)
                     }
                 }
                 .task {
                     if loadTestingData() {
                         // swiftlint:disable:next force_try
-                        try! await DataHandler(modelContainer: getSharedModelContainer()).loadTestData()
+                        try! await DataHandler().loadTestData()
                     } else if usingTestingDataContainer() {
                         // swiftlint:disable:next force_try
-                        try! await DataHandler(modelContainer: getSharedModelContainer()).clearData()
+                        try! await DataHandler().clearData()
                     }
                 }
 #if os(iOS)
@@ -314,7 +314,7 @@ struct RemoteViewContained: View {
                             if Task.isCancelled {
                                 return
                             }
-                            let handler = DataHandler(modelContainer: getSharedModelContainer())
+                            let handler = DataHandler()
                             await handler.refreshDevice(client: ECPWebsocketRefreshClient(id: selectedDevice.persistentModelID, client: ecpSession, location: selectedDevice.location))
                         } else {
                             Log.connection
@@ -370,10 +370,10 @@ struct RemoteViewContained: View {
                     }
                 }
                 .onAppear {
-                    scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                    scanningActor = DeviceDiscoveryActor(updater: {
                         updater?.update()
                     })
-                    ssdpActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: {
+                    ssdpActor = DeviceDiscoveryActor(updater: {
                         updater?.update()
                     })
                 }
@@ -1032,7 +1032,7 @@ struct RemoteViewContained: View {
         }
         Task.detached {
             if let modelId = app.modelId {
-                await DataHandler(modelContainer: getSharedModelContainer()).setSelectedApp(modelId)
+                await DataHandler().setSelectedApp(modelId)
             }
         }
     }

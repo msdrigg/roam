@@ -322,7 +322,9 @@ extension FileDescriptor {
     /// ``getSocketOption(_:_:as:retryOnInterrupt:)``.
 
     public func getSocketOption(_ level: CInt, _ name: CInt, _ optionValue: UnsafeMutableRawPointer, optionLen: inout Int, retryOnInterrupt: Bool = true) throws {
-        guard var optionSockLen = socklen_t(exactly: optionLen), optionLen >= 0 else { fatalError() }
+        guard var optionSockLen = socklen_t(exactly: optionLen), optionLen >= 0 else {
+            loggedFatalError("QSocket failed to set option length")
+        }
         try errnoQ(retryOnInterrupt: retryOnInterrupt) {
             Foundation.getsockopt(self.rawValue, level, name, optionValue, &optionSockLen)
         }
@@ -337,7 +339,9 @@ extension FileDescriptor {
     /// ``setSocketOption(_:_:_:retryOnInterrupt:)``.
 
     public func setSocketOption(_ level: CInt, _ name: CInt, _ optionValue: UnsafeRawPointer, _ optionLen: Int, retryOnInterrupt: Bool = true) throws {
-        guard let optionSockLen = socklen_t(exactly: optionLen), optionLen >= 0 else { fatalError() }
+        guard let optionSockLen = socklen_t(exactly: optionLen), optionLen >= 0 else {
+            loggedFatalError("QSocket failed to get option length")
+        }
         try errnoQ(retryOnInterrupt: retryOnInterrupt) {
             Foundation.setsockopt(self.rawValue, level, name, optionValue, optionSockLen)
         }

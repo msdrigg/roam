@@ -136,7 +136,7 @@ struct WatchAppView: View {
             }
             .tabViewStyle(.verticalPage)
             .onAppear {
-                scanningActor = DeviceDiscoveryActor(modelContainer: getSharedModelContainer(), updater: { })
+                scanningActor = DeviceDiscoveryActor(updater: { })
             }
         }
     }
@@ -149,10 +149,10 @@ struct WatchAppView: View {
                 .task {
                     if loadTestingData() {
                         // swiftlint:disable:next force_try
-                        try! await DataHandler(modelContainer: getSharedModelContainer()).loadTestData()
+                        try! await DataHandler().loadTestData()
                     } else if usingTestingDataContainer() {
                         // swiftlint:disable:next force_try
-                        try! await DataHandler(modelContainer: getSharedModelContainer()).clearData()
+                        try! await DataHandler().clearData()
                     }
                 }
                 .task(id: selectedDevice?.persistentModelID, priority: .medium) {
@@ -163,7 +163,7 @@ struct WatchAppView: View {
                             if Task.isCancelled {
                                 return
                             }
-                            let handler = DataHandler(modelContainer: getSharedModelContainer())
+                            let handler = DataHandler()
                             await handler.refreshDevice(client: WatchOSRefreshClient(id: selectedDevice.persistentModelID, location: selectedDevice.location))
                         } else {
                             Log.connection.info("No selected device to refresh")

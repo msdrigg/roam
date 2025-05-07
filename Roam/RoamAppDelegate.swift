@@ -54,7 +54,7 @@ final class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
 
         Task {
             do {
-                let selectedDevice = await DataHandler(modelContainer: getSharedModelContainer()).fetchSelectedDeviceAppEntity()
+                let selectedDevice = await DataHandler().fetchSelectedDeviceAppEntity()
 
                 if let selectedDevice, ecpMonitor.ecpClient == nil {
                     ecpMonitor.setDevice(selectedDevice)
@@ -111,7 +111,7 @@ final class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
 
     func refreshMessages() {
         Task {
-            let dataHandler = await DataHandler(modelContainer: getSharedModelContainer())
+            let dataHandler = await DataHandler()
             await dataHandler.refreshMessagesIfExpectingNewMessages()
         }
     }
@@ -305,7 +305,7 @@ extension NSApplication {
 
         func refreshMessages(fetchCompletionHandler completionHandler: ((UIBackgroundFetchResult) -> Void)? = nil) {
             Task {
-                let dataHandler = DataHandler(modelContainer: getSharedModelContainer())
+                let dataHandler = DataHandler()
                 let refreshResult = await dataHandler.refreshMessagesIfExpectingNewMessages()
                 if refreshResult > 0 {
                     completionHandler?(.newData)
@@ -352,7 +352,7 @@ extension NSApplication {
 
             Task {
                 do {
-                    let selectedDevice = await DataHandler(modelContainer: getSharedModelContainer()).fetchSelectedDeviceAppEntity()
+                    let selectedDevice = await DataHandler().fetchSelectedDeviceAppEntity()
 
                     if let selectedDevice, ecpMonitor.ecpClient == nil {
                         ecpMonitor.setDevice(selectedDevice)

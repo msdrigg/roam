@@ -16,7 +16,7 @@ public struct OpenDeviceIntent: OpenIntent {
 
     @MainActor
     public func perform() async throws -> some IntentResult {
-        await DataHandler(modelContainer: getSharedModelContainer()).setSelectedDevice(target.modelId)
+        await DataHandler().setSelectedDevice(target.modelId)
         return .result()
     }
 }
@@ -194,12 +194,11 @@ public struct ButtonPressIntent: AppIntent, CustomIntentMigratedAppIntent, Predi
     }
 }
 
-#if WIDGET
+#if WIDGET || os(watchOS)
 public func clickButton(button: RemoteButton, device: DeviceAppEntity?) async throws {
     Log.userInteraction.notice("Pressing widget button \(button.apiValue ?? "nil", privacy: .public) on device \(device?.name ?? "nil", privacy: .public)")
-    let modelContainer = await getSharedModelContainer()
 
-    let dataHandler = DataHandler(modelContainer: modelContainer)
+    let dataHandler = await DataHandler()
 
     var targetDevice = device
     if targetDevice == nil {
@@ -246,8 +245,7 @@ public func clickButton(button: RemoteButton, device: DeviceAppEntity?) async th
 }
 
 public func launchApp(app: AppLinkAppEntity, device: DeviceAppEntity?) async throws {
-    let modelContainer = await getSharedModelContainer()
-    let dataHandler = DataHandler(modelContainer: modelContainer)
+    let dataHandler = await DataHandler()
 
     var targetDevice = device
     if targetDevice == nil {
@@ -310,17 +308,17 @@ extension AppLinkAppEntity: AppEntity {
         public init() {}
 
         public func entities(for identifiers: [AppLinkAppEntity.ID]) async throws -> [AppLinkAppEntity] {
-            let appLinkActor = DataHandler(modelContainer: await getSharedModelContainer())
+            let appLinkActor = await DataHandler()
             return try await appLinkActor.appEntities(for: identifiers, deviceUid: launchAppIntent?.device.udn)
         }
 
         func entities(matching string: String) async throws -> [AppLinkAppEntity] {
-            let appLinkActor = DataHandler(modelContainer: await getSharedModelContainer())
+            let appLinkActor = await DataHandler()
             return try await appLinkActor.appEntities(matching: string, deviceUid: launchAppIntent?.device.udn)
         }
 
         public func suggestedEntities() async throws -> [AppLinkAppEntity] {
-            let appLinkActor = DataHandler(modelContainer: await getSharedModelContainer())
+            let appLinkActor = await DataHandler()
             return try await appLinkActor.appEntities(deviceUid: launchAppIntent?.device.udn)
         }
     }

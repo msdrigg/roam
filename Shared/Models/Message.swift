@@ -33,7 +33,7 @@ extension Message {
             Task {
                 do {
                     let upload = try await DiagnosticsImport().load().get()
-                    try await DataHandler(modelContainer: getSharedModelContainer()).sendChatMessage(message: ":ninja:", attachments: [upload])
+                    try await DataHandler().sendChatMessage(message: ":ninja:", attachments: [upload])
                     Log.backend.notice("Sent attachment to share diagnostics \(String(describing: upload), privacy: .public)")
                 } catch {
                     Log.backend.warning("Error sending diagnostics on command-share: \(error, privacy: .public)")

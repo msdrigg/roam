@@ -148,7 +148,7 @@ func trimmedDebugInfoIfNeeded(_ debugInfo: DebugInfo, maxFileSize: Int = 9 * 102
     }
 }
 
-func getDebugInfo(container: ModelContainer) async -> DebugInfo {
+func getDebugInfo() async -> DebugInfo {
     var debugErrors: [String] = []
     var entries: [LogEntry] = []
     do {
@@ -159,7 +159,7 @@ func getDebugInfo(container: ModelContainer) async -> DebugInfo {
 
     var devices: [DeviceAppEntity] = []
     do {
-        devices = try await DataHandler(modelContainer: container).allDeviceEntitiesIncludingDeleted()
+        devices = try await DataHandler().allDeviceEntitiesIncludingDeleted()
     } catch {
         debugErrors.append("Error Getting Devices: \n\(error)")
     }
@@ -210,7 +210,7 @@ func getDebugInfo(container: ModelContainer) async -> DebugInfo {
 
     var appLinks: [AppLinkAppEntity] = []
     do {
-        appLinks = try await DataHandler(modelContainer: container).allAppEntities()
+        appLinks = try await DataHandler().allAppEntities()
     } catch {
         debugErrors.append("Error Getting AppLinks: \n\(error)")
     }

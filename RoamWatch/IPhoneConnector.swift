@@ -52,8 +52,7 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
         if let deviceMap = devices as? [String: [String: String]] {
             Log.watch.notice("Trying to add devices \(deviceMap, privacy: .public)")
             Task {
-                let modelContainer = await getSharedModelContainer()
-                let dataHandler = DataHandler(modelContainer: modelContainer)
+                let dataHandler = await DataHandler()
                 for device in deviceMap {
                     if let existingDevice = await dataHandler.deviceEntityForUdn(udn: device.key) {
                         Log.watch

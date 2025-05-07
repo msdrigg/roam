@@ -25,7 +25,7 @@ actor OpusDecoderWithJitterBuffer {
     init(audioBuffer: TimeInterval) throws {
         guard let opusFormat = AVAudioFormat(opusPCMFormat: .float32, sampleRate: Double(globalClockRate), channels: 2)
         else {
-            fatalError("Error initializing opus av format. This is a bug")
+            loggedFatalError("Error initializing opus av format. This is a bug")
         }
         do {
             opusDecoder = try Opus.RoamDecoder(format: opusFormat)

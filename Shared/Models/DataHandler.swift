@@ -13,7 +13,12 @@ public actor DataHandler {
 
     private let minRescanInterval: TimeInterval = 30
 
-    private func allDevices() throws -> [Device] {
+    @MainActor
+    init() {
+        self.init(modelContainer: getSharedModelContainer())
+    }
+
+    private func allDevices() async throws -> [Device] {
         var descriptor = FetchDescriptor<Device>(
             predicate: #Predicate {
                 $0.deletedAt == nil
@@ -26,42 +31,42 @@ public actor DataHandler {
         descriptor.propertiesToFetch = [
             \.lastSentToWatch, \.udn
         ]
-        let links = try modelContext.fetchSafer(
+        let links = try await self.fetchSafer(
             descriptor
         )
         return links
     }
 
-    func setSelectedApp(_ appId: PersistentIdentifier) {
+    func setSelectedApp(_ appId: PersistentIdentifier) async {
         Log.data.notice("Updating selectedAt for app with id \(appId.described(), privacy: .public)")
 
-        if let appLink = modelContext.existingApp(for: appId) {
+        if let appLink = await self.existingApp(for: appId) {
             Log.data.notice("Setting appId selected to now")
             appLink.lastSelected = Date.now
             do {
-                try modelContext.saveSafer()
+                try await self.saveSafer()
             } catch {
                 Log.data.error("Error marking app as selected \(appLink.id, privacy: .public)")
             }
         }
     }
 
-    func setSelectedDevice(_ id: PersistentIdentifier) {
+    func setSelectedDevice(_ id: PersistentIdentifier) async {
         Log.data.notice("Updating selectedAt for device with id \(String(describing: id), privacy: .public)")
-        if let device = modelContext.existingDevice(for: id) {
+        if let device = await self.existingDevice(for: id) {
             Log.data.notice("Found device to update with location \(device.location, privacy: .public)")
             device.lastSelectedAt = Date.now
             do {
-                try modelContext.saveSafer()
+                try await self.saveSafer()
             } catch {
                 Log.data.error("Error marking device as selected \(device.location, privacy: .public)")
             }
         }
     }
 
-    func updateDevice(_ id: PersistentIdentifier, name: String? = nil, location: String? = nil, hidden: Bool? = nil) {
+    func updateDevice(_ id: PersistentIdentifier, name: String? = nil, location: String? = nil, hidden: Bool? = nil) async {
         Log.data.notice("Updating device at \(id.described(), privacy: .public)")
-        if let device = modelContext.existingDevice(for: id) {
+        if let device = await self.existingDevice(for: id) {
             Log.data.notice("Found device to update with id \(id.described(), privacy: .public))")
             if let location {
                 device.location = location
@@ -78,7 +83,7 @@ public actor DataHandler {
                 }
             }
             do {
-                try modelContext.saveSafer()
+                try await self.saveSafer()
             } catch {
                 Log.data.warning("Error updating device at location \(device.location, privacy: .public)")
             }
@@ -87,13 +92,13 @@ public actor DataHandler {
     }
 
     @discardableResult
-    func addDeviceIndistriminantly(location: String, friendlyDeviceName: String, udn: String, serial: String, hidden: Bool) -> PersistentIdentifier? {
-        if let device = deviceForUdn(udn: udn) {
+    func addDeviceIndistriminantly(location: String, friendlyDeviceName: String, udn: String, serial: String, hidden: Bool) async -> PersistentIdentifier? {
+        if let device = await deviceForUdn(udn: udn) {
             device.location = location
             device.name = friendlyDeviceName
             device.hiddenAt = hidden ? Date.now : nil
             do {
-                try modelContext.saveSafer()
+                try await self.saveSafer()
             } catch {
                 Log.data.warning("Error updating device fields \(error, privacy: .public)")
             }
@@ -110,7 +115,7 @@ public actor DataHandler {
             modelContext.insert(device)
 
             do {
-                try modelContext.saveSafer()
+                try await self.saveSafer()
                 Log.data.notice("Added device \(String(describing: device.persistentModelID), privacy: .public)")
                 return device.persistentModelID
             } catch {
@@ -122,20 +127,20 @@ public actor DataHandler {
 
     @discardableResult
     func addOrReplaceDevice(location: String, udn: String? = nil, serial: String? = nil) async -> PersistentIdentifier? {
-        if let udn, let device = deviceForUdn(udn: udn) {
+        if let udn, let device = await deviceForUdn(udn: udn) {
             device.location = location
             do {
-                try modelContext.saveSafer()
+                try await self.saveSafer()
             } catch {
                 Log.data.warning("Error updating device fields \(error, privacy: .public)")
             }
             return device.persistentModelID
         }
 
-        if let serial, let device = deviceForSerial(serial: serial) {
+        if let serial, let device = await deviceForSerial(serial: serial) {
             device.location = location
             do {
-                try modelContext.saveSafer()
+                try await self.saveSafer()
             } catch {
                 Log.data.warning("Error updating device fields \(error, privacy: .public)")
             }
@@ -146,12 +151,12 @@ public actor DataHandler {
         var foundDevice: Device?
         do {
             info = try await fetchPreconnectionInfo(location: location)
-            if let device = deviceForUdn(udn: info.udn) {
+            if let device = await deviceForUdn(udn: info.udn) {
                 Log.data.info("Found device for udn \(info.udn, privacy: .public), updating")
                 device.serial = info.serial
                 device.location = location
                 foundDevice = device
-            } else if let device = deviceForSerial(serial: info.serial) {
+            } else if let device = await deviceForSerial(serial: info.serial) {
                 Log.data.info("Found device for serial \(info.serial, privacy: .public), updating")
                 device.udn = info.udn
                 device.location = location
@@ -179,7 +184,7 @@ public actor DataHandler {
         }
 
         do {
-            try modelContext.saveSafer()
+            try await self.saveSafer()
             Log.data.notice("Added device \(String(describing: device.persistentModelID), privacy: .public)")
             Task {
                 #if os(watchOS)
@@ -213,24 +218,24 @@ public actor DataHandler {
         }
     }
 
-    func sentToWatch(deviceId: PersistentIdentifier) {
+    func sentToWatch(deviceId: PersistentIdentifier) async {
         do {
-            if let device = modelContext.existingDevice(for: deviceId) {
+            if let device = await self.existingDevice(for: deviceId) {
                 device.lastSentToWatch = Date.now
-                try modelContext.saveSafer()
+                try await self.saveSafer()
             }
         } catch {
             Log.data.warning("Error marking device \(deviceId.described(), privacy: .public) as sent to watch \(error, privacy: .public)")
         }
     }
 
-    func watchPossiblyDead() {
-        let devices = (try? allDevices()) ?? []
+    func watchPossiblyDead() async {
+        let devices = (try? await allDevices()) ?? []
         for device in devices {
             device.lastSentToWatch = nil
         }
         do {
-            try modelContext.saveSafer()
+            try await self.saveSafer()
         } catch {
             Log.data.warning("Error marking devices as not sent to watch \(error, privacy: .public)")
         }
@@ -245,7 +250,7 @@ public actor DataHandler {
                 $0.deletedAt ?? distantFuture < deleteBefore
             })
             descriptor.propertiesToFetch = [\.name, \.udn, \.location]
-            let models = try modelContext.fetchSafer(descriptor)
+            let models = try await self.fetchSafer(descriptor)
 
             for model in models {
                 Log.data.notice("Deleteing device and apps \(model.location, privacy: .public) with name \(model.name, privacy: .public)")
@@ -257,7 +262,7 @@ public actor DataHandler {
                 modelContext.delete(model)
             }
 
-            try modelContext.saveSafer()
+            try await self.saveSafer()
         } catch {
             Log.data.warning("Error deleting past devices \(error, privacy: .public)")
         }
@@ -265,10 +270,10 @@ public actor DataHandler {
 
     func hide(_ id: PersistentIdentifier) async throws {
         Log.data.notice("Hiding device \(String(describing: id), privacy: .public)")
-        if let device = modelContext.existingDevice(for: id) {
+        if let device = await self.existingDevice(for: id) {
             device.hiddenAt = .now
             do {
-                try modelContext.saveSafer()
+                try await self.saveSafer()
             } catch {
                 Log.data.error("Error hiding device with id \(id.described(), privacy: .public)")
                 return
@@ -278,10 +283,10 @@ public actor DataHandler {
 
     func delete(_ id: PersistentIdentifier) async throws {
         Log.data.notice("Soft deleting device \(String(describing: id), privacy: .public)")
-        if let device = modelContext.existingDevice(for: id) {
+        if let device = await self.existingDevice(for: id) {
             device.deletedAt = .now
             do {
-                try modelContext.saveSafer()
+                try await self.saveSafer()
             } catch {
                 Log.data.error("Error deleting device with id \(id.described(), privacy: .public)")
                 return
@@ -291,7 +296,7 @@ public actor DataHandler {
         await deleteInPast()
     }
 
-    private func deviceForUdnUnchecked(udn: String) -> Device? {
+    private func deviceForUdn(udn: String) async -> Device? {
         var matchingIds = FetchDescriptor<Device>(
             predicate: #Predicate {
                 $0.deletedAt == nil && $0.udn == udn
@@ -312,7 +317,7 @@ public actor DataHandler {
             let matchingIds = try modelContext.fetchIdentifiers(matchingIds)
 
             if let matchingPid = matchingIds.first {
-                if let device = modelContext.existingDevice(for: matchingPid) {
+                if let device = await self.existingDevice(for: matchingPid) {
                     return device
                 }
             }
@@ -322,7 +327,7 @@ public actor DataHandler {
         return nil
     }
 
-    private func deviceForSerialUnchecked(serial: String) -> Device? {
+    private func deviceForSerial(serial: String) async -> Device? {
         var matchingIds = FetchDescriptor<Device>(
             predicate: #Predicate {
                 $0.deletedAt == nil && $0.serial == serial
@@ -343,7 +348,7 @@ public actor DataHandler {
             let matchingIds = try modelContext.fetchIdentifiers(matchingIds)
 
             if let matchingPid = matchingIds.first {
-                if let device = modelContext.existingDevice(for: matchingPid) {
+                if let device = await self.existingDevice(for: matchingPid) {
                     return device
                 }
             }
@@ -353,37 +358,15 @@ public actor DataHandler {
         return nil
     }
 
-    private func deviceForUdn(udn: String) -> Device? {
-        do {
-            return try catchObjc {
-                return deviceForUdnUnchecked(udn: udn)
-            }
-        } catch {
-            Log.data.warning("Objc error getting device for udn \(error, privacy: .public)")
-            return nil
-        }
+    func deviceEntityForUdn(udn: String) async -> DeviceAppEntity? {
+        return await deviceForUdn(udn: udn)?.toAppEntity()
     }
 
-    private func deviceForSerial(serial: String) -> Device? {
-        do {
-            return try catchObjc {
-                return deviceForSerialUnchecked(serial: serial)
-            }
-        } catch {
-            Log.data.warning("Objc error getting device for serial \(error, privacy: .public)")
-            return nil
-        }
+    func deviceExists(id: String) async -> Bool {
+        await deviceForUdn(udn: id) != nil
     }
 
-    func deviceEntityForUdn(udn: String) -> DeviceAppEntity? {
-        return deviceForUdn(udn: udn)?.toAppEntity()
-    }
-
-    func deviceExists(id: String) -> Bool {
-        deviceForUdn(udn: id) != nil
-    }
-
-    func fetchSelectedDeviceAppEntity() -> DeviceAppEntity? {
+    func fetchSelectedDeviceAppEntity() async -> DeviceAppEntity? {
         var descriptor = FetchDescriptor<Device>(
             predicate: #Predicate {
                 $0.deletedAt == nil
@@ -396,37 +379,37 @@ public actor DataHandler {
         descriptor.fetchLimit = 1
         descriptor.propertiesToFetch = [\.name, \.location, \.udn, \.wifiMAC, \.ethernetMAC, \.lastSelectedAt, \.lastSentToWatch, \.lastOnlineAt, \.lastScannedAt, \.deletedAt]
 
-        let selectedDevice: Device? = try? modelContext.fetchSafer(descriptor).first
+        let selectedDevice: Device? = try? await self.fetchSafer(descriptor).first
 
         return selectedDevice?.toAppEntity()
     }
 }
 
 extension DataHandler {
-    public func deviceEntities(for identifiers: [DeviceAppEntity.ID]) throws -> [DeviceAppEntity] {
+    public func deviceEntities(for identifiers: [DeviceAppEntity.ID]) async throws -> [DeviceAppEntity] {
         var descriptor = FetchDescriptor<Device>(predicate: #Predicate {
             identifiers.contains($0.udn) && $0.deletedAt == nil
         })
 
         descriptor.propertiesToFetch = [\.name, \.location, \.udn, \.wifiMAC, \.ethernetMAC, \.lastSelectedAt, \.lastSentToWatch, \.lastOnlineAt, \.lastScannedAt, \.deletedAt]
 
-        let links = try modelContext.fetchSafer(descriptor)
+        let links = try await self.fetchSafer(descriptor)
 
         return links.map { $0.toAppEntity() }
     }
 
-    public func deviceEntities(matching string: String) throws -> [DeviceAppEntity] {
+    public func deviceEntities(matching string: String) async throws -> [DeviceAppEntity] {
         var descriptor = FetchDescriptor<Device>(predicate: #Predicate {
             $0.name.contains(string) && $0.deletedAt == nil
         })
 
         descriptor.propertiesToFetch = [\.name, \.location, \.udn, \.wifiMAC, \.ethernetMAC, \.lastSelectedAt, \.lastSentToWatch, \.lastOnlineAt, \.lastScannedAt, \.deletedAt]
 
-        let links = try modelContext.fetchSafer(descriptor)
+        let links = try await self.fetchSafer(descriptor)
         return links.map { $0.toAppEntity() }
     }
 
-    public func allDeviceEntitiesIncludingDeleted() throws -> [DeviceAppEntity] {
+    public func allDeviceEntitiesIncludingDeleted() async throws -> [DeviceAppEntity] {
         var descriptor = FetchDescriptor<Device>(
             predicate: #Predicate { _ in
                 true
@@ -438,13 +421,13 @@ extension DataHandler {
         ]
         descriptor.propertiesToFetch = [\.name, \.location, \.udn, \.wifiMAC, \.ethernetMAC, \.lastSelectedAt, \.lastSentToWatch, \.lastOnlineAt, \.lastScannedAt, \.deletedAt]
 
-        let links = try modelContext.fetchSafer(
+        let links = try await self.fetchSafer(
             descriptor
         )
         return links.map { $0.toAppEntity() }
     }
 
-    public func allDeviceEntities() throws -> [DeviceAppEntity] {
+    public func allDeviceEntities() async throws -> [DeviceAppEntity] {
         var descriptor = FetchDescriptor<Device>(
             predicate: #Predicate {
                 $0.deletedAt == nil
@@ -456,13 +439,13 @@ extension DataHandler {
         ]
         descriptor.propertiesToFetch = [\.name, \.location, \.udn, \.wifiMAC, \.ethernetMAC, \.lastSelectedAt, \.lastSentToWatch, \.lastOnlineAt, \.lastScannedAt, \.deletedAt]
 
-        let links = try modelContext.fetchSafer(
+        let links = try await self.fetchSafer(
             descriptor
         )
         return links.map { $0.toAppEntity() }
     }
 
-    public func loadTestData() throws {
+    public func loadTestData() async throws {
         #if DEBUG
         try self.clearData()
 
@@ -479,7 +462,7 @@ extension DataHandler {
             modelContext.insert(message)
         }
 
-        try modelContext.saveSafer()
+        try await self.saveSafer()
         #endif
     }
 
@@ -490,23 +473,69 @@ extension DataHandler {
     }
 }
 
-public extension ModelContext {
-    func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) throws -> [T] {
-        return try catchObjc {
-            return try self.fetch(descriptor)
-        }
-    }
-
-    func saveSafer() throws {
-        return try catchObjc {
-            try self.save()
-        }
-    }
+enum DataHandlerError: Error {
+    case suspending
 }
 
-extension ModelContext {
-    internal func existingDevice(for id: PersistentIdentifier) -> Device? {
-        if let registered: Device = registeredModel(for: id) {
+public extension DataHandler {
+    #if !os(macOS)
+    func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
+        let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
+        var result: [T]?
+        do {
+            if await !assertion.isReleased() {
+                result = try catchObjc {
+                    return try self.modelContext.fetch(descriptor)
+                }
+            }
+            await assertion.release()
+        } catch {
+            await assertion.release()
+            throw error
+        }
+        if let result {
+            return result
+        } else {
+            throw DataHandlerError.suspending
+        }
+    }
+    #else
+    func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
+        return try catchObjc {
+            return try self.modelContext.fetch(descriptor)
+        }
+    }
+    #endif
+
+    #if !os(macOS)
+    func saveSafer() async throws {
+        let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
+        do {
+            if await !assertion.isReleased() {
+                try catchObjc {
+                    try self.modelContext.save()
+                }
+            } else {
+                throw DataHandlerError.suspending
+            }
+            await assertion.release()
+        } catch {
+            await assertion.release()
+            throw error
+        }
+    }
+    #else
+    func saveSafer() async throws {
+        try catchObjc {
+            try self.modelContext.save()
+        }
+    }
+    #endif
+}
+
+extension DataHandler {
+    internal func existingDevice(for id: PersistentIdentifier) async -> Device? {
+        if let registered: Device = modelContext.registeredModel(for: id) {
             if registered.isDeleted || registered.deletedAt != nil {
                 return nil
             }
@@ -528,7 +557,7 @@ extension ModelContext {
         ]
 
         do {
-            let model = try fetchSafer(fetchDescriptor).first
+            let model = try await fetchSafer(fetchDescriptor).first
 
             if model?.isDeleted == true {
                 return nil
@@ -541,8 +570,8 @@ extension ModelContext {
         }
     }
 
-    func existingApp(for id: PersistentIdentifier) -> AppLink? {
-        if let registered: AppLink = registeredModel(for: id) {
+    func existingApp(for id: PersistentIdentifier) async -> AppLink? {
+        if let registered: AppLink = modelContext.registeredModel(for: id) {
             if registered.isDeleted {
                 return nil
             }
@@ -556,7 +585,7 @@ extension ModelContext {
         )
         fetchDescriptor.propertiesToFetch = [\.id, \.name, \.lastSelected, \.deviceUid, \.type]
         do {
-            let data = try fetchSafer(fetchDescriptor).first
+            let data = try await fetchSafer(fetchDescriptor).first
 
             if data?.isDeleted == true {
                 return nil
@@ -581,38 +610,38 @@ public struct DataHandlerKey: EnvironmentKey {
 }
 
 extension DataHandler {
-    public func allAppEntities() throws -> [AppLinkAppEntity] {
+    public func allAppEntities() async throws -> [AppLinkAppEntity] {
         var descriptor = FetchDescriptor<AppLink>(predicate: #Predicate { _ in
             true
         })
         descriptor.propertiesToFetch = [\.name, \.id, \.type, \.icon]
 
-        let links = try modelContext.fetchSafer(descriptor)
+        let links = try await self.fetchSafer(descriptor)
         return links.map { $0.toAppEntityWithIcon() }
     }
 
-    public func appEntities(for identifiers: [AppLinkAppEntity.ID], deviceUid: String?) throws -> [AppLinkAppEntity] {
+    public func appEntities(for identifiers: [AppLinkAppEntity.ID], deviceUid: String?) async throws -> [AppLinkAppEntity] {
 
         var descriptor = FetchDescriptor<AppLink>(predicate: #Predicate { appLink in
             identifiers.contains(appLink.id) && (deviceUid == nil || appLink.deviceUid == deviceUid)
         })
         descriptor.propertiesToFetch = [\.name, \.id, \.type, \.icon]
 
-        let links = try modelContext.fetchSafer(descriptor)
+        let links = try await self.fetchSafer(descriptor)
         return links.map { $0.toAppEntityWithIcon() }
     }
 
-    public func appEntities(matching string: String, deviceUid: String?) throws -> [AppLinkAppEntity] {
+    public func appEntities(matching string: String, deviceUid: String?) async throws -> [AppLinkAppEntity] {
         var descriptor = FetchDescriptor<AppLink>(predicate: #Predicate<AppLink> { appLink in
             appLink.name.contains(string) && (deviceUid == nil || appLink.deviceUid == deviceUid)
         })
 
         descriptor.propertiesToFetch = [\.name, \.id, \.type, \.icon]
-        let links = try modelContext.fetchSafer(descriptor)
+        let links = try await self.fetchSafer(descriptor)
         return links.map { $0.toAppEntityWithIcon() }
     }
 
-    public func appEntities(deviceUid: String?) throws -> [AppLinkAppEntity] {
+    public func appEntities(deviceUid: String?) async throws -> [AppLinkAppEntity] {
         var descriptor = FetchDescriptor<AppLink>(
             predicate: #Predicate {
                 deviceUid == nil || $0.deviceUid == deviceUid
@@ -622,7 +651,7 @@ extension DataHandler {
 
         descriptor.propertiesToFetch = [\.name, \.id, \.type, \.icon]
 
-        let links = try modelContext.fetchSafer(descriptor)
+        let links = try await self.fetchSafer(descriptor)
         return links.map { $0.toAppEntityWithIcon() }
     }
 
@@ -740,7 +769,7 @@ extension DataHandler {
             return
         }
 
-        if let device = modelContext.existingDevice(for: id) {
+        if let device = await self.existingDevice(for: id) {
             if deviceInfo.udn != device.udn {
                 Log.data.warning("Error: trying to refresh device with udn \(deviceInfo.udn, privacy: .public), but device already has udn \(device.udn, privacy: .public)")
                 return
@@ -757,12 +786,12 @@ extension DataHandler {
             )
 
             descriptor.propertiesToFetch = [\.name, \.id, \.type, \.icon]
-            let deviceApps = (try? modelContext.fetchSafer(descriptor)) ?? []
+            let deviceApps = (try? await self.fetchSafer(descriptor)) ?? []
 
             if (device.lastScannedAt?.timeIntervalSinceNow) ?? -10000 > -minRescanInterval,
                deviceApps.allSatisfy({ $0.icon != nil }), deviceApps.count > 0
             {
-                try? modelContext.saveSafer()
+                try? await self.saveSafer()
                 Log.data.notice("Returning early from refresh")
                 return
             }
@@ -778,7 +807,7 @@ extension DataHandler {
                 }
             }
 
-            try? modelContext.saveSafer()
+            try? await self.saveSafer()
         }
 
         Log.data.notice("Refreshing capabilities and apps")
@@ -801,7 +830,7 @@ extension DataHandler {
 
         var deviceNeedsIcon = false
         var appsNeedingIcons: [String] = []
-        if let device = modelContext.existingDevice(for: id) {
+        if let device = await self.existingDevice(for: id) {
             deviceNeedsIcon = device.deviceIcon == nil
             if let capabilities {
                 device.rtcpPort = capabilities.rtcpPort
@@ -816,7 +845,7 @@ extension DataHandler {
             )
             descriptor.propertiesToFetch = [\.id, \.name, \.deviceUid, \.type, \.icon]
 
-            let deviceApps = (try? modelContext.fetchSafer(descriptor)) ?? []
+            let deviceApps = (try? await self.fetchSafer(descriptor)) ?? []
 
             if let sortedApps {
                 // Remove apps from device that aren't in fetchedApps
@@ -840,7 +869,7 @@ extension DataHandler {
                 }
             }
 
-            try? modelContext.saveSafer()
+            try? await self.saveSafer()
         }
 
         var deviceIcon: Data?
@@ -865,7 +894,7 @@ extension DataHandler {
             }
         }
 
-        if let device = modelContext.existingDevice(for: id) {
+        if let device = await self.existingDevice(for: id) {
             let udn: String? = device.udn
 
             var descriptor = FetchDescriptor<AppLink>(
@@ -875,7 +904,7 @@ extension DataHandler {
             )
             descriptor.propertiesToFetch = [\.icon, \.id]
 
-            let deviceApps = (try? modelContext.fetchSafer(descriptor)) ?? []
+            let deviceApps = (try? await self.fetchSafer(descriptor)) ?? []
 
             if let icon = deviceIcon {
                 device.deviceIcon = icon
@@ -885,7 +914,7 @@ extension DataHandler {
                     deviceApp.icon = app.value
                 }
             }
-            try? modelContext.saveSafer()
+            try? await self.saveSafer()
         }
 
         await deleteInPast()
@@ -908,7 +937,7 @@ extension DataHandler {
 
         var lastMessage: Message?
         do {
-            lastMessage = try modelContext.fetchSafer(descriptor).last
+            lastMessage = try await self.fetchSafer(descriptor).last
         } catch {
             Log.data.notice("Error loading messages \(error, privacy: .public)")
         }
@@ -933,7 +962,7 @@ extension DataHandler {
         descriptor.propertiesToFetch = [\Message.id]
         descriptor.sortBy = [SortDescriptor(\Message.id, order: .reverse)]
         descriptor.fetchLimit = 1
-        let latestMessageId = (try? modelContext.fetchSafer(descriptor))?.first?.id
+        let latestMessageId = (try? await self.fetchSafer(descriptor))?.first?.id
 
         Log.data.notice("Refreshing messages with last message \(String(describing: latestMessageId), privacy: .public)")
 
@@ -953,7 +982,7 @@ extension DataHandler {
         }
     }
 
-    public func getSendableMessages() throws -> [Message] {
+    public func getSendableMessages() async throws -> [Message] {
         Log.data.notice("Getting sendable messages")
         let tenPast = Date.now - 10
         let distantPast = Date.distantPast
@@ -965,19 +994,19 @@ extension DataHandler {
             }
         )
         descriptor.propertiesToFetch = [\.id, \.message, \.unsentAttachmentData, \.lastSendAttempt]
-        let foundModels = try modelContext.fetchSafer(descriptor)
+        let foundModels = try await self.fetchSafer(descriptor)
         for model in foundModels {
             model.lastSendAttempt = Date.now
         }
         Log.data.notice("Got \(foundModels.count, privacy: .public) sendable messages")
-        try modelContext.saveSafer()
+        try await self.saveSafer()
         return foundModels
     }
 
     public func trySendMessages() async {
         let messages: [Message]
         do {
-            messages = try self.getSendableMessages()
+            messages = try await self.getSendableMessages()
         } catch {
             Log.backend.notice("Error getting messages to send \(error, privacy: .public)")
             return
@@ -990,11 +1019,11 @@ extension DataHandler {
                 message.cycleAttachments(messageResult.attachments?.map({ a in
                     return Message.SentAttachment(id: a.id, data: a.data, filename: a.filename, mimetype: a.contentType)
                 }) ?? [])
-                try self.modelContext.saveSafer()
+                try await self.saveSafer()
             } catch {
                 Log.backend.notice("Error sending message \(message.id, privacy: .public), \(error, privacy: .public)")
                 message.lastSendAttempt = nil
-                try? self.modelContext.saveSafer()
+                try? await self.saveSafer()
             }
         }
     }
@@ -1013,7 +1042,7 @@ extension DataHandler {
             unsentAttachment: firstAttachment,
             nonce: nonce
         ))
-        try self.modelContext.saveSafer()
+        try await self.saveSafer()
         Log.backend.info("Saved message to send queue: \(message, privacy: .public), id: \(id, privacy: .public)")
         await self.trySendMessages()
     }
@@ -1036,7 +1065,7 @@ extension DataHandler {
                         predicate: #Predicate { $0.id == id }
                     )
 
-                    let existingMessages = try modelContext.fetchSafer(existingMessageDescriptor)
+                    let existingMessages = try await self.fetchSafer(existingMessageDescriptor)
                     for message in existingMessages {
                         modelContext.delete(message)
                     }
@@ -1046,7 +1075,7 @@ extension DataHandler {
                 }
                 count = newMessages.count
 
-                let savingMessages = try modelContext.fetchSafer(FetchDescriptor<Message>(
+                let savingMessages = try await self.fetchSafer(FetchDescriptor<Message>(
                     predicate: #Predicate { $0.fetchedBackend == false || $0.lastSendAttempt != nil }
                 ))
                 for message in savingMessages {
@@ -1065,7 +1094,7 @@ extension DataHandler {
                 }
             }
 
-            try modelContext.saveSafer()
+            try await self.saveSafer()
 
             return count
         } catch {

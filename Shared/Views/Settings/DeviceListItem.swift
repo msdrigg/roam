@@ -50,7 +50,7 @@ struct DeviceListItem: View {
                 let pid = device.persistentModelID
                 Task.detached {
                     do {
-                        try await DataHandler(modelContainer: getSharedModelContainer()).delete(pid)
+                        try await DataHandler().delete(pid)
                         Log.userInteraction
                             .notice(
                                 "Deleted device with id \(String(describing: pid), privacy: .public)"

@@ -53,7 +53,7 @@ public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING
 
             return container
         } catch {
-            fatalError("Failed to create container with error: \(error.localizedDescription)")
+            loggedFatalError("Failed to create container with error: \(error.localizedDescription)")
         }
     }
 
@@ -90,7 +90,7 @@ public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING
             }
             return container
         } catch {
-            fatalError("Failed to create container with error: \(error.localizedDescription)")
+            loggedFatalError("Failed to create container with error: \(error.localizedDescription)")
         }
     }()
 
