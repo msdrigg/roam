@@ -11,6 +11,290 @@ import AppKit
 typealias PlatformImage = NSImage
 #endif
 
+#if canImport(PDFKit)
+import PDFKit
+#endif
+
+// MARK: - Thumbnail Generator
+enum ThumbnailSize {
+    case small
+    case large
+
+    var dimensions: (width: CGFloat, height: CGFloat) {
+        switch self {
+        case .small:
+            return (150, 150)
+        case .large:
+            return (300, 300)
+        }
+    }
+
+    var suffix: String {
+        switch self {
+        case .small: return "thumbnail.small"
+        case .large: return "thumbnail.large"
+        }
+    }
+}
+
+final class ThumbnailGenerator: Sendable {
+    static let shared = ThumbnailGenerator()
+
+    private let thumbnailQueue = DispatchQueue(label: "com.cachedAsyncImage.thumbnailQueue", qos: .userInitiated, attributes: .concurrent)
+
+    private init() {}
+
+    // Determine file extension based on format support
+    private func getFileExtension() -> String {
+        return "png"
+    }
+
+    func thumbnailPath(for url: URL, size: ThumbnailSize) -> String {
+        let directory = url.deletingLastPathComponent().path
+        let filename = url.deletingPathExtension().lastPathComponent
+        let ext = getFileExtension()
+        return "\(directory)/\(filename).\(size.suffix).\(ext)"
+    }
+
+    func thumbnailExists(for path: URL, size: ThumbnailSize) -> Bool {
+        let thumbnailPath = self.thumbnailPath(for: path, size: size)
+        return FileManager.default.fileExists(atPath: thumbnailPath)
+    }
+
+    func loadThumbnail(for path: URL, size: ThumbnailSize) -> PlatformImage? {
+        let thumbnailPath = self.thumbnailPath(for: path, size: size)
+        if FileManager.default.fileExists(atPath: thumbnailPath) {
+            #if os(iOS) || os(visionOS) || os(watchOS)
+            return PlatformImage(contentsOfFile: thumbnailPath)
+            #elseif os(macOS)
+            return PlatformImage(contentsOfFile: thumbnailPath)
+            #endif
+        }
+        return nil
+    }
+
+    @discardableResult
+    func createThumbnails(for url: URL, smallSize: CGSize? = nil, largeSize: CGSize? = nil) async throws -> (small: String, large: String) {
+        Log.data.notice("Creating thumbnails for \(url, privacy: .public)")
+        return try await withCheckedThrowingContinuation { continuation in
+            thumbnailQueue.async {
+                do {
+                    let smallThumbnailPath = self.thumbnailPath(for: url, size: .small)
+                    let largeThumbnailPath = self.thumbnailPath(for: url, size: .large)
+
+                    // Check if the file is a PDF
+                    let isPdf = url.pathExtension.lowercased() == "pdf"
+
+                    // Get the original image
+                    #if os(iOS) || os(visionOS) || os(watchOS)
+                    let originalImage: UIImage?
+
+                    if isPdf {
+                        // Handle PDF with white background
+                        originalImage = self.createImageFromPDF(url: url)
+                    } else {
+                        guard let data = try? Data(contentsOf: url) else {
+                            try? self.saveEmptyThumbnail(to: smallThumbnailPath)
+                            try? self.saveEmptyThumbnail(to: largeThumbnailPath)
+                            throw NSError(domain: "ThumbnailGeneratorError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to load image from path"])
+                        }
+                        originalImage = UIImage(data: data)
+                    }
+
+                    guard let originalImage = originalImage else {
+                        try? self.saveEmptyThumbnail(to: smallThumbnailPath)
+                        try? self.saveEmptyThumbnail(to: largeThumbnailPath)
+                        throw NSError(domain: "ThumbnailGeneratorError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to load image from path"])
+                    }
+                    #elseif os(macOS)
+                    let originalImage: NSImage?
+
+                    if isPdf {
+                        // Handle PDF with white background
+                        originalImage = self.createImageFromPDF(url: url)
+                    } else {
+                        originalImage = NSImage(contentsOf: url)
+                    }
+
+                    guard let originalImage = originalImage else {
+                        try? self.saveEmptyThumbnail(to: smallThumbnailPath)
+                        try? self.saveEmptyThumbnail(to: largeThumbnailPath)
+                        throw NSError(domain: "ThumbnailGeneratorError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to load image from path"])
+                    }
+                    #endif
+
+                    let originalSize = originalImage.size
+                    let originalAspectRatio = originalSize.width / originalSize.height
+
+                    // Generate the small thumbnail
+                    let smallMaxDimension = smallSize?.width ?? ThumbnailSize.small.dimensions.width
+                    let smallThumbnailDimensions: CGSize
+                    if originalSize.width > originalSize.height {
+                        // Landscape orientation
+                        smallThumbnailDimensions = CGSize(
+                            width: smallMaxDimension,
+                            height: smallMaxDimension / originalAspectRatio
+                        )
+                    } else {
+                        // Portrait orientation
+                        smallThumbnailDimensions = CGSize(
+                            width: smallMaxDimension * originalAspectRatio,
+                            height: smallMaxDimension
+                        )
+                    }
+
+                    // Calculate large thumbnail dimensions while preserving aspect ratio
+                    let largeMaxDimension = largeSize?.width ?? ThumbnailSize.large.dimensions.width
+                    let largeThumbnailDimensions: CGSize
+                    if originalSize.width > originalSize.height {
+                        // Landscape orientation
+                        largeThumbnailDimensions = CGSize(
+                            width: largeMaxDimension,
+                            height: largeMaxDimension / originalAspectRatio
+                        )
+                    } else {
+                        // Portrait orientation
+                        largeThumbnailDimensions = CGSize(
+                            width: largeMaxDimension * originalAspectRatio,
+                            height: largeMaxDimension
+                        )
+                    }
+
+                    let smallThumbnail = self.resize(originalImage, to: smallThumbnailDimensions)
+                    try self.saveThumbnail(smallThumbnail, to: smallThumbnailPath, isPdf: isPdf)
+
+                    let largeThumbnail = self.resize(originalImage, to: largeThumbnailDimensions)
+                    try self.saveThumbnail(largeThumbnail, to: largeThumbnailPath, isPdf: isPdf)
+
+                    continuation.resume(returning: (small: smallThumbnailPath, large: largeThumbnailPath))
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    private func resize(_ image: PlatformImage, to size: CGSize) -> PlatformImage {
+        #if os(iOS) || os(visionOS)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: size))
+        }
+        #elseif os(macOS)
+        let newImage = NSImage(size: size)
+        newImage.lockFocus()
+
+        let sourceRect = NSRect(x: 0, y: 0, width: image.size.width, height: image.size.height)
+        let destRect = NSRect(x: 0, y: 0, width: size.width, height: size.height)
+
+        image.draw(in: destRect, from: sourceRect, operation: .copy, fraction: 1.0)
+
+        newImage.unlockFocus()
+        return newImage
+        #elseif os(watchOS)
+        return image
+        #endif
+    }
+
+    private func saveEmptyThumbnail(to path: String) throws {
+        try Data().write(to: URL(fileURLWithPath: path))
+    }
+
+    #if os(iOS) || os(visionOS) || os(watchOS) && canImport(PDFKit)
+    private func createImageFromPDF(url: URL) -> UIImage? {
+        guard let document = CGPDFDocument(url as CFURL),
+              let page = document.page(at: 1) else {
+            return nil
+        }
+
+        let pageRect = page.getBoxRect(.mediaBox)
+        let renderer = UIGraphicsImageRenderer(size: pageRect.size)
+
+        let image = renderer.image { ctx in
+            // Fill with white background
+            UIColor.white.set()
+            ctx.fill(pageRect)
+
+            // Draw the PDF page
+            ctx.cgContext.translateBy(x: 0, y: pageRect.size.height)
+            ctx.cgContext.scaleBy(x: 1.0, y: -1.0)
+            ctx.cgContext.drawPDFPage(page)
+        }
+
+        return image
+    }
+    #elseif os(macOS)
+    private func createImageFromPDF(url: URL) -> NSImage? {
+        guard let document = CGPDFDocument(url as CFURL),
+              let page = document.page(at: 1) else {
+            return nil
+         }
+
+         let pageRect = page.getBoxRect(.mediaBox)
+         let image = NSImage(size: pageRect.size)
+
+         image.lockFocus()
+
+         // Get current graphics context
+         guard let context = NSGraphicsContext.current?.cgContext else {
+             image.unlockFocus()
+             return nil
+         }
+
+         // Fill with white background
+         context.setFillColor(CGColor.white)
+         context.fill(pageRect)
+
+         // Flip coordinates for PDF rendering (PDFs have origin at bottom-left)
+         context.translateBy(x: 0, y: pageRect.size.height)
+         context.scaleBy(x: 1.0, y: -1.0)
+
+         // Draw the PDF page
+         context.drawPDFPage(page)
+
+         image.unlockFocus()
+         return image
+     }
+    #else
+    private func createImageFromPDF(url: URL) -> PlatformImage? {
+        return nil
+    }
+    #endif
+
+    private func saveThumbnail(_ image: PlatformImage, to path: String, isPdf: Bool = false) throws {
+        var data: Data?
+
+        #if os(iOS) || os(visionOS) || os(watchOS)
+        data = image.pngData()
+        #elseif os(macOS)
+        guard let tiffRepresentation = image.tiffRepresentation,
+              let bitmapImage = NSBitmapImageRep(data: tiffRepresentation),
+              let pngData = bitmapImage.representation(using: .png, properties: [:]) else {
+            throw NSError(domain: "ThumbnailGeneratorError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to create PNG data"])
+        }
+        data = pngData
+        #endif
+
+        guard let finalData = data else {
+            throw NSError(domain: "ThumbnailGeneratorError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to create image data"])
+        }
+
+        try finalData.write(to: URL(fileURLWithPath: path))
+    }
+}
+
+// MARK: - Public Utility Function
+public func createThumbnailsForImage(
+    path: URL,
+    smallSize: CGSize? = nil,
+    largeSize: CGSize? = nil
+) async throws -> (small: String, large: String) {
+    try await ThumbnailGenerator.shared.createThumbnails(
+        for: path,
+        smallSize: smallSize,
+        largeSize: largeSize
+    )
+}
 // MARK: - Image Phase
 public enum ImagePhase {
     case empty
@@ -99,172 +383,6 @@ final class ThumbnailCache {
             self.image = image
             self.size = size
         }
-    }
-}
-
-// MARK: - Thumbnail Generator
-enum ThumbnailSize {
-    case small
-    case large
-
-    var dimensions: (width: CGFloat, height: CGFloat) {
-        switch self {
-        case .small:
-            return (150, 150)
-        case .large:
-            return (300, 300)
-        }
-    }
-
-    var suffix: String {
-        switch self {
-        case .small: return "thumbnail.small"
-        case .large: return "thumbnail.large"
-        }
-    }
-}
-
-final class ThumbnailGenerator: Sendable {
-    static let shared = ThumbnailGenerator()
-
-    private let thumbnailQueue = DispatchQueue(label: "com.cachedAsyncImage.thumbnailQueue", qos: .userInitiated, attributes: .concurrent)
-
-    private init() {}
-
-    func thumbnailPath(for url: URL, size: ThumbnailSize) -> String {
-        let directory = url.deletingLastPathComponent().path
-        let filename = url.deletingPathExtension().lastPathComponent
-        return "\(directory)/\(filename).\(size.suffix)"
-    }
-
-    func thumbnailExists(for path: URL, size: ThumbnailSize) -> Bool {
-        let thumbnailPath = self.thumbnailPath(for: path, size: size)
-        return FileManager.default.fileExists(atPath: thumbnailPath)
-    }
-
-    func loadThumbnail(for path: URL, size: ThumbnailSize) -> PlatformImage? {
-        let thumbnailPath = self.thumbnailPath(for: path, size: size)
-        if FileManager.default.fileExists(atPath: thumbnailPath) {
-            #if os(iOS) || os(visionOS) || os(watchOS)
-            return UIImage(contentsOfFile: thumbnailPath)
-            #elseif os(macOS)
-            return NSImage(contentsOfFile: thumbnailPath)
-            #endif
-        }
-        return nil
-    }
-
-    @discardableResult
-    func createThumbnails(for url: URL, smallSize: CGSize? = nil, largeSize: CGSize? = nil) async throws -> (small: String, large: String) {
-        Log.data.notice("Creating thumbnails for \(url, privacy: .public)")
-        return try await withCheckedThrowingContinuation { continuation in
-            thumbnailQueue.async {
-                do {
-                    let smallThumbnailPath = self.thumbnailPath(for: url, size: .small)
-                    let largeThumbnailPath = self.thumbnailPath(for: url, size: .large)
-                    // Get the original image
-                    #if os(iOS) || os(visionOS) || os(watchOS)
-                    guard let data = try? Data(contentsOf: url), let originalImage = UIImage(data: data) else {
-                        try? self.saveEmptyThumbnail(to: smallThumbnailPath)
-                        try? self.saveEmptyThumbnail(to: largeThumbnailPath)
-                        throw NSError(domain: "ThumbnailGeneratorError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to load image from path"])
-                    }
-                    #elseif os(macOS)
-                    guard let originalImage = NSImage(contentsOf: url) else {
-                        try? self.saveEmptyThumbnail(to: smallThumbnailPath)
-                        try? self.saveEmptyThumbnail(to: largeThumbnailPath)
-                        throw NSError(domain: "ThumbnailGeneratorError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to load image from path"])
-                    }
-                    #endif
-                    let originalSize = originalImage.size
-                    let originalAspectRatio = originalSize.width / originalSize.height
-
-                    // Generate the small thumbnail
-                    let smallMaxDimension = smallSize?.width ?? ThumbnailSize.small.dimensions.width
-                    let smallThumbnailDimensions: CGSize
-                    if originalSize.width > originalSize.height {
-                        // Landscape orientation
-                        smallThumbnailDimensions = CGSize(
-                            width: smallMaxDimension,
-                            height: smallMaxDimension / originalAspectRatio
-                        )
-                    } else {
-                        // Portrait orientation
-                        smallThumbnailDimensions = CGSize(
-                            width: smallMaxDimension * originalAspectRatio,
-                            height: smallMaxDimension
-                        )
-                    }
-
-                    // Calculate large thumbnail dimensions while preserving aspect ratio
-                    let largeMaxDimension = largeSize?.width ?? ThumbnailSize.large.dimensions.width
-                    let largeThumbnailDimensions: CGSize
-                    if originalSize.width > originalSize.height {
-                        // Landscape orientation
-                        largeThumbnailDimensions = CGSize(
-                            width: largeMaxDimension,
-                            height: largeMaxDimension / originalAspectRatio
-                        )
-                    } else {
-                        // Portrait orientation
-                        largeThumbnailDimensions = CGSize(
-                            width: largeMaxDimension * originalAspectRatio,
-                            height: largeMaxDimension
-                        )
-                    }
-                    let smallThumbnail = self.resize(originalImage, to: smallThumbnailDimensions)
-                    try self.saveThumbnail(smallThumbnail, to: smallThumbnailPath)
-
-                    let largeThumbnail = self.resize(originalImage, to: largeThumbnailDimensions)
-                    try self.saveThumbnail(largeThumbnail, to: largeThumbnailPath)
-
-                    continuation.resume(returning: (small: smallThumbnailPath, large: largeThumbnailPath))
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
-    }
-
-    private func resize(_ image: PlatformImage, to size: CGSize) -> PlatformImage {
-        #if os(iOS) || os(visionOS)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        return renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: size))
-        }
-        #elseif os(macOS)
-        let newImage = NSImage(size: size)
-        newImage.lockFocus()
-
-        let sourceRect = NSRect(x: 0, y: 0, width: image.size.width, height: image.size.height)
-        let destRect = NSRect(x: 0, y: 0, width: size.width, height: size.height)
-
-        image.draw(in: destRect, from: sourceRect, operation: .copy, fraction: 1.0)
-
-        newImage.unlockFocus()
-        return newImage
-        #elseif os(watchOS)
-        return image
-        #endif
-    }
-
-    private func saveEmptyThumbnail(to path: String) throws {
-        try Data().write(to: URL(fileURLWithPath: path))
-    }
-    private func saveThumbnail(_ image: PlatformImage, to path: String) throws {
-        #if os(iOS) || os(visionOS) || os(watchOS)
-        guard let data = image.jpegData(compressionQuality: 0.7) else {
-            throw NSError(domain: "ThumbnailGeneratorError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to create JPEG data"])
-        }
-        #elseif os(macOS)
-        guard let tiffRepresentation = image.tiffRepresentation,
-              let bitmapImage = NSBitmapImageRep(data: tiffRepresentation),
-              let data = bitmapImage.representation(using: .jpeg, properties: [.compressionFactor: 0.7]) else {
-            throw NSError(domain: "ThumbnailGeneratorError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to create JPEG data"])
-        }
-        #endif
-
-        try data.write(to: URL(fileURLWithPath: path))
     }
 }
 
@@ -397,17 +515,4 @@ extension CachedAsyncImage {
             }
         }
     }
-}
-
-// MARK: - Public Utility Function
-public func createThumbnailsForImage(
-    path: URL,
-    smallSize: CGSize? = nil,
-    largeSize: CGSize? = nil
-) async throws -> (small: String, large: String) {
-    try await ThumbnailGenerator.shared.createThumbnails(
-        for: path,
-        smallSize: smallSize,
-        largeSize: largeSize
-    )
 }

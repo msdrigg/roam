@@ -2,6 +2,7 @@ import os.log
 import SwiftData
 import SwiftUI
 import TipKit
+import ImageIO
 
 @main
 struct RoamWatch: App {
