@@ -122,6 +122,7 @@ public actor DataHandler {
         }
     }
 
+#if !WIDGET
     @discardableResult
     func addOrReplaceDevice(location: String, udn: String? = nil, serial: String? = nil) async -> PersistentIdentifier? {
         if let udn, let device = await deviceForUdn(udn: udn) {
@@ -291,6 +292,7 @@ public actor DataHandler {
 
         await deleteInPast()
     }
+#endif
 
     private func deviceForUdn(udn: String) async -> Device? {
         var matchingIds = FetchDescriptor<Device>(
@@ -654,7 +656,7 @@ protocol RefreshClient: Sendable {
     func getDeviceIcon() async throws -> Data
 }
 
-#if os(watchOS)
+#if os(watchOS) && !WIDGET
 actor WatchOSRefreshClient: RefreshClient {
     let id: PersistentIdentifier
     let location: String
@@ -689,7 +691,7 @@ actor WatchOSRefreshClient: RefreshClient {
         return try await fetchDeviceIcon(info: info)
     }
 }
-#else
+#elseif !WIDGET
 actor ECPWebsocketRefreshClient: RefreshClient {
     let id: PersistentIdentifier
     let client: ECPWebsocketClient
@@ -728,6 +730,7 @@ actor ECPWebsocketRefreshClient: RefreshClient {
 }
 #endif
 
+#if !WIDGET
 extension DataHandler {
     func refreshDevice(client: any RefreshClient) async {
         let id: PersistentIdentifier
@@ -911,57 +914,6 @@ extension DataHandler {
     }
 }
 
-@discardableResult
-func storeUserFileToDisk(data: Data, filename: String, path: [String]) throws -> URL {
-    guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
-        throw DataHandlerError.errorStoring
-    }
-
-    var iconDirectoryURL = containerURL
-    for path in path {
-        iconDirectoryURL = iconDirectoryURL.appendingPathComponent(path, isDirectory: true)
-    }
-
-    if !FileManager.default.fileExists(atPath: iconDirectoryURL.path) {
-        try FileManager.default.createDirectory(at: iconDirectoryURL, withIntermediateDirectories: true)
-    }
-
-    let iconFileURL = iconDirectoryURL.appendingPathComponent(filename)
-
-    // Write data atomically to prevent corruption
-    try data.write(to: iconFileURL, options: .atomic)
-    return iconFileURL
-}
-
-@discardableResult
-func storeIconToDisk(iconData: Data, hash: String) throws -> URL {
-    return try storeUserFileToDisk(data: iconData, filename: hash, path: ["roku-icons"])
-}
-
-@discardableResult
-func storeAttachmentToDisk(attachmentData: Data, hash: String, filename: String) throws -> URL {
-    return try storeUserFileToDisk(data: attachmentData, filename: filename, path: ["message-attachments", hash])
-}
-
-func loadAttachmentFromDisk(hash: String, filename: String) throws -> Data {
-    guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
-        throw DataHandlerError.errorStoring
-    }
-
-    let iconDirectoryURL = containerURL
-        .appendingPathComponent("message-attachments", isDirectory: true)
-        .appendingPathComponent(hash, isDirectory: true)
-
-    if !FileManager.default.fileExists(atPath: iconDirectoryURL.path) {
-        try FileManager.default.createDirectory(at: iconDirectoryURL, withIntermediateDirectories: true)
-    }
-
-    let iconFileURL = iconDirectoryURL.appendingPathComponent(filename)
-
-    return try Data(contentsOf: iconFileURL)
-}
-
-#if !WIDGET
 extension DataHandler {
     @discardableResult
     public func refreshMessagesIfExpectingNewMessages() async -> Int {
@@ -1147,3 +1099,53 @@ extension DataHandler {
     }
 }
 #endif
+
+@discardableResult
+func storeUserFileToDisk(data: Data, filename: String, path: [String]) throws -> URL {
+    guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
+        throw DataHandlerError.errorStoring
+    }
+
+    var iconDirectoryURL = containerURL
+    for path in path {
+        iconDirectoryURL = iconDirectoryURL.appendingPathComponent(path, isDirectory: true)
+    }
+
+    if !FileManager.default.fileExists(atPath: iconDirectoryURL.path) {
+        try FileManager.default.createDirectory(at: iconDirectoryURL, withIntermediateDirectories: true)
+    }
+
+    let iconFileURL = iconDirectoryURL.appendingPathComponent(filename)
+
+    // Write data atomically to prevent corruption
+    try data.write(to: iconFileURL, options: .atomic)
+    return iconFileURL
+}
+
+@discardableResult
+func storeIconToDisk(iconData: Data, hash: String) throws -> URL {
+    return try storeUserFileToDisk(data: iconData, filename: hash, path: ["roku-icons"])
+}
+
+@discardableResult
+func storeAttachmentToDisk(attachmentData: Data, hash: String, filename: String) throws -> URL {
+    return try storeUserFileToDisk(data: attachmentData, filename: filename, path: ["message-attachments", hash])
+}
+
+func loadAttachmentFromDisk(hash: String, filename: String) throws -> Data {
+    guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
+        throw DataHandlerError.errorStoring
+    }
+
+    let iconDirectoryURL = containerURL
+        .appendingPathComponent("message-attachments", isDirectory: true)
+        .appendingPathComponent(hash, isDirectory: true)
+
+    if !FileManager.default.fileExists(atPath: iconDirectoryURL.path) {
+        try FileManager.default.createDirectory(at: iconDirectoryURL, withIntermediateDirectories: true)
+    }
+
+    let iconFileURL = iconDirectoryURL.appendingPathComponent(filename)
+
+    return try Data(contentsOf: iconFileURL)
+}

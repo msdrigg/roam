@@ -3,7 +3,9 @@ import Network
 import os
 import SwiftData
 import SwiftUI
+#if !WIDGET
 import XMLCoder
+#endif
 
 actor DeviceDiscoveryActor {
     let dataHandler: DataHandler

@@ -1,1 +1,2 @@
-- Correções de bugs e melhorias
+- Melhorias de desempenho quando um usuário tem muitos aplicativos Roku carregados
+- Corrigindo falha nas mensagens do watchOS

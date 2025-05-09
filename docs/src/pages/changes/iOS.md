@@ -1,2 +1,2 @@
 -   Performance improvements when a user has many Roku apps loaded
--   Increasing button size
+-   Fixing watchOS messages crash

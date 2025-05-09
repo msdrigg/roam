@@ -3083,7 +3083,86 @@
       }
     },
     "Before you add your TV, go to **Settings > System > Advanced system settings > Control by mobile apps > Network access and make sure it's set to 'Permissive' or 'Enabled'" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "قبل أن تضيف تلفزيونك، اذهب إلى **الإعدادات > النظام > الإعدادات المتقدمة للنظام > التحكم عبر تطبيقات الجوال > الوصول إلى الشبكة وتأكد من تعيينها على 'متساهل' أو 'ممكّن'"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bevor Sie Ihren Fernseher hinzufügen, gehen Sie zu **Einstellungen > System > Erweiterte Systemeinstellungen > Steuerung durch mobile Apps > Netzwerkzugriff und stellen Sie sicher, dass es auf 'Permissiv' oder 'Aktiviert' eingestellt ist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antes de agregar tu TV, ve a **Configuración > Sistema > Configuración avanzada del sistema > Control por aplicaciones móviles > Acceso a la red y asegúrate de que esté configurado en 'Permisivo' o 'Habilitado'"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antes de agregar tu TV, ve a **Configuración > Sistema > Configuración avanzada del sistema > Control por aplicaciones móviles > Acceso a la red y asegúrate de que esté configurado en 'Permisivo' o 'Habilitado'"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bago mo idagdag ang iyong TV, pumunta sa **Mga Setting > Systema > Advanced na mga setting ng systema > Kontrolin ng mobile apps > Network access at siguraduhing ito'y naka-set sa 'Permissive' o 'Enabled'"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avant d'ajouter votre télévision, allez à **Paramètres > Système > Paramètres système avancés > Contrôle par applications mobiles > Accès au réseau et assurez-vous qu'il est réglé sur 'Permissif' ou 'Activé'"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avant d'ajouter votre téléviseur, allez à **Paramètres > Système > Paramètres système avancés > Contrôle par applications mobiles > Accès réseau et assurez-vous qu'il est réglé sur 'Permissif' ou 'Activé'"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prima di aggiungere la tua TV, vai su **Impostazioni > Sistema > Impostazioni sistema avanzate > Controllo tramite app mobili > Accesso alla rete e assicurati che sia impostato su 'Permissivo' o 'Abilitato'"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਤੁਸੀਂ ਆਪਣੀ ਟੀਵੀ ਜੋੜਨ ਤੋਂ ਪਹਿਲਾਂ, **ਸੈਟਿੰਗਜ > ਸਿਸਟਮ > ਐਡਵਾਂਸਡ ਸਿਸਟਮ ਸੈਟਿੰਗਜ > ਮੋਬਾਈਲ ਐਪਸ ਦੁਆਰਾ ਕੰਟਰੋਲ > ਨੈਟਵਰਕ ਐਕਸੈਸ ਤੇ ਜਾਓ ਅਤੇ ਯਕੀਨੀ ਬਣਾਓ ਕਿ ਇਹ 'ਪਾਬੰਦੀ' ਜਾਂ 'ਯੋਗ' ਨੂੰ ਸੈਟ ਕੀਤਾ ਗਿਆ ਹੈ।"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antes de adicionar sua TV, vá para **Configurações > Sistema > Configurações avançadas do sistema > Controle por aplicativos móveis > Acesso à rede e certifique-se de que está definido como 'Permissivo' ou 'Habilitado'"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antes de adicionar a sua TV, vá a **Definições > Sistema > Definições avançadas do sistema > Controlo por aplicações móveis > Acesso à rede e certifique-se de que está definido para 'Permissivo' ou 'Ativado'"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trước khi bạn thêm TV của mình, hãy đi đến **Cài đặt > Hệ thống > Cài đặt hệ thống nâng cao > Điều khiển bằng ứng dụng di động > Truy cập mạng và đảm bảo nó được đặt là 'Cho phép' hoặc 'Đã bật'"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在您添加电视之前，请前往 **设置 > 系统 > 高级系统设置 > 移动应用控制 > 网络访问，确保它被设置为 'Permissive' 或 'Enabled'"
+          }
+        }
+      }
     },
     "Behavior" : {
       "comment" : "Settings section label",
@@ -6313,7 +6392,87 @@
       }
     },
     "Due to WatchOS limitations, you may need to enable \"Permissive\" Network Access on your Roku TV. You can do this by going to **Settings > System > Advanced system settings > Control by mobile apps > Network**" : {
-      "comment" : "WatchOS indicator showing that watchOS can't auto-discover TV's due to network restrictions"
+      "comment" : "WatchOS indicator showing that watchOS can't auto-discover TV's due to network restrictions",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "بسبب القيود الموجودة في WatchOS، قد تحتاج إلى تمكين \"الوصول الشامل\" للشبكة على تلفزيون Roku الخاص بك. يمكنك القيام بذلك من خلال الذهاب إلى **الإعدادات > النظام > الإعدادات المتقدمة للنظام > التحكم عبر تطبيقات الهاتف المحمول > الشبكة**."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgrund von Einschränkungen bei WatchOS müssen Sie möglicherweise den \"Permissiven\" Netzwerkzugang auf Ihrem Roku TV aktivieren. Sie können dies tun, indem Sie zu **Einstellungen > System > Erweiterte Systemeinstellungen > Steuerung durch mobile Apps > Netzwerk** gehen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Debido a las limitaciones de WatchOS, es posible que debas activar el \"Acceso a la red permisivo\" en tu Roku TV. Puedes hacer esto yendo a **Configuración > Sistema > Configuración avanzada del sistema > Control por aplicaciones móviles > Red**"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Debido a las limitaciones de WatchOS, es posible que necesites habilitar el Acceso a la Red \"Permisivo\" en tu Roku TV. Puedes hacerlo yendo a **Configuración > Sistema > Configuraciones avanzadas del sistema > Control por aplicaciones móviles > Red**"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dahil sa mga limitasyon ng WatchOS, maaaring kailanganin mong paganahin ang \"Permissive\" Network Access sa iyong Roku TV. Maaari mong gawin ito sa pamamagitan ng pagpunta sa **Mga Setting > Systema > Mga advanced na setting ng sistema > Kontrolin sa pamamagitan ng mobile apps > Network**"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En raison des limitations de WatchOS, vous devrez peut-être activer l'accès réseau \"Permissif\" sur votre Roku TV. Vous pouvez le faire en allant dans **Paramètres > Système > Paramètres système avancés > Contrôle par applications mobiles > Réseau**"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En raison des limitations de WatchOS, vous devrez peut-être activer l'accès réseau \"Permissif\" sur votre téléviseur Roku. Vous pouvez le faire en allant dans **Paramètres > Système > Paramètres système avancés > Contrôle par applications mobiles > Réseau**"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A causa delle limitazioni di WatchOS, potrebbe essere necessario abilitare \"Accesso alla rete Permissivo\" sulla tua TV Roku. Puoi farlo andando su **Impostazioni > Sistema > Impostazioni di sistema avanzate > Controllo tramite app mobili > Rete**"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WatchOS ਦੀਆਂ ਸੀਮਾਵਾਂ ਕਾਰਨ, ਤੁਹਾਨੂੰ ਆਪਣੇ Roku TV 'ਤੇ \"Permissive\" ਨੈਟਵਰਕ ਐਕਸੈਸ ਯੋਗ ਕਰਨ ਦੀ ਜ਼ਰੂਰਤ ਹੋ ਸਕਦੀ ਹੈ। ਤੁਸੀਂ ਇਸ ਨੂੰ ਕਰ ਸਕਦੇ ਹੋ **ਸੈਟਿੰਗਜ਼ > ਸਿਸਟਮ > ਅਗਾਧ ਸਿਸਟਮ ਸੈਟਿੰਗਜ਼ > ਮੋਬਾਈਲ ਐਪਸ ਦੁਆਰਾ ਕੰਟਰੋਲ > ਨੈਟਵਰਕ** ਤੇ ਜਾ ਕੇ।"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Devido às limitações do WatchOS, você pode precisar habilitar o \"Acesso permissivo\" à Rede na sua TV Roku. Você pode fazer isso indo em **Configurações > Sistema > Configurações avançadas do sistema > Controle por aplicativos móveis > Rede**"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Devido às limitações do WatchOS, pode ser necessário ativar o \"Acesso à Rede Permissivo\" na sua TV Roku. Pode fazer isso indo a **Definições > Sistema > Configurações avançadas do sistema > Controlo por aplicações móveis > Rede**"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do các hạn chế của WatchOS, bạn có thể cần kích hoạt \"Truy cập Mạng Linh hoạt\" trên TV Roku của bạn. Bạn có thể làm điều này bằng cách đi đến **Cài đặt > Hệ thống > Cài đặt hệ thống nâng cao > Điều khiển bởi ứng dụng di động > Mạng**"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由于WatchOS的限制，您可能需要在您的Roku电视上启用\"Permissive\"网络访问。您可以通过进入**设置> 系统> 高级系统设置> 通过移动应用控制> 网络**来实现这一点。"
+          }
+        }
+      }
     },
     "Due to WatchOS limitations, you may need to enable \"Permissive\" Network Access on your Roku TV. You can do this by going to Settings -> System -> Advanced System Settings -> Control by mobile apps" : {
       "comment" : "WatchOS indicator showing that watchOS can't auto-discover TV's due to network restrictions",

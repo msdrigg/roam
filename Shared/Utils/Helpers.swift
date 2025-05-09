@@ -628,6 +628,7 @@ func getNotificationSettings() {
 }
 #endif
 
+#if !TEST && !CLI
 public func sendBackendError(_ message: String, file: StaticString = #file, line: UInt = #line) async {
     let sendingMessage = ":ninja:\nFatal error logged: \(message)\n\nFile: \(file)\nLine: \(line)\n\nThis is likely a bug in the app."
 
@@ -656,6 +657,7 @@ public func sendBackendError(_ message: String, file: StaticString = #file, line
         Log.lifecycle.warning("Error sending fatal log to backend: \(error, privacy: .public)")
     }
 }
+#endif
 
 public func loggedFatalError(_ message: @autoclosure () -> String = String(), file: StaticString = #file, line: UInt = #line) -> Never {
     let message = message()
@@ -690,6 +692,7 @@ func fastHashData(data: Data) -> String {
     return hash.compactMap { String(format: "%02x", $0) }.joined()
 }
 
+#if !CLI && !TEST
 func initialInstallationAfter(_ version: String) -> Bool {
     if let initialVersion = UserDefaults.standard.string(forKey: UserDefaultKeys.firstInstallVersion) {
         let after = initialVersion > version
@@ -699,3 +702,4 @@ func initialInstallationAfter(_ version: String) -> Bool {
         return false
     }
 }
+#endif

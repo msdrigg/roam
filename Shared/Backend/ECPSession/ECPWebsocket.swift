@@ -2,7 +2,9 @@
 import Network
 import Dispatch
 import OSLog
+#if !WIDGET
 import XMLCoder
+#endif
 
 typealias ECPStateCallback = @Sendable (ECPWebsocketState) -> Void
 typealias ECPNotificationCallback = @Sendable (ECPNotification) -> Void
@@ -174,6 +176,7 @@ actor ECPWebsocketClient: Sendable {
         try await self.sendCommand(.setTexteditState(SetTexteditStateRequest(requestId: "", text: text, texteditId: texteditId)))
     }
 
+#if !WIDGET
     public nonisolated func getDeviceInfo() async throws -> DeviceInfo {
         let result = try await self.sendCommand(.queryDeviceInfo(QueryDeviceInfo(requestId: "")))
         // Parse device info from result
@@ -227,6 +230,7 @@ actor ECPWebsocketClient: Sendable {
             return apps.app
         }
     }
+#endif
 
     public nonisolated func getDeviceAppIcon(_ appId: String) async throws -> Data {
         let result = try await self.sendCommand(.queryAppIcon(QueryAppIcon(requestId: "", channelId: appId)))

@@ -22,7 +22,6 @@
 		AF05B4702BFDA49900FA3783 /* ObjcErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF05B46F2BFDA49900FA3783 /* ObjcErrors.swift */; };
 		AF05B4712BFDA49D00FA3783 /* ObjcErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF05B46F2BFDA49900FA3783 /* ObjcErrors.swift */; };
 		AF05B4722BFDA49E00FA3783 /* ObjcErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF05B46F2BFDA49900FA3783 /* ObjcErrors.swift */; };
-		AF06AAD82BA3798E002C8FAF /* libwebp in Frameworks */ = {isa = PBXBuildFile; platformFilters = (tvos, ); productRef = AF06AAD72BA3798E002C8FAF /* libwebp */; };
 		AF0C82882AEB44C000CBE7F8 /* AccentColor.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AF0C82872AEB44BF00CBE7F8 /* AccentColor.xcassets */; };
 		AF0C82892AEB463300CBE7F8 /* AccentColor.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AF0C82872AEB44BF00CBE7F8 /* AccentColor.xcassets */; };
 		AF0C828A2AEB463400CBE7F8 /* AccentColor.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AF0C82872AEB44BF00CBE7F8 /* AccentColor.xcassets */; };
@@ -49,15 +48,12 @@
 		AF19CA152AE4471200A42DFF /* AsyncHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA132AE4471200A42DFF /* AsyncHelpers.swift */; };
 		AF19CA1B2AE4510900A42DFF /* RTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA1A2AE4510900A42DFF /* RTP.swift */; };
 		AF19CA1E2AE4517600A42DFF /* RTCP.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA1D2AE4517600A42DFF /* RTCP.swift */; };
-		AF19CA212AE4536700A42DFF /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = AF19CA202AE4536700A42DFF /* AsyncAlgorithms */; };
 		AF19CA232AE455B400A42DFF /* DataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA222AE455B400A42DFF /* DataHelpers.swift */; };
 		AF19CA242AE455B400A42DFF /* DataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA222AE455B400A42DFF /* DataHelpers.swift */; };
 		AF19CA282AE54ABC00A42DFF /* SSDPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA272AE54ABC00A42DFF /* SSDPService.swift */; };
 		AF19CA2B2AE54AD100A42DFF /* SSDPDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA2A2AE54AD100A42DFF /* SSDPDiscovery.swift */; };
-		AF19CA2E2AE692E600A42DFF /* AsyncBufferedChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA2D2AE692E600A42DFF /* AsyncBufferedChannel.swift */; };
 		AF19CA312AE6947600A42DFF /* ManagedCriticalState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA302AE6947600A42DFF /* ManagedCriticalState.swift */; };
 		AF19CA352AE694E500A42DFF /* AsyncThrowingBufferedChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA342AE694E500A42DFF /* AsyncThrowingBufferedChannel.swift */; };
-		AF19CA3A2AE6BF9D00A42DFF /* XMLCoder in Frameworks */ = {isa = PBXBuildFile; productRef = AF19CA392AE6BF9D00A42DFF /* XMLCoder */; };
 		AF19CA3C2AE6BFC400A42DFF /* DeviceApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA3B2AE6BFC300A42DFF /* DeviceApi.swift */; };
 		AF19CA3D2AE6BFDF00A42DFF /* DeviceApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA3B2AE6BFC300A42DFF /* DeviceApi.swift */; };
 		AF1C74842CE035480061E9F8 /* NetworkPermissionsCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1C74832CE035440061E9F8 /* NetworkPermissionsCheck.swift */; };
@@ -114,7 +110,6 @@
 		AF344FEE2D42DB7F00179FE0 /* ECPProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A52D37183600A167B2 /* ECPProtocol.swift */; };
 		AF344FEF2D42DB8C00179FE0 /* RemoteButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E68B2ADDDF450036EC90 /* RemoteButton.swift */; };
 		AF344FF02D42E1C500179FE0 /* APIHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82942AEBFB4600CBE7F8 /* APIHelpers.swift */; };
-		AF344FF22D42E21400179FE0 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = AF344FF12D42E21400179FE0 /* AsyncAlgorithms */; };
 		AF344FF42D42E24D00179FE0 /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0D09EE2CDE5C3B0098122E /* Helpers.swift */; };
 		AF344FF52D42E27000179FE0 /* StatelessDeviceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */; };
 		AF344FF62D42E28500179FE0 /* AppLinkAppEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E68D2ADDE2BC0036EC90 /* AppLinkAppEntity.swift */; };
@@ -126,7 +121,6 @@
 		AF344FFE2D42E9D200179FE0 /* NetworkHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF95B74F2ADF43FD005FC338 /* NetworkHelpers.swift */; };
 		AF3450002D42EA3000179FE0 /* XMLCoder in Frameworks */ = {isa = PBXBuildFile; productRef = AF344FFF2D42EA3000179FE0 /* XMLCoder */; };
 		AF35038F2BB499F3004F4337 /* RoamWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AF27400B2AE02C25007C6208 /* RoamWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AF3503942BB499FA004F4337 /* libwebp in Frameworks */ = {isa = PBXBuildFile; platformFilters = (watchos, ); productRef = AF3503932BB499FA004F4337 /* libwebp */; };
 		AF35ACEB2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF35ACEA2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift */; };
 		AF35ACF22BA3D6B200CC8B36 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AF35ACF12BA3D21F00CC8B36 /* PrivacyInfo.xcprivacy */; };
 		AF35ACF32BA3D6B300CC8B36 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AF35ACF12BA3D21F00CC8B36 /* PrivacyInfo.xcprivacy */; };
@@ -164,6 +158,11 @@
 		AF67C8F62C1D1A9200A6D077 /* UUIDUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF67C8F32C1D1A9000A6D077 /* UUIDUpdater.swift */; };
 		AF68F2842D41EC2700F39530 /* DataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA222AE455B400A42DFF /* DataHelpers.swift */; };
 		AF6A8F942D060834004AB1D2 /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */; };
+		AF6D560D2DCE47EE00B00780 /* AsyncTimerSequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6D560C2DCE47E900B00780 /* AsyncTimerSequence.swift */; };
+		AF6D560F2DCE496B00B00780 /* Deque.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6D560E2DCE496900B00780 /* Deque.swift */; };
+		AF6D56112DCE497E00B00780 /* OrderedSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6D56102DCE497C00B00780 /* OrderedSet.swift */; };
+		AF6D56132DCE50DF00B00780 /* DequeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6D56122DCE50DD00B00780 /* DequeTests.swift */; };
+		AF6D56152DCE50E900B00780 /* OrderedSetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6D56142DCE50E600B00780 /* OrderedSetTests.swift */; };
 		AF6E294A2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6E29492C1A2ACB0062DFB3 /* ViewHelpers.swift */; };
 		AF6E294B2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6E29492C1A2ACB0062DFB3 /* ViewHelpers.swift */; };
 		AF6E294C2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6E29492C1A2ACB0062DFB3 /* ViewHelpers.swift */; };
@@ -232,7 +231,6 @@
 		AFCD23602DCBC6270000E80E /* QBackgroundExecution.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCD235D2DCBC6210000E80E /* QBackgroundExecution.swift */; };
 		AFCF22DE2B2A52190048FFD9 /* NotificationBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCF22DD2B2A52190048FFD9 /* NotificationBanner.swift */; };
 		AFCF22E02B2A6A720048FFD9 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCF22DF2B2A6A720048FFD9 /* NetworkMonitor.swift */; };
-		AFD395042D2F9C710017B2A0 /* AsyncAlgorithms in Frameworks */ = {isa = PBXBuildFile; productRef = AFD395032D2F9C710017B2A0 /* AsyncAlgorithms */; };
 		AFD590D02AEC673C00189620 /* WatchConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590CF2AEC673C00189620 /* WatchConnector.swift */; };
 		AFD590D22AEC692700189620 /* IPhoneConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D12AEC692700189620 /* IPhoneConnector.swift */; };
 		AFD590D62AEC787700189620 /* ModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D52AEC787700189620 /* ModelContainer.swift */; };
@@ -451,7 +449,6 @@
 		AF19CA222AE455B400A42DFF /* DataHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataHelpers.swift; sourceTree = "<group>"; };
 		AF19CA272AE54ABC00A42DFF /* SSDPService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSDPService.swift; sourceTree = "<group>"; };
 		AF19CA2A2AE54AD100A42DFF /* SSDPDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSDPDiscovery.swift; sourceTree = "<group>"; };
-		AF19CA2D2AE692E600A42DFF /* AsyncBufferedChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncBufferedChannel.swift; sourceTree = "<group>"; };
 		AF19CA302AE6947600A42DFF /* ManagedCriticalState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagedCriticalState.swift; sourceTree = "<group>"; };
 		AF19CA342AE694E500A42DFF /* AsyncThrowingBufferedChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncThrowingBufferedChannel.swift; sourceTree = "<group>"; };
 		AF19CA3B2AE6BFC300A42DFF /* DeviceApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceApi.swift; sourceTree = "<group>"; };
@@ -501,6 +498,11 @@
 		AF65A8892BB5ABF9005ECF7F /* RoamAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamAppDelegate.swift; sourceTree = "<group>"; };
 		AF65A88B2BB5AD02005ECF7F /* ExternalAboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalAboutView.swift; sourceTree = "<group>"; };
 		AF67C8F32C1D1A9000A6D077 /* UUIDUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UUIDUpdater.swift; sourceTree = "<group>"; };
+		AF6D560C2DCE47E900B00780 /* AsyncTimerSequence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncTimerSequence.swift; sourceTree = "<group>"; };
+		AF6D560E2DCE496900B00780 /* Deque.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Deque.swift; sourceTree = "<group>"; };
+		AF6D56102DCE497C00B00780 /* OrderedSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderedSet.swift; sourceTree = "<group>"; };
+		AF6D56122DCE50DD00B00780 /* DequeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DequeTests.swift; sourceTree = "<group>"; };
+		AF6D56142DCE50E600B00780 /* OrderedSetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderedSetTests.swift; sourceTree = "<group>"; };
 		AF6E29492C1A2ACB0062DFB3 /* ViewHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewHelpers.swift; sourceTree = "<group>"; };
 		AF6EE1C32DCD1D160005EE78 /* PaddedRoundedTextFieldStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaddedRoundedTextFieldStyle.swift; sourceTree = "<group>"; };
 		AF70BB062BA7C4D2009A06EC /* HoveredView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoveredView.swift; sourceTree = "<group>"; };
@@ -608,11 +610,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AF3503942BB499FA004F4337 /* libwebp in Frameworks */,
-				AF19CA3A2AE6BF9D00A42DFF /* XMLCoder in Frameworks */,
 				AF27400D2AE02C25007C6208 /* SwiftUI.framework in Frameworks */,
 				AF27400C2AE02C25007C6208 /* WidgetKit.framework in Frameworks */,
-				AFD395042D2F9C710017B2A0 /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -622,7 +621,6 @@
 			files = (
 				AF3450002D42EA3000179FE0 /* XMLCoder in Frameworks */,
 				AF344FEB2D42D3BE00179FE0 /* ArgumentParser in Frameworks */,
-				AF344FF22D42E21400179FE0 /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -645,10 +643,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				AFECDE202AE18519003F6676 /* RTP in Frameworks */,
-				AF06AAD82BA3798E002C8FAF /* libwebp in Frameworks */,
 				AFECDE1A2AE184FE003F6676 /* XMLCoder in Frameworks */,
 				AFECDE1D2AE18511003F6676 /* Opus in Frameworks */,
-				AF19CA212AE4536700A42DFF /* AsyncAlgorithms in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -685,6 +681,8 @@
 		AF0532842D36DB2B00D68F8E /* RoamSwiftTests */ = {
 			isa = PBXGroup;
 			children = (
+				AF6D56142DCE50E600B00780 /* OrderedSetTests.swift */,
+				AF6D56122DCE50DD00B00780 /* DequeTests.swift */,
 				AF0532832D36DB2B00D68F8E /* RoamSwiftTests.swift */,
 			);
 			path = RoamSwiftTests;
@@ -749,8 +747,10 @@
 		AF19CA332AE694CE00A42DFF /* BufferedChannel */ = {
 			isa = PBXGroup;
 			children = (
+				AF6D56102DCE497C00B00780 /* OrderedSet.swift */,
+				AF6D560E2DCE496900B00780 /* Deque.swift */,
+				AF6D560C2DCE47E900B00780 /* AsyncTimerSequence.swift */,
 				AF19CA302AE6947600A42DFF /* ManagedCriticalState.swift */,
-				AF19CA2D2AE692E600A42DFF /* AsyncBufferedChannel.swift */,
 				AF19CA342AE694E500A42DFF /* AsyncThrowingBufferedChannel.swift */,
 			);
 			path = BufferedChannel;
@@ -1091,9 +1091,6 @@
 			);
 			name = RoamWidgets;
 			packageProductDependencies = (
-				AF19CA392AE6BF9D00A42DFF /* XMLCoder */,
-				AF3503932BB499FA004F4337 /* libwebp */,
-				AFD395032D2F9C710017B2A0 /* AsyncAlgorithms */,
 			);
 			productName = BetterRemoteWidgetsExtension;
 			productReference = AF27400B2AE02C25007C6208 /* RoamWidgets.appex */;
@@ -1114,7 +1111,6 @@
 			name = "roam-cli";
 			packageProductDependencies = (
 				AF344FEA2D42D3BE00179FE0 /* ArgumentParser */,
-				AF344FF12D42E21400179FE0 /* AsyncAlgorithms */,
 				AF344FFF2D42EA3000179FE0 /* XMLCoder */,
 			);
 			productName = RoamCLI;
@@ -1182,8 +1178,6 @@
 				AFECDE192AE184FE003F6676 /* XMLCoder */,
 				AFECDE1C2AE18511003F6676 /* Opus */,
 				AFECDE1F2AE18519003F6676 /* RTP */,
-				AF19CA202AE4536700A42DFF /* AsyncAlgorithms */,
-				AF06AAD72BA3798E002C8FAF /* libwebp */,
 			);
 			productName = BetterRemote;
 			productReference = AFC24EFB2AD0E5A1002AB66C /* Roam.app */;
@@ -1271,7 +1265,6 @@
 				AFECDE182AE184FE003F6676 /* XCRemoteSwiftPackageReference "XMLCoder" */,
 				AFECDE1B2AE18511003F6676 /* XCRemoteSwiftPackageReference "swift-opus" */,
 				AFECDE1E2AE18519003F6676 /* XCRemoteSwiftPackageReference "swift-rtp" */,
-				AF19CA192AE44B1900A42DFF /* XCRemoteSwiftPackageReference "swift-async-algorithms" */,
 				AF0042812AEAA3ED0051BB1E /* XCRemoteSwiftPackageReference "libwebp-Xcode" */,
 				AF344FE92D42D3B600179FE0 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 			);
@@ -1596,6 +1589,7 @@
 				AF2AF23B2D3B0FDB00AAD5B0 /* StatelessDeviceAPI.swift in Sources */,
 				AFA079DA2AE02561003E2754 /* DeviceAppEntity.swift in Sources */,
 				AF1899F32C1CB204001EDA78 /* NavigationManager.swift in Sources */,
+				AF6D56112DCE497E00B00780 /* OrderedSet.swift in Sources */,
 				AF65A88C2BB5AD02005ECF7F /* ExternalAboutView.swift in Sources */,
 				AF0042752AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */,
 				AFBDEA302D7D122000C15B18 /* AddDeviceFlow.swift in Sources */,
@@ -1618,6 +1612,7 @@
 				AFED45F12D52BF3000FD53E2 /* MessagingView.swift in Sources */,
 				AFED45F22D52BF3000FD53E2 /* AttachButton.swift in Sources */,
 				AF2480582BDB42F600EF47AE /* TestData.swift in Sources */,
+				AF6D560F2DCE496B00B00780 /* Deque.swift in Sources */,
 				AF5853932D4BCD690027C279 /* GlobalHotkey.swift in Sources */,
 				AF19CA312AE6947600A42DFF /* ManagedCriticalState.swift in Sources */,
 				AF3AD55B2AE2947E00E2D780 /* KeyboardEntry.swift in Sources */,
@@ -1625,6 +1620,7 @@
 				AF2C85A72D37183E00A167B2 /* ECPProtocol.swift in Sources */,
 				AFD590D62AEC787700189620 /* ModelContainer.swift in Sources */,
 				AF2C372F2D53D23E00D7B79F /* NetworkConnectivityBanner.swift in Sources */,
+				AF6D560D2DCE47EE00B00780 /* AsyncTimerSequence.swift in Sources */,
 				AF736A822DCD57DD0028A2B4 /* Attachment.swift in Sources */,
 				AFA079DF2AE0263F003E2754 /* Shortcuts.swift in Sources */,
 				AFF607812ADFACBA00A7D657 /* DiscoveryActor.swift in Sources */,
@@ -1665,7 +1661,6 @@
 				AF3EEF952AE0206E00B661F3 /* AudioPlayer.swift in Sources */,
 				AF8EF51D2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */,
 				AF3446AA2D5FE62A0037EFC8 /* Importers.swift in Sources */,
-				AF19CA2E2AE692E600A42DFF /* AsyncBufferedChannel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1674,7 +1669,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				AF0D09F42CDE64750098122E /* Helpers.swift in Sources */,
+				AF6D56152DCE50E900B00780 /* OrderedSetTests.swift in Sources */,
 				AF68F2842D41EC2700F39530 /* DataHelpers.swift in Sources */,
+				AF6D56132DCE50DF00B00780 /* DequeTests.swift in Sources */,
 				AF0532852D36DB2B00D68F8E /* RoamSwiftTests.swift in Sources */,
 				AFDB50002D53C7B7004E27A4 /* Loggers.swift in Sources */,
 				AF3F350D2D3E99A2009AF2F8 /* ECPMessages.swift in Sources */,
@@ -1780,6 +1777,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LLVM_LTO = YES;
 				MARKETING_VERSION = "$(MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.roam.watchkitapp;
 				PRODUCT_NAME = Roam;
@@ -1867,6 +1865,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
+				LLVM_LTO = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = "$(MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.roam.RoamWidgets;
@@ -1920,7 +1919,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.45;
+				MARKETING_VERSION = 1.46;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamWatchUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -1940,7 +1939,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.45;
+				MARKETING_VERSION = 1.46;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamWatchUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -1962,7 +1961,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.45;
+				MARKETING_VERSION = 1.46;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1987,7 +1986,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.45;
+				MARKETING_VERSION = 1.46;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -2042,7 +2041,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20250507.4978711.2;
+				CURRENT_PROJECT_VERSION = 20250509.4331669.3;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
@@ -2067,7 +2066,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.45;
+				MARKETING_VERSION = 1.46;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -2126,7 +2125,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20250507.4978711.2;
+				CURRENT_PROJECT_VERSION = 20250509.4331669.3;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
@@ -2145,7 +2144,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.45;
+				MARKETING_VERSION = 1.46;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "";
@@ -2251,6 +2250,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LLVM_LTO = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = "$(MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.roam;
@@ -2277,7 +2277,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
-				MARKETING_VERSION = 1.45;
+				MARKETING_VERSION = 1.46;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamSwiftTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2297,7 +2297,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
-				MARKETING_VERSION = 1.45;
+				MARKETING_VERSION = 1.46;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.RoamSwiftTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -2394,14 +2394,6 @@
 				minimumVersion = 1.3.2;
 			};
 		};
-		AF19CA192AE44B1900A42DFF /* XCRemoteSwiftPackageReference "swift-async-algorithms" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/apple/swift-async-algorithms.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.0;
-			};
-		};
 		AF344FE92D42D3B600179FE0 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
@@ -2442,45 +2434,15 @@
 			package = AF0042812AEAA3ED0051BB1E /* XCRemoteSwiftPackageReference "libwebp-Xcode" */;
 			productName = libwebp;
 		};
-		AF06AAD72BA3798E002C8FAF /* libwebp */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AF0042812AEAA3ED0051BB1E /* XCRemoteSwiftPackageReference "libwebp-Xcode" */;
-			productName = libwebp;
-		};
-		AF19CA202AE4536700A42DFF /* AsyncAlgorithms */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AF19CA192AE44B1900A42DFF /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
-			productName = AsyncAlgorithms;
-		};
-		AF19CA392AE6BF9D00A42DFF /* XMLCoder */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AFECDE182AE184FE003F6676 /* XCRemoteSwiftPackageReference "XMLCoder" */;
-			productName = XMLCoder;
-		};
 		AF344FEA2D42D3BE00179FE0 /* ArgumentParser */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = AF344FE92D42D3B600179FE0 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
 			productName = ArgumentParser;
 		};
-		AF344FF12D42E21400179FE0 /* AsyncAlgorithms */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AF19CA192AE44B1900A42DFF /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
-			productName = AsyncAlgorithms;
-		};
 		AF344FFF2D42EA3000179FE0 /* XMLCoder */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = AFECDE182AE184FE003F6676 /* XCRemoteSwiftPackageReference "XMLCoder" */;
 			productName = XMLCoder;
-		};
-		AF3503932BB499FA004F4337 /* libwebp */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AF0042812AEAA3ED0051BB1E /* XCRemoteSwiftPackageReference "libwebp-Xcode" */;
-			productName = libwebp;
-		};
-		AFD395032D2F9C710017B2A0 /* AsyncAlgorithms */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AF19CA192AE44B1900A42DFF /* XCRemoteSwiftPackageReference "swift-async-algorithms" */;
-			productName = AsyncAlgorithms;
 		};
 		AFD9C4F42AE9830100C4079C /* XMLCoder */ = {
 			isa = XCSwiftPackageProductDependency;

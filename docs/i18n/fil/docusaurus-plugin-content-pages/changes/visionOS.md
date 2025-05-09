@@ -1,1 +1,2 @@
-- Pag-aayos ng bug at mga pagpapabuti
+-   Mga pagpapabuti sa pagganap kapag ang gumagamit ay may maraming mga app na Roku na nai-load
+-   Pag-ayos sa mga mensahe ng watchOS na crash

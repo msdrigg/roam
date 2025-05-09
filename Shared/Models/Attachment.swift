@@ -73,7 +73,7 @@ public struct AttachmentUpload: Codable, Sendable, Hashable {
     }
 }
 
-#if !os(watchOS)
+#if !os(watchOS) && !WIDGET
 extension AttachmentUpload: FileDocument {
     public init(configuration: ReadConfiguration) throws {
         guard let fileData = configuration.file.regularFileContents else {

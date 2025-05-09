@@ -1,6 +1,8 @@
 import Foundation
 import os.log
+#if !WIDGET
 import XMLCoder
+#endif
 import Network
 
 struct PreconnectionDeviceInfo: Codable {
@@ -146,6 +148,7 @@ struct Apps: Decodable {
     let app: [AppLinkAppEntity]
 }
 
+#if !WIDGET
 func fetchPreconnectionInfo(location: String) async throws -> PreconnectionDeviceInfo {
     // Fetch device details
     guard let url = URL(string: location) else {
@@ -159,6 +162,7 @@ func fetchPreconnectionInfo(location: String) async throws -> PreconnectionDevic
 
     return PreconnectionDeviceInfo(service: root, location: location)
 }
+#endif
 
 func fetchDeviceIcon(info: PreconnectionDeviceInfo) async throws -> Data {
     let location = info.location
@@ -172,7 +176,7 @@ func fetchDeviceIcon(info: PreconnectionDeviceInfo) async throws -> Data {
     }
 }
 
-#if os(watchOS)
+#if os(watchOS) && !WIDGET
 func fetchDeviceCapabilities(location: String) async throws -> DeviceCapabilities {
     let url = URL(string: "\(location)query/audio-device")!
     let (data, _) = try await URLSession.shared.data(from: url)

@@ -5,9 +5,6 @@
 //  Created by Thibault Wittemberg on 07/01/2022.
 //
 
-import DequeModule
-import OrderedCollections
-
 /// A channel for sending elements from one task to another.
 ///
 /// The `AsyncThrowingBufferedChannel` class is intended to be used as a communication type between tasks,
@@ -115,7 +112,7 @@ public final class AsyncThrowingBufferedChannel<Element, Failure: Error>: AsyncS
                 state = .queued(values)
                 return .nothing
             case (.awaiting(var awaitings), let .element(element)):
-                let awaiting = awaitings.removeFirst()
+                let awaiting = awaitings.popFirst()!
                 if awaitings.isEmpty {
                     state = .idle
                 } else {
