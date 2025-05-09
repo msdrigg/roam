@@ -1,9 +1,9 @@
 Roam ist eine kostenlose App ohne Werbung!
 
--   Funktioniert auf Mac, iPhone, iPad, Apple Watch, VisionOS und (bald) Apple TV!
--   Intelligente Plattformintegration mit Tastenkombinationen auf dem Mac und Tastatur-/Lautstärkeregelung auf iOS
--   Verwende Shortcuts, Widgets oder Siri, um deinen Fernseher zu steuern, ohne jemals die App zu öffnen
--   Unterstützung für privates Hören auf Mac und iOS (spiele den Ton deines Fernsehers über deine Kopfhörer ab)
--   Entdeckt Geräte in deinem lokalen Netzwerk, sobald du die App öffnest
--   Intuitives Design mit Apples native SwiftUI-Designsystem
--   Schnell und leichtgewichtig (nur 7 Megabyte) und öffnet sofort
+-   Läuft auf Mac, iPhone, iPad, Apple Watch, VisionOS und (bald) Apple TV!
+-   Intelligente Plattformintegration mit Tastenkombinationen auf dem Mac und Tastatur/Lautstärkeregler auf iOS
+-   Verwenden Sie Tastenkombinationen, Widgets oder Siri, um Ihren Fernseher zu steuern, ohne jemals die App öffnen zu müssen
+-   Unterstützung für privates Hören auf Mac und iOS (spielen Sie den Ton Ihres Fernsehers über Ihre Kopfhörer)
+-   Entdeckt Geräte in Ihrem lokalen Netzwerk, sobald Sie die App öffnen
+-   Intuitives Design mit Apples einheimischem SwiftUI-Designsystem
+-   Schnell und leicht (6 MB Download) und öffnet sofort

@@ -5,4 +5,4 @@ Roam is a free app with no ads!
 -   Headphones mode support (play the audio from your TV through your headphones)
 -   Discovers devices on your local network as soon as you open the app
 -   Intuitive design with apple's native SwiftUI design system
--   Fast and lightweight (only 7 megabytes) and opens instantly
+-   Fast and lightweight (5 MB download) and opens instantly
