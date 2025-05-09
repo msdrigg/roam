@@ -6,7 +6,7 @@ struct WatchOSNote: View {
             Section("Permissive Mode") {
                 Text(
                     // swiftlint:disable:next line_length
-                    "Due to WatchOS limitations, you may need to enable \"Permissive\" Network Access on your Roku TV. You can do this by going to Settings -> System -> Advanced System Settings -> Control by mobile apps",
+                    "Due to WatchOS limitations, you may need to enable \"Permissive\" Network Access on your Roku TV. You can do this by going to **Settings > System > Advanced system settings > Control by mobile apps > Network**",
                     comment: "WatchOS indicator showing that watchOS can't auto-discover TV's due to network restrictions"
                 )
             }

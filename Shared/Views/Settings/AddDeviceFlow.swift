@@ -60,7 +60,6 @@ struct AddDeviceFlow: View {
                 .colorScheme(.dark)
                 .task {
                     let localInterfaces = await allAddressedInterfaces()
-                    print("Interfaces \(localInterfaces)")
                     selfIpGuess = localInterfaces.filter({ localInterface in
                         localInterface.isNormal
                     }).first?.address.addressString ?? "192.168.1.1"
@@ -115,7 +114,17 @@ struct AddDeviceFlow: View {
                         }
                         .autocorrectionDisabled()
                 }
-
+#if os(watchOS)
+                Section {
+                    if connectionStatus.isIdle || connectionStatus.isInvalidIp {
+                        Text(
+                            "Before you add your TV, go to **Settings > System > Advanced system settings > Control by mobile apps > Network access and make sure it's set to 'Permissive' or 'Enabled'"
+                        )
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+#endif
                 Section {
                     if !connectionStatus.isIdle {
                         connectionStatusView(status: connectionStatus)

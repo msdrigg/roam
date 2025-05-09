@@ -4,11 +4,13 @@ import Network
 
 struct IP4Address: Comparable, Equatable, Strideable, Encodable {
     func distance(to other: IP4Address) -> Int {
-        Int(other.address) - Int(address)
+        let distance64 = Int64(other.address) - Int64(address)
+
+        return Int(truncatingIfNeeded: distance64)
     }
 
     func advanced(by n: Int) -> IP4Address {
-        let address = UInt32(Int(address) + n)
+        let address = UInt32(truncatingIfNeeded: Int64(address) + Int64(n))
         return IP4Address(address: address)
     }
 

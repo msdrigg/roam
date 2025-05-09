@@ -6,6 +6,8 @@ import TipKit
 @main
 struct RoamWatch: App {
     var sharedModelContainer: ModelContainer
+    @WKApplicationDelegateAdaptor var appDelegate: RoamWatchAppDelegate
+
     init() {
         sharedModelContainer = getSharedModelContainer()
 
@@ -17,9 +19,18 @@ struct RoamWatch: App {
         Log.lifecycle.notice("Getting WatchConnectivity \(String(describing: WatchConnectivity.shared), privacy: .public)")
     }
 
+    private var navigationPath: Binding<[NavigationDestination]> {
+        return Binding(
+            get: { appDelegate.navigationPath.navigationPath },
+            set: {
+                appDelegate.navigationPath.navigationPath = $0
+            }
+        )
+    }
+
     var body: some Scene {
         WindowGroup {
-            WatchAppView()
+            WatchAppView(navigationPath: navigationPath)
         }
         .modelContainer(sharedModelContainer)
     }
@@ -54,11 +65,6 @@ private let deviceFetchDescriptor: FetchDescriptor<Device> = {
         predicate: globalMainDevicePredicate,
         sortBy: [SortDescriptor(\Device.name)]
     )
-    fd.propertiesToFetch = [
-        \Device.udn, \Device.location, \Device.name,
-         \Device.lastOnlineAt, \Device.lastSelectedAt,
-         \Device.lastScannedAt
-    ]
 
     return fd
 }()
@@ -70,6 +76,8 @@ struct WatchAppView: View {
     @State private var manuallySelectedDevice: Device?
     @State private var showDeviceList: Bool = false
     @State private var showingAddDeviceSheet: Bool = false
+
+    @Binding var navigationPath: [NavigationDestination]
 
     @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanIpAutomatically: Bool = true
 
@@ -83,11 +91,9 @@ struct WatchAppView: View {
         }
     }
 
-    @State var navPath: NavigationManager = NavigationManager()
-
     @MainActor
     var mainBody: some View {
-        SettingsNavigationWrapper(path: $navPath.navigationPath) {
+        SettingsNavigationWrapper(path: $navigationPath) {
             TabView {
                 if selectedDevice == nil {
                     VStack {
@@ -116,7 +122,9 @@ struct WatchAppView: View {
                 }
             }
             .sheet(isPresented: $showingAddDeviceSheet) {
-                AddDeviceFlow()
+                NavigationStack {
+                    AddDeviceFlow()
+                }
             }
             .accessibilityIdentifier("MainTabView")
             .navigationTitle(selectedDevice?.name ?? String(localized: "No device"))
@@ -183,7 +191,7 @@ struct AppListViewWrapper: View {
     var appIdsIconsHashed: Int {
         var appLinkPairs: Set<String> = Set()
         for app in apps {
-            appLinkPairs.insert("\(app.id);\(app.icon != nil)")
+            appLinkPairs.insert("\(app.id);\(app.iconHash ?? "--")")
         }
 
         var hasher = Hasher()
@@ -220,7 +228,10 @@ struct AppListViewWrapper: View {
 
 #if DEBUG
 #Preview {
-    WatchAppView()
+    WatchAppView(navigationPath: Binding(
+        get: {[]},
+        set: {_ in }
+    ))
         .modelContainer(getTestingContainer())
 }
 #endif

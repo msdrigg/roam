@@ -28,9 +28,6 @@ public actor DataHandler {
             SortDescriptor(\Device.lastSelectedAt, order: .reverse),
             SortDescriptor(\Device.lastOnlineAt, order: .reverse),
         ]
-        descriptor.propertiesToFetch = [
-            \.lastSentToWatch, \.udn
-        ]
         let links = try await self.fetchSafer(
             descriptor
         )
@@ -246,10 +243,9 @@ public actor DataHandler {
         let deleteBefore = Date.now - Self.hardDeleteTimeout
         let distantFuture = Date.distantFuture
         do {
-            var descriptor = FetchDescriptor<Device>(predicate: #Predicate {
+            let descriptor = FetchDescriptor<Device>(predicate: #Predicate {
                 $0.deletedAt ?? distantFuture < deleteBefore
             })
-            descriptor.propertiesToFetch = [\.name, \.udn, \.location]
             let models = try await self.fetchSafer(descriptor)
 
             for model in models {
@@ -304,15 +300,6 @@ public actor DataHandler {
         )
         matchingIds.fetchLimit = 1
         matchingIds.includePendingChanges = true
-        matchingIds.propertiesToFetch = [
-            \.udn, \.location, \.lastOnlineAt,
-             \.lastSelectedAt, \.name, \.deletedAt,
-             \.lastSentToWatch, \.lastScannedAt,
-             \.ethernetMAC, \.rtcpPort,
-             \.supportsDatagram, \.wifiMAC,
-             \.networkType, \.powerMode,
-             \.serial
-        ]
         do {
             let matchingIds = try modelContext.fetchIdentifiers(matchingIds)
 
@@ -335,15 +322,6 @@ public actor DataHandler {
         )
         matchingIds.fetchLimit = 1
         matchingIds.includePendingChanges = true
-        matchingIds.propertiesToFetch = [
-            \.udn, \.location, \.lastOnlineAt,
-             \.lastSelectedAt, \.name, \.deletedAt,
-             \.lastSentToWatch, \.lastScannedAt,
-             \.ethernetMAC, \.rtcpPort,
-             \.supportsDatagram, \.wifiMAC,
-             \.networkType, \.powerMode,
-             \.serial
-        ]
         do {
             let matchingIds = try modelContext.fetchIdentifiers(matchingIds)
 
@@ -377,7 +355,6 @@ public actor DataHandler {
             SortDescriptor(\Device.lastOnlineAt, order: .reverse),
         ]
         descriptor.fetchLimit = 1
-        descriptor.propertiesToFetch = [\.name, \.location, \.udn, \.wifiMAC, \.ethernetMAC, \.lastSelectedAt, \.lastSentToWatch, \.lastOnlineAt, \.lastScannedAt, \.deletedAt]
 
         let selectedDevice: Device? = try? await self.fetchSafer(descriptor).first
 
@@ -387,11 +364,9 @@ public actor DataHandler {
 
 extension DataHandler {
     public func deviceEntities(for identifiers: [DeviceAppEntity.ID]) async throws -> [DeviceAppEntity] {
-        var descriptor = FetchDescriptor<Device>(predicate: #Predicate {
+        let descriptor = FetchDescriptor<Device>(predicate: #Predicate {
             identifiers.contains($0.udn) && $0.deletedAt == nil
         })
-
-        descriptor.propertiesToFetch = [\.name, \.location, \.udn, \.wifiMAC, \.ethernetMAC, \.lastSelectedAt, \.lastSentToWatch, \.lastOnlineAt, \.lastScannedAt, \.deletedAt]
 
         let links = try await self.fetchSafer(descriptor)
 
@@ -399,11 +374,9 @@ extension DataHandler {
     }
 
     public func deviceEntities(matching string: String) async throws -> [DeviceAppEntity] {
-        var descriptor = FetchDescriptor<Device>(predicate: #Predicate {
+        let descriptor = FetchDescriptor<Device>(predicate: #Predicate {
             $0.name.contains(string) && $0.deletedAt == nil
         })
-
-        descriptor.propertiesToFetch = [\.name, \.location, \.udn, \.wifiMAC, \.ethernetMAC, \.lastSelectedAt, \.lastSentToWatch, \.lastOnlineAt, \.lastScannedAt, \.deletedAt]
 
         let links = try await self.fetchSafer(descriptor)
         return links.map { $0.toAppEntity() }
@@ -419,7 +392,6 @@ extension DataHandler {
             SortDescriptor(\Device.lastSelectedAt, order: .reverse),
             SortDescriptor(\Device.lastOnlineAt, order: .reverse),
         ]
-        descriptor.propertiesToFetch = [\.name, \.location, \.udn, \.wifiMAC, \.ethernetMAC, \.lastSelectedAt, \.lastSentToWatch, \.lastOnlineAt, \.lastScannedAt, \.deletedAt]
 
         let links = try await self.fetchSafer(
             descriptor
@@ -437,12 +409,33 @@ extension DataHandler {
             SortDescriptor(\Device.lastSelectedAt, order: .reverse),
             SortDescriptor(\Device.lastOnlineAt, order: .reverse),
         ]
-        descriptor.propertiesToFetch = [\.name, \.location, \.udn, \.wifiMAC, \.ethernetMAC, \.lastSelectedAt, \.lastSentToWatch, \.lastOnlineAt, \.lastScannedAt, \.deletedAt]
 
         let links = try await self.fetchSafer(
             descriptor
         )
         return links.map { $0.toAppEntity() }
+    }
+
+    public func loadLoadTestData() async throws {
+        #if DEBUG
+        try self.clearData()
+
+        let (devices, apps) = getLoadTestingData()
+        for device in devices {
+            modelContext.insert(device)
+        }
+        for app in apps {
+            modelContext.insert(app)
+        }
+
+        for message in getTestingMessages() {
+            message.viewed = true
+
+            modelContext.insert(message)
+        }
+
+        try await self.saveSafer()
+        #endif
     }
 
     public func loadTestData() async throws {
@@ -475,6 +468,7 @@ extension DataHandler {
 
 enum DataHandlerError: Error {
     case suspending
+    case errorStoring
 }
 
 public extension DataHandler {
@@ -542,19 +536,11 @@ extension DataHandler {
             return registered
         }
 
-        var fetchDescriptor = FetchDescriptor<Device>(
+        let fetchDescriptor = FetchDescriptor<Device>(
             predicate: #Predicate {
                 $0.persistentModelID == id && $0.deletedAt == nil
             }
         )
-        fetchDescriptor.propertiesToFetch = [
-            \.udn, \.location, \.lastOnlineAt,
-             \.lastSelectedAt, \.name, \.deletedAt,
-             \.lastSentToWatch, \.lastScannedAt,
-             \.ethernetMAC, \.rtcpPort,
-             \.supportsDatagram, \.wifiMAC,
-             \.networkType, \.powerMode
-        ]
 
         do {
             let model = try await fetchSafer(fetchDescriptor).first
@@ -578,12 +564,11 @@ extension DataHandler {
             return registered
         }
 
-        var fetchDescriptor = FetchDescriptor<AppLink>(
+        let fetchDescriptor = FetchDescriptor<AppLink>(
             predicate: #Predicate {
                 $0.persistentModelID == id
             }
         )
-        fetchDescriptor.propertiesToFetch = [\.id, \.name, \.lastSelected, \.deviceUid, \.type]
         do {
             let data = try await fetchSafer(fetchDescriptor).first
 
@@ -611,48 +596,43 @@ public struct DataHandlerKey: EnvironmentKey {
 
 extension DataHandler {
     public func allAppEntities() async throws -> [AppLinkAppEntity] {
-        var descriptor = FetchDescriptor<AppLink>(predicate: #Predicate { _ in
+        let descriptor = FetchDescriptor<AppLink>(predicate: #Predicate { _ in
             true
         })
-        descriptor.propertiesToFetch = [\.name, \.id, \.type, \.icon]
 
         let links = try await self.fetchSafer(descriptor)
-        return links.map { $0.toAppEntityWithIcon() }
+        return links.map { $0.toAppEntity() }
     }
 
     public func appEntities(for identifiers: [AppLinkAppEntity.ID], deviceUid: String?) async throws -> [AppLinkAppEntity] {
 
-        var descriptor = FetchDescriptor<AppLink>(predicate: #Predicate { appLink in
+        let descriptor = FetchDescriptor<AppLink>(predicate: #Predicate { appLink in
             identifiers.contains(appLink.id) && (deviceUid == nil || appLink.deviceUid == deviceUid)
         })
-        descriptor.propertiesToFetch = [\.name, \.id, \.type, \.icon]
 
         let links = try await self.fetchSafer(descriptor)
-        return links.map { $0.toAppEntityWithIcon() }
+        return links.map { $0.toAppEntity() }
     }
 
     public func appEntities(matching string: String, deviceUid: String?) async throws -> [AppLinkAppEntity] {
-        var descriptor = FetchDescriptor<AppLink>(predicate: #Predicate<AppLink> { appLink in
+        let descriptor = FetchDescriptor<AppLink>(predicate: #Predicate<AppLink> { appLink in
             appLink.name.contains(string) && (deviceUid == nil || appLink.deviceUid == deviceUid)
         })
 
-        descriptor.propertiesToFetch = [\.name, \.id, \.type, \.icon]
         let links = try await self.fetchSafer(descriptor)
-        return links.map { $0.toAppEntityWithIcon() }
+        return links.map { $0.toAppEntity() }
     }
 
     public func appEntities(deviceUid: String?) async throws -> [AppLinkAppEntity] {
-        var descriptor = FetchDescriptor<AppLink>(
+        let descriptor = FetchDescriptor<AppLink>(
             predicate: #Predicate {
                 deviceUid == nil || $0.deviceUid == deviceUid
             },
             sortBy: [SortDescriptor(\AppLink.lastSelected, order: .reverse)]
         )
 
-        descriptor.propertiesToFetch = [\.name, \.id, \.type, \.icon]
-
         let links = try await self.fetchSafer(descriptor)
-        return links.map { $0.toAppEntityWithIcon() }
+        return links.map { $0.toAppEntity() }
     }
 
     public func deleteAppsForDeviceUdn(udn: String) throws {
@@ -779,17 +759,16 @@ extension DataHandler {
 
             let udn: String? = device.udn
 
-            var descriptor = FetchDescriptor<AppLink>(
+            let descriptor = FetchDescriptor<AppLink>(
                 predicate: #Predicate {
                     $0.deviceUid == udn
                 }
             )
 
-            descriptor.propertiesToFetch = [\.name, \.id, \.type, \.icon]
             let deviceApps = (try? await self.fetchSafer(descriptor)) ?? []
 
             if (device.lastScannedAt?.timeIntervalSinceNow) ?? -10000 > -minRescanInterval,
-               deviceApps.allSatisfy({ $0.icon != nil }), deviceApps.count > 0
+               deviceApps.allSatisfy({ $0.iconHash != nil }), deviceApps.count > 0
             {
                 try? await self.saveSafer()
                 Log.data.notice("Returning early from refresh")
@@ -831,19 +810,18 @@ extension DataHandler {
         var deviceNeedsIcon = false
         var appsNeedingIcons: [String] = []
         if let device = await self.existingDevice(for: id) {
-            deviceNeedsIcon = device.deviceIcon == nil
+            deviceNeedsIcon = device.deviceIconHash == nil
             if let capabilities {
                 device.rtcpPort = capabilities.rtcpPort
                 device.supportsDatagram = capabilities.supportsDatagram
             }
 
             let udn: String = device.udn
-            var descriptor = FetchDescriptor<AppLink>(
+            let descriptor = FetchDescriptor<AppLink>(
                 predicate: #Predicate {
                     $0.deviceUid == udn
                 }
             )
-            descriptor.propertiesToFetch = [\.id, \.name, \.deviceUid, \.type, \.icon]
 
             let deviceApps = (try? await self.fetchSafer(descriptor)) ?? []
 
@@ -864,7 +842,7 @@ extension DataHandler {
                 }
 
                 // Fetch icons for apps in deviceApps
-                for app in deviceApps where app.icon == nil {
+                for app in deviceApps where app.iconHash == nil {
                     appsNeedingIcons.append(app.id)
                 }
             }
@@ -876,7 +854,8 @@ extension DataHandler {
         if deviceNeedsIcon {
             Log.data.notice("Getting icon for device")
             do {
-                deviceIcon = try await client.getDeviceIcon()
+                let newIcon = try await client.getDeviceIcon()
+                deviceIcon = newIcon
             } catch {
                 Log.data.warning("Error getting device icon \(error, privacy: .public)")
             }
@@ -897,21 +876,32 @@ extension DataHandler {
         if let device = await self.existingDevice(for: id) {
             let udn: String? = device.udn
 
-            var descriptor = FetchDescriptor<AppLink>(
+            let descriptor = FetchDescriptor<AppLink>(
                 predicate: #Predicate {
                     $0.deviceUid == udn
                 }
             )
-            descriptor.propertiesToFetch = [\.icon, \.id]
 
             let deviceApps = (try? await self.fetchSafer(descriptor)) ?? []
 
             if let icon = deviceIcon {
-                device.deviceIcon = icon
+                let iconHash = fastHashData(data: icon)
+                do {
+                    try storeIconToDisk(iconData: icon, hash: iconHash)
+                    device.deviceIconHash = iconHash
+                } catch {
+                    Log.data.warning("Error storing device icon \(error, privacy: .public)")
+                }
             }
             for app in appIcons {
                 if let deviceApp = deviceApps.first(where: { $0.id == app.key }) {
-                    deviceApp.icon = app.value
+                    let iconHash = fastHashData(data: app.value)
+                    do {
+                        try storeIconToDisk(iconData: app.value, hash: iconHash)
+                        deviceApp.iconHash = iconHash
+                    } catch {
+                        Log.data.warning("Error storing app icon \(error, privacy: .public)")
+                    }
                 }
             }
             try? await self.saveSafer()
@@ -919,6 +909,56 @@ extension DataHandler {
 
         await deleteInPast()
     }
+}
+
+@discardableResult
+func storeUserFileToDisk(data: Data, filename: String, path: [String]) throws -> URL {
+    guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
+        throw DataHandlerError.errorStoring
+    }
+
+    var iconDirectoryURL = containerURL
+    for path in path {
+        iconDirectoryURL = iconDirectoryURL.appendingPathComponent(path, isDirectory: true)
+    }
+
+    if !FileManager.default.fileExists(atPath: iconDirectoryURL.path) {
+        try FileManager.default.createDirectory(at: iconDirectoryURL, withIntermediateDirectories: true)
+    }
+
+    let iconFileURL = iconDirectoryURL.appendingPathComponent(filename)
+
+    // Write data atomically to prevent corruption
+    try data.write(to: iconFileURL, options: .atomic)
+    return iconFileURL
+}
+
+@discardableResult
+func storeIconToDisk(iconData: Data, hash: String) throws -> URL {
+    return try storeUserFileToDisk(data: iconData, filename: hash, path: ["roku-icons"])
+}
+
+@discardableResult
+func storeAttachmentToDisk(attachmentData: Data, hash: String, filename: String) throws -> URL {
+    return try storeUserFileToDisk(data: attachmentData, filename: filename, path: ["message-attachments", hash])
+}
+
+func loadAttachmentFromDisk(hash: String, filename: String) throws -> Data {
+    guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
+        throw DataHandlerError.errorStoring
+    }
+
+    let iconDirectoryURL = containerURL
+        .appendingPathComponent("message-attachments", isDirectory: true)
+        .appendingPathComponent(hash, isDirectory: true)
+
+    if !FileManager.default.fileExists(atPath: iconDirectoryURL.path) {
+        try FileManager.default.createDirectory(at: iconDirectoryURL, withIntermediateDirectories: true)
+    }
+
+    let iconFileURL = iconDirectoryURL.appendingPathComponent(filename)
+
+    return try Data(contentsOf: iconFileURL)
 }
 
 #if !WIDGET
@@ -933,7 +973,6 @@ extension DataHandler {
             sortBy: [SortDescriptor(\.id, order: .reverse)]
         )
         descriptor.fetchLimit = 1
-        descriptor.propertiesToFetch = [\.id]
 
         var lastMessage: Message?
         do {
@@ -959,7 +998,6 @@ extension DataHandler {
                 model.fetchedBackend == true
             }
         )
-        descriptor.propertiesToFetch = [\Message.id]
         descriptor.sortBy = [SortDescriptor(\Message.id, order: .reverse)]
         descriptor.fetchLimit = 1
         let latestMessageId = (try? await self.fetchSafer(descriptor))?.first?.id
@@ -986,14 +1024,13 @@ extension DataHandler {
         Log.data.notice("Getting sendable messages")
         let tenPast = Date.now - 10
         let distantPast = Date.distantPast
-        var descriptor = FetchDescriptor(
+        let descriptor = FetchDescriptor(
             predicate: #Predicate<Message> { model in
                 model.fetchedBackend == false && (
                     (model.lastSendAttempt ?? distantPast) < tenPast
                 )
             }
         )
-        descriptor.propertiesToFetch = [\.id, \.message, \.unsentAttachmentData, \.lastSendAttempt]
         let foundModels = try await self.fetchSafer(descriptor)
         for model in foundModels {
             model.lastSendAttempt = Date.now
@@ -1016,8 +1053,15 @@ extension DataHandler {
                 let messageResult = try await sendMessageDirect(message: message.message, attachment: message.unsentAttachment).get()
                 message.id = messageResult.id
                 message.lastSendAttempt = Date.distantFuture
-                message.cycleAttachments(messageResult.attachments?.map({ a in
-                    return Message.SentAttachment(id: a.id, data: a.data, filename: a.filename, mimetype: a.contentType)
+                message.cycleAttachments(messageResult.attachments?.compactMap({ a in
+                    let hash = fastHashData(data: a.data)
+                    do {
+                        try storeAttachmentToDisk(attachmentData: a.data, hash: hash, filename: a.filename)
+                    } catch {
+                        Log.backend.error("Error saving attachment to disk \(error, privacy: .public)")
+                        return nil
+                    }
+                    return Message.SentAttachment(id: a.id, dataHash: hash, dataSize: Int64(a.data.count), filename: a.filename, mimetype: a.contentType)
                 }) ?? [])
                 try await self.saveSafer()
             } catch {
@@ -1028,8 +1072,7 @@ extension DataHandler {
         }
     }
 
-    public func sendChatMessage(message: String, attachments: [AttachmentUpload] = []) async throws {
-        let firstAttachment = attachments.first
+    public func sendChatMessage(message: String, attachment: AttachmentUpload?) async throws {
         let nonce = String(Int64.random(in: 0..<Int64.max))
         let id = generateDiscordSnowflake(Date.now.addingTimeInterval(1))
         Log.backend.info("Inserting pending message to send queue: \(message, privacy: .public)")
@@ -1039,7 +1082,7 @@ extension DataHandler {
             author: .me,
             fetchedBackend: false,
             viewed: true,
-            unsentAttachment: firstAttachment,
+            unsentAttachment: attachment,
             nonce: nonce
         ))
         try await self.saveSafer()

@@ -2,7 +2,7 @@ import Foundation
 import os
 import SwiftData
 
-typealias Device = SchemaV4.Device
+typealias Device = SchemaV5.Device
 
 let globalMainDevicePredicate = #Predicate<Device> {
     $0.deletedAt == nil && $0.hiddenAt == nil
@@ -11,6 +11,20 @@ let globalMainDevicePredicate = #Predicate<Device> {
 extension Device: Identifiable {
     public var id: PersistentIdentifier {
         persistentModelID
+    }
+
+    public var iconURL: URL? {
+        guard let iconHash = deviceIconHash else { return nil }
+
+        // Get the group container directory
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
+            Log.data.error("Unable to get group container URL")
+            return nil
+        }
+
+        return containerURL
+            .appendingPathComponent("roku-icons", isDirectory: true)
+            .appendingPathComponent(iconHash)
     }
 }
 
@@ -32,19 +46,6 @@ public extension Device {
             return false
         }
         return Date().timeIntervalSince(lastOnlineAt) < 60
-    }
-
-    internal static func fetchAllRequest() -> FetchDescriptor<Device> {
-        var fd = FetchDescriptor<Device>(
-            predicate: #Predicate<Device> {
-                $0.deletedAt == nil
-            },
-            sortBy: [SortDescriptor<Device>(\Device.name)]
-        )
-        fd.relationshipKeyPathsForPrefetching = []
-        fd.propertiesToFetch = [\Device.udn, \Device.location, \Device.name, \Device.lastOnlineAt, \Device.lastSelectedAt, \Device.lastScannedAt]
-
-        return fd
     }
 }
 

@@ -239,8 +239,6 @@ extension NSApplication {
         @Published var networkMonitor: NetworkMonitor
         @Published var uuidUpdater: UUIDUpdater
 
-        private var cancellables: Set<AnyCancellable> = []
-
         override init() {
             self.navigationPath = NavigationManager()
             self.ecpMonitor = ECPMonitor()
@@ -361,7 +359,6 @@ extension NSApplication {
             }
 
             return true
-
         }
 
         func application(_ application: UIApplication, willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
@@ -377,13 +374,3 @@ extension NSApplication {
         }
     }
 #endif
-
-func initialInstallationAfter(_ version: String) -> Bool {
-    if let initialVersion = UserDefaults.standard.string(forKey: UserDefaultKeys.firstInstallVersion) {
-        let after = initialVersion > version
-        Log.lifecycle.notice("Getting install version after \(version, privacy: .public) after=\(after, privacy: .public)")
-        return after
-    } else {
-        return false
-    }
-}

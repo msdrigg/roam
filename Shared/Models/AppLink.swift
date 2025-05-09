@@ -2,22 +2,7 @@ import Foundation
 import os
 import SwiftData
 
-typealias AppLink = SchemaV4.AppLink
-
-extension AppLink {
-    internal static func fetchAllRequest() -> FetchDescriptor<AppLink> {
-        var fd = FetchDescriptor(
-            predicate: #Predicate<AppLink> { _ in
-                true
-            },
-            sortBy: [SortDescriptor(\AppLink.id)]
-        )
-        fd.relationshipKeyPathsForPrefetching = []
-        fd.propertiesToFetch = [\.id, \.type, \.name, \.lastSelected, \.deviceUid, \.icon]
-
-        return fd
-    }
-}
+typealias AppLink = SchemaV5.AppLink
 
 // Models shouldn't be sendable
 @available(*, unavailable)
@@ -25,10 +10,20 @@ extension AppLink: Sendable {}
 
 public extension AppLink {
     func toAppEntity() -> AppLinkAppEntity {
-        AppLinkAppEntity(name: name, id: id, type: type, modelId: persistentModelID)
+        AppLinkAppEntity(name: name, id: id, type: type, modelId: persistentModelID, iconHash: iconHash)
     }
 
-    func toAppEntityWithIcon() -> AppLinkAppEntity {
-        AppLinkAppEntity(name: name, id: id, type: type, modelId: persistentModelID, icon: icon)
+    var iconURL: URL? {
+        guard let iconHash else { return nil }
+
+        // Get the group container directory
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
+            Log.data.error("Unable to get group container URL")
+            return nil
+        }
+
+        return containerURL
+            .appendingPathComponent("roku-icons", isDirectory: true)
+            .appendingPathComponent(iconHash)
     }
 }

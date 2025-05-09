@@ -3,28 +3,17 @@ import SwiftData
 import CoreTransferable
 import UniformTypeIdentifiers
 
-public typealias Message = SchemaV4.Message
+public typealias Message = SchemaV5.Message
 
 extension Message {
     var timestamp: Date? {
         return parseDiscordSnowflake(self.id)
     }
 
-    func cycleAttachments(_ attachments: [SentAttachment]) {
+    func cycleAttachments(_ attachments: [Message.SentAttachment]) {
         let encoder = PropertyListEncoder()
-        self.attachmentsData = try? encoder.encode(attachments)
-        self.unsentAttachmentData = nil
-    }
-
-    internal static func fetchAllRequest() -> FetchDescriptor<Message> {
-        var fd = FetchDescriptor(
-            predicate: #Predicate<Message> { _ in
-                true
-            }
-        )
-        fd.relationshipKeyPathsForPrefetching = []
-
-        return fd
+        self.attachmentsDataV2 = try? encoder.encode(attachments)
+        self.unsentAttachmentDataV2 = nil
     }
 
     func triggerAction() {
@@ -33,7 +22,7 @@ extension Message {
             Task {
                 do {
                     let upload = try await DiagnosticsImport().load().get()
-                    try await DataHandler().sendChatMessage(message: ":ninja:", attachments: [upload])
+                    try await DataHandler().sendChatMessage(message: ":ninja:", attachment: upload)
                     Log.backend.notice("Sent attachment to share diagnostics \(String(describing: upload), privacy: .public)")
                 } catch {
                     Log.backend.warning("Error sending diagnostics on command-share: \(error, privacy: .public)")
@@ -88,10 +77,18 @@ extension Message {
             id: message.id,
             message: message.message,
             author: message.author,
-            attachments: message.attachments?.map({ attachment in
+            attachments: message.attachments?.compactMap({ attachment in
+                let hash = fastHashData(data: attachment.data)
+                do {
+                    try storeAttachmentToDisk(attachmentData: attachment.data, hash: hash, filename: attachment.filename)
+                } catch {
+                    Log.backend.error("Error saving attachment to disk \(error, privacy: .public)")
+                    return nil
+                }
                 return Message.SentAttachment(
                     id: attachment.id,
-                    data: attachment.data,
+                    dataHash: hash,
+                    dataSize: Int64(attachment.data.count),
                     filename: attachment.filename,
                     mimetype: attachment.contentType
                 )
@@ -100,66 +97,3 @@ extension Message {
     }
 }
 #endif
-
-public struct AttachmentUpload: Codable, Sendable, Hashable {
-    let filename: String
-    let data: Data
-    let contentType: String
-    let id: String
-
-    let pairedMessages: [String]
-
-    init(filename: String, data: Data, contentType: String, id: String, pairedMessages: [String] = []) {
-        self.filename = filename
-        self.data = data
-        self.contentType = contentType
-        self.pairedMessages = pairedMessages
-        self.id = id
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case filename = "filename"
-        case data = "data"
-        case contentType = "content_type"
-        case pairedMessages = "paired_messages"
-        case id = "id"
-    }
-
-    var description: String {
-        let type = utType
-
-        return [type.localizedDescription ?? "Document", bytesString].joined(separator: " · ")
-    }
-
-    var bytesString: String {
-        let style = ByteCountFormatStyle(
-            style: .file,
-            allowedUnits: [.kb, .mb],
-            spellsOutZero: true,
-            includesActualByteCount: false,
-            locale: Locale.current
-        )
-        return style.format(Int64(data.count))
-    }
-
-    private var filenameExtension: String {
-        (filename as NSString).pathExtension
-    }
-
-    var utType: UTType {
-        let rewrites = [
-            "application/pdf": UTType.pdf
-        ]
-        if let type = rewrites[self.contentType] {
-            return type
-        }
-        if let type = UTType(tag: self.contentType, tagClass: .mimeType, conformingTo: nil), type.isPublic {
-            return type
-        }
-        if let type = UTType(tag: self.filenameExtension, tagClass: .filenameExtension, conformingTo: nil), type.isPublic {
-            return type
-        }
-
-        return .data
-    }
-}

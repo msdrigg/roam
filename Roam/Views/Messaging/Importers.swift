@@ -3,31 +3,43 @@ import PhotosUI
 import SwiftUI
 
 struct DiagnosticsImport: PendingAttachment {
-    let utType: UTType = .json
-    let id: String
+    nonisolated let utType: UTType = .json
+    nonisolated let id: String
 
-    var filename: String {
+    nonisolated var filename: String {
         "Diagnostics.json"
     }
 
-    init() {
+    nonisolated init() {
         id = "diagnostics-\(UUID().uuidString)"
     }
 
-    func load() async -> Result<AttachmentUpload, AttachmentError> {
+    nonisolated func load() async -> Result<AttachmentUpload, AttachmentError> {
         let loggingAt = Date.now
         Log.userInteraction.notice("Starting to send logs \(loggingAt, privacy: .public)")
         let logs = await getDebugInfo()
         Log.userInteraction.notice("Sending logs \(logs.installationInfo.userId, privacy: .public)")
 
         if let data = trimmedDebugInfoIfNeeded(logs) {
-            return .success(AttachmentUpload(filename: self.filename, data: data, contentType: "application/json", id: self.id, pairedMessages: [Self.getDebugLogMessageString(logs)]))
+            let hash = fastHashData(data: data)
+            do {
+                try storeAttachmentToDisk(attachmentData: data, hash: hash, filename: self.filename)
+            } catch {
+                return .failure(.loadingFailed)
+            }
+            return .success(AttachmentUpload(
+                filename: self.filename,
+                dataHash: hash,
+                dataSize: Int64(data.count),
+                contentType: "application/json",
+                id: self.id, pairedMessages: [Self.getDebugLogMessageString(logs)]
+            ))
         } else {
             return .failure(.failedToEncode)
         }
     }
 
-    private static func getDebugLogMessageString(_ debugInfo: DebugInfo) -> String {
+    nonisolated private static func getDebugLogMessageString(_ debugInfo: DebugInfo) -> String {
         var message: String = ":ninja:\n\n"
 
         message += "### Installation Info\n\n"
@@ -112,27 +124,48 @@ struct PhotoImport: PendingAttachment {
 
 #if os(macOS)
             if let image = NSImage(data: data), let pngData = await image.compressedPNGData() {
+                let hash = fastHashData(data: pngData)
+                do {
+                    try storeAttachmentToDisk(attachmentData: pngData, hash: hash, filename: filename)
+                } catch {
+                    return .failure(.loadingFailed)
+                }
                 return .success(AttachmentUpload(
                     filename: filename,
-                    data: pngData,
+                    dataHash: hash,
+                    dataSize: Int64(pngData.count),
                     contentType: "image/png",
                     id: self.id
                 ))
             }
 #else
             if let image = UIImage(data: data), let pngData = await image.compressedPNGData() {
+                let hash = fastHashData(data: pngData)
+                do {
+                    try storeAttachmentToDisk(attachmentData: pngData, hash: hash, filename: filename)
+                } catch {
+                    return .failure(.loadingFailed)
+                }
                 return .success(AttachmentUpload(
                     filename: filename,
-                    data: pngData,
+                    dataHash: hash,
+                    dataSize: Int64(pngData.count),
                     contentType: "image/png",
                     id: self.id
                 ))
             }
 #endif
 
+            let hash = fastHashData(data: data)
+            do {
+                try storeAttachmentToDisk(attachmentData: data, hash: hash, filename: filename)
+            } catch {
+                return .failure(.loadingFailed)
+            }
             return .success(AttachmentUpload(
                 filename: filename,
-                data: data,
+                dataHash: hash,
+                dataSize: Int64(data.count),
                 contentType: utType.preferredMIMEType ?? "application/octet-stream",
                 id: self.id
             ))
@@ -174,7 +207,23 @@ struct ItemProviderAttachment: PendingAttachment {
                     return
                 }
 
-                continuation.resume(returning: .success(AttachmentUpload(filename: filename, data: data, contentType: utType.preferredMIMEType ?? "application/octet-stream", id: self.id)))
+                let hash = fastHashData(data: data)
+                do {
+                    try storeAttachmentToDisk(attachmentData: data, hash: hash, filename: filename)
+                } catch {
+                    continuation.resume(returning: Result.failure(AttachmentError.loadingFailed))
+                    return
+                }
+
+                continuation.resume(returning: .success(
+                    AttachmentUpload(
+                        filename: filename,
+                        dataHash: hash,
+                        dataSize: Int64(data.count),
+                        contentType: utType.preferredMIMEType ?? "application/octet-stream",
+                        id: self.id
+                    )
+                ))
             }
         }
     }
@@ -221,7 +270,20 @@ struct FileImport: PendingAttachment {
 
             let filename = url.lastPathComponent
 
-            return .success(AttachmentUpload(filename: filename, data: data, contentType: utType.preferredMIMEType ?? "application/octet-stream", id: self.id))
+            let hash = fastHashData(data: data)
+            do {
+                try storeAttachmentToDisk(attachmentData: data, hash: hash, filename: filename)
+            } catch {
+                return Result.failure(AttachmentError.loadingFailed)
+            }
+
+            return .success(AttachmentUpload(
+                filename: filename,
+                dataHash: hash,
+                dataSize: Int64(data.count),
+                contentType: utType.preferredMIMEType ?? "application/octet-stream",
+                id: self.id
+            ))
         } catch {
             return .failure(.loadingFailed)
         }

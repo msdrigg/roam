@@ -52,14 +52,14 @@ private func demandSharedModelContainer() -> ModelContainer {
         return try _getSharedModelContainer()
         #endif
     } catch {
-        loggedFatalError("Error getting shared model container \(error))")
+        loggedFatalError("Error getting shared model container \(error)")
     }
 }
 
 @MainActor
 private func _getSharedModelContainer() throws -> ModelContainer {
     let schema = Schema(
-        versionedSchema: SchemaV4.self
+        versionedSchema: SchemaV5.self
     )
 
     let modelConfiguration = ModelConfiguration(

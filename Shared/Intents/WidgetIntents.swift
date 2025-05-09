@@ -324,7 +324,11 @@ extension AppLinkAppEntity: AppEntity {
     }
 
     public var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(name)", image: (icon != nil) ? DisplayRepresentation.Image(data: icon!) : DisplayRepresentation.Image(systemName: "app.dashed"))
+        if let iconURL {
+            DisplayRepresentation(title: "\(name)", image: DisplayRepresentation.Image(url: iconURL))
+        } else {
+            DisplayRepresentation(title: "\(name)", image: DisplayRepresentation.Image(systemName: "app.dashed"))
+        }
     }
 }
 

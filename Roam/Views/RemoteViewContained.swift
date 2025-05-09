@@ -24,11 +24,6 @@ private func deviceFetchDescriptor() -> FetchDescriptor<Device> {
         sortBy: [SortDescriptor(\Device.name)]
     )
     fd.relationshipKeyPathsForPrefetching = []
-    fd.propertiesToFetch = [
-        \Device.udn, \Device.location, \Device.name,
-         \Device.lastOnlineAt, \Device.lastSelectedAt,
-         \Device.lastScannedAt
-    ]
 
     return fd
 }
@@ -260,6 +255,7 @@ struct RemoteViewContained: View {
                     if loadTestingData() {
                         // swiftlint:disable:next force_try
                         try! await DataHandler().loadTestData()
+                        // try! await DataHandler().loadLoadTestData()
                     } else if usingTestingDataContainer() {
                         // swiftlint:disable:next force_try
                         try! await DataHandler().clearData()

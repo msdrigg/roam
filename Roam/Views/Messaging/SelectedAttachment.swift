@@ -136,7 +136,8 @@ struct AttachmentView: View {
     init(attachment: AttachmentUpload, message: Message? = nil) {
         let upload = AttachmentUpload(
             filename: attachment.filename,
-            data: attachment.data,
+            dataHash: attachment.dataHash,
+            dataSize: attachment.dataSize,
             contentType: attachment.contentType,
             id: attachment.id
         )
@@ -153,7 +154,8 @@ struct AttachmentView: View {
     init(attachment: Message.SentAttachment, message: Message? = nil) {
         let upload = AttachmentUpload(
             filename: attachment.filename,
-            data: attachment.data,
+            dataHash: attachment.dataHash,
+            dataSize: attachment.dataSize,
             contentType: attachment.mimetype,
             id: attachment.id
         )
@@ -177,31 +179,20 @@ struct AttachmentView: View {
         }
     }
 
-    var loadedData: Data? {
-        if attachment.loading || attachment.failure != nil {
-             return nil
-        }
-        return attachment.attachment?.data
-    }
-
     var body: some View {
         if let attachmentDocument = attachment.attachment {
             bodyContent
 #if !os(watchOS)
 #if !os(macOS)
-                .contentShape([.contextMenuPreview, .dragPreview], RoundedRectangle(cornerRadius: 15))
+                .contentShape([.contextMenuPreview, .dragPreview, .interaction], RoundedRectangle(cornerRadius: 15))
+#else
+                .contentShape([.dragPreview, .interaction], RoundedRectangle(cornerRadius: 15))
 #endif
-#if !os(visionOS)
                 .onTapGesture {
-                    do {
-                        previewUrl = try attachmentDocument.writeToTemporaryFile()
-                        Log.userInteraction.notice("Wrote url to preview url")
-                    } catch {
-                        Log.userInteraction.notice("Error writing attachment to temp file \(error, privacy: .public)")
-                    }
+                    Log.userInteraction.notice("Clicking on document with path \(attachmentDocument.dataURL?.absoluteString ?? "--", privacy: .public)")
+                    previewUrl = attachmentDocument.dataURL
                 }
                 .quickLookPreview($previewUrl)
-#endif
                 .contextMenu {
                     Button(action: {
                         isExporting = true
@@ -210,7 +201,7 @@ struct AttachmentView: View {
                         Label(String(localized: "Save to files", comment: "Label on a button to download an attachment"), systemImage: "square.and.arrow.down")
                     })
 #if !os(macOS)
-                    if let data = attachment.attachment?.data, let image = UIImage(data: data) {
+                    if let dataUrl = attachment.attachment?.dataURL, let data = try? Data(contentsOf: dataUrl), let image = UIImage(data: data) {
                         Button(action: {
                             Log.userInteraction.notice("Attempting to save to photos \(attachmentDocument.filename, privacy: .public) with type utType \(attachmentDocument.utType, privacy: .public)")
                             UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
@@ -228,9 +219,9 @@ struct AttachmentView: View {
                 ) { result in
                     switch result {
                     case .success(let url):
-                        print("File saved to: \(url)")
+                        Log.data.notice("File saved to: \(url)")
                     case .failure(let error):
-                        print("Error saving file: \(error.localizedDescription)")
+                        Log.data.error("Error saving file: \(error.localizedDescription)")
                     }
                 }
 #endif
@@ -242,9 +233,10 @@ struct AttachmentView: View {
     @ViewBuilder
     var bodyContent: some View {
         HStack {
-            DataImageInset(data: loadedData, fallback: {
+            DataImageInset(url: attachment.attachment?.dataURL, fallback: {
                 HStack {
-                    DataImage(from: attachment.attachment?.data, fallback: attachment.loading ? "rays" : documentImage)
+                    FallibleImage(from: attachment.attachment?.dataURL, fallback: attachment.loading ? "rays" : documentImage)
+                        .font(.body)
                         .symbolEffect(.variableColor, isActive: attachment.loading)
 #if os(macOS)
                         .padding(.vertical, 12)
@@ -260,7 +252,7 @@ struct AttachmentView: View {
                 }
                 .padding(.vertical, 8)
                 .padding(.horizontal, 12)
-                .frame(minWidth: 140)
+                .allowsHitTesting(false)
                 .overlay(alignment: .bottomTrailing) {
                     if let message {
                         MessageMetadataOverlay(message: message)
@@ -272,7 +264,7 @@ struct AttachmentView: View {
                 TimeOverlayModifier(message: message)
             })
         }
-        .frame(maxHeight: 100)
+        .allowsHitTesting(true)
         .clipShape(RoundedRectangle(cornerRadius: 15))
     }
 }
@@ -344,7 +336,7 @@ struct AttachmentRow: View {
                         )
                     }
                 }
-                .frame(maxHeight: gridSize)
+                .frame(height: gridSize)
                 .padding(.horizontal, 8)
                 .padding(.bottom, 12)
                 .padding(.top, 16)
@@ -355,46 +347,41 @@ struct AttachmentRow: View {
 }
 
 struct DataImageInset<Fallback, IM>: View  where Fallback: View, IM: ViewModifier {
-    let data: Data?
+    let path: URL?
     let fallback: () -> Fallback
     let imageModifier: () -> IM
 
-    init(data: Data?, @ViewBuilder fallback: @escaping () -> Fallback, imageModifier: @escaping () -> IM) {
-        self.data = data
+    init(url: URL?, @ViewBuilder fallback: @escaping () -> Fallback, imageModifier: @escaping () -> IM) {
+        self.path = url
         self.imageModifier = imageModifier
         self.fallback = fallback
     }
 
-    var image: Image? {
-        if let data {
-#if os(macOS)
-            if let nsImage = NSImage(data: data) {
-                return Image(nsImage: nsImage)
-            } else {
-                return nil
-            }
-#else
-            if let uiImage = UIImage(data: data) {
-                return Image(uiImage: uiImage)
-            } else {
-                return nil
-            }
-#endif
-        } else {
-            return nil
-        }
-    }
-
     @ViewBuilder
     var body: some View {
-        if let image {
-            image
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .background(
-                    Color.white
-                )
-                .modifier(imageModifier())
+        if let path {
+            CachedAsyncImage(path: path) { phase in
+                switch phase {
+                case .loading:
+                    Image(systemName: "rays")
+                        .enableResize()
+                        .labelStyle(.iconOnly)
+                        .symbolEffect(.variableColor)
+                        .font(.body)
+                        .modifier(imageModifier())
+//                    fallback()
+                case .empty, .failure:
+                    fallback()
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .background(
+                            Color.white
+                        )
+                        .modifier(imageModifier())
+                }
+            }
         } else {
             fallback()
         }
@@ -402,36 +389,63 @@ struct DataImageInset<Fallback, IM>: View  where Fallback: View, IM: ViewModifie
 }
 
 #if DEBUG
+import CryptoKit
+
+func prepareAttachmentData(data: Data, filename: String) -> (hash: String, size: Int64) {
+    let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+    try? data.write(to: fileURL)
+
+    let hash = SHA256.hash(data: data).compactMap { String(format: "%02x", $0) }.joined()
+    let size = Int64(data.count)
+
+    return (hash: hash, size: size)
+}
+
+func attachmentUploadPreview(filename: String, data: Data, contentType: String, id: String) -> AttachmentUpload {
+    let (hash, size) = prepareAttachmentData(data: data, filename: filename)
+
+    return AttachmentUpload(
+        filename: "a1", dataHash: hash, dataSize: size,
+        contentType: "image/png", id: UUID().uuidString
+    )
+}
+
 @MainActor
 let previewAttachments = [
+    SelectedAttachment(
+        attachment: attachmentUploadPreview(
+            filename: "a1", data: Data(fromAssetImage: "Netflix")!,
+            contentType: "image/png", id: UUID().uuidString
+        ),
+        name: "a1", type: .png, failure: nil, loading: false
+    ),
     SelectedAttachment(
         attachment: nil, name: "a6", type: .pdf,
         failure: "Image too large (10mb max)", loading: false
     ),
     SelectedAttachment(
-        attachment:
-            AttachmentUpload(
-                filename: "a1.png", data: Data(fromAssetImage: "Netflix")!,
-                contentType: "image/png", id: UUID().uuidString
-            ),
+        attachment: attachmentUploadPreview(
+            filename: "a1.png", data: Data(fromAssetImage: "Netflix")!,
+            contentType: "image/png", id: UUID().uuidString
+        ),
         name: "a1.png", type: .png, failure: nil, loading: false
     ),
     SelectedAttachment(
-        attachment: AttachmentUpload(
+        attachment: attachmentUploadPreview(
             filename: "a2.png", data: Data(fromAssetImage: "Hulu")!,
             contentType: "image/png", id: UUID().uuidString
         ),
         name: "a2.png", type: .png, failure: nil, loading: false
     ),
     SelectedAttachment(
-        attachment: AttachmentUpload(
+        attachment: attachmentUploadPreview(
             filename: "a3", data: Data(fromAssetImage: "Hulu")!,
             contentType: "image/png", id: UUID().uuidString
         ),
         name: "a3", type: .png, failure: nil, loading: false
     ),
     SelectedAttachment(
-        attachment: AttachmentUpload(
+        attachment: attachmentUploadPreview(
             filename: "a4", data: Data(hexString: "001223")!,
             contentType: "image/png", id: UUID().uuidString
         ),
@@ -446,13 +460,7 @@ let previewAttachments = [
 
 #Preview("Attachment") {
     AttachmentPreviewView(
-        attachment: SelectedAttachment(
-            attachment: AttachmentUpload(
-                filename: "a1", data: Data(fromAssetImage: "Netflix")!,
-                contentType: "image/png", id: UUID().uuidString
-            ),
-            name: "a1", type: .png, failure: nil, loading: false
-        ),
+        attachment: previewAttachments[0],
         delete: {},
         scrollToSelf: {}
     )

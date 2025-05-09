@@ -26,7 +26,7 @@ import WidgetKit
         DeviceChoiceTimelineEntity(
             date: Date.now,
             device: getTestingDevices()[0].toAppEntity(),
-            apps: getTestingAppLinks().map { $0.toAppEntityWithIcon() }
+            apps: getTestingAppLinks().map { $0.toAppEntity() }
         )
         DeviceChoiceTimelineEntity(
             date: Date.now,
@@ -64,7 +64,7 @@ import WidgetKit
         DeviceChoiceTimelineEntity(
             date: Date.now,
             device: getTestingDevices()[0].toAppEntity(),
-            apps: Array(getTestingAppLinks().map { $0.toAppEntityWithIcon() }.prefix(2))
+            apps: Array(getTestingAppLinks().map { $0.toAppEntity() }.prefix(2))
         )
         DeviceChoiceTimelineEntity(
             date: Date.now,

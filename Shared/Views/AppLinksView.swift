@@ -36,7 +36,7 @@ struct AppLinksView: View {
     var appIdsIconsHashed: Int {
         var appLinkPairs: Set<String> = Set()
         for appLink in appLinks {
-            appLinkPairs.insert("\(appLink.id);\(appLink.icon != nil)")
+            appLinkPairs.insert("\(appLink.id);\(appLink.iconHash ?? "--")")
         }
 
         var hasher = Hasher()
@@ -56,7 +56,6 @@ struct AppLinksView: View {
                 $0.deviceUid == deviceId
             },
             sort: [
-                SortDescriptor<AppLink>(\.lastSelected, order: .reverse),
                 SortDescriptor<AppLink>(\.deviceSortOrder, order: .forward),
                 SortDescriptor<AppLink>(\.id)
             ],
@@ -116,7 +115,8 @@ struct AppLinksView: View {
 
                     cachedAppLinks = Array(appLinksUnique.values)
                 }
-            }    }
+            }
+    }
 }
 
 struct AppLinkButton: View {
@@ -130,7 +130,7 @@ struct AppLinkButton: View {
             action(app.toAppEntity())
         }, label: {
             VStack {
-                DataImage(from: app.icon, fallback: "questionmark.app.fill")
+                FallibleImage(from: app.iconURL, fallback: "questionmark.app.fill")
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .frame(width: gridWidth)
                     .shadow(radius: 4)

@@ -156,6 +156,7 @@ func getDebugInfo() async -> DebugInfo {
     } catch {
         debugErrors.append("Error Getting Log Entries: \n\(error)")
     }
+    Log.backend.info("Got \(entries.count) log entries")
 
     var devices: [DeviceAppEntity] = []
     do {
@@ -229,7 +230,7 @@ func getDebugInfo() async -> DebugInfo {
     )
 }
 
-private func getLogEntries(limit: Int = 500000) throws -> [LogEntry] {
+func getLogEntries(limit: Int = 500000) throws -> [LogEntry] {
     let logStore = try OSLogStore(scope: .currentProcessIdentifier)
     let date = Date.now.addingTimeInterval(2)
     let position = logStore.position(date: date)

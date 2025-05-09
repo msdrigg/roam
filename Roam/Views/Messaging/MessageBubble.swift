@@ -92,6 +92,7 @@ struct MessageBubble: View {
                 MessageFraming(message: message) {
                     AttachmentView(attachment: attachment, message: message)
                         .background(color)
+                        .frame(height: 120)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -100,6 +101,7 @@ struct MessageBubble: View {
                 MessageFraming(message: message) {
                     AttachmentView(attachment: attachment, message: message)
                         .background(color)
+                        .frame(height: 120)
                }
             }
         }
@@ -342,7 +344,8 @@ func getAttachmentMessage() -> Message {
         author: .me,
         attachments: [Message.SentAttachment(
             id: "hi",
-            data: Data(),
+            dataHash: "nil",
+            dataSize: 0,
             filename: "diagnostics.json",
             mimetype: "application/json"
         )]

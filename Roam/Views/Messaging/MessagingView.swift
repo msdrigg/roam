@@ -395,8 +395,8 @@ struct MessageView: View {
                 DispatchQueue.main.async {
                     self.attachedFiles = self.attachedFiles.map { file in
                         if file.id == attachment.id {
-                            if result.data.count > 1000000 * 10 - 2000 {
-                                let error = AttachmentError.fileTooLarge(result.data.count)
+                            if result.dataSize > 1000000 * 10 - 2000 {
+                                let error = AttachmentError.fileTooLarge(Int(result.dataSize))
                                 Log.userInteraction.warning("Error, unable to load attachment \(attachment.filename, privacy: .public): Too large \(error)")
                                 return file.withAttachment(result).withError(error)
                             } else {
@@ -429,15 +429,15 @@ struct MessageView: View {
         }
     }
 
-    private func sendMessageText(messageText: String, attachments: [AttachmentUpload] = []) {
+    private func sendMessageText(messageText: String, attachment: AttachmentUpload? = nil) {
         let messageCopy = messageText
-        if messageCopy.isEmpty && attachments.isEmpty {
+        if messageCopy.isEmpty && attachment == nil {
             return
         }
-        Log.userInteraction.notice("Sending message \"\(messageText, privacy: .public)\" -- \(attachments.count, privacy: .public) attachments")
+        Log.userInteraction.notice("Sending message \"\(messageText, privacy: .public)\" with attachment \(attachment?.filename ?? "--", privacy: .public) attachments")
         Task {
             do {
-                try await DataHandler().sendChatMessage(message: messageCopy, attachments: attachments)
+                try await DataHandler().sendChatMessage(message: messageCopy, attachment: attachment)
 
                 Task {
                     let result = await DataHandler().refreshMessages(
@@ -462,52 +462,16 @@ struct MessageView: View {
             wrongAttemptsTracker.attempts += 1
             return
         }
-        self.sendMessageText(messageText: messageFieldText, attachments: attachedFiles.compactMap(\.attachment))
+        let firstAttachment = attachedFiles.first?.attachment
+        self.sendMessageText(messageText: messageFieldText, attachment: firstAttachment)
+        for attachment in attachedFiles.dropFirst() {
+            self.sendMessageText(messageText: "", attachment: attachment.attachment)
+        }
         self.messageFieldText = ""
         self.attachedFiles = []
         self.lastSelfTypingTime = Date.distantPast
     }
 }
-
-#if os(visionOS)
-import SwiftUI
-
-struct PaddedRoundedTextFieldStyle: TextFieldStyle {
-    // swiftlint:disable:next identifier_name
-    func _body(configuration: TextField<Self._Label>) -> some View {
-        configuration
-            .padding(.vertical, 10)
-            .padding(.horizontal, 12)
-            .foregroundColor(.secondary)
-            .allowsHitTesting(true)
-            .hoverEffectDisabled()
-            .background(
-                Rectangle()
-                    .fill(Color(.systemGray6).opacity(0.5))
-                    .shadow(color: Color.black.opacity(0.1), radius: 1, x: 0, y: 1)
-                    .shadow(color: Color.white.opacity(0.3), radius: 2, x: 0, y: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .contentShape(RoundedRectangle(cornerRadius: 10))
-            .focusable()
-            .hoverEffect(.highlight)
-    }
-}
-
-#if DEBUG
-#Preview(
-    "Padded Rounded Style",
-    traits: .fixedLayout(width: 400, height: 300)
-) {
-    TextField("Test textfield", text: Binding(
-        get: {"hi dude"},
-        set: {_ in }
-    ))
-        .textFieldStyle(PaddedRoundedTextFieldStyle())
-        .padding()
-}
-#endif
-#endif
 
 #if DEBUG
 #Preview(

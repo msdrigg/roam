@@ -184,7 +184,7 @@ struct DevicePickerLabelStyle: LabelStyle {
             configuration.title
                 .font(.body)
                 .padding(.trailing, 4)
-            #if !os(macOS)
+            #if !os(macOS) && !os(visionOS)
                 .foregroundColor(.accentColor)
             #else
                 .foregroundColor(.primary)

@@ -23,17 +23,19 @@ struct AttachButton: View {
         })
         .buttonStyle(.plain)
         .sheet(isPresented: $showingSheet) {
-            List {
-                Button(action: {
-                    handleAttachment(DiagnosticsImport())
-                    diagnosticsPressCounter += 1
-                    showingSheet = false
-                }, label: {
-                    Label(String(localized: "Attach Diagnostics", comment: "Label on a button"), systemImage: "latch.2.case")
-                })
-                .symbolEffect(.bounce, value: diagnosticsPressCounter)
-                .sensoryFeedback(.impact, trigger: diagnosticsPressCounter)
-                .labelStyle(.titleAndIcon)
+            NavigationStack {
+                List {
+                    Button(action: {
+                        handleAttachment(DiagnosticsImport())
+                        diagnosticsPressCounter += 1
+                        showingSheet = false
+                    }, label: {
+                        Label(String(localized: "Attach Diagnostics", comment: "Label on a button"), systemImage: "latch.2.case")
+                    })
+                    .symbolEffect(.bounce, value: diagnosticsPressCounter)
+                    .sensoryFeedback(.impact, trigger: diagnosticsPressCounter)
+                    .labelStyle(.titleAndIcon)
+                }
             }
         }
     }

@@ -29,12 +29,6 @@ struct DeviceDetailView: View {
         descriptor.sortBy = [
             SortDescriptor(\Device.lastSelectedAt, order: .reverse)
         ]
-        descriptor.propertiesToFetch = [
-            \Device.udn, \Device.location, \Device.lastOnlineAt, \Device.lastSelectedAt,
-             \Device.name, \Device.deletedAt, \.hiddenAt, \Device.lastSentToWatch, \Device.lastScannedAt,
-             \Device.ethernetMAC, \Device.rtcpPort, \Device.supportsDatagram, \Device.wifiMAC,
-             \Device.networkType, \Device.powerMode
-        ]
 
         _selectedDevices = Query(
             descriptor
@@ -113,7 +107,7 @@ struct DeviceDetailView: View {
             }, footer: {
                 VStack {
                     HStack(alignment: .center) {
-                        DataImage(from: device?.deviceIcon, fallback: "tv")
+                        FallibleImage(from: device?.iconURL, fallback: "tv")
 #if os(macOS)
                             .frame(maxHeight: 45)
 #else

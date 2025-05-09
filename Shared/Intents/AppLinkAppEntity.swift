@@ -9,14 +9,28 @@ public struct AppLinkAppEntity: Identifiable, Equatable, Hashable, Codable, Send
     public var id: String
     public var type: String
     public var modelId: PersistentIdentifier?
-    public var icon: Data?
+    public var iconHash: String?
 
-    init(name: String, id: String, type: String, modelId: PersistentIdentifier? = nil, icon: Data? = nil) {
+    init(name: String, id: String, type: String, modelId: PersistentIdentifier? = nil, iconHash: String? = nil) {
         self.name = name
         self.id = id
         self.type = type
         self.modelId = modelId
-        self.icon = icon
+        self.iconHash = iconHash
+    }
+
+    public var iconURL: URL? {
+        guard let iconHash else { return nil }
+
+        // Get the group container directory
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
+            Log.data.error("Unable to get group container URL")
+            return nil
+        }
+
+        return containerURL
+            .appendingPathComponent("roku-icons", isDirectory: true)
+            .appendingPathComponent(iconHash)
     }
 
     public func encode(to encoder: any Encoder) throws {

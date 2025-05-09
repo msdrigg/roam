@@ -37,7 +37,7 @@ public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING
     public func getTestingContainer() -> ModelContainer {
         do {
             let schema = Schema(
-                versionedSchema: SchemaV4.self
+                versionedSchema: SchemaV5.self
             )
             let modelConfiguration = ModelConfiguration(
                 schema: schema,
@@ -53,14 +53,14 @@ public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING
 
             return container
         } catch {
-            loggedFatalError("Failed to create container with error: \(error.localizedDescription)")
+            loggedFatalError("Failed to create container with error: \(error)")
         }
     }
 
     @MainActor
     public let previewContainer: ModelContainer = {
         do {
-            let schema = Schema(versionedSchema: SchemaV4.self)
+            let schema = Schema(versionedSchema: SchemaV5.self)
             let container = try ModelContainer(
                 for: schema,
                 migrationPlan: RoamSchemaMigrationPlan.self,
@@ -90,7 +90,7 @@ public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING
             }
             return container
         } catch {
-            loggedFatalError("Failed to create container with error: \(error.localizedDescription)")
+            loggedFatalError("Failed to create container with error: \(error)")
         }
     }()
 
@@ -111,7 +111,13 @@ public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING
         for (idx, name) in appNames.enumerated() {
             let imageName = name
             let pngData = Data(fromAssetImage: imageName)
-            let link = AppLink(id: String(idx), type: "appl", name: name, icon: pngData, deviceUid: deviceUid)
+            let pngDataHash: String? = if let pngData { fastHashData(data: pngData) } else { nil }
+            if let pngData, let pngDataHash {
+                Task {
+                    try? storeIconToDisk(iconData: pngData, hash: pngDataHash)
+                }
+            }
+            let link = AppLink(id: String(idx), type: "appl", name: name, iconHash: pngDataHash, deviceUid: deviceUid)
             link.lastSelected = Date().addingTimeInterval(-Double(idx))
             links.append(link)
         }
@@ -154,12 +160,18 @@ public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING
                 appCount += 1
                 let imageName = "\(j)"
                 let pngData = Data(fromAssetImage: imageName)
+                let pngDataHash: String? = if let pngData { fastHashData(data: pngData) } else { nil }
+                if let pngData, let pngDataHash {
+                    Task {
+                        try? storeIconToDisk(iconData: pngData, hash: pngDataHash)
+                    }
+                }
 
                 apps.append(AppLink(
                     id: "app.id.\(j)",
                     type: "appl",
                     name: "App \(j)",
-                    icon: pngData,
+                    iconHash: pngDataHash,
                     deviceUid: device.udn
                 ))
             }

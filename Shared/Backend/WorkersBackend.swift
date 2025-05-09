@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import CoreTransferable
 import OSLog
 import SwiftData
 import UniformTypeIdentifiers
@@ -46,7 +45,7 @@ private extension UserDefaultInfo {
     }
 }
 
-public struct AttachmentDownload: Decodable, Sendable {
+public struct WorkersAttachmentDownload: Decodable, Sendable {
     let filename: String
     let data: Data
     let contentType: String
@@ -60,42 +59,20 @@ public struct AttachmentDownload: Decodable, Sendable {
     }
 }
 
-#if !os(watchOS)
-extension AttachmentUpload: FileDocument {
-    public init(configuration: ReadConfiguration) throws {
-        guard let fileData = configuration.file.regularFileContents else {
-            throw CocoaError(.fileReadCorruptFile)
-        }
+public struct WorkersAttachmentUpload: Encodable, Sendable {
+    let filename: String
+    let data: Data
+    let contentType: String
+    let id: String
 
-        self.filename = "Unknown" // No way to get filename from FileDocument
-        self.data = fileData
-        self.contentType = configuration.contentType.preferredMIMEType ?? "application/octet-stream"
-        self.id = UUID().uuidString
-        self.pairedMessages = []
-    }
-    public static let readableContentTypes: [UTType] = [.data, .pdf, .png, .image, .jpeg, .json, .text, .movie, .archive]
+    let pairedMessages: [String]
 
-    public func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        FileWrapper(regularFileWithContents: data)
-    }
-}
-#endif
-
-extension AttachmentUpload: Transferable {
-    // MARK: - Transferable Conformance
-    public typealias Representation = FileRepresentation<AttachmentUpload>
-    static public var transferRepresentation: FileRepresentation<AttachmentUpload> {
-        FileRepresentation(exportedContentType: UTType.data, shouldAllowToOpenInPlace: true) { (attachment: AttachmentUpload) in
-            SentTransferredFile(try attachment.writeToTemporaryFile())
-        }
-    }
-}
-
-extension AttachmentUpload {
-    func writeToTemporaryFile() throws -> URL {
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
-        try data.write(to: tempURL)
-        return tempURL
+    enum CodingKeys: String, CodingKey {
+        case filename = "filename"
+        case data = "data"
+        case contentType = "content_type"
+        case pairedMessages = "paired_messages"
+        case id = "id"
     }
 }
 
@@ -109,7 +86,7 @@ struct MessageRequest: Encodable, Sendable {
     let content: String
     let userId: String
     let installationInfo: InstallationInfo
-    let attachment: AttachmentUpload?
+    let attachment: WorkersAttachmentUpload?
     let nonce: String?
 }
 
@@ -118,7 +95,7 @@ public struct MessageModelResponse: Decodable, Sendable {
     let message: String
     let author: Message.AuthorType
     let nonce: String?
-    let attachments: [AttachmentDownload]?
+    let attachments: [WorkersAttachmentDownload]?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -137,8 +114,8 @@ public struct MessageModelResponse: Decodable, Sendable {
         let id = try authorInfo.decode(String.self, forKey: .id)
         author = id == "1229219148228460595" ? .me : .support
 
-        let attachmentsData: [AttachmentDownload]?
-        if let attachmentsArray = try container.decodeIfPresent([AttachmentDownload].self, forKey: .attachments) {
+        let attachmentsData: [WorkersAttachmentDownload]?
+        if let attachmentsArray = try container.decodeIfPresent([WorkersAttachmentDownload].self, forKey: .attachments) {
             attachmentsData = attachmentsArray
         } else {
             attachmentsData = nil
@@ -314,11 +291,27 @@ public func sendMessageDirect(message: String?, attachment: AttachmentUpload?) a
     request.addValue(getAPIKey() ?? "", forHTTPHeaderField: "x-api-key")
     request.addValue("application/json", forHTTPHeaderField: "Content-Type")
 
+    var workersAttachment: WorkersAttachmentUpload?
+    do {
+        if let attachment {
+            let data = try loadAttachmentFromDisk(hash: attachment.dataHash, filename: attachment.filename)
+            workersAttachment = WorkersAttachmentUpload(
+                filename: attachment.filename,
+                data: data,
+                contentType: attachment.contentType,
+                id: attachment.id,
+                pairedMessages: attachment.pairedMessages
+            )
+        }
+    } catch {
+        Log.backend.error("Error loading attachment from disk: \(error, privacy: .public)")
+    }
+
     let messageRequest = MessageRequest(
         content: message ?? "",
         userId: userId,
         installationInfo: InstallationInfo(),
-        attachment: attachment,
+        attachment: workersAttachment,
         nonce: nil
     )
     let encoder = JSONEncoder()

@@ -71,7 +71,6 @@ import UIKit
         guard self.taskID != .invalid else { return }
         let task = self.taskID
         self.taskID = .invalid
-        self.systemDidReleaseAssertion = nil
         DispatchQueue.main.async {
             UIApplication.shared.endBackgroundTask(task)
         }

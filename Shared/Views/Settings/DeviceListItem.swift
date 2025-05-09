@@ -10,7 +10,7 @@ struct DeviceListItem: View {
         NavigationLink(value: NavigationDestination.deviceSettingsDestination(device.persistentModelID)) {
             HStack(alignment: .center) {
                 VStack(alignment: .center) {
-                    DataImage(from: device.deviceIcon, fallback: "tv")
+                    FallibleImage(from: device.iconURL, fallback: "tv")
                         .frame(maxHeight: 60)
                         .padding(.trailing, 12)
                 }

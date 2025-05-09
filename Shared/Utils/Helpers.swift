@@ -5,6 +5,7 @@ import Foundation
 import CoreGraphics
 import ImageIO
 import UniformTypeIdentifiers
+import CryptoKit
 
 extension String {
     func stripPrefix(_ prefix: String) -> String {
@@ -612,16 +613,49 @@ func getNotificationSettings() {
             return
         }
         DispatchQueue.main.async {
-            Log.notifications.notice("Registering for remote notifications")
             #if os(macOS)
+                Log.notifications.notice("Registering for remote notifications")
                 NSApplication.shared.registerForRemoteNotifications()
-            #elseif !os(watchOS)
+            #elseif os(watchOS)
+                Log.notifications.notice("Registering for remote notifications")
+                WKApplication.shared().registerForRemoteNotifications()
+            #else
+                Log.notifications.notice("Registering for remote notifications")
                 UIApplication.shared.registerForRemoteNotifications()
             #endif
         }
     }
 }
 #endif
+
+public func sendBackendError(_ message: String, file: StaticString = #file, line: UInt = #line) async {
+    let sendingMessage = ":ninja:\nFatal error logged: \(message)\n\nFile: \(file)\nLine: \(line)\n\nThis is likely a bug in the app."
+
+    do {
+        _ = try await sendMessageDirect(message: sendingMessage, attachment: nil).get()
+
+        #if !CLI && !TEST && !WIDGET
+        do {
+            Log.backend.notice("Getting diagnostics to export")
+            let entries = try getLogEntries()
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let codedEntries: Data = try encoder.encode(entries)
+            let hash = fastHashData(data: codedEntries)
+            try storeAttachmentToDisk(attachmentData: codedEntries, hash: hash, filename: "log-entries.json")
+            let upload = AttachmentUpload(filename: "LogEntries.json", dataHash: "scare-upload", dataSize: Int64(codedEntries.count), contentType: "application/json", id: UUID().uuidString)
+            _ = try await sendMessageDirect(message: ":ninja:", attachment: upload).get()
+            Log.backend.notice("Sent attachment to share diagnostics \(String(describing: upload), privacy: .public)")
+        } catch {
+            Log.backend.warning("Error sending diagnostics on command-share: \(error, privacy: .public)")
+            _ = try await sendMessageDirect(message: ":ninja:\nError sending diagnostics on command-share\n\(error)", attachment: nil).get()
+        }
+        #endif
+    } catch {
+        Log.lifecycle.warning("Error sending fatal log to backend: \(error, privacy: .public)")
+    }
+}
 
 public func loggedFatalError(_ message: @autoclosure () -> String = String(), file: StaticString = #file, line: UInt = #line) -> Never {
     let message = message()
@@ -633,19 +667,13 @@ public func loggedFatalError(_ message: @autoclosure () -> String = String(), fi
     var didComplete = false
 
     Task {
-        let sendingMessage = ":ninja:\nFatal error logged: \(message)\n\nFile: \(file)\nLine: \(line)\n\nThis is likely a bug in the app."
-
-        do {
-            _ = try await sendMessageDirect(message: sendingMessage, attachment: nil).get()
-        } catch {
-            Log.lifecycle.warning("Error sending fatal log to backend: \(error, privacy: .public)")
-        }
+        await sendBackendError(message, file: file, line: line)
 
         didComplete = true
         group.leave()
     }
 
-    _ = group.wait(timeout: .now() + 5.0)
+    _ = group.wait(timeout: .now() + 15.0)
 
     if didComplete {
         Log.lifecycle.warning("Error logged to backend before fatal error: \(message, privacy: .public)")
@@ -655,4 +683,19 @@ public func loggedFatalError(_ message: @autoclosure () -> String = String(), fi
 #endif
 
     fatalError(message, file: file, line: line)
+}
+
+func fastHashData(data: Data) -> String {
+    let hash = SHA256.hash(data: data)
+    return hash.compactMap { String(format: "%02x", $0) }.joined()
+}
+
+func initialInstallationAfter(_ version: String) -> Bool {
+    if let initialVersion = UserDefaults.standard.string(forKey: UserDefaultKeys.firstInstallVersion) {
+        let after = initialVersion > version
+        Log.lifecycle.notice("Getting install version after \(version, privacy: .public) after=\(after, privacy: .public)")
+        return after
+    } else {
+        return false
+    }
 }

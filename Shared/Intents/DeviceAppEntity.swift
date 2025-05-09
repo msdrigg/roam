@@ -48,14 +48,18 @@ public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Enc
 
     public var rtcpPort: UInt16?
     public var supportsDatagram: Bool?
-    public var icon: Data?
+    public var iconHash: String?
 
     public var id: String {
         udn
     }
 
     public var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(name)", image: (icon != nil) ? DisplayRepresentation.Image(data: icon!) : DisplayRepresentation.Image(systemName: "tv"))
+        if let iconURL {
+            DisplayRepresentation(title: "\(name)", image: DisplayRepresentation.Image(url: iconURL))
+        } else {
+            DisplayRepresentation(title: "\(name)", image: DisplayRepresentation.Image(systemName: "app.dashed"))
+        }
     }
 
     func macs() -> [String] {
@@ -75,7 +79,7 @@ public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Enc
         lastScannedAt = device.lastScannedAt
         deletedAt = device.deletedAt
         hiddenAt = device.hiddenAt
-        icon = device.deviceIcon
+        iconHash = device.deviceIconHash
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -98,6 +102,20 @@ public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Enc
 
         try container.encodeIfPresent(rtcpPort, forKey: .rtcpPort)
         try container.encodeIfPresent(supportsDatagram, forKey: .supportsDatagram)
+    }
+
+    public var iconURL: URL? {
+        guard let iconHash else { return nil }
+
+        // Get the group container directory
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
+            Log.data.error("Unable to get group container URL")
+            return nil
+        }
+
+        return containerURL
+            .appendingPathComponent("roku-icons", isDirectory: true)
+            .appendingPathComponent(iconHash)
     }
 
     private enum CodingKeys: String, CodingKey {

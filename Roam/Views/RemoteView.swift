@@ -16,11 +16,6 @@ private func deviceFetchDescriptor() -> FetchDescriptor<Device> {
         sortBy: [SortDescriptor(\Device.name)]
     )
     fd.relationshipKeyPathsForPrefetching = []
-    fd.propertiesToFetch = [
-        \Device.udn, \Device.location, \Device.name,
-         \Device.lastOnlineAt, \Device.lastSelectedAt,
-         \Device.lastScannedAt
-    ]
 
     return fd
 }

@@ -65,7 +65,7 @@ struct SmallMediaWidget: Widget {
         DeviceChoiceTimelineEntity(
             date: Date.now,
             device: getTestingDevices()[0].toAppEntity(),
-            apps: getTestingAppLinks().map { $0.toAppEntityWithIcon() }
+            apps: getTestingAppLinks().map { $0.toAppEntity() }
         )
         DeviceChoiceTimelineEntity(
             date: Date.now,
@@ -80,7 +80,7 @@ struct SmallMediaWidget: Widget {
         DeviceChoiceTimelineEntity(
             date: Date.now,
             device: getTestingDevices()[0].toAppEntity(),
-            apps: getTestingAppLinks().map { $0.toAppEntityWithIcon() }
+            apps: getTestingAppLinks().map { $0.toAppEntity() }
         )
         DeviceChoiceTimelineEntity(
             date: Date.now,
@@ -206,7 +206,7 @@ struct SmallMediaWidget: Widget {
         DeviceChoiceTimelineEntity(
             date: Date.now,
             device: getTestingDevices()[0].toAppEntity(),
-            apps: getTestingAppLinks().map { $0.toAppEntityWithIcon() }
+            apps: getTestingAppLinks().map { $0.toAppEntity() }
         )
         DeviceChoiceTimelineEntity(
             date: Date.now,

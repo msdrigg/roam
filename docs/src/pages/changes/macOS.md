@@ -1,1 +1,2 @@
-- Bug fixes and improvements
+-   Performance improvements when a user has many Roku apps loaded
+-   Increasing button size

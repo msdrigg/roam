@@ -34,7 +34,6 @@ private let deviceFetchDescriptor: FetchDescriptor<Device> = {
         },
         sortBy: [SortDescriptor(\Device.name)]
     )
-    fd.propertiesToFetch = [\Device.udn, \Device.location, \Device.name, \Device.lastOnlineAt, \Device.lastSelectedAt, \Device.lastScannedAt, \Device.deviceIcon]
     return fd
 }()
 
@@ -227,7 +226,9 @@ struct SettingsView: View {
 #if os(watchOS)
             Button(String(localized: "WatchOS Note", comment: "Description on a button to see info about watchOS limitations"), systemImage: "info.circle.fill", action: { showWatchOSNote = true })
                 .sheet(isPresented: $showWatchOSNote) {
-                    WatchOSNote()
+                    NavigationStack {
+                        WatchOSNote()
+                    }
                 }
 #endif
 
@@ -355,7 +356,13 @@ struct SettingsView: View {
             }
         }
         .sheet(isPresented: $showingAddDeviceSheet) {
+            #if os(watchOS)
+            NavigationStack {
+                AddDeviceFlow()
+            }
+            #else
             AddDeviceFlow()
+            #endif
         }
 #if !os(watchOS) && !os(macOS)
         .refreshable {

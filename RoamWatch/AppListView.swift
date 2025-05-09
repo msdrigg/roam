@@ -39,7 +39,7 @@ struct AppListView: View {
                     Label {
                         Text(app.name)
                     } icon: {
-                        DataImage(from: app.icon, fallback: "questionmark.app.fill")
+                        FallibleImage(from: app.iconURL, fallback: "questionmark.app.fill")
                             .clipShape(RoundedRectangle(cornerRadius: 2))
                             .frame(width: 32, height: 32)
                             .shadow(radius: 4)
