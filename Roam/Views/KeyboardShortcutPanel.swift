@@ -543,6 +543,7 @@ struct KeyboardShortcutStorage: DynamicProperty {
 }
 
 @propertyWrapper
+@MainActor
 struct AllCustomKeyboardShortcuts: DynamicProperty {
     @KeyboardShortcutStorage(.back) private var backShortcut
     @KeyboardShortcutStorage(.power) private var powerShortcut

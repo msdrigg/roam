@@ -117,12 +117,15 @@ extension QSockAddr {
     /// - Returns: A tuple containing the address string, and the port.
 
     public static func fromSockAddr(sa: UnsafeMutablePointer<sockaddr>, saLen: socklen_t) throws -> (address: String, port: UInt16) {
-        var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+        var hostChars = [CChar](repeating: 0, count: Int(NI_MAXHOST))
         var serv = [CChar](repeating: 0, count: Int(NI_MAXSERV))
-        let err = getnameinfo(sa, saLen, &host, socklen_t(host.count), &serv, socklen_t(serv.count), NI_NUMERICHOST | NI_NUMERICSERV)
+        let err = getnameinfo(sa, saLen, &hostChars, socklen_t(hostChars.count), &serv, socklen_t(serv.count), NI_NUMERICHOST | NI_NUMERICSERV)
         guard err == 0 else { throw QSockAddr.NetDBError(code: err) }
-        guard let port = UInt16(String(cString: serv)) else { throw QSockAddr.NetDBError(code: EAI_SERVICE) }
-        return (String(cString: host), port)
+        guard let host = String(utf8String: hostChars), let portString = String(utf8String: serv) else {
+            throw QSockAddr.QSockError.uTF8DecodingError
+        }
+        guard let port = UInt16(portString) else { throw QSockAddr.NetDBError(code: EAI_SERVICE) }
+        return (host, port)
     }
 }
 
@@ -133,6 +136,10 @@ extension QSockAddr {
 
     struct NetDBError: Error {
         var code: CInt
+    }
+
+    enum QSockError: Error {
+        case uTF8DecodingError
     }
 }
 
@@ -158,12 +165,13 @@ extension QSockAddr {
         return sequence(first: first, next: { $0.pointee.ifa_next })
             .compactMap { addr in
                 guard
-                    let name = addr.pointee.ifa_name,
+                    let namePointee = addr.pointee.ifa_name,
                     let sa = addr.pointee.ifa_addr,
+                    let name = String(utf8String: namePointee),
                     [AF_INET, AF_INET6].contains(CInt(sa.pointee.sa_family)),
                     let (address, _) = try? QSockAddr.fromSockAddr(sa: sa, saLen: socklen_t(sa.pointee.sa_len))
                 else { return nil }
-                return (String(cString: name), address)
+                return (name, address)
             }
     }
 }

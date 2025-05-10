@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 90;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -350,75 +350,62 @@
 /* Begin PBXCopyFilesBuildPhase section */
 		AF15C2572AE8672800B79FD9 /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
-			dstSubfolderSpec = 16;
+			dstSubfolder = Product;
 			files = (
 				AF15C2532AE8672800B79FD9 /* Roam.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AF344FDD2D42D34A00179FE0 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
+			dstSubfolder = None;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		AF3503692BB493F4004F4337 /* Embed App Clips */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
 			dstPath = "$(CONTENTS_FOLDER_PATH)/AppClips";
-			dstSubfolderSpec = 16;
+			dstSubfolder = Product;
 			files = (
 			);
 			name = "Embed App Clips";
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AF3503922BB499F3004F4337 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolderSpec = 13;
+			dstSubfolder = PlugIns;
 			files = (
 				AF35038F2BB499F3004F4337 /* RoamWidgets.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AF95B7302ADF3F5A005FC338 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolderSpec = 10;
+			dstSubfolder = Frameworks;
 			files = (
 			);
 			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AFA079CE2AE02352003E2754 /* Embed ExtensionKit Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
 			dstPath = "$(EXTENSIONS_FOLDER_PATH)";
-			dstSubfolderSpec = 16;
+			dstSubfolder = Product;
 			files = (
 			);
 			name = "Embed ExtensionKit Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AFC6E6B62ADDF6BC0036EC90 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolderSpec = 13;
+			dstSubfolder = PlugIns;
 			files = (
 				AF27401B2AE02C26007C6208 /* RoamWidgets.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -599,61 +586,47 @@
 /* Begin PBXFrameworksBuildPhase section */
 		AF15C2432AE8672700B79FD9 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				AF0042832AEAA3ED0051BB1E /* libwebp in Frameworks */,
 				AFD9C4F52AE9830100C4079C /* XMLCoder in Frameworks */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AF2740082AE02C25007C6208 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				AF27400D2AE02C25007C6208 /* SwiftUI.framework in Frameworks */,
 				AF27400C2AE02C25007C6208 /* WidgetKit.framework in Frameworks */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AF344FDC2D42D34A00179FE0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				AF3450002D42EA3000179FE0 /* XMLCoder in Frameworks */,
 				AF344FEB2D42D3BE00179FE0 /* ArgumentParser in Frameworks */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AFA21D2E2C2C7C83008EF24A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AFA21D3D2C2C7CB6008EF24A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AFC24EF82AD0E5A1002AB66C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				AFECDE202AE18519003F6676 /* RTP in Frameworks */,
 				AFECDE1A2AE184FE003F6676 /* XMLCoder in Frameworks */,
 				AFECDE1D2AE18511003F6676 /* Opus in Frameworks */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AFEDCDF12CD1331E0001D959 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -1087,11 +1060,7 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			name = RoamWidgets;
-			packageProductDependencies = (
-			);
 			productName = BetterRemoteWidgetsExtension;
 			productReference = AF27400B2AE02C25007C6208 /* RoamWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -1105,8 +1074,6 @@
 				AF344FDD2D42D34A00179FE0 /* CopyFiles */,
 			);
 			buildRules = (
-			);
-			dependencies = (
 			);
 			name = "roam-cli";
 			packageProductDependencies = (
@@ -1197,8 +1164,6 @@
 				AFEDCDF92CD1331E0001D959 /* PBXTargetDependency */,
 			);
 			name = RoamSwiftTests;
-			packageProductDependencies = (
-			);
 			productName = RoamSwiftTests;
 			productReference = AFEDCDF42CD1331E0001D959 /* RoamSwiftTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -1240,7 +1205,6 @@
 				};
 			};
 			buildConfigurationList = AFC24EF62AD0E5A1002AB66C /* Build configuration list for PBXProject "Roam" */;
-			compatibilityVersion = "Xcode 15.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -1268,6 +1232,7 @@
 				AF0042812AEAA3ED0051BB1E /* XCRemoteSwiftPackageReference "libwebp-Xcode" */,
 				AF344FE92D42D3B600179FE0 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 			);
+			preferredProjectObjectVersion = 90;
 			productRefGroup = AFC24EFC2AD0E5A1002AB66C /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -1286,7 +1251,6 @@
 /* Begin PBXResourcesBuildPhase section */
 		AF15C2442AE8672700B79FD9 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				AF35ACF32BA3D6B300CC8B36 /* PrivacyInfo.xcprivacy in Resources */,
 				AF207FFD2D31C1EE00E541AD /* DebugImages.xcassets in Resources */,
@@ -1295,36 +1259,28 @@
 				AF94AEF42C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */,
 				AF0C82892AEB463300CBE7F8 /* AccentColor.xcassets in Resources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AF2740092AE02C25007C6208 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				AF5ED8D52AE984E9007DB2B8 /* WidgetColor.xcassets in Resources */,
 				AF0C828A2AEB463400CBE7F8 /* AccentColor.xcassets in Resources */,
 				AFDB19A72C0D8E7A00C4DAB7 /* InfoPlist.xcstrings in Resources */,
 				AF94AEF52C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AFA21D2F2C2C7C83008EF24A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AFA21D3E2C2C7CB6008EF24A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AFC24EF92AD0E5A1002AB66C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				AF35ACF22BA3D6B200CC8B36 /* PrivacyInfo.xcprivacy in Resources */,
 				AF207FFC2D31C1EE00E541AD /* DebugImages.xcassets in Resources */,
@@ -1333,42 +1289,44 @@
 				AF94AEF32C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */,
 				AFC24F052AD0E5A2002AB66C /* AppIcon.xcassets in Resources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AFEDCDF22CD1331E0001D959 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		AF8CB9EC2BDAB90600115C88 /* Lint */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
 			name = Lint;
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "ENABLE=\"true\"\n\nif [[ \"$ENABLE\" == \"false\" ]]; then\n   echo \"warning: Lint disabled manually\"\n   exit 0\nfi\n\nif [[ \"$(uname -m)\" == arm64 ]]; then\n    export PATH=\"/opt/homebrew/bin:$PATH\"\nfi\n\nif which swiftlint > /dev/null; then\n  swiftlint --lenient\nelse\n  echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
+			shellScript = (
+				"ENABLE=\"true\"",
+				"",
+				"if [[ \"$ENABLE\" == \"false\" ]]; then",
+				"   echo \"warning: Lint disabled manually\"",
+				"   exit 0",
+				"fi",
+				"",
+				"if [[ \"$(uname -m)\" == arm64 ]]; then",
+				"    export PATH=\"/opt/homebrew/bin:$PATH\"",
+				"fi",
+				"",
+				"if which swiftlint > /dev/null; then",
+				"  swiftlint --lenient",
+				"else",
+				"  echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"",
+				"fi",
+				"",
+			);
 		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		AF15C2422AE8672700B79FD9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				AF70BB0B2BA7CBD3009A06EC /* PaddedHoverButtonStyle.swift in Sources */,
 				AFE6249E2BDCAA5000F4992E /* DataHandler.swift in Sources */,
@@ -1443,11 +1401,9 @@
 				AFD590D22AEC692700189620 /* IPhoneConnector.swift in Sources */,
 				AF00427D2AEA95D90051BB1E /* FallibleImage.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AF2740072AE02C25007C6208 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				AF05B4722BFDA49E00FA3783 /* ObjcErrors.swift in Sources */,
 				AFD9C4F22AE9828600C4079C /* SmallRemoteView.swift in Sources */,
@@ -1504,11 +1460,9 @@
 				AF736A932DCDD9370028A2B4 /* CachedAsyncImage.swift in Sources */,
 				AF205B262AE02D0100041CDF /* Device.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AF344FDB2D42D34A00179FE0 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				AF344FFB2D42E33700179FE0 /* ImageDecoder.swift in Sources */,
 				AF344FED2D42DB7700179FE0 /* ECPMessages.swift in Sources */,
@@ -1527,31 +1481,25 @@
 				AF344FF02D42E1C500179FE0 /* APIHelpers.swift in Sources */,
 				AF344FE82D42D35000179FE0 /* RoamCLI.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AFA21D2D2C2C7C83008EF24A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				AFDB4FFE2D53C7B7004E27A4 /* Loggers.swift in Sources */,
 				AFA21D342C2C7C83008EF24A /* RoamWatchUITests.swift in Sources */,
 				AFA21D362C2C7C83008EF24A /* RoamWatchScreenshotTests.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AFA21D3C2C2C7CB6008EF24A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				AFDB4FFF2D53C7B7004E27A4 /* Loggers.swift in Sources */,
 				AFA21D432C2C7CB6008EF24A /* RoamUITests.swift in Sources */,
 				AFA21D452C2C7CB6008EF24A /* RoamScreenshotTests.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AFC24EF72AD0E5A1002AB66C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				AF0532802D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift in Sources */,
 				AFBDEA322D7D157500C15B18 /* StandardDislosureGroupStyle.swift in Sources */,
@@ -1662,11 +1610,9 @@
 				AF8EF51D2BB60EAF002A4D6D /* NavigationDestination.swift in Sources */,
 				AF3446AA2D5FE62A0037EFC8 /* Importers.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AFEDCDF02CD1331E0001D959 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				AF0D09F42CDE64750098122E /* Helpers.swift in Sources */,
 				AF6D56152DCE50E900B00780 /* OrderedSetTests.swift in Sources */,
@@ -1678,7 +1624,6 @@
 				AF3F350C2D3E98C9009AF2F8 /* ECPProtocol.swift in Sources */,
 				AFEDCDFD2CD134130001D959 /* NetworkUtils.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
@@ -1721,7 +1666,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		AF15C2552AE8672800B79FD9 /* Debug */ = {
+		AF15C2552AE8672800B79FD9 /* Debug configuration for PBXNativeTarget "RoamWatch" */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AF6520872BCE55E200B69BE8 /* Vars.xcconfig */;
 			buildSettings = {
@@ -1755,7 +1700,7 @@
 			};
 			name = Debug;
 		};
-		AF15C2562AE8672800B79FD9 /* Release */ = {
+		AF15C2562AE8672800B79FD9 /* Release configuration for PBXNativeTarget "RoamWatch" */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AF6520872BCE55E200B69BE8 /* Vars.xcconfig */;
 			buildSettings = {
@@ -1791,7 +1736,7 @@
 			};
 			name = Release;
 		};
-		AF27401C2AE02C27007C6208 /* Debug */ = {
+		AF27401C2AE02C27007C6208 /* Debug configuration for PBXNativeTarget "RoamWidgets" */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AF6520872BCE55E200B69BE8 /* Vars.xcconfig */;
 			buildSettings = {
@@ -1837,7 +1782,7 @@
 			};
 			name = Debug;
 		};
-		AF27401D2AE02C27007C6208 /* Release */ = {
+		AF27401D2AE02C27007C6208 /* Release configuration for PBXNativeTarget "RoamWidgets" */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AF6520872BCE55E200B69BE8 /* Vars.xcconfig */;
 			buildSettings = {
@@ -1884,7 +1829,7 @@
 			};
 			name = Release;
 		};
-		AF344FE32D42D34A00179FE0 /* Debug */ = {
+		AF344FE32D42D34A00179FE0 /* Debug configuration for PBXNativeTarget "roam-cli" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -1898,7 +1843,7 @@
 			};
 			name = Debug;
 		};
-		AF344FE42D42D34A00179FE0 /* Release */ = {
+		AF344FE42D42D34A00179FE0 /* Release configuration for PBXNativeTarget "roam-cli" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -1912,7 +1857,7 @@
 			};
 			name = Release;
 		};
-		AFA21D3A2C2C7C83008EF24A /* Debug */ = {
+		AFA21D3A2C2C7C83008EF24A /* Debug configuration for PBXNativeTarget "RoamWatchUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -1932,7 +1877,7 @@
 			};
 			name = Debug;
 		};
-		AFA21D3B2C2C7C83008EF24A /* Release */ = {
+		AFA21D3B2C2C7C83008EF24A /* Release configuration for PBXNativeTarget "RoamWatchUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -1953,7 +1898,7 @@
 			};
 			name = Release;
 		};
-		AFA21D492C2C7CB6008EF24A /* Debug */ = {
+		AFA21D492C2C7CB6008EF24A /* Debug configuration for PBXNativeTarget "RoamUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -1978,7 +1923,7 @@
 			};
 			name = Debug;
 		};
-		AFA21D4A2C2C7CB6008EF24A /* Release */ = {
+		AFA21D4A2C2C7CB6008EF24A /* Release configuration for PBXNativeTarget "RoamUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -2004,7 +1949,7 @@
 			};
 			name = Release;
 		};
-		AFC24F202AD0E5A3002AB66C /* Debug */ = {
+		AFC24F202AD0E5A3002AB66C /* Debug configuration for PBXProject "Roam" */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AF6520872BCE55E200B69BE8 /* Vars.xcconfig */;
 			buildSettings = {
@@ -2041,7 +1986,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20250509.0067761.1;
+				CURRENT_PROJECT_VERSION = 20250509.3257118.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
@@ -2076,19 +2021,14 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = Shared/Bridge.h;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY = YES;
-				SWIFT_UPCOMING_FEATURE_GLOBAL_CONCURRENCY = YES;
-				SWIFT_UPCOMING_FEATURE_INFER_SENDABLE_FROM_CAPTURES = YES;
-				SWIFT_UPCOMING_FEATURE_ISOLATED_DEFAULT_VALUES = YES;
-				SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION = YES;
+				SWIFT_VERSION = 6.0;
 				TVOS_DEPLOYMENT_TARGET = 17.0;
 				WATCHOS_DEPLOYMENT_TARGET = 10.0;
 				XROS_DEPLOYMENT_TARGET = 1.0;
 			};
 			name = Debug;
 		};
-		AFC24F212AD0E5A3002AB66C /* Release */ = {
+		AFC24F212AD0E5A3002AB66C /* Release configuration for PBXProject "Roam" */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AF6520872BCE55E200B69BE8 /* Vars.xcconfig */;
 			buildSettings = {
@@ -2125,7 +2065,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 20250509.0067761.1;
+				CURRENT_PROJECT_VERSION = 20250509.3257118.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 2865NTZ7H3;
@@ -2153,19 +2093,14 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = Shared/Bridge.h;
-				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_UPCOMING_FEATURE_EXISTENTIAL_ANY = YES;
-				SWIFT_UPCOMING_FEATURE_GLOBAL_CONCURRENCY = YES;
-				SWIFT_UPCOMING_FEATURE_INFER_SENDABLE_FROM_CAPTURES = YES;
-				SWIFT_UPCOMING_FEATURE_ISOLATED_DEFAULT_VALUES = YES;
-				SWIFT_UPCOMING_FEATURE_REGION_BASED_ISOLATION = YES;
+				SWIFT_VERSION = 6.0;
 				TVOS_DEPLOYMENT_TARGET = 17.0;
 				WATCHOS_DEPLOYMENT_TARGET = 10.0;
 				XROS_DEPLOYMENT_TARGET = 1.0;
 			};
 			name = Release;
 		};
-		AFC24F232AD0E5A3002AB66C /* Debug */ = {
+		AFC24F232AD0E5A3002AB66C /* Debug configuration for PBXNativeTarget "Roam" */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AF6520872BCE55E200B69BE8 /* Vars.xcconfig */;
 			buildSettings = {
@@ -2211,12 +2146,11 @@
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 			};
 			name = Debug;
 		};
-		AFC24F242AD0E5A3002AB66C /* Release */ = {
+		AFC24F242AD0E5A3002AB66C /* Release configuration for PBXNativeTarget "Roam" */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = AF6520872BCE55E200B69BE8 /* Vars.xcconfig */;
 			buildSettings = {
@@ -2263,12 +2197,11 @@
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 			};
 			name = Release;
 		};
-		AFEDCDFA2CD1331E0001D959 /* Debug */ = {
+		AFEDCDFA2CD1331E0001D959 /* Debug configuration for PBXNativeTarget "RoamSwiftTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -2288,7 +2221,7 @@
 			};
 			name = Debug;
 		};
-		AFEDCDFB2CD1331E0001D959 /* Release */ = {
+		AFEDCDFB2CD1331E0001D959 /* Release configuration for PBXNativeTarget "RoamSwiftTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -2314,73 +2247,65 @@
 		AF15C2542AE8672800B79FD9 /* Build configuration list for PBXNativeTarget "RoamWatch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				AF15C2552AE8672800B79FD9 /* Debug */,
-				AF15C2562AE8672800B79FD9 /* Release */,
+				AF15C2552AE8672800B79FD9 /* Debug configuration for PBXNativeTarget "RoamWatch" */,
+				AF15C2562AE8672800B79FD9 /* Release configuration for PBXNativeTarget "RoamWatch" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		AF27401E2AE02C27007C6208 /* Build configuration list for PBXNativeTarget "RoamWidgets" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				AF27401C2AE02C27007C6208 /* Debug */,
-				AF27401D2AE02C27007C6208 /* Release */,
+				AF27401C2AE02C27007C6208 /* Debug configuration for PBXNativeTarget "RoamWidgets" */,
+				AF27401D2AE02C27007C6208 /* Release configuration for PBXNativeTarget "RoamWidgets" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		AF344FE52D42D34A00179FE0 /* Build configuration list for PBXNativeTarget "roam-cli" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				AF344FE32D42D34A00179FE0 /* Debug */,
-				AF344FE42D42D34A00179FE0 /* Release */,
+				AF344FE32D42D34A00179FE0 /* Debug configuration for PBXNativeTarget "roam-cli" */,
+				AF344FE42D42D34A00179FE0 /* Release configuration for PBXNativeTarget "roam-cli" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		AFA21D392C2C7C83008EF24A /* Build configuration list for PBXNativeTarget "RoamWatchUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				AFA21D3A2C2C7C83008EF24A /* Debug */,
-				AFA21D3B2C2C7C83008EF24A /* Release */,
+				AFA21D3A2C2C7C83008EF24A /* Debug configuration for PBXNativeTarget "RoamWatchUITests" */,
+				AFA21D3B2C2C7C83008EF24A /* Release configuration for PBXNativeTarget "RoamWatchUITests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		AFA21D482C2C7CB6008EF24A /* Build configuration list for PBXNativeTarget "RoamUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				AFA21D492C2C7CB6008EF24A /* Debug */,
-				AFA21D4A2C2C7CB6008EF24A /* Release */,
+				AFA21D492C2C7CB6008EF24A /* Debug configuration for PBXNativeTarget "RoamUITests" */,
+				AFA21D4A2C2C7CB6008EF24A /* Release configuration for PBXNativeTarget "RoamUITests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		AFC24EF62AD0E5A1002AB66C /* Build configuration list for PBXProject "Roam" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				AFC24F202AD0E5A3002AB66C /* Debug */,
-				AFC24F212AD0E5A3002AB66C /* Release */,
+				AFC24F202AD0E5A3002AB66C /* Debug configuration for PBXProject "Roam" */,
+				AFC24F212AD0E5A3002AB66C /* Release configuration for PBXProject "Roam" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		AFC24F222AD0E5A3002AB66C /* Build configuration list for PBXNativeTarget "Roam" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				AFC24F232AD0E5A3002AB66C /* Debug */,
-				AFC24F242AD0E5A3002AB66C /* Release */,
+				AFC24F232AD0E5A3002AB66C /* Debug configuration for PBXNativeTarget "Roam" */,
+				AFC24F242AD0E5A3002AB66C /* Release configuration for PBXNativeTarget "Roam" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		AFEDCDFC2CD1331E0001D959 /* Build configuration list for PBXNativeTarget "RoamSwiftTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				AFEDCDFA2CD1331E0001D959 /* Debug */,
-				AFEDCDFB2CD1331E0001D959 /* Release */,
+				AFEDCDFA2CD1331E0001D959 /* Debug configuration for PBXNativeTarget "RoamSwiftTests" */,
+				AFEDCDFB2CD1331E0001D959 /* Release configuration for PBXNativeTarget "RoamSwiftTests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */

@@ -218,7 +218,6 @@ private func listInterfacesDarwin() -> [Addressed4NetworkInterface] {
             defer { ptr = ptr?.pointee.ifa_next }
             guard let addr = ptr?.pointee else { continue }
 
-            let name = String(cString: addr.ifa_name)
             let flags = addr.ifa_flags
             let family = addr.ifa_addr?.pointee.sa_family ?? 0
 
@@ -236,9 +235,9 @@ private func listInterfacesDarwin() -> [Addressed4NetworkInterface] {
                             nil, socklen_t(0), NI_NUMERICHOST)
             }
             if family == AF_INET || family == AF_INET6 {
-                let addressString = String(cString: host)
-                let netmaskString = String(cString: netmask)
-                if let address = IP4Address(string: addressString), let netmask = IP4Address(string: netmaskString) {
+                if let name = String(utf8String: addr.ifa_name),
+                    let addressString = String(utf8String: host), let netmaskString = String(utf8String: netmask),
+                    let address = IP4Address(string: addressString), let netmask = IP4Address(string: netmaskString) {
                     networkInterfaces.append(Addressed4NetworkInterface(
                         name: name,
                         family: Int32(family),

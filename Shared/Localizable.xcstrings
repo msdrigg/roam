@@ -1429,7 +1429,7 @@
       }
     },
     "Add a device manually" : {
-      "comment" : "Label on a button to add a device",
+      "comment" : "Label on a button to add a device\nLabel on a button to open the device setup page",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
