@@ -15,6 +15,8 @@ typealias PlatformImage = NSImage
 import PDFKit
 #endif
 
+let globalMaxThumbnailSize: CGFloat = 400
+
 // MARK: - Thumbnail Generator
 enum ThumbnailSize {
     case small
@@ -25,7 +27,7 @@ enum ThumbnailSize {
         case .small:
             return (150, 150)
         case .large:
-            return (400, 400)
+            return (globalMaxThumbnailSize * 2, globalMaxThumbnailSize * 2)
         }
     }
 
@@ -193,53 +195,16 @@ final actor ThumbnailGenerator: Sendable {
         try Data().write(to: URL(fileURLWithPath: path))
     }
 
-    #if (os(iOS) || os(visionOS) || os(watchOS)) && canImport(PDFKit)
-    private func createImageFromPDF(url: URL) -> UIImage? {
-        guard let document = CGPDFDocument(url as CFURL),
-              let page = document.page(at: 1) else {
+    #if canImport(PDFKit)
+    private func createImageFromPDF(url: URL) -> PlatformImage? {
+        guard let document = PDFDocument(url: url), let page = document.page(at: 0) else {
             return nil
         }
 
-        let pageRect = page.getBoxRect(.mediaBox)
-        let renderer = UIGraphicsImageRenderer(size: pageRect.size)
-        let image = renderer.image { ctx in
-            UIColor.white.set()
-            ctx.fill(CGRect(x: 0, y: 0, width: pageRect.width, height: pageRect.height))
+        let pdfSize = page.bounds(for: .mediaBox).size
 
-            ctx.cgContext.drawPDFPage(page)
-        }
-
-        return image
+        return page.thumbnail(of: pdfSize, for: .mediaBox)
     }
-#elseif os(macOS)
-    private func createImageFromPDF(url: URL) -> NSImage? {
-        guard let document = CGPDFDocument(url as CFURL),
-              let page = document.page(at: 1) else {
-            return nil
-         }
-
-         let pageRect = page.getBoxRect(.mediaBox)
-         let image = NSImage(size: pageRect.size)
-
-         image.lockFocus()
-
-         guard let context = NSGraphicsContext.current?.cgContext else {
-             image.unlockFocus()
-             return nil
-         }
-
-         context.setFillColor(CGColor.white)
-         context.fill(pageRect)
-
-         // Flip coordinates for PDF rendering. For some reason we really only have to do this on macOS lol
-         context.translateBy(x: 0, y: pageRect.size.height)
-         context.scaleBy(x: 1.0, y: -1.0)
-
-         context.drawPDFPage(page)
-
-         image.unlockFocus()
-         return image
-     }
     #else
     private func createImageFromPDF(url: URL) -> PlatformImage? {
         return nil

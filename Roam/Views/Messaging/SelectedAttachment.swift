@@ -4,8 +4,6 @@ import UniformTypeIdentifiers
 import QuickLook
 #endif
 
-let globalMaxAttachmentSize: CGFloat = 400
-
 struct SelectedAttachment {
     let attachment: AttachmentUpload?
     let name: String
@@ -239,9 +237,9 @@ struct AttachmentView: View {
     @ViewBuilder
     var bodyContent: some View {
         HStack {
-            DataImageInset(url: attachment.previewURL, maxSize: globalMaxAttachmentSize, fallback: {
+            DataImageInset(url: attachment.previewURL, maxSize: globalMaxThumbnailSize, fallback: {
                 HStack {
-                    FallibleImage(from: attachment.previewURL, fallback: attachment.loading ? "rays" : documentImage, maxSize: globalMaxAttachmentSize)
+                    FallibleImage(from: attachment.previewURL, fallback: attachment.loading ? "rays" : documentImage, maxSize: globalMaxThumbnailSize)
                         .font(.body)
                         .symbolEffect(.variableColor, isActive: attachment.loading)
 #if os(macOS)
