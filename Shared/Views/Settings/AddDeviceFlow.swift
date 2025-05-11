@@ -306,7 +306,7 @@ struct AddDeviceFlow: View {
     }
 
     private func completeConnection(preConnectInfo: PreconnectionDeviceInfo, location: String) async {
-        let dataHandler = DataHandler()
+        let dataHandler = RoamDataHandler()
 
         let device = await dataHandler.addDeviceIndistriminantly(
             location: location,

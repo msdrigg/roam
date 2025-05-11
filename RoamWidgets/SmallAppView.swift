@@ -41,7 +41,7 @@ struct SmallAppView: View {
                         if let app = row[rowIndex] {
                             Button(intent: LaunchAppIntent(app, device: device)) {
                                 VStack(spacing: 0) {
-                                    FallibleImage(from: app.iconURL, fallback: "questionmark.app.fill")
+                                    FallibleImage(from: app.iconURL, fallback: "questionmark.app.fill", maxSize: 150)
                                         .clipShape(RoundedRectangle(cornerRadius: 8))
                                         .shadow(radius: 4)
 
@@ -109,7 +109,7 @@ struct SmallAppView: View {
                 ForEach(appRow.indices, id: \.self) { rowIndex in
                     if let app = appRow[rowIndex] {
                         Button(intent: LaunchAppIntent(app, device: device)) {
-                            FallibleImage(from: app.iconURL, fallback: "questionmark.app.fill")
+                            FallibleImage(from: app.iconURL, fallback: "questionmark.app.fill", maxSize: 150)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                                 .shadow(radius: 4)
                         }

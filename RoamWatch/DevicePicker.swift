@@ -58,7 +58,7 @@ struct DevicePicker: View {
                                     Log.connection.notice("Setting last selected at")
                                     let id = chosenDevice.persistentModelID
                                     Task.detached {
-                                        await DataHandler().setSelectedDevice(id)
+                                        await RoamDataHandler().setSelectedDevice(id)
                                     }
                                 }
                                 showingPicker = false
@@ -75,7 +75,7 @@ struct DevicePicker: View {
                                     let pid = listItemDevice.persistentModelID
                                     Task.detached {
                                         do {
-                                            try await DataHandler().delete(pid)
+                                            try await RoamDataHandler().delete(pid)
                                         } catch {
                                             Log.connection.error("Error deleting device \(error, privacy: .public)")
                                         }
@@ -95,7 +95,7 @@ struct DevicePicker: View {
                                     let pid = model.persistentModelID
                                     Task.detached {
                                         do {
-                                            try await DataHandler().delete(pid)
+                                            try await RoamDataHandler().delete(pid)
                                         } catch {
                                             Log.connection.error("Error deleting device \(error, privacy: .public)")
                                         }

@@ -16,7 +16,7 @@ public struct OpenDeviceIntent: OpenIntent {
 
     @MainActor
     public func perform() async throws -> some IntentResult {
-        await DataHandler().setSelectedDevice(target.modelId)
+        await RoamDataHandler().setSelectedDevice(target.modelId)
         return .result()
     }
 }
@@ -198,7 +198,7 @@ public struct ButtonPressIntent: AppIntent, CustomIntentMigratedAppIntent, Predi
 public func clickButton(button: RemoteButton, device: DeviceAppEntity?) async throws {
     Log.userInteraction.notice("Pressing widget button \(button.apiValue ?? "nil", privacy: .public) on device \(device?.name ?? "nil", privacy: .public)")
 
-    let dataHandler = await DataHandler()
+    let dataHandler = await RoamDataHandler()
 
     var targetDevice = device
     if targetDevice == nil {
@@ -245,7 +245,7 @@ public func clickButton(button: RemoteButton, device: DeviceAppEntity?) async th
 }
 
 public func launchApp(app: AppLinkAppEntity, device: DeviceAppEntity?) async throws {
-    let dataHandler = await DataHandler()
+    let dataHandler = await RoamDataHandler()
 
     var targetDevice = device
     if targetDevice == nil {
@@ -308,17 +308,17 @@ extension AppLinkAppEntity: AppEntity {
         public init() {}
 
         public func entities(for identifiers: [AppLinkAppEntity.ID]) async throws -> [AppLinkAppEntity] {
-            let appLinkActor = await DataHandler()
+            let appLinkActor = await RoamDataHandler()
             return try await appLinkActor.appEntities(for: identifiers, deviceUid: launchAppIntent?.device.udn)
         }
 
         func entities(matching string: String) async throws -> [AppLinkAppEntity] {
-            let appLinkActor = await DataHandler()
+            let appLinkActor = await RoamDataHandler()
             return try await appLinkActor.appEntities(matching: string, deviceUid: launchAppIntent?.device.udn)
         }
 
         public func suggestedEntities() async throws -> [AppLinkAppEntity] {
-            let appLinkActor = await DataHandler()
+            let appLinkActor = await RoamDataHandler()
             return try await appLinkActor.appEntities(deviceUid: launchAppIntent?.device.udn)
         }
     }

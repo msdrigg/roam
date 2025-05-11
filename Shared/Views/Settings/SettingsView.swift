@@ -18,23 +18,21 @@ let deviceIconSize: CGFloat = 24.0
 let circleSize: CGFloat = 10
 #endif
 
-private let messageFetchDescriptor: FetchDescriptor<Message> = {
-    var fd = FetchDescriptor(
+private let unreadMessageFetchDescriptor: FetchDescriptor<Message> = {
+    return FetchDescriptor(
         predicate: #Predicate<Message> {
             !$0.viewed
         }
     )
-    return fd
 }()
 
 private let deviceFetchDescriptor: FetchDescriptor<Device> = {
-    var fd = FetchDescriptor<Device>(
+    return FetchDescriptor<Device>(
         predicate: #Predicate<Device> {
             $0.deletedAt == nil
         },
         sortBy: [SortDescriptor(\Device.name)]
     )
-    return fd
 }()
 
 struct SettingsView: View {
@@ -43,7 +41,7 @@ struct SettingsView: View {
 #endif
 
     @Query(deviceFetchDescriptor) private var allDevices: [Device]
-    @Query(messageFetchDescriptor) private var unreadMessages: [Message]
+    @Query(unreadMessageFetchDescriptor) private var unreadMessages: [Message]
     @Binding var path: [NavigationDestination]
     let destination: SettingsDestination
 
@@ -154,7 +152,7 @@ struct SettingsView: View {
                                 let pid = model.persistentModelID
                                 Task.detached {
                                     do {
-                                        try await DataHandler().delete(pid)
+                                        try await RoamDataHandler().delete(pid)
                                         DispatchQueue.main.async {
                                             self.updater?.update()
                                         }
@@ -330,7 +328,7 @@ struct SettingsView: View {
                                         let pid = model.persistentModelID
                                         Task.detached {
                                             do {
-                                                try await DataHandler().delete(pid)
+                                                try await RoamDataHandler().delete(pid)
                                                 DispatchQueue.main.async {
                                                     self.updater?.update()
                                                 }
@@ -385,6 +383,9 @@ struct SettingsView: View {
         Button(String(localized: "Add a device manually", comment: "Label on a button to add a device"), systemImage: "plus") {
             showingAddDeviceSheet = true
         }
+        #if !os(watchOS) && !WIDGET
+        .customKeyboardShortcut(.addDevice)
+        #endif
     }
 }
 

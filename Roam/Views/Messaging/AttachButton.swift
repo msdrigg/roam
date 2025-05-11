@@ -98,7 +98,7 @@ struct AttachButton: View {
                 switch result {
                 case .success(let urls):
                     guard let url = urls.first else {
-                        Log.userInteraction.warning("Got \(0, privacy: .public) items from file importer")
+                        Log.userInteraction.warning("Got 0 items from file importer")
                         return
                     }
                     Log.userInteraction.notice("Got \(urls, privacy: .public) items from file importer")

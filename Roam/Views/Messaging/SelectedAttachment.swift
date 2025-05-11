@@ -4,6 +4,8 @@ import UniformTypeIdentifiers
 import QuickLook
 #endif
 
+let globalMaxAttachmentSize: CGFloat = 400
+
 struct SelectedAttachment {
     let attachment: AttachmentUpload?
     let name: String
@@ -41,6 +43,12 @@ struct SelectedAttachment {
             loading: false,
             id: self.id
         )
+    }
+
+    var previewURL: URL? {
+        // TODO: Put this back!
+//        failure == nil ? attachment?.dataURL : nil
+        attachment?.dataURL
     }
 }
 
@@ -233,19 +241,20 @@ struct AttachmentView: View {
     @ViewBuilder
     var bodyContent: some View {
         HStack {
-            DataImageInset(url: attachment.attachment?.dataURL, fallback: {
+            DataImageInset(url: attachment.previewURL, maxSize: globalMaxAttachmentSize, fallback: {
                 HStack {
-                    FallibleImage(from: attachment.attachment?.dataURL, fallback: attachment.loading ? "rays" : documentImage)
+                    FallibleImage(from: attachment.previewURL, fallback: attachment.loading ? "rays" : documentImage, maxSize: globalMaxAttachmentSize)
                         .font(.body)
                         .symbolEffect(.variableColor, isActive: attachment.loading)
 #if os(macOS)
                         .padding(.vertical, 12)
                         .padding(.horizontal, 4)
 #else
-                        .padding(.vertical, 24)
+                        .padding(.vertical, attachment.loading ? 24 : 12)
                         .padding(.horizontal, 8)
 #endif
                         .foregroundStyle(attachment.failure != nil ? Color.red : .primary)
+                        .frame(maxWidth: 48)
 
                     DocumentName(attachment: attachment)
                         .allowsHitTesting(false)
@@ -350,27 +359,28 @@ struct DataImageInset<Fallback, IM>: View  where Fallback: View, IM: ViewModifie
     let path: URL?
     let fallback: () -> Fallback
     let imageModifier: () -> IM
+    let maxSize: CGFloat
 
-    init(url: URL?, @ViewBuilder fallback: @escaping () -> Fallback, imageModifier: @escaping () -> IM) {
+    init(url: URL?, maxSize: CGFloat, @ViewBuilder fallback: @escaping () -> Fallback, imageModifier: @escaping () -> IM) {
         self.path = url
         self.imageModifier = imageModifier
         self.fallback = fallback
+        self.maxSize = maxSize
     }
 
     @ViewBuilder
     var body: some View {
         if let path {
-            CachedAsyncImage(path: path) { phase in
+            CachedAsyncImage(path: path, maxSize: maxSize) { phase in
                 switch phase {
-                case .loading:
+                case .empty, .loading:
                     Image(systemName: "rays")
                         .enableResize()
                         .labelStyle(.iconOnly)
                         .symbolEffect(.variableColor)
                         .font(.body)
                         .modifier(imageModifier())
-//                    fallback()
-                case .empty, .failure:
+                case .failure:
                     fallback()
                 case .success(let image):
                     image

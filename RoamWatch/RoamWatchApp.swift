@@ -158,10 +158,10 @@ struct WatchAppView: View {
                 .task {
                     if loadTestingData() {
                         // swiftlint:disable:next force_try
-                        try! await DataHandler().loadTestData()
+                        try! await RoamDataHandler().loadTestData()
                     } else if usingTestingDataContainer() {
                         // swiftlint:disable:next force_try
-                        try! await DataHandler().clearData()
+                        try! await RoamDataHandler().clearData()
                     }
                 }
                 .task(id: selectedDevice?.persistentModelID, priority: .medium) {
@@ -172,7 +172,7 @@ struct WatchAppView: View {
                             if Task.isCancelled {
                                 return
                             }
-                            let handler = DataHandler()
+                            let handler = RoamDataHandler()
                             await handler.refreshDevice(client: WatchOSRefreshClient(id: selectedDevice.persistentModelID, location: selectedDevice.location))
                         } else {
                             Log.connection.info("No selected device to refresh")

@@ -10,8 +10,8 @@ struct DeviceListItem: View {
         NavigationLink(value: NavigationDestination.deviceSettingsDestination(device.persistentModelID)) {
             HStack(alignment: .center) {
                 VStack(alignment: .center) {
-                    FallibleImage(from: device.iconURL, fallback: "tv")
-                        .frame(maxHeight: 60)
+                    FallibleImage(from: device.iconURL, fallback: "tv", maxSize: 120)
+                        .frame(maxWidth: 120, maxHeight: 60)
                         .padding(.trailing, 12)
                 }
 
@@ -50,7 +50,7 @@ struct DeviceListItem: View {
                 let pid = device.persistentModelID
                 Task.detached {
                     do {
-                        try await DataHandler().delete(pid)
+                        try await RoamDataHandler().delete(pid)
                         Log.userInteraction
                             .notice(
                                 "Deleted device with id \(String(describing: pid), privacy: .public)"

@@ -1,113 +1,22 @@
-import AppIntents
-import AVFoundation
-import Intents
-import os
-import StoreKit
-import SwiftData
 import SwiftUI
-import Foundation
-import TipKit
-
-@MainActor
-private func deviceFetchDescriptor() -> FetchDescriptor<Device> {
-    var fd = FetchDescriptor<Device>(
-        predicate: globalMainDevicePredicate,
-        sortBy: [SortDescriptor(\Device.name)]
-    )
-    fd.relationshipKeyPathsForPrefetching = []
-
-    return fd
-}
-
-@MainActor
-private func messageFetchDescriptor() -> FetchDescriptor<Message> {
-    let fd = FetchDescriptor(
-        predicate: #Predicate<Message> {
-            !$0.viewed
-        }
-    )
-    return fd
-}
 
 struct RemoteView: View {
     @Environment(\.openWindow) var openWindow
 
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 
-    @Query(deviceFetchDescriptor()) private var devices: [Device]
-    @Query(messageFetchDescriptor()) private var unreadMessages: [Message]
-
-    @State private var manuallySelectedDevice: Device?
-    @State private var showKeyboardEntry: Bool = false
-    @State private var keyboardLeaving: Bool = false
-    @State var buttonPresses: [RemoteButton: Int] = [:]
-    @State private var headphonesModeEnabled: Bool = false
-    @State private var errorTrigger: Int = 0
-    @State private var showingAddDeviceSheet: Bool = false
-    @AllCustomKeyboardShortcuts private var allKeyboardShortcuts: [CustomKeyboardShortcut]
-
-    var headphonesModeDisabled: Bool {
-        !(selectedDevice?.supportsDatagram ?? true)
-    }
-
-    var hideUIForKeyboardEntry: Bool {
-        #if os(iOS)
-        if UIDevice.current.userInterfaceIdiom  == .pad {
-            return false
-        } else {
-            return showKeyboardEntry
-        }
-        #else
-            return false
-        #endif
-    }
-
-    private var selectedDevice: Device? {
-        if let manuallySelectedDevice, manuallySelectedDevice.visible {
-            manuallySelectedDevice
-        } else {
-            devices.filter{
-                $0.visible
-            }.min { d1, d2 in
-                (d1.lastSelectedAt?.timeIntervalSince1970 ?? 0) > (d2.lastSelectedAt?.timeIntervalSince1970 ?? 0)
-            }
-        }
-    }
-
     private var runningInPreview: Bool {
         ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
-    }
-
-    @ScaledMetric var buttonRadius = globalButtonRadius
-
-    private struct IsHorizontalKey: PreferenceKey {
-        static let defaultValue: Bool = false
-        static func reduce(value: inout Bool, nextValue: () -> Bool) {
-            value = nextValue()
-        }
-    }
-
-    private struct IsSmallWidth: PreferenceKey {
-        static let  defaultValue: Bool = false
-        static func reduce(value: inout Bool, nextValue: () -> Bool) {
-            value = nextValue()
-        }
     }
 
     var body: some View {
         if runningInPreview {
             SettingsNavigationWrapper(path: $appDelegate.navigationPath.navigationPath) {
                 RemoteViewContained()
-                    .sheet(isPresented: $showingAddDeviceSheet) {
-                        AddDeviceFlow()
-                    }
             }
         } else {
             SettingsNavigationWrapper(path: $appDelegate.navigationPath.navigationPath) {
                 RemoteViewContained()
-                    .sheet(isPresented: $showingAddDeviceSheet) {
-                        AddDeviceFlow()
-                    }
                     .onOpenURL { incomingURL in
                         Log.lifecycle.notice("App was opened via URL: \(incomingURL, privacy: .public)")
                         handleIncomingURL(incomingURL)
@@ -164,7 +73,7 @@ struct RemoteView: View {
             }
 
             Task {
-                let dh = DataHandler()
+                let dh = RoamDataHandler()
                 if let pid = await dh.addOrReplaceDevice(location: location) {
                     Log.lifecycle.notice("Added device with PID \(pid.described(), privacy: .public)")
                     await dh.setSelectedDevice(pid)

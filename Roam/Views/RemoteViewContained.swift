@@ -18,23 +18,19 @@ let globalMajorActions: [RemoteButton] = [.power, .playPause, .mute, .headphones
 
 @MainActor
 private func deviceFetchDescriptor() -> FetchDescriptor<Device> {
-    var fd = FetchDescriptor<Device>(
+    return FetchDescriptor<Device>(
         predicate: globalMainDevicePredicate,
         sortBy: [SortDescriptor(\Device.name)]
     )
-    fd.relationshipKeyPathsForPrefetching = []
-
-    return fd
 }
 
 @MainActor
-private func messageFetchDescriptor() -> FetchDescriptor<Message> {
-    let fd = FetchDescriptor(
+private func unreadMessageFetchDescriptor() -> FetchDescriptor<Message> {
+    return FetchDescriptor(
         predicate: #Predicate<Message> {
             !$0.viewed
         }
     )
-    return fd
 }
 
 enum KeyboardFocus {
@@ -48,7 +44,7 @@ struct RemoteViewContained: View {
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 
     @Query(deviceFetchDescriptor()) private var devices: [Device]
-    @Query(messageFetchDescriptor()) private var unreadMessages: [Message]
+    @Query(unreadMessageFetchDescriptor()) private var unreadMessages: [Message]
     @Environment(\.dismiss) var dismiss
 
     @State private var showingAddDeviceSheet: Bool = false
@@ -158,8 +154,19 @@ struct RemoteViewContained: View {
         ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
     }
 
-    @State var isHorizontal: Bool = false
-    @State var isSmallWidth: Bool = true
+    @State var controlledIsHorizontal: Bool?
+    @AppStorage(UserDefaultKeys.macosKeysWindowHorizontal) private var windowWasLastHorizontal: Bool = false
+
+    var isHorizontal: Bool {
+        if let controlledIsHorizontal {
+            return controlledIsHorizontal
+        }
+        #if os(macOS)
+        return windowWasLastHorizontal
+        #else
+        return UIDevice.current.orientation.isLandscape
+        #endif
+    }
 
     @State var volume: Float = 0
     @State var lastVolumeChangeFromTv: Bool = false
@@ -168,13 +175,6 @@ struct RemoteViewContained: View {
 
     private struct IsHorizontalKey: PreferenceKey {
         static let defaultValue: Bool = false
-        static func reduce(value: inout Bool, nextValue: () -> Bool) {
-            value = nextValue()
-        }
-    }
-
-    private struct IsSmallWidth: PreferenceKey {
-        static let  defaultValue: Bool = false
         static func reduce(value: inout Bool, nextValue: () -> Bool) {
             value = nextValue()
         }
@@ -246,18 +246,18 @@ struct RemoteViewContained: View {
                 }
                 .task {
                     while !Task.isCancelled {
-                        await DataHandler().refreshMessagesIfExpectingNewMessages()
+                        await MessageDataHandler.shared.refreshMessagesIfExpectingNewMessages()
                         try? await Task.sleep(nanoseconds: 1000 * 1000 * 1000 * 3600)
                     }
                 }
                 .task {
                     if loadTestingData() {
                         // swiftlint:disable:next force_try
-                        try! await DataHandler().loadTestData()
-                        // try! await DataHandler().loadLoadTestData()
+                        try! await RoamDataHandler().loadTestData()
+                        // try! await RoamDataHandler().loadLoadTestData()
                     } else if usingTestingDataContainer() {
                         // swiftlint:disable:next force_try
-                        try! await DataHandler().clearData()
+                        try! await RoamDataHandler().clearData()
                     }
                 }
 #if os(iOS)
@@ -309,7 +309,7 @@ struct RemoteViewContained: View {
                             if Task.isCancelled {
                                 return
                             }
-                            let handler = DataHandler()
+                            let handler = RoamDataHandler()
                             await handler.refreshDevice(client: ECPWebsocketRefreshClient(id: selectedDevice.persistentModelID, client: ecpSession, location: selectedDevice.location))
                         } else {
                             Log.connection
@@ -410,24 +410,16 @@ struct RemoteViewContained: View {
                 .overlay(
                     GeometryReader { proxy in
                         let isHorizontal = proxy.size.width > proxy.size.height
-                        let isSmallWidth = proxy.size.width <= globalToolbarShrinkWidth
 
                         Color.clear.preference(key: IsHorizontalKey.self, value: isHorizontal)
-                        Color.clear.preference(key: IsSmallWidth.self, value: isSmallWidth)
                     }
                 )
                 .onPreferenceChange(IsHorizontalKey.self) { value in
                     DispatchQueue.main.async {
                         withAnimation {
                             Log.userInteraction.notice("IsHorizontalKey changed to \(value, privacy: .public)")
-                            isHorizontal = value
-                        }
-                    }
-                }
-                .onPreferenceChange(IsSmallWidth.self) { value in
-                    DispatchQueue.main.async {
-                        withAnimation {
-                            isSmallWidth = value
+                            controlledIsHorizontal = value
+                            windowWasLastHorizontal = value
                         }
                     }
                 }
@@ -579,6 +571,7 @@ struct RemoteViewContained: View {
                         .buttonStyle(.borderless)
                         .foregroundStyle(Color.secondary)
 #endif
+                        .customKeyboardShortcut(.addDevice)
                     }
 
                     if isHorizontal {
@@ -1027,7 +1020,7 @@ struct RemoteViewContained: View {
         }
         Task.detached {
             if let modelId = app.modelId {
-                await DataHandler().setSelectedApp(modelId)
+                await RoamDataHandler().setSelectedApp(modelId)
             }
         }
     }

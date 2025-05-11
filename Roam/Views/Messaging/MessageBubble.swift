@@ -92,7 +92,7 @@ struct MessageBubble: View {
                 MessageFraming(message: message) {
                     AttachmentView(attachment: attachment, message: message)
                         .background(color)
-                        .frame(height: 120)
+                        .frame(minWidth: 120, maxHeight: globalMaxAttachmentSize)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -101,7 +101,7 @@ struct MessageBubble: View {
                 MessageFraming(message: message) {
                     AttachmentView(attachment: attachment, message: message)
                         .background(color)
-                        .frame(height: 120)
+                        .frame(minWidth: 120, maxHeight: globalMaxAttachmentSize)
                }
             }
         }

@@ -10,18 +10,18 @@ public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Enc
         public init() {}
 
         public func entities(for identifiers: [DeviceAppEntity.ID]) async throws -> [DeviceAppEntity] {
-            let dataHandler = await DataHandler()
+            let dataHandler = await RoamDataHandler()
 
             return try await dataHandler.deviceEntities(for: identifiers)
         }
 
         public func entities(matching string: String) async throws -> [DeviceAppEntity] {
-            let dataHandler = await DataHandler()
+            let dataHandler = await RoamDataHandler()
             return try await dataHandler.deviceEntities(matching: string)
         }
 
         public func suggestedEntities() async throws -> [DeviceAppEntity] {
-            let dataHandler = await DataHandler()
+            let dataHandler = await RoamDataHandler()
             return try await dataHandler.allDeviceEntities()
         }
     }

@@ -1,8 +1,5 @@
 import Foundation
 import os.log
-#if !WIDGET
-import XMLCoder
-#endif
 import Network
 
 struct PreconnectionDeviceInfo: Codable {
@@ -17,7 +14,7 @@ struct PreconnectionDeviceInfo: Codable {
         self.friendlyName = service.device.friendlyName
         self.location = location
         self.serial = service.device.serialNumber
-        self.deviceImagePath = service.device.iconList.icon.first?.url
+        self.deviceImagePath = service.device.iconList.first?.url
     }
 }
 
@@ -78,17 +75,13 @@ private struct DeviceServiceRoot: Codable {
     let device: DeviceIconDescription
 
     struct DeviceIconDescription: Codable {
-        let iconList: IconList
+        let iconList: [Icon]
         let friendlyName: String
         let UDN: String
         let serialNumber: String
 
-        struct IconList: Codable {
-            let icon: [Icon]
-
-            struct Icon: Codable {
-                let url: String
-            }
+        struct Icon: Codable {
+            let url: String
         }
     }
 }
@@ -144,9 +137,7 @@ struct DeviceCapabilities {
     let rtcpPort: UInt16?
 }
 
-struct Apps: Decodable {
-    let app: [AppLinkAppEntity]
-}
+typealias Apps = [AppLinkAppEntity]
 
 #if !WIDGET
 func fetchPreconnectionInfo(location: String) async throws -> PreconnectionDeviceInfo {
@@ -157,7 +148,7 @@ func fetchPreconnectionInfo(location: String) async throws -> PreconnectionDevic
     let (data, _) = try await URLSession.shared.data(from: url)
 
     // Decode XML to Root object
-    let decoder = XMLDecoder()
+    let decoder = XMLStreamDecoder()
     let root = try decoder.decode(DeviceServiceRoot.self, from: data)
 
     return PreconnectionDeviceInfo(service: root, location: location)
@@ -181,7 +172,7 @@ func fetchDeviceCapabilities(location: String) async throws -> DeviceCapabilitie
     let url = URL(string: "\(location)query/audio-device")!
     let (data, _) = try await URLSession.shared.data(from: url)
 
-    let decoder = XMLDecoder()
+    let decoder = XMLStreamDecoder()
     let audioDevice = try decoder.decode(AudioDevice.self, from: data)
 
     let isDatagramSupported = audioDevice.capabilities.allDestinations?.contains("datagram")
@@ -203,8 +194,7 @@ func fetchDeviceInfo(location: String) async throws -> DeviceInfo {
     do {
         let (data, _) = try await URLSession.shared.data(for: request)
         if let xmlString = String(data: data, encoding: .utf8) {
-            let decoder = XMLDecoder()
-            decoder.keyDecodingStrategy = .convertFromKebabCase
+            let decoder = XMLStreamDecoder(.convertFromKebabCase)
             return try decoder.decode(DeviceInfo.self, from: Data(xmlString.utf8))
         }
         throw APIError.badData("No valid string returned")
@@ -220,10 +210,10 @@ func fetchDeviceApps(location: String) async throws -> [AppLinkAppEntity] {
     }
     let (data, _) = try await URLSession.shared.data(from: url)
 
-    let decoder = XMLDecoder()
+    let decoder = XMLStreamDecoder()
     let apps = try decoder.decode(Apps.self, from: data)
 
-    return apps.app
+    return apps
 }
 
 func fetchAppIcon(location: String, appId: String) async throws -> Data {

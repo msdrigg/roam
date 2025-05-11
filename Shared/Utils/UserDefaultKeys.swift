@@ -13,6 +13,7 @@ enum UserDefaultKeys {
     static let networkPermissionBannerDismissed = "networkPermissionBannerDismissed"
     static let networkExpensiveBannerDismissed = "networkExpensiveBannerDismissed"
     static let localNetworkPermissionGranted = "localNetworkPermissionGranted"
+    static let macosKeysWindowHorizontal = "macosKeysWindowHorizontal"
 
     // Messaging
     static let lastTypingTime = "lastTypingTime"

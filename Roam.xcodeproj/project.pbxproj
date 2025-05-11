@@ -119,7 +119,6 @@
 		AF344FFC2D42E6BC00179FE0 /* AsyncHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA132AE4471200A42DFF /* AsyncHelpers.swift */; };
 		AF344FFD2D42E76600179FE0 /* DataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA222AE455B400A42DFF /* DataHelpers.swift */; };
 		AF344FFE2D42E9D200179FE0 /* NetworkHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF95B74F2ADF43FD005FC338 /* NetworkHelpers.swift */; };
-		AF3450002D42EA3000179FE0 /* XMLCoder in Frameworks */ = {isa = PBXBuildFile; productRef = AF344FFF2D42EA3000179FE0 /* XMLCoder */; };
 		AF35038F2BB499F3004F4337 /* RoamWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AF27400B2AE02C25007C6208 /* RoamWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AF35ACEB2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF35ACEA2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift */; };
 		AF35ACF22BA3D6B200CC8B36 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AF35ACF12BA3D21F00CC8B36 /* PrivacyInfo.xcprivacy */; };
@@ -130,6 +129,9 @@
 		AF3AD5592AE2940A00E2D780 /* KeyboardMonitorAppKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3AD5582AE2940A00E2D780 /* KeyboardMonitorAppKit.swift */; };
 		AF3AD55B2AE2947E00E2D780 /* KeyboardEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3AD55A2AE2947E00E2D780 /* KeyboardEntry.swift */; };
 		AF3AD55D2AE299BD00E2D780 /* DevicePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3AD55C2AE299BD00E2D780 /* DevicePicker.swift */; };
+		AF3BDD142DCF8F9200DABFA6 /* XMLStreamingDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3BDD132DCF8F8F00DABFA6 /* XMLStreamingDecoder.swift */; };
+		AF3BDD152DCF8F9200DABFA6 /* XMLStreamingDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3BDD132DCF8F8F00DABFA6 /* XMLStreamingDecoder.swift */; };
+		AF3BDD162DCF8F9200DABFA6 /* XMLStreamingDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3BDD132DCF8F8F00DABFA6 /* XMLStreamingDecoder.swift */; };
 		AF3D62D72AE6F703006AB8E9 /* OpusDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3D62D62AE6F703006AB8E9 /* OpusDecoder.swift */; };
 		AF3EEF952AE0206E00B661F3 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5B16E32AD5D5BB00053BDC /* AudioPlayer.swift */; };
 		AF3EEF962AE0206E00B661F3 /* RokuSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF76B8152AD8A14600DF6FF7 /* RokuSession.swift */; };
@@ -252,7 +254,6 @@
 		AFD9C4ED2AE980C300C4079C /* DataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA222AE455B400A42DFF /* DataHelpers.swift */; };
 		AFD9C4F22AE9828600C4079C /* SmallRemoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD9C4E02AE9802200C4079C /* SmallRemoteView.swift */; };
 		AFD9C4F32AE982E400C4079C /* DiscoveryActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF95B7532ADF4435005FC338 /* DiscoveryActor.swift */; };
-		AFD9C4F52AE9830100C4079C /* XMLCoder in Frameworks */ = {isa = PBXBuildFile; productRef = AFD9C4F42AE9830100C4079C /* XMLCoder */; };
 		AFD9C4F82AE983A800C4079C /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */; };
 		AFD9C4F92AE983AE00C4079C /* SSDPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA272AE54ABC00A42DFF /* SSDPService.swift */; };
 		AFD9C4FA2AE983B300C4079C /* SSDPDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA2A2AE54AD100A42DFF /* SSDPDiscovery.swift */; };
@@ -281,7 +282,6 @@
 		AFEBD9112D5D489C00E840FF /* SelectedAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF9DE5662D553DDE00C50894 /* SelectedAttachment.swift */; };
 		AFEBD9132D5DACA100E840FF /* MessageBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED45EB2D52BF3000FD53E2 /* MessageBubble.swift */; };
 		AFEBD9172D5DAF7A00E840FF /* WatchOSAttachButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFEBD9152D5DAF7A00E840FF /* WatchOSAttachButton.swift */; };
-		AFECDE1A2AE184FE003F6676 /* XMLCoder in Frameworks */ = {isa = PBXBuildFile; productRef = AFECDE192AE184FE003F6676 /* XMLCoder */; };
 		AFECDE1D2AE18511003F6676 /* Opus in Frameworks */ = {isa = PBXBuildFile; productRef = AFECDE1C2AE18511003F6676 /* Opus */; };
 		AFECDE202AE18519003F6676 /* RTP in Frameworks */ = {isa = PBXBuildFile; productRef = AFECDE1F2AE18519003F6676 /* RTP */; };
 		AFED424A2AEE8F3B0023D684 /* VolumeListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED42492AEE8F3B0023D684 /* VolumeListener.swift */; };
@@ -467,6 +467,7 @@
 		AF3AD5582AE2940A00E2D780 /* KeyboardMonitorAppKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardMonitorAppKit.swift; sourceTree = "<group>"; };
 		AF3AD55A2AE2947E00E2D780 /* KeyboardEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardEntry.swift; sourceTree = "<group>"; };
 		AF3AD55C2AE299BD00E2D780 /* DevicePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicePicker.swift; sourceTree = "<group>"; };
+		AF3BDD132DCF8F8F00DABFA6 /* XMLStreamingDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMLStreamingDecoder.swift; sourceTree = "<group>"; };
 		AF3D62D62AE6F703006AB8E9 /* OpusDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpusDecoder.swift; sourceTree = "<group>"; };
 		AF3F35082D3E9230009AF2F8 /* ImageDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDecoder.swift; sourceTree = "<group>"; };
 		AF42442D2BB1118700334AAF /* SchemaFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaFile.swift; sourceTree = "<group>"; };
@@ -588,7 +589,6 @@
 			isa = PBXFrameworksBuildPhase;
 			files = (
 				AF0042832AEAA3ED0051BB1E /* libwebp in Frameworks */,
-				AFD9C4F52AE9830100C4079C /* XMLCoder in Frameworks */,
 			);
 		};
 		AF2740082AE02C25007C6208 /* Frameworks */ = {
@@ -601,7 +601,6 @@
 		AF344FDC2D42D34A00179FE0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
-				AF3450002D42EA3000179FE0 /* XMLCoder in Frameworks */,
 				AF344FEB2D42D3BE00179FE0 /* ArgumentParser in Frameworks */,
 			);
 		};
@@ -619,7 +618,6 @@
 			isa = PBXFrameworksBuildPhase;
 			files = (
 				AFECDE202AE18519003F6676 /* RTP in Frameworks */,
-				AFECDE1A2AE184FE003F6676 /* XMLCoder in Frameworks */,
 				AFECDE1D2AE18511003F6676 /* Opus in Frameworks */,
 			);
 		};
@@ -806,6 +804,7 @@
 		AF56E3BB2AD9865400F5E6E0 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
+				AF3BDD132DCF8F8F00DABFA6 /* XMLStreamingDecoder.swift */,
 				AFCD235D2DCBC6210000E80E /* QBackgroundExecution.swift */,
 				AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */,
 				AF468D362D333A9C00DF0F2E /* QSocket.swift */,
@@ -1043,7 +1042,6 @@
 			);
 			name = RoamWatch;
 			packageProductDependencies = (
-				AFD9C4F42AE9830100C4079C /* XMLCoder */,
 				AF0042822AEAA3ED0051BB1E /* libwebp */,
 			);
 			productName = "RoamWatch Watch App";
@@ -1078,7 +1076,6 @@
 			name = "roam-cli";
 			packageProductDependencies = (
 				AF344FEA2D42D3BE00179FE0 /* ArgumentParser */,
-				AF344FFF2D42EA3000179FE0 /* XMLCoder */,
 			);
 			productName = RoamCLI;
 			productReference = AF344FDF2D42D34A00179FE0 /* roam-cli */;
@@ -1142,7 +1139,6 @@
 			);
 			name = Roam;
 			packageProductDependencies = (
-				AFECDE192AE184FE003F6676 /* XMLCoder */,
 				AFECDE1C2AE18511003F6676 /* Opus */,
 				AFECDE1F2AE18519003F6676 /* RTP */,
 			);
@@ -1226,7 +1222,6 @@
 			);
 			mainGroup = AFC24EF22AD0E5A1002AB66C;
 			packageReferences = (
-				AFECDE182AE184FE003F6676 /* XCRemoteSwiftPackageReference "XMLCoder" */,
 				AFECDE1B2AE18511003F6676 /* XCRemoteSwiftPackageReference "swift-opus" */,
 				AFECDE1E2AE18519003F6676 /* XCRemoteSwiftPackageReference "swift-rtp" */,
 				AF0042812AEAA3ED0051BB1E /* XCRemoteSwiftPackageReference "libwebp-Xcode" */,
@@ -1320,6 +1315,7 @@
 				"  echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"",
 				"fi",
 				"",
+				"",
 			);
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -1354,6 +1350,7 @@
 				AF42442F2BB1118700334AAF /* SchemaFile.swift in Sources */,
 				AFD9C4F32AE982E400C4079C /* DiscoveryActor.swift in Sources */,
 				AFD9C4FB2AE983BF00C4079C /* DeviceApi.swift in Sources */,
+				AF3BDD152DCF8F9200DABFA6 /* XMLStreamingDecoder.swift in Sources */,
 				AF2F54F02BCE58EF00BAE156 /* WorkersBackend.swift in Sources */,
 				AFD9C4EC2AE980BF00C4079C /* NetworkHelpers.swift in Sources */,
 				AFD9C4F82AE983A800C4079C /* NetworkUtils.swift in Sources */,
@@ -1419,6 +1416,7 @@
 				AF736A842DCD75C70028A2B4 /* AttachmentError.swift in Sources */,
 				AF2C85A62D37183E00A167B2 /* ECPProtocol.swift in Sources */,
 				AF0D09F02CDE5C410098122E /* Helpers.swift in Sources */,
+				AF3BDD142DCF8F9200DABFA6 /* XMLStreamingDecoder.swift in Sources */,
 				AF205B2A2AE02D1C00041CDF /* RemoteButtonAppEnum.swift in Sources */,
 				AF205B212AE02CAF00041CDF /* SmallRemoteWidget.swift in Sources */,
 				AF1899FD2C1CE2E5001EDA78 /* AccessoryGroupRemoteView.swift in Sources */,
@@ -1593,6 +1591,7 @@
 				AFC4A65F2AE8AF3F005DAC6C /* FallibleImage.swift in Sources */,
 				AF0042852AEABA9D0051BB1E /* CollectionHelpers.swift in Sources */,
 				AF19CA352AE694E500A42DFF /* AsyncThrowingBufferedChannel.swift in Sources */,
+				AF3BDD162DCF8F9200DABFA6 /* XMLStreamingDecoder.swift in Sources */,
 				AFA079DD2AE02561003E2754 /* AppLinkAppEntity.swift in Sources */,
 				AFD590D02AEC673C00189620 /* WatchConnector.swift in Sources */,
 				AF20AD172AE01EDB00D371C7 /* RemoteButton.swift in Sources */,
@@ -2327,14 +2326,6 @@
 				minimumVersion = 1.5.0;
 			};
 		};
-		AFECDE182AE184FE003F6676 /* XCRemoteSwiftPackageReference "XMLCoder" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/CoreOffice/XMLCoder.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.17.1;
-			};
-		};
 		AFECDE1B2AE18511003F6676 /* XCRemoteSwiftPackageReference "swift-opus" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/alta/swift-opus";
@@ -2363,21 +2354,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AF344FE92D42D3B600179FE0 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
 			productName = ArgumentParser;
-		};
-		AF344FFF2D42EA3000179FE0 /* XMLCoder */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AFECDE182AE184FE003F6676 /* XCRemoteSwiftPackageReference "XMLCoder" */;
-			productName = XMLCoder;
-		};
-		AFD9C4F42AE9830100C4079C /* XMLCoder */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AFECDE182AE184FE003F6676 /* XCRemoteSwiftPackageReference "XMLCoder" */;
-			productName = XMLCoder;
-		};
-		AFECDE192AE184FE003F6676 /* XMLCoder */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AFECDE182AE184FE003F6676 /* XCRemoteSwiftPackageReference "XMLCoder" */;
-			productName = XMLCoder;
 		};
 		AFECDE1C2AE18511003F6676 /* Opus */ = {
 			isa = XCSwiftPackageProductDependency;

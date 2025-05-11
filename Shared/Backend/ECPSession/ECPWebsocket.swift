@@ -2,9 +2,6 @@
 import Network
 import Dispatch
 import OSLog
-#if !WIDGET
-import XMLCoder
-#endif
 
 typealias ECPStateCallback = @Sendable (ECPWebsocketState) -> Void
 typealias ECPNotificationCallback = @Sendable (ECPNotification) -> Void
@@ -185,8 +182,7 @@ actor ECPWebsocketClient: Sendable {
             guard let data = resp.contentData else {
                 throw ECPError.invalidResponse
             }
-            let decoder = XMLDecoder()
-            decoder.keyDecodingStrategy = .convertFromKebabCase
+            let decoder = XMLStreamDecoder(.convertFromKebabCase)
             do {
                 return try decoder.decode(DeviceInfo.self, from: data)
             } catch {
@@ -205,7 +201,7 @@ actor ECPWebsocketClient: Sendable {
                 throw ECPError.invalidResponse
             }
 
-            let decoder = XMLDecoder()
+            let decoder = XMLStreamDecoder()
             let audioDevice = try decoder.decode(AudioDevice.self, from: data)
 
             let isDatagramSupported = audioDevice.capabilities.allDestinations?.contains("datagram")
@@ -224,10 +220,10 @@ actor ECPWebsocketClient: Sendable {
                 throw ECPError.invalidResponse
             }
 
-            let decoder = XMLDecoder()
+            let decoder = XMLStreamDecoder()
             let apps = try decoder.decode(Apps.self, from: data)
 
-            return apps.app
+            return apps
         }
     }
 #endif

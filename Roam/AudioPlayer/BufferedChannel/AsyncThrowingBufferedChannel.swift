@@ -4,6 +4,7 @@
 //
 //  Created by Thibault Wittemberg on 07/01/2022.
 //
+// Please see the source at https://github.com/apple/swift-async-algorithms
 
 /// A channel for sending elements from one task to another.
 ///

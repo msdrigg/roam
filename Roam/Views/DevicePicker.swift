@@ -85,7 +85,7 @@ struct DevicePicker: View {
                         if let pid = $0?.persistentModelID {
                             Task.detached {
                                 try? await Task.sleep(duration: 0.5)
-                                await DataHandler().setSelectedDevice(pid)
+                                await RoamDataHandler().setSelectedDevice(pid)
                             }
                         }
                     }

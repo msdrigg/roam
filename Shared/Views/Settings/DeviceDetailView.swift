@@ -24,11 +24,10 @@ struct DeviceDetailView: View {
         self.deviceId = deviceId
         var descriptor = FetchDescriptor<Device>(predicate: #Predicate<Device> { device in
             device.deletedAt == nil && device.persistentModelID == deviceId
-        })
-        descriptor.fetchLimit = 1
-        descriptor.sortBy = [
+        }, sortBy: [
             SortDescriptor(\Device.lastSelectedAt, order: .reverse)
-        ]
+        ])
+        descriptor.fetchLimit = 1
 
         _selectedDevices = Query(
             descriptor
@@ -107,11 +106,11 @@ struct DeviceDetailView: View {
             }, footer: {
                 VStack {
                     HStack(alignment: .center) {
-                        FallibleImage(from: device?.iconURL, fallback: "tv")
+                        FallibleImage(from: device?.iconURL, fallback: "tv", maxSize: 120)
 #if os(macOS)
-                            .frame(maxHeight: 45)
+                            .frame(maxWidth: 120, maxHeight: 45)
 #else
-                            .frame(maxHeight: 85)
+                            .frame(maxWidth: 120, maxHeight: 85)
 #endif
                             .padding(.horizontal, 12)
                             .padding(4)
@@ -234,7 +233,7 @@ struct DeviceDetailView: View {
                         dismiss()
                     }
                     do {
-                        try await DataHandler().delete(deviceId)
+                        try await RoamDataHandler().delete(deviceId)
 
                         Log.userInteraction.notice("Deleted device with id \(String(describing: deviceId), privacy: .public)")
                     } catch {
@@ -280,7 +279,7 @@ struct DeviceDetailView: View {
             let deviceUrl = addSchemeAndPort(to: cleanedString)
             Log.data.notice("Getting device url \(deviceUrl, privacy: .public)")
 
-            let dh = DataHandler()
+            let dh = RoamDataHandler()
             Task {
                 await dh.updateDevice(device.persistentModelID, name: deviceName, location: deviceUrl, hidden: hidden)
 

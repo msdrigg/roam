@@ -341,7 +341,7 @@ struct MessageView: View {
 
             if latestMessageId != nil {
                 let result = await Task.detached {
-                    return await DataHandler().refreshMessages(
+                    return await MessageDataHandler.shared.refreshMessages(
                         viewed: true
                     )
                 }.value
@@ -437,10 +437,10 @@ struct MessageView: View {
         Log.userInteraction.notice("Sending message \"\(messageText, privacy: .public)\" with attachment \(attachment?.filename ?? "--", privacy: .public) attachments")
         Task {
             do {
-                try await DataHandler().sendChatMessage(message: messageCopy, attachment: attachment)
+                try await MessageDataHandler.shared.sendChatMessage(message: messageCopy, attachment: attachment)
 
                 Task {
-                    let result = await DataHandler().refreshMessages(
+                    let result = await MessageDataHandler.shared.refreshMessages(
                         viewed: true
                     )
                     if result > 0 {

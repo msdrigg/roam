@@ -23,7 +23,7 @@
             if session.isReachable {
                 Task {
                     do {
-                        let devices = try await DataHandler().allDeviceEntities()
+                        let devices = try await RoamDataHandler().allDeviceEntities()
                         DispatchQueue.main.async {
                             self.transferDevices(session, devices: devices)
                         }
@@ -39,7 +39,7 @@
             DispatchQueue.main.async {
                 Task {
                     do {
-                        let devices = try await DataHandler().allDeviceEntities()
+                        let devices = try await RoamDataHandler().allDeviceEntities()
                         DispatchQueue.main.async {
                             self.transferDevices(session, devices: devices)
                         }
@@ -90,7 +90,7 @@
 
                 session.sendMessage(deviceMap, replyHandler: { reply in
                     Task.detached {
-                        let dataHandler = await DataHandler()
+                        let dataHandler = await RoamDataHandler()
                         for device in transferingDevices {
                             await dataHandler.sentToWatch(deviceId: device)
                         }
@@ -111,13 +111,13 @@
             if let error {
                 Log.watch.error("WCSession activated with error: \(error, privacy: .public)")
                 Task {
-                    await DataHandler().watchPossiblyDead()
+                    await RoamDataHandler().watchPossiblyDead()
                 }
             } else {
                 Log.watch.notice("WCSession activated no error")
                 Task {
                     do {
-                        let devices = try await DataHandler().allDeviceEntities()
+                        let devices = try await RoamDataHandler().allDeviceEntities()
 
                         DispatchQueue.main.async {
                             self.transferDevices(session, devices: devices)
@@ -133,7 +133,7 @@
             Log.watch.notice("WatchConnectivity session became inactive")
 
             Task {
-                await DataHandler().watchPossiblyDead()
+                await RoamDataHandler().watchPossiblyDead()
             }
         }
 
@@ -141,7 +141,7 @@
             Log.watch.notice("WatchConnectivity session deactivated")
 
             Task {
-                await DataHandler().watchPossiblyDead()
+                await RoamDataHandler().watchPossiblyDead()
             }
         }
     }

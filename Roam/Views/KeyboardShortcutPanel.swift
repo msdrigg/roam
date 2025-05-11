@@ -69,6 +69,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
                 .paste: KeyboardShortcut(KeyEquivalent("v"), modifiers: .command),
                 .cut: KeyboardShortcut(KeyEquivalent("x"), modifiers: .command),
                 .copy: KeyboardShortcut(KeyEquivalent("c"), modifiers: .command),
+                .addDevice: KeyboardShortcut(KeyEquivalent("n"), modifiers: [.command]),
             ]
         } else {
             items = [
@@ -88,7 +89,8 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
                 .chatWithDeveloper: KeyboardShortcut(KeyEquivalent("j"), modifiers: .command),
                 .paste: KeyboardShortcut(KeyEquivalent("v"), modifiers: .command),
                 .cut: KeyboardShortcut(KeyEquivalent("x"), modifiers: .command),
-                .copy: KeyboardShortcut(KeyEquivalent("c"), modifiers: .command)
+                .copy: KeyboardShortcut(KeyEquivalent("c"), modifiers: .command),
+                .addDevice: KeyboardShortcut(KeyEquivalent("n"), modifiers: [.command]),
             ]
         }
         #else
@@ -110,7 +112,8 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
             .copy: KeyboardShortcut(KeyEquivalent("c"), modifiers: .command),
             .keyboardShortcuts: KeyboardShortcut(KeyEquivalent("k"), modifiers: .command),
             .chatWithDeveloper: KeyboardShortcut(KeyEquivalent("j"), modifiers: .command),
-            .showRoam: KeyboardShortcut(KeyEquivalent("r"), modifiers: [.command, .control, .shift])
+            .showRoam: KeyboardShortcut(KeyEquivalent("r"), modifiers: [.command, .control, .shift]),
+            .addDevice: KeyboardShortcut(KeyEquivalent("n"), modifiers: [.command]),
         ]
         #endif
 
@@ -183,6 +186,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
         case copy = "Copy"
         case cut = "Cut"
         case showRoam = "Show Roam"
+        case addDevice = "Add Device"
 
         var defaultsKey: String {
             return "keyboard-shortcut-\(rawValue)"
@@ -221,6 +225,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
             .cut: String(localized: "Cut", comment: "Keyboard shortcut to cut"),
             .copy: String(localized: "Copy", comment: "Keyboard shortcut to copy"),
             .showRoam: String(localized: "Show Roam", comment: "Keyboard shortcut to show the Roam app"),
+            .addDevice: String(localized: "Add Device", comment: "Keyboard shortcut to show the Roam app"),
         ]
 
         public var description: String {
@@ -294,7 +299,7 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
                 return .up
             case .down:
                 return .down
-            case .keyboardShortcuts, .paste, .chatWithDeveloper, .cut, .copy, .showRoam:
+            case .keyboardShortcuts, .paste, .chatWithDeveloper, .cut, .copy, .showRoam, .addDevice:
                 return nil
             case .options:
                 return .options
@@ -568,6 +573,7 @@ struct AllCustomKeyboardShortcuts: DynamicProperty {
     @KeyboardShortcutStorage(.fastForward) private var fastForwardShortcut
     @KeyboardShortcutStorage(.rewind) private var rewindShortcut
     @KeyboardShortcutStorage(.showRoam) private var showRoamShortcut
+    @KeyboardShortcutStorage(.addDevice) private var addDeviceShortcut
 
     var wrappedValue: [CustomKeyboardShortcut] {
         [
@@ -593,7 +599,8 @@ struct AllCustomKeyboardShortcuts: DynamicProperty {
             pasteShortcut,
             copyShortcut,
             cutShortcut,
-            showRoamShortcut
+            showRoamShortcut,
+            addDeviceShortcut,
         ]
             .compactMap { $0 }
     }
@@ -625,6 +632,7 @@ struct AllCustomKeyboardShortcuts: DynamicProperty {
                     cutShortcut,
                     copyShortcut,
                     showRoamShortcut,
+                    addDeviceShortcut,
                 ].compactMap { $0 }
             },
             set: { newShortcuts in
@@ -653,6 +661,7 @@ struct AllCustomKeyboardShortcuts: DynamicProperty {
                     case .cut: cutShortcut = shortcut
                     case .copy: copyShortcut = shortcut
                     case .showRoam: showRoamShortcut = shortcut
+                    case .addDevice: addDeviceShortcut = shortcut
                     }
                 }
             }

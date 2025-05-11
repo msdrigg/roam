@@ -130,7 +130,7 @@ struct AppLinkButton: View {
             action(app.toAppEntity())
         }, label: {
             VStack {
-                FallibleImage(from: app.iconURL, fallback: "questionmark.app.fill")
+                FallibleImage(from: app.iconURL, fallback: "questionmark.app.fill", maxSize: gridWidth)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .frame(width: gridWidth)
                     .shadow(radius: 4)

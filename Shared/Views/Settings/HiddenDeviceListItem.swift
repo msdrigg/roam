@@ -19,7 +19,7 @@ struct HiddenDeviceListItem: View {
                 let pid = device.persistentModelID
                 Task.detached {
                     do {
-                        try await DataHandler().delete(pid)
+                        try await RoamDataHandler().delete(pid)
                         Log.userInteraction
                             .notice(
                                 "Deleted device with id \(String(describing: pid), privacy: .public)"
@@ -37,7 +37,7 @@ struct HiddenDeviceListItem: View {
             Button {
                 let pid = device.persistentModelID
                 Task.detached {
-                    await DataHandler().updateDevice(
+                    await RoamDataHandler().updateDevice(
                         pid,
                         hidden: false
                     )
@@ -57,7 +57,7 @@ struct HiddenDeviceListItem: View {
             Button {
                 let pid = device.persistentModelID
                 Task.detached {
-                    await DataHandler().updateDevice(
+                    await RoamDataHandler().updateDevice(
                         pid,
                         hidden: false
                     )

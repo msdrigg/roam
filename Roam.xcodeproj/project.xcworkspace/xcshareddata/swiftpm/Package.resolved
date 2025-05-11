@@ -1,5 +1,5 @@
 {
-  "originHash" : "0720dc582c6d7445485d2454926f5094d0b70333769b66398a49ea6480b66197",
+  "originHash" : "4f06c84c927e589e438d5da6491bd1b1a84aff47b07972157c8a144301c2ba0c",
   "pins" : [
     {
       "identity" : "libwebp-xcode",
@@ -35,15 +35,6 @@
       "state" : {
         "branch" : "main",
         "revision" : "ff10c1336189135b86d962c5721e41a49c55c06a"
-      }
-    },
-    {
-      "identity" : "xmlcoder",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/CoreOffice/XMLCoder.git",
-      "state" : {
-        "revision" : "b1e944cbd0ef33787b13f639a5418d55b3bed501",
-        "version" : "0.17.1"
       }
     }
   ],

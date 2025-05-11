@@ -160,7 +160,7 @@ func getDebugInfo() async -> DebugInfo {
 
     var devices: [DeviceAppEntity] = []
     do {
-        devices = try await DataHandler().allDeviceEntitiesIncludingDeleted()
+        devices = try await RoamDataHandler().allDeviceEntitiesIncludingDeleted()
     } catch {
         debugErrors.append("Error Getting Devices: \n\(error)")
     }
@@ -211,7 +211,7 @@ func getDebugInfo() async -> DebugInfo {
 
     var appLinks: [AppLinkAppEntity] = []
     do {
-        appLinks = try await DataHandler().allAppEntities()
+        appLinks = try await RoamDataHandler().allAppEntities()
     } catch {
         debugErrors.append("Error Getting AppLinks: \n\(error)")
     }

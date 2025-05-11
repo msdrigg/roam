@@ -43,13 +43,7 @@ let mainLicenses: [Dependency] = [
         licenseType: "Apache-2.0"
     ),
     Dependency(name: "SSDPClient", link: "https://github.com/pierrickrouxel/SSDPClient", licenseType: "MIT"),
-    Dependency(name: "XMLCoder", link: "https://github.com/CoreOffice/XMLCoder", licenseType: "MIT"),
     Dependency(name: "AsyncSemaphore", link: "https://github.com/groue/Semaphore", licenseType: "MIT"),
-    Dependency(
-        name: "Swift Collections",
-        link: "https://github.com/apple/swift-collections",
-        licenseType: "Apache-2.0"
-    ),
     Dependency(name: "Wrapping HStack", link: "https://github.com/ksemianov/WrappingHStack", licenseType: "MIT"),
 ]
 

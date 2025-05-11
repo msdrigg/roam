@@ -8,7 +8,7 @@ func getGlobalNewDeviceName() -> String {
 }
 
 @ModelActor
-public actor DataHandler {
+public actor RoamDataHandler {
     static let hardDeleteTimeout: TimeInterval = 3600
 
     private let minRescanInterval: TimeInterval = 30
@@ -19,15 +19,15 @@ public actor DataHandler {
     }
 
     private func allDevices() async throws -> [Device] {
-        var descriptor = FetchDescriptor<Device>(
+        let descriptor = FetchDescriptor<Device>(
             predicate: #Predicate {
                 $0.deletedAt == nil
-            }
+            },
+            sortBy: [
+                SortDescriptor(\Device.lastSelectedAt, order: .reverse),
+                SortDescriptor(\Device.lastOnlineAt, order: .reverse),
+            ]
         )
-        descriptor.sortBy = [
-            SortDescriptor(\Device.lastSelectedAt, order: .reverse),
-            SortDescriptor(\Device.lastOnlineAt, order: .reverse),
-        ]
         let links = try await self.fetchSafer(
             descriptor
         )
@@ -301,7 +301,6 @@ public actor DataHandler {
             }
         )
         matchingIds.fetchLimit = 1
-        matchingIds.includePendingChanges = true
         do {
             let matchingIds = try modelContext.fetchIdentifiers(matchingIds)
 
@@ -323,7 +322,6 @@ public actor DataHandler {
             }
         )
         matchingIds.fetchLimit = 1
-        matchingIds.includePendingChanges = true
         do {
             let matchingIds = try modelContext.fetchIdentifiers(matchingIds)
 
@@ -364,7 +362,7 @@ public actor DataHandler {
     }
 }
 
-extension DataHandler {
+extension RoamDataHandler {
     public func deviceEntities(for identifiers: [DeviceAppEntity.ID]) async throws -> [DeviceAppEntity] {
         let descriptor = FetchDescriptor<Device>(predicate: #Predicate {
             identifiers.contains($0.udn) && $0.deletedAt == nil
@@ -473,7 +471,7 @@ enum DataHandlerError: Error {
     case errorStoring
 }
 
-public extension DataHandler {
+public extension RoamDataHandler {
     #if !os(macOS)
     func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
         let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
@@ -529,7 +527,7 @@ public extension DataHandler {
     #endif
 }
 
-extension DataHandler {
+extension RoamDataHandler {
     internal func existingDevice(for id: PersistentIdentifier) async -> Device? {
         if let registered: Device = modelContext.registeredModel(for: id) {
             if registered.isDeleted || registered.deletedAt != nil {
@@ -592,11 +590,7 @@ extension PersistentIdentifier {
     }
 }
 
-public struct DataHandlerKey: EnvironmentKey {
-  public static let defaultValue: @Sendable () async -> DataHandler? = { nil }
-}
-
-extension DataHandler {
+extension RoamDataHandler {
     public func allAppEntities() async throws -> [AppLinkAppEntity] {
         let descriptor = FetchDescriptor<AppLink>(predicate: #Predicate { _ in
             true
@@ -731,7 +725,7 @@ actor ECPWebsocketRefreshClient: RefreshClient {
 #endif
 
 #if !WIDGET
-extension DataHandler {
+extension RoamDataHandler {
     func refreshDevice(client: any RefreshClient) async {
         let id: PersistentIdentifier
         do {
@@ -913,8 +907,13 @@ extension DataHandler {
         await deleteInPast()
     }
 }
+@ModelActor
+actor MessageDataHandler {
+    @MainActor
+    static let shared: MessageDataHandler = .init(modelContainer: getSharedModelContainer())
 
-extension DataHandler {
+    let semaphore: AsyncSemaphore = AsyncSemaphore(value: 1)
+
     @discardableResult
     public func refreshMessagesIfExpectingNewMessages() async -> Int {
         Log.data.notice("Refreshing messages")
@@ -961,6 +960,7 @@ extension DataHandler {
                 await self.trySendMessages()
                 return 0
             }
+            await Task.yield()
             taskGroup.addTask {
                 return await self.refreshExternalMessages(latestMessageId: latestMessageId, viewed: viewed)
             }
@@ -993,6 +993,14 @@ extension DataHandler {
     }
 
     public func trySendMessages() async {
+        do {
+            try await semaphore.waitUnlessCancelled()
+        } catch {
+            return
+        }
+        defer {
+            semaphore.signal()
+        }
         let messages: [Message]
         do {
             messages = try await self.getSendableMessages()
@@ -1043,6 +1051,14 @@ extension DataHandler {
     }
 
     public func refreshExternalMessages(latestMessageId: String?, viewed: Bool) async -> Int {
+        do {
+            try await self.semaphore.waitUnlessCancelled()
+        } catch {
+            return 0
+        }
+        defer {
+            self.semaphore.signal()
+        }
         do {
             var count = 0
             do {
@@ -1097,6 +1113,62 @@ extension DataHandler {
             return 0
         }
     }
+}
+
+extension MessageDataHandler {
+    #if !os(macOS)
+    func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
+        let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
+        var result: [T]?
+        do {
+            if await !assertion.isReleased() {
+                result = try catchObjc {
+                    return try self.modelContext.fetch(descriptor)
+                }
+            }
+            await assertion.release()
+        } catch {
+            await assertion.release()
+            throw error
+        }
+        if let result {
+            return result
+        } else {
+            throw DataHandlerError.suspending
+        }
+    }
+    #else
+    func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
+        return try catchObjc {
+            return try self.modelContext.fetch(descriptor)
+        }
+    }
+    #endif
+
+    #if !os(macOS)
+    func saveSafer() async throws {
+        let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
+        do {
+            if await !assertion.isReleased() {
+                try catchObjc {
+                    try self.modelContext.save()
+                }
+            } else {
+                throw DataHandlerError.suspending
+            }
+            await assertion.release()
+        } catch {
+            await assertion.release()
+            throw error
+        }
+    }
+    #else
+    func saveSafer() async throws {
+        try catchObjc {
+            try self.modelContext.save()
+        }
+    }
+    #endif
 }
 #endif
 
