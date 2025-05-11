@@ -46,9 +46,7 @@ struct SelectedAttachment {
     }
 
     var previewURL: URL? {
-        // TODO: Put this back!
-//        failure == nil ? attachment?.dataURL : nil
-        attachment?.dataURL
+        failure == nil ? attachment?.dataURL : nil
     }
 }
 

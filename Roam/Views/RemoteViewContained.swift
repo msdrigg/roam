@@ -161,7 +161,7 @@ struct RemoteViewContained: View {
         if let controlledIsHorizontal {
             return controlledIsHorizontal
         }
-        #if os(macOS)
+        #if os(macOS) || os(visionOS)
         return windowWasLastHorizontal
         #else
         return UIDevice.current.orientation.isLandscape
