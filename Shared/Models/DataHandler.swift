@@ -848,7 +848,7 @@ extension RoamDataHandler {
 
             if let sortedApps {
                 // Remove apps from device that aren't in fetchedApps
-                var deletedApps = deviceApps.filter { existingApp in
+                let deletedApps = deviceApps.filter { existingApp in
                     return !sortedApps.contains { $0.id == existingApp.id }
                 }
                 for app in deletedApps {

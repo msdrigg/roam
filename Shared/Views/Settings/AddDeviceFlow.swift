@@ -105,7 +105,9 @@ struct AddDeviceFlow: View {
                 Section {
                     TextField("IP Address", text: $ipAddress)
                         .disabled(connectionStatus.isSuccess)
-#if !os(macOS) && !os(watchOS)
+#if os(watchOS)
+                        .textContentType(.URL)
+#elseif !os(macOS)
                         .keyboardType(.numbersAndPunctuation)
 #endif
                         .focused($isIpAddressFocused)

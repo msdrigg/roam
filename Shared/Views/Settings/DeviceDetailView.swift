@@ -141,8 +141,10 @@ struct DeviceDetailView: View {
                     HStack {
                         TextField(String(localized: "IP Address", comment: "Settings field label for the device's IP address"), text: $deviceIP)
                             .frame(maxWidth: .infinity)
-#if !os(macOS) && !os(watchOS)
-                            .keyboardType(.numbersAndPunctuation)
+#if os(watchOS)
+                        .textContentType(.URL)
+#elseif !os(macOS)
+                        .keyboardType(.numbersAndPunctuation)
 #endif
                         #if !os(watchOS)
                         Spacer()

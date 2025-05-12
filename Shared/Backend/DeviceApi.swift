@@ -145,7 +145,10 @@ func fetchPreconnectionInfo(location: String) async throws -> PreconnectionDevic
     guard let url = URL(string: location) else {
         throw FetchDeviceIconError.badURL(location)
     }
-    let (data, _) = try await URLSession.shared.data(from: url)
+    var request = URLRequest(url: url)
+    request.timeoutInterval = 8
+
+    let (data, _) = try await URLSession.shared.data(for: request)
 
     // Decode XML to Root object
     let decoder = XMLStreamDecoder()

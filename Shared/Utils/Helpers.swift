@@ -645,7 +645,7 @@ public func sendBackendError(_ message: String, file: StaticString = #file, line
             let codedEntries: Data = try encoder.encode(entries)
             let hash = fastHashData(data: codedEntries)
             try storeAttachmentToDisk(attachmentData: codedEntries, hash: hash, filename: "log-entries.json")
-            let upload = AttachmentUpload(filename: "LogEntries.json", dataHash: "scare-upload", dataSize: Int64(codedEntries.count), contentType: "application/json", id: UUID().uuidString)
+            let upload = AttachmentUpload(filename: "log-entries.json", dataHash: hash, dataSize: Int64(codedEntries.count), contentType: "application/json", id: UUID().uuidString)
             _ = try await sendMessageDirect(message: ":ninja:", attachment: upload).get()
             Log.backend.notice("Sent attachment to share diagnostics \(String(describing: upload), privacy: .public)")
         } catch {

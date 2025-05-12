@@ -384,7 +384,11 @@ struct SettingsView: View {
     @ViewBuilder
     var addDeviceButton: some View {
         Button(String(localized: "Add a device manually", comment: "Label on a button to add a device"), systemImage: "plus") {
+            #if os(watchOS)
+            showingAddDeviceSheet = true
+            #else
             appDelegate.navigationPath.showAddDevice = true
+            #endif
         }
         #if !os(watchOS) && !WIDGET
         .customKeyboardShortcut(.addDevice)
