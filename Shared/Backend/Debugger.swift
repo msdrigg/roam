@@ -211,7 +211,7 @@ func getDebugInfo() async -> DebugInfo {
 
     var appLinks: [AppLinkAppEntity] = []
     do {
-        appLinks = try await RoamDataHandler().allAppEntities()
+        appLinks = try await RoamDataHandler().allAppEntitiesIncludingDeleted()
     } catch {
         debugErrors.append("Error Getting AppLinks: \n\(error)")
     }

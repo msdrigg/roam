@@ -61,19 +61,10 @@ let CONTROLS: [[RemoteButton?]] = [
     ],
 ]
 
-private let deviceFetchDescriptor: FetchDescriptor<Device> = {
-    var fd = FetchDescriptor<Device>(
-        predicate: globalMainDevicePredicate,
-        sortBy: [SortDescriptor(\Device.name)]
-    )
-
-    return fd
-}()
-
 struct WatchAppView: View {
     @State private var scanningActor: DeviceDiscoveryActor!
 
-    @Query(deviceFetchDescriptor) private var devices: [Device]
+    @Query(deviceFetchDescriptor()) private var devices: [Device]
     @State private var manuallySelectedDevice: Device?
     @State private var showDeviceList: Bool = false
     @State private var showingAddDeviceSheet: Bool = false
@@ -205,7 +196,7 @@ struct AppListViewWrapper: View {
 
         _apps = Query(
             filter: #Predicate<AppLink> {
-                $0.deviceUid == pid
+                $0.deviceUid == pid && $0.deletedAt == nil
             },
             sort: \AppLink.lastSelected,
             order: .reverse

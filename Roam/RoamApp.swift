@@ -80,7 +80,7 @@ struct RoamApp: App {
                         Log.lifecycle.notice("Shutting down main body from willTerminate")
                     }
                     .frame(width: inScreenshotTestingContext() ? macOSWidth : nil, height: inScreenshotTestingContext() ? macOSHeigth : nil)
-                    .colorScheme(.dark)
+                    .preferredColorScheme(.dark)
             }
             .keyboardShortcut(showRoamShortcut?.shortcut)
             .onChange(of: showRoamShortcut, initial: true) { _, new in
@@ -191,7 +191,17 @@ struct RoamApp: App {
                     }
                 }
 
-                if appDelegate.navigationPath.focusedWindow == .messages{
+                if appDelegate.navigationPath.focusedWindow == .settings || appDelegate.navigationPath.focusedWindow == .remote {
+                    CommandGroup(after: .appSettings) {
+                        Divider()
+                        Button("Add Device", systemImage: "plus") {
+                            appDelegate.navigationPath.showAddDevice = true
+                        }
+                        .customKeyboardShortcut(.addDevice)
+                    }
+                }
+
+                if appDelegate.navigationPath.focusedWindow == .messages {
                     CommandGroup(after: .appSettings) {
                         Divider()
                         Button("Refresh Chat Messages", systemImage: "arrow.clockwise.circle") {
@@ -224,7 +234,7 @@ struct RoamApp: App {
                     .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                         Log.lifecycle.notice("Shutting meuBar down from willTerminate")
                     }
-                    .colorScheme(.dark)
+                    .preferredColorScheme(.dark)
             }
             .menuBarExtraStyle(.window)
         #else
@@ -238,7 +248,7 @@ struct RoamApp: App {
                         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
                             Log.lifecycle.notice("Shutting down from willTerminate")
                         }
-                        .colorScheme(.dark)
+                        .preferredColorScheme(.dark)
             }
             #if os(visionOS)
             .windowResizability(windowResizability)
@@ -263,7 +273,7 @@ struct RoamApp: App {
                             NSApp.setActivationPolicy(.accessory)
                         }
                     }
-                    .colorScheme(.dark)
+                    .preferredColorScheme(.dark)
             }
             .keyboardShortcut(messagesShortcut?.shortcut)
             .windowResizability(.contentSize)
@@ -281,7 +291,7 @@ struct RoamApp: App {
                             NSApp.setActivationPolicy(.accessory)
                         }
                     }
-                    .colorScheme(.dark)
+                    .preferredColorScheme(.dark)
             }
             .keyboardShortcut(keyboardShortcutPanelShortcut?.shortcut)
             .windowResizability(.contentSize)
@@ -302,7 +312,7 @@ struct RoamApp: App {
                             NSApp.setActivationPolicy(.accessory)
                         }
                     }
-                    .colorScheme(.dark)
+                    .preferredColorScheme(.dark)
             }
             .modelContainer(sharedModelContainer)
             .windowToolbarStyle(.unifiedCompact(showsTitle: false))
@@ -324,7 +334,7 @@ struct RoamApp: App {
                             NSApp.setActivationPolicy(.accessory)
                         }
                     }
-                    .colorScheme(.dark)
+                    .preferredColorScheme(.dark)
             }
             .disableRestoration()
             .defaultSize(width: 450, height: 200)

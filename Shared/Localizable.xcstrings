@@ -12439,6 +12439,9 @@
         }
       }
     },
+    "New Device" : {
+
+    },
     "No apps" : {
       "comment" : "Text indicator that there are no apps available",
       "localizations" : {

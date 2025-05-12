@@ -259,6 +259,16 @@ public actor RoamDataHandler {
                 modelContext.delete(model)
             }
 
+            let appFetchDescriptor = FetchDescriptor<AppLink>(predicate: #Predicate {
+                $0.deletedAt ?? distantFuture < deleteBefore
+            })
+            let appModels = try await self.fetchSafer(appFetchDescriptor)
+
+            for model in appModels {
+                Log.data.notice("Deleteing app \(model.id, privacy: .public) for device \(model.deviceUid ?? "--", privacy: .public) with name \(model.name, privacy: .public)")
+                modelContext.delete(model)
+            }
+
             try await self.saveSafer()
         } catch {
             Log.data.warning("Error deleting past devices \(error, privacy: .public)")
@@ -558,7 +568,7 @@ extension RoamDataHandler {
 
     func existingApp(for id: PersistentIdentifier) async -> AppLink? {
         if let registered: AppLink = modelContext.registeredModel(for: id) {
-            if registered.isDeleted {
+            if registered.isDeleted || registered.deletedAt != nil {
                 return nil
             }
             return registered
@@ -566,7 +576,7 @@ extension RoamDataHandler {
 
         let fetchDescriptor = FetchDescriptor<AppLink>(
             predicate: #Predicate {
-                $0.persistentModelID == id
+                $0.persistentModelID == id && $0.deletedAt == nil
             }
         )
         do {
@@ -592,6 +602,15 @@ extension PersistentIdentifier {
 
 extension RoamDataHandler {
     public func allAppEntities() async throws -> [AppLinkAppEntity] {
+        let descriptor = FetchDescriptor<AppLink>(predicate: #Predicate {
+             $0.deletedAt == nil
+        })
+
+        let links = try await self.fetchSafer(descriptor)
+        return links.map { $0.toAppEntity() }
+    }
+
+    public func allAppEntitiesIncludingDeleted() async throws -> [AppLinkAppEntity] {
         let descriptor = FetchDescriptor<AppLink>(predicate: #Predicate { _ in
             true
         })
@@ -603,7 +622,9 @@ extension RoamDataHandler {
     public func appEntities(for identifiers: [AppLinkAppEntity.ID], deviceUid: String?) async throws -> [AppLinkAppEntity] {
 
         let descriptor = FetchDescriptor<AppLink>(predicate: #Predicate { appLink in
-            identifiers.contains(appLink.id) && (deviceUid == nil || appLink.deviceUid == deviceUid)
+            identifiers.contains(appLink.id)
+                && (deviceUid == nil || appLink.deviceUid == deviceUid)
+                && appLink.deletedAt == nil
         })
 
         let links = try await self.fetchSafer(descriptor)
@@ -612,7 +633,9 @@ extension RoamDataHandler {
 
     public func appEntities(matching string: String, deviceUid: String?) async throws -> [AppLinkAppEntity] {
         let descriptor = FetchDescriptor<AppLink>(predicate: #Predicate<AppLink> { appLink in
-            appLink.name.contains(string) && (deviceUid == nil || appLink.deviceUid == deviceUid)
+            appLink.name.contains(string) &&
+                (deviceUid == nil || appLink.deviceUid == deviceUid) &&
+                appLink.deletedAt == nil
         })
 
         let links = try await self.fetchSafer(descriptor)
@@ -622,7 +645,8 @@ extension RoamDataHandler {
     public func appEntities(deviceUid: String?) async throws -> [AppLinkAppEntity] {
         let descriptor = FetchDescriptor<AppLink>(
             predicate: #Predicate {
-                deviceUid == nil || $0.deviceUid == deviceUid
+                (deviceUid == nil || $0.deviceUid == deviceUid)
+                    && $0.deletedAt == nil
             },
             sortBy: [SortDescriptor(\AppLink.lastSelected, order: .reverse)]
         )
@@ -754,11 +778,11 @@ extension RoamDataHandler {
 
             device.lastOnlineAt = Date.now
 
-            let udn: String? = device.udn
+            let udn: String = device.udn
 
             let descriptor = FetchDescriptor<AppLink>(
                 predicate: #Predicate {
-                    $0.deviceUid == udn
+                    $0.deviceUid == udn && $0.deletedAt == nil
                 }
             )
 
@@ -816,7 +840,7 @@ extension RoamDataHandler {
             let udn: String = device.udn
             let descriptor = FetchDescriptor<AppLink>(
                 predicate: #Predicate {
-                    $0.deviceUid == udn
+                    $0.deviceUid == udn && $0.deletedAt == nil
                 }
             )
 
@@ -824,6 +848,12 @@ extension RoamDataHandler {
 
             if let sortedApps {
                 // Remove apps from device that aren't in fetchedApps
+                var deletedApps = deviceApps.filter { existingApp in
+                    return !sortedApps.contains { $0.id == existingApp.id }
+                }
+                for app in deletedApps {
+                    app.deletedAt = .now
+                }
                 var deviceApps = deviceApps.filter { existingApp in
                     return sortedApps.contains { $0.id == existingApp.id }
                 }
@@ -839,7 +869,7 @@ extension RoamDataHandler {
                 }
 
                 // Fetch icons for apps in deviceApps
-                for app in deviceApps where app.iconHash == nil {
+                for app in deviceApps where app.iconHash == nil || (app.lastIconSyncAt ?? .distantPast).advanced(by: 3600 * 24) < .now {
                     appsNeedingIcons.append(app.id)
                 }
             }
@@ -875,7 +905,7 @@ extension RoamDataHandler {
 
             let descriptor = FetchDescriptor<AppLink>(
                 predicate: #Predicate {
-                    $0.deviceUid == udn
+                    $0.deviceUid == udn && $0.deletedAt == nil
                 }
             )
 
@@ -896,6 +926,7 @@ extension RoamDataHandler {
                     do {
                         try storeIconToDisk(iconData: app.value, hash: iconHash)
                         deviceApp.iconHash = iconHash
+                        deviceApp.lastIconSyncAt = .now
                     } catch {
                         Log.data.warning("Error storing app icon \(error, privacy: .public)")
                     }
@@ -944,8 +975,8 @@ actor MessageDataHandler {
     @discardableResult
     public func refreshMessages(viewed: Bool) async -> Int {
         Log.data.notice("Querying for message to fetch new")
-        var descriptor = FetchDescriptor(
-            predicate: #Predicate<Message> { model in
+        var descriptor = FetchDescriptor<Message>(
+            predicate: #Predicate { model in
                 model.fetchedBackend == true
             }
         )
@@ -976,8 +1007,8 @@ actor MessageDataHandler {
         Log.data.notice("Getting sendable messages")
         let tenPast = Date.now - 10
         let distantPast = Date.distantPast
-        let descriptor = FetchDescriptor(
-            predicate: #Predicate<Message> { model in
+        let descriptor = FetchDescriptor<Message>(
+            predicate: #Predicate { model in
                 model.fetchedBackend == false && (
                     (model.lastSendAttempt ?? distantPast) < tenPast
                 )

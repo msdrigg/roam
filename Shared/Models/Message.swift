@@ -5,6 +5,10 @@ import UniformTypeIdentifiers
 
 public typealias Message = SchemaV5.Message
 
+let globalUnviewedMessagePredicate = #Predicate<Message> {
+    !$0.viewed
+}
+
 extension Message {
     var timestamp: Date? {
         return parseDiscordSnowflake(self.id)

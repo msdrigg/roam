@@ -53,7 +53,7 @@ struct AppLinksView: View {
 
         _appLinks = Query(
             filter: #Predicate {
-                $0.deviceUid == deviceId
+                $0.deviceUid == deviceId && $0.deletedAt == nil
             },
             sort: [
                 SortDescriptor<AppLink>(\.deviceSortOrder, order: .forward),

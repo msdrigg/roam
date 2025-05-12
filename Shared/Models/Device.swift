@@ -8,6 +8,14 @@ let globalMainDevicePredicate = #Predicate<Device> {
     $0.deletedAt == nil && $0.hiddenAt == nil
 }
 
+@MainActor
+func deviceFetchDescriptor() -> FetchDescriptor<Device> {
+    return FetchDescriptor<Device>(
+        predicate: globalMainDevicePredicate,
+        sortBy: [SortDescriptor(\Device.name)]
+    )
+}
+
 extension Device: Identifiable {
     public var id: PersistentIdentifier {
         persistentModelID

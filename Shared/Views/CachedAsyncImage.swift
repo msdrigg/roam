@@ -27,7 +27,7 @@ enum ThumbnailSize {
         case .small:
             return (150, 150)
         case .large:
-            return (globalMaxThumbnailSize * 2, globalMaxThumbnailSize * 2)
+            return (globalMaxThumbnailSize, globalMaxThumbnailSize)
         }
     }
 

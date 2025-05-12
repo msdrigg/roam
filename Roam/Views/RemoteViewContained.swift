@@ -17,20 +17,8 @@ let globalToolbarShrinkWidth: CGFloat = 300
 let globalMajorActions: [RemoteButton] = [.power, .playPause, .mute, .headphonesMode]
 
 @MainActor
-private func deviceFetchDescriptor() -> FetchDescriptor<Device> {
-    return FetchDescriptor<Device>(
-        predicate: globalMainDevicePredicate,
-        sortBy: [SortDescriptor(\Device.name)]
-    )
-}
-
-@MainActor
 private func unreadMessageFetchDescriptor() -> FetchDescriptor<Message> {
-    return FetchDescriptor(
-        predicate: #Predicate<Message> {
-            !$0.viewed
-        }
-    )
+    return FetchDescriptor(predicate: globalUnviewedMessagePredicate)
 }
 
 enum KeyboardFocus {
@@ -47,7 +35,6 @@ struct RemoteViewContained: View {
     @Query(unreadMessageFetchDescriptor()) private var unreadMessages: [Message]
     @Environment(\.dismiss) var dismiss
 
-    @State private var showingAddDeviceSheet: Bool = false
     @State private var scanningActor: DeviceDiscoveryActor?
     @State private var ssdpActor: DeviceDiscoveryActor?
     @State private var manuallySelectedDevice: Device?
@@ -310,7 +297,13 @@ struct RemoteViewContained: View {
                                 return
                             }
                             let handler = RoamDataHandler()
-                            await handler.refreshDevice(client: ECPWebsocketRefreshClient(id: selectedDevice.persistentModelID, client: ecpSession, location: selectedDevice.location))
+                            await handler.refreshDevice(
+                                client: ECPWebsocketRefreshClient(
+                                    id: selectedDevice.persistentModelID,
+                                    client: ecpSession,
+                                    location: selectedDevice.location
+                                )
+                            )
                         } else {
                             Log.connection
                                 .info("No selected device to refresh")
@@ -559,7 +552,7 @@ struct RemoteViewContained: View {
 
                     if selectedDevice == nil {
                         Button(String(localized: "Add a device manually", comment: "Label on a button to add a device"), systemImage: "plus") {
-                            showingAddDeviceSheet = true
+                            appDelegate.navigationPath.showAddDevice = true
                         }
                         .labelStyle(.titleAndIcon)
                         .font(.body)
@@ -805,7 +798,7 @@ struct RemoteViewContained: View {
                 .sensoryFeedback(.error, trigger: errorTrigger)
 #endif
         }
-        .sheet(isPresented: $showingAddDeviceSheet) {
+        .sheet(isPresented: appDelegate.navigationPath.showingAddDevice(for: .remote)) {
             AddDeviceFlow()
         }
         .defaultFocus($focusKeyboardMonitor, .monitor, priority: .userInitiated)

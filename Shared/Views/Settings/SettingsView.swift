@@ -19,14 +19,12 @@ let circleSize: CGFloat = 10
 #endif
 
 private let unreadMessageFetchDescriptor: FetchDescriptor<Message> = {
-    return FetchDescriptor(
-        predicate: #Predicate<Message> {
-            !$0.viewed
-        }
+    return FetchDescriptor<Message>(
+        predicate: globalUnviewedMessagePredicate
     )
 }()
 
-private let deviceFetchDescriptor: FetchDescriptor<Device> = {
+private let settingsDeviceFetchDescriptor: FetchDescriptor<Device> = {
     return FetchDescriptor<Device>(
         predicate: #Predicate<Device> {
             $0.deletedAt == nil
@@ -40,7 +38,7 @@ struct SettingsView: View {
     @Environment(\.openWindow) private var openWindow
 #endif
 
-    @Query(deviceFetchDescriptor) private var allDevices: [Device]
+    @Query(settingsDeviceFetchDescriptor) private var allDevices: [Device]
     @Query(unreadMessageFetchDescriptor) private var unreadMessages: [Message]
     @Binding var path: [NavigationDestination]
     let destination: SettingsDestination
@@ -48,7 +46,10 @@ struct SettingsView: View {
     @State private var scanningActor: DeviceDiscoveryActor!
     @State private var ssdpActor: DeviceDiscoveryActor!
     @State private var isScanning: Bool = false
+
+    #if os(watchOS)
     @State private var showingAddDeviceSheet: Bool = false
+    #endif
 
     private var runningInPreview: Bool {
         ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
@@ -353,15 +354,17 @@ struct SettingsView: View {
                 NavigationLink(String(localized: "About", comment: "Text on a navigation link to the about page"), value: NavigationDestination.aboutDestination)
             }
         }
+#if os(watchOS)
         .sheet(isPresented: $showingAddDeviceSheet) {
-            #if os(watchOS)
             NavigationStack {
                 AddDeviceFlow()
             }
-            #else
-            AddDeviceFlow()
-            #endif
         }
+#else
+        .sheet(isPresented: appDelegate.navigationPath.showingAddDevice(for: .settings)) {
+            AddDeviceFlow()
+        }
+#endif
 #if !os(watchOS) && !os(macOS)
         .refreshable {
             initiateScan()
@@ -381,7 +384,7 @@ struct SettingsView: View {
     @ViewBuilder
     var addDeviceButton: some View {
         Button(String(localized: "Add a device manually", comment: "Label on a button to add a device"), systemImage: "plus") {
-            showingAddDeviceSheet = true
+            appDelegate.navigationPath.showAddDevice = true
         }
         #if !os(watchOS) && !WIDGET
         .customKeyboardShortcut(.addDevice)

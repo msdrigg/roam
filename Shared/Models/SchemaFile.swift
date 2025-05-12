@@ -485,6 +485,8 @@ public enum SchemaV5: VersionedSchema {
         public var lastSelected: Date?
         public var deviceSortOrder: Int?
         public var deviceUid: String?
+        public var deletedAt: Date?
+        public var lastIconSyncAt: Date?
 
         public var iconHash: String?
 

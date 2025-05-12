@@ -53,11 +53,11 @@ struct AddDeviceFlow: View {
         if runningInPreview {
             bodyContent
                 .preferredColorScheme(.dark)
-                .colorScheme(.dark)
+                .preferredColorScheme(.dark)
         } else {
             bodyContent
                 .preferredColorScheme(.dark)
-                .colorScheme(.dark)
+                .preferredColorScheme(.dark)
                 .task {
                     let localInterfaces = await allAddressedInterfaces()
                     selfIpGuess = localInterfaces.filter({ localInterface in
