@@ -120,7 +120,8 @@ struct AddDeviceFlow: View {
                 Section {
                     if connectionStatus.isIdle || connectionStatus.isInvalidIp {
                         Text(
-                            "Before you add your TV, go to **Settings > System > Advanced system settings > Control by mobile apps > Network access and make sure it's set to 'Permissive' or 'Enabled'"
+                            // swiftlint:disable:next line_length
+                            "Before you add your TV, go to **Settings > System > Advanced system settings > Control by mobile apps > Network access** and make sure it's set to 'Permissive' or 'Enabled'"
                         )
                             .font(.subheadline)
                             .foregroundColor(.secondary)

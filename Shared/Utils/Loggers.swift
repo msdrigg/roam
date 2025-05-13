@@ -7,6 +7,8 @@ public enum Log {
     public static let notifications = Logger(subsystem: getLogSubsystem(), category: "Notifications")
     // Used for backend events and status
     public static let backend = Logger(subsystem: getLogSubsystem(), category: "Backend")
+    // Used for UI interface
+    public static let interface = Logger(subsystem: getLogSubsystem(), category: "Interface")
     // Used for network status and permissions logs
     public static let network = Logger(subsystem: getLogSubsystem(), category: "Network")
     // Used for data loading, storage and other information

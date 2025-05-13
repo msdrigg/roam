@@ -103,7 +103,9 @@ struct AppLinksView: View {
                     appLinksUnique[appLink.id] = appLink
                 }
 
-                cachedAppLinks = Array(appLinksUnique.values)
+                cachedAppLinks = Array(appLinksUnique.values).sorted {
+                    $0.deviceSortOrder ?? Int.max < $1.deviceSortOrder ?? Int.max
+                }
             }
             .onChange(of: appIdsIconsHashed) {
                 withAnimation(.interpolatingSpring) {

@@ -447,6 +447,7 @@ public enum SchemaV5: VersionedSchema {
         public var lastScannedAt: Date?
         public var lastSentToWatch: Date?
         public var deletedAt: Date?
+        public var lastSyncAt: Date?
 
         public var hiddenAt: Date?
 
@@ -486,7 +487,7 @@ public enum SchemaV5: VersionedSchema {
         public var deviceSortOrder: Int?
         public var deviceUid: String?
         public var deletedAt: Date?
-        public var lastIconSyncAt: Date?
+        public var lastSyncAt: Date?
 
         public var iconHash: String?
 

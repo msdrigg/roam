@@ -3084,6 +3084,7 @@
       }
     },
     "Before you add your TV, go to **Settings > System > Advanced system settings > Control by mobile apps > Network access and make sure it's set to 'Permissive' or 'Enabled'" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3164,6 +3165,9 @@
           }
         }
       }
+    },
+    "Before you add your TV, go to **Settings > System > Advanced system settings > Control by mobile apps > Network access** and make sure it's set to 'Permissive' or 'Enabled'" : {
+
     },
     "Behavior" : {
       "comment" : "Settings section label",

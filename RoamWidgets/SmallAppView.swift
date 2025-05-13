@@ -5,6 +5,7 @@ import SwiftUI
 struct SmallAppView: View {
     let device: DeviceAppEntity?
     let apps: [AppLinkAppEntity]
+    let appIcons: [String: Image]
     let rows: Int
 
     var appRows: [[AppLinkAppEntity?]] {
@@ -41,9 +42,19 @@ struct SmallAppView: View {
                         if let app = row[rowIndex] {
                             Button(intent: LaunchAppIntent(app, device: device)) {
                                 VStack(spacing: 0) {
-                                    FallibleImage(from: app.iconURL, fallback: "questionmark.app.fill", maxSize: 150)
-                                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                                        .shadow(radius: 4)
+                                    if let icon = appIcons[app.id] {
+                                        icon
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            .shadow(radius: 4)
+                                    } else {
+                                        Image(systemName: "questionmark.app.fill")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .clipShape(RoundedRectangle(cornerRadius: 0))
+                                            .shadow(radius: 4)
+                                    }
 
                                     Text(app.name)
                                         .font(.caption2)
@@ -93,6 +104,7 @@ import WidgetKit
 struct SmallAppView: View {
     let device: DeviceAppEntity?
     let apps: [AppLinkAppEntity]
+    let appIcons: [String: Image]
     let rows: Int
 
     var appRow: [AppLinkAppEntity?] {
@@ -138,13 +150,13 @@ struct SmallAppView: View {
 
 #if DEBUG
 #Preview("TwoRowsSmallAppView") {
-    SmallAppView(device: nil, apps: [], rows: 2)
+    SmallAppView(device: nil, apps: [], appIcons: [:], rows: 2)
         .frame(width: 200, height: 200)
         .padding(.all, 12)
 }
 
 #Preview("OneRowSmallAppView") {
-    SmallAppView(device: nil, apps: [], rows: 1)
+    SmallAppView(device: nil, apps: [], appIcons: [:], rows: 1)
         .frame(width: 200, height: 100)
         .padding(.all, 12)
 }

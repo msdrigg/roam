@@ -759,7 +759,13 @@ extension RoamDataHandler {
              Log.data.error("Failed to refresh device because couldn't get id")
             return
         }
-        Log.data.notice("Refreshing device with id \(String(describing: id), privacy: .public)")
+        let lastRefreshed = await self.existingDevice(for: id)?.lastSyncAt ?? .distantPast
+        if lastRefreshed.advanced(by: 30) > .now {
+            Log.data.notice("Device refresh skipped for id \(String(describing: id), privacy: .public) b/c last refreshed \(lastRefreshed, privacy: .public)")
+            return
+        } else {
+            Log.data.notice("Refreshing device with id \(String(describing: id), privacy: .public) lastRefreshed \(lastRefreshed, privacy: .public)")
+        }
 
         let deviceInfo: DeviceInfo
         do {
@@ -777,6 +783,7 @@ extension RoamDataHandler {
             }
 
             device.lastOnlineAt = Date.now
+            device.lastSyncAt = Date.now
 
             let udn: String = device.udn
 
@@ -861,6 +868,11 @@ extension RoamDataHandler {
                     existingApp.deviceSortOrder = sortedApps.firstIndex(where: { $0.id == existingApp.id }) ?? nil
                 }
 
+                // Sync App Names
+                for app in deviceApps where (app.lastSyncAt ?? .distantPast).advanced(by: 3600 * 24) < .now {
+                    app.name = (sortedApps.first { $0.id == app.id })?.name ?? app.name
+                }
+
                 // Add new apps to device
                 for (index, app) in sortedApps.enumerated() where !deviceApps.contains(where: { $0.id == app.id }) {
                     let al = AppLink(id: app.id, type: app.type, name: app.name, deviceUid: device.udn, deviceSortOrder: index)
@@ -869,7 +881,7 @@ extension RoamDataHandler {
                 }
 
                 // Fetch icons for apps in deviceApps
-                for app in deviceApps where app.iconHash == nil || (app.lastIconSyncAt ?? .distantPast).advanced(by: 3600 * 24) < .now {
+                for app in deviceApps where app.iconHash == nil || (app.lastSyncAt ?? .distantPast).advanced(by: 3600 * 24) < .now {
                     appsNeedingIcons.append(app.id)
                 }
             }
@@ -926,7 +938,7 @@ extension RoamDataHandler {
                     do {
                         try storeIconToDisk(iconData: app.value, hash: iconHash)
                         deviceApp.iconHash = iconHash
-                        deviceApp.lastIconSyncAt = .now
+                        deviceApp.lastSyncAt = .now
                     } catch {
                         Log.data.warning("Error storing app icon \(error, privacy: .public)")
                     }

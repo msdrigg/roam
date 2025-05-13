@@ -6,9 +6,19 @@ import Combine
 #if os(iOS) || os(visionOS) || os(watchOS)
 import UIKit
 typealias PlatformImage = UIImage
+extension Image {
+    init(platformImage: UIImage) {
+        self = Image(uiImage: platformImage)
+    }
+}
 #elseif os(macOS)
 import AppKit
 typealias PlatformImage = NSImage
+extension Image {
+    init(platformImage: NSImage) {
+        self = Image(nsImage: platformImage)
+    }
+}
 #endif
 
 #if canImport(PDFKit)
@@ -18,7 +28,7 @@ import PDFKit
 let globalMaxThumbnailSize: CGFloat = 400
 
 // MARK: - Thumbnail Generator
-enum ThumbnailSize {
+enum ThumbnailSize: CustomStringConvertible {
     case small
     case large
 
@@ -35,6 +45,13 @@ enum ThumbnailSize {
         switch self {
         case .small: return "thumbnail.small"
         case .large: return "thumbnail.large"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .small: return "small"
+        case .large: return "large"
         }
     }
 }
@@ -55,11 +72,14 @@ final actor ThumbnailGenerator: Sendable {
         let directory = url.deletingLastPathComponent().path
         let filename = url.deletingPathExtension().lastPathComponent
         let ext = getFileExtension()
-        return "\(directory)/\(filename).\(size.suffix).\(ext)"
+        let path = "\(directory)/\(filename).\(size.suffix).\(ext)"
+        Log.interface.notice("Thumbnail path computed: \(path, privacy: .public)")
+        return path
     }
 
     func thumbnailExists(for path: URL, size: ThumbnailSize) -> Bool {
         let thumbnailPath = self.thumbnailPath(for: path, size: size)
+        Log.interface.notice("Checking existence of thumbnail at path: \(thumbnailPath, privacy: .public)")
         return FileManager.default.fileExists(atPath: thumbnailPath)
     }
 
@@ -67,9 +87,13 @@ final actor ThumbnailGenerator: Sendable {
         let thumbnailPath = self.thumbnailPath(for: path, size: size)
         if FileManager.default.fileExists(atPath: thumbnailPath) {
             #if os(iOS) || os(visionOS) || os(watchOS)
-            return PlatformImage(contentsOfFile: thumbnailPath)
+            let image = PlatformImage(contentsOfFile: thumbnailPath)
+            Log.interface.notice("Loaded thumbnail from path: \(thumbnailPath, privacy: .public)")
+            return image
             #elseif os(macOS)
-            return PlatformImage(contentsOfFile: thumbnailPath)
+            let image = PlatformImage(contentsOfFile: thumbnailPath)
+            Log.interface.notice("Loaded thumbnail from path: \(thumbnailPath, privacy: .public)")
+            return image
             // Precache bitmap data due to https://wadetregaskis.com/nsimage-is-dangerous/
             #endif
         }
@@ -77,7 +101,7 @@ final actor ThumbnailGenerator: Sendable {
     }
 
     @discardableResult
-    func createThumbnails(for url: URL, smallSize: CGSize? = nil, largeSize: CGSize? = nil) async throws -> (small: String, large: String) {
+    func createThumbnails(for url: URL, smallSize: CGSize? = nil, largeSize: CGSize? = nil) throws -> (small: String, large: String) {
         Log.data.notice("Creating thumbnails for \(url, privacy: .public)")
         let smallThumbnailPath = self.thumbnailPath(for: url, size: .small)
         let largeThumbnailPath = self.thumbnailPath(for: url, size: .large)
@@ -170,6 +194,7 @@ final actor ThumbnailGenerator: Sendable {
     }
 
     private func resize(_ image: PlatformImage, to size: CGSize) -> PlatformImage {
+        Log.interface.notice("Resizing image to: \(size.width, privacy: .public)x\(size.height, privacy: .public)")
         #if os(iOS) || os(visionOS)
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { _ in
@@ -192,6 +217,7 @@ final actor ThumbnailGenerator: Sendable {
     }
 
     private func saveEmptyThumbnail(to path: String) throws {
+        Log.interface.notice("Saving empty thumbnail at path: \(path, privacy: .public)")
         try Data().write(to: URL(fileURLWithPath: path))
     }
 
@@ -212,6 +238,7 @@ final actor ThumbnailGenerator: Sendable {
     #endif
 
     private func saveThumbnail(_ image: PlatformImage, to path: String, isPdf: Bool = false) throws {
+        Log.interface.notice("Saving thumbnail to path: \(path, privacy: .public)")
         var data: Data?
 
         #if os(iOS) || os(visionOS) || os(watchOS)
@@ -261,7 +288,7 @@ final class ThumbnailCache {
         cache.totalCostLimit = maxMemoryUsage
     }
 
-    func getImage(for path: URL) throws -> PlatformImage? {
+    func getImage(for path: URL) throws -> (PlatformImage, ThumbnailSize)? {
         guard let cacheEntry = cache.object(forKey: path.absoluteString as NSString) else {
             if let lastFailed = imageFails.object(forKey: path.absoluteString as NSString)?.lastFailed, abs(lastFailed.timeIntervalSinceNow) < 30 {
                 throw ThumbnailError.failedToLoad
@@ -270,22 +297,26 @@ final class ThumbnailCache {
         }
         // Update last access time
         lastAccessTimes[path] = Date()
-        return cacheEntry.image
+        return (cacheEntry.image, cacheEntry.thumbnailScale)
     }
 
     func setFailure(for path: URL) {
         self.imageFails.setObject(CacheFail(lastFailed: .now), forKey: path.absoluteString as NSString)
     }
 
-    func setImage(_ image: PlatformImage, for path: URL) {
+    func setImage(_ image: PlatformImage, for path: URL, withSize size: ThumbnailSize) {
+        let key = path.absoluteString as NSString
         let estimatedSize = estimateImageMemorySize(image)
-        let entry = CacheEntry(image: image, size: estimatedSize)
+        let entry = CacheEntry(image: image, size: estimatedSize, scale: size)
 
         // Update last access time
         lastAccessTimes[path] = Date()
 
         // Add to cache with cost
-        cache.setObject(entry, forKey: path.absoluteString as NSString, cost: estimatedSize)
+        if let obj = cache.object(forKey: key), obj.thumbnailScale == .large && entry.thumbnailScale == .small {
+            return
+        }
+        cache.setObject(entry, forKey: key, cost: estimatedSize)
 
         // Update current memory usage
         currentMemoryUsage += estimatedSize
@@ -330,10 +361,12 @@ final class ThumbnailCache {
     class CacheEntry {
         let image: PlatformImage
         let size: Int
+        let thumbnailScale: ThumbnailSize
 
-        init(image: PlatformImage, size: Int) {
+        init(image: PlatformImage, size: Int, scale: ThumbnailSize) {
             self.image = image
             self.size = size
+            self.thumbnailScale = scale
         }
     }
 
@@ -352,11 +385,27 @@ enum ImageLoadingPhase {
     case loading
     case success(PlatformImage)
     case failure(any Error)
+
+    var isSuccess: Bool {
+        if case .success = self {
+            return true
+        } else {
+            return false
+        }
+    }
+
+    func getImage() -> PlatformImage? {
+        if case let .success(image) = self {
+            return image
+        } else {
+            return nil
+        }
+    }
 }
 
 @MainActor
-class ImageLoader: ObservableObject {
-    @Published var phase: ImageLoadingPhase = .empty
+@Observable class ImageLoader {
+    var phase: ImageLoadingPhase = .empty
 
     private let path: URL
     private let cache = ThumbnailCache.shared
@@ -366,76 +415,264 @@ class ImageLoader: ObservableObject {
         self.path = path
     }
 
+    func prefetch() {
+        if let (cachedImage, _) = try? cache.getImage(for: path) {
+            phase = .success(cachedImage)
+        }
+    }
+
     func load(maxSize: CGFloat) async {
-        // Check if image is in cache
         do {
-            if let cachedImage = try cache.getImage(for: path) {
-                phase = .success(cachedImage)
-                return
+            if let (cachedImage, cachedSize) = try cache.getImage(for: path) {
+                if maxSize < 150 {
+                    phase = .success(cachedImage)
+                    return
+                } else {
+                    if cachedSize == .large {
+                        phase = .success(cachedImage)
+                        return
+                    } else {
+                        phase = .success(cachedImage)
+                    }
+                }
+            } else {
+                Log.interface.notice("Cache miss for path: \(self.path, privacy: .public)")
             }
         } catch {
+            Log.data.notice("Error reading from cache for \(self.path, privacy: .public): \(error, privacy: .public)")
             phase = .failure(ThumbnailError.failedToLoad)
             return
         }
 
-        var exists = false
-        var needsSmall = false
-        var needsBig = false
+        if maxSize < 150 {
+            Log.interface.notice("Loading small thumbnail for \(self.path, privacy: .public) (maxSize <= 150)")
+            phase = .loading
 
-        // Check if thumbnails exist
-        if let thumbnailImage = await thumbnailGenerator.loadThumbnail(for: path, size: .small) {
-            cache.setImage(thumbnailImage, for: path)
-            phase = .success(thumbnailImage)
-            exists = true
-        } else {
-            needsSmall = true
-        }
-        if maxSize > 150 {
-            if let thumbnailImage = await thumbnailGenerator.loadThumbnail(for: path, size: .large) {
-                cache.setImage(thumbnailImage, for: path)
-                phase = .success(thumbnailImage)
-                exists = true
+            if let smallThumbnail = await thumbnailGenerator.loadThumbnail(for: path, size: .small) {
+                cache.setImage(smallThumbnail, for: path, withSize: .small)
+                phase = .success(smallThumbnail)
+                Log.interface.notice("Phase changed to: success (loaded small thumbnail)")
             } else {
-                needsBig = true
+                Log.interface.notice("Small thumbnail not found, attempting generation for \(self.path, privacy: .public)...")
+                do {
+                    try await thumbnailGenerator.createThumbnails(for: path)
+                    if let generatedSmallThumbnail = await thumbnailGenerator.loadThumbnail(for: path, size: .small) {
+                        cache.setImage(generatedSmallThumbnail, for: path, withSize: .small)
+                        phase = .success(generatedSmallThumbnail)
+                        Log.interface.notice("Phase changed to: success (generated and loaded small thumbnail)")
+                    } else {
+                        phase = .failure(ThumbnailError.failedToLoad)
+                        Log.interface.notice("Phase changed to: failure (could not load small thumbnail after generation)")
+                    }
+                } catch {
+                    Log.data.notice("Error creating thumbnails for \(self.path, privacy: .public): \(error, privacy: .public)")
+                    cache.setFailure(for: path)
+                    phase = .failure(ThumbnailError.failedToLoad)
+                    Log.interface.notice("Phase changed to: failure (error during thumbnail generation)")
+                }
+            }
+        } else {
+            let needsToLoadSmall = !phase.isSuccess
+
+            if needsToLoadSmall {
+                 phase = .loading
+                 Log.interface.notice("Phase changed to: loading (preparing to load for maxSize > 150)")
+            }
+
+            var smallImageLoaded: PlatformImage? = phase.getImage()
+            var largeImageLoaded: PlatformImage?
+
+            if !phase.isSuccess {
+                 if let existingSmall = await thumbnailGenerator.loadThumbnail(for: path, size: .small) {
+                    smallImageLoaded = existingSmall
+                    cache.setImage(existingSmall, for: path, withSize: .small)
+                    phase = .success(existingSmall)
+                    Log.interface.notice("Phase changed to: success (loaded existing small thumbnail for maxSize > 150)")
+                }
+            }
+
+            if let existingLarge = await thumbnailGenerator.loadThumbnail(for: path, size: .large) {
+                largeImageLoaded = existingLarge
+                cache.setImage(existingLarge, for: path, withSize: .large)
+                phase = .success(existingLarge)
+                Log.interface.notice("Phase changed to: success (loaded existing large thumbnail)")
+                return
+            }
+
+            if smallImageLoaded == nil || largeImageLoaded == nil {
+                Log.interface.notice("Thumbnails not fully available, attempting generation for \(self.path, privacy: .public)...")
+                if smallImageLoaded == nil {
+                    phase = .loading
+                    Log.interface.notice("Phase changed to: loading (before generation)")
+                }
+
+                do {
+                    try await thumbnailGenerator.createThumbnails(for: path)
+                    Log.interface.notice("Thumbnail generation completed for \(self.path, privacy: .public).")
+
+                    if smallImageLoaded == nil {
+                        if let generatedSmall = await thumbnailGenerator.loadThumbnail(for: path, size: .small) {
+                            smallImageLoaded = generatedSmall
+                            cache.setImage(generatedSmall, for: path, withSize: .small)
+                            if largeImageLoaded == nil {
+                                phase = .success(generatedSmall)
+                                Log.interface.notice("Phase changed to: success (generated and loaded small)")
+                            }
+                        } else {
+                            Log.data.notice("Failed to load small thumbnail for \(self.path, privacy: .public) after generation.")
+                        }
+                    }
+
+                    if let generatedLarge = await thumbnailGenerator.loadThumbnail(for: path, size: .large) {
+                        largeImageLoaded = generatedLarge
+                        cache.setImage(generatedLarge, for: path, withSize: .large)
+                        phase = .success(generatedLarge)
+                        Log.interface.notice("Phase changed to: success (generated and loaded large)")
+                    } else {
+                        if smallImageLoaded == nil {
+                            phase = .failure(ThumbnailError.failedToLoad)
+                            Log.interface.notice("Phase changed to: failure (failed to load large and small after generation)")
+                        } else {
+                            Log.interface.notice("Successfully loaded small, but large failed to load after generation.")
+                        }
+                    }
+                } catch {
+                    Log.data.notice("Error creating thumbnails for \(self.path, privacy: .public): \(error, privacy: .public)")
+                    cache.setFailure(for: path)
+                    if smallImageLoaded == nil {
+                        phase = .failure(ThumbnailError.failedToLoad)
+                        Log.interface.notice("Phase changed to: failure (error during thumbnail generation process)")
+                    } else {
+                        Log.interface.notice("Error during thumbnail generation, but a small image was already loaded/displayed.")
+                    }
+                }
             }
         }
+    }
+}
 
-        if !(needsBig || needsSmall) {
-            return
+@MainActor
+func loadThumbnailForUrl(_ path: URL, maxSize: CGFloat = 400) async throws -> PlatformImage {
+    let cache = ThumbnailCache.shared
+    let thumbnailGenerator = ThumbnailGenerator.shared
+
+    do {
+        if let (cachedImage, cachedSize) = try cache.getImage(for: path) {
+            Log.interface.notice("Cache hit for path: \(path, privacy: .public) with size: \(cachedSize)")
+            if maxSize <= 150 {
+                Log.interface.notice("Returning cached image (any size ok for maxSize <= 150)")
+                return cachedImage
+            } else {
+                if cachedSize == .large {
+                    Log.interface.notice("Returning cached large image")
+                    return cachedImage
+                } else {
+                    Log.interface.notice("Cached small image found, but large is preferred for maxSize > 150. Will attempt to load large.")
+                }
+            }
+        } else {
+            Log.interface.notice("Cache miss for path: \(path, privacy: .public)")
+        }
+    } catch {
+        Log.data.notice("Error reading from cache for \(path, privacy: .public): \(error, privacy: .public). Proceeding to load/generate.")
+    }
+
+    if maxSize <= 150 {
+        Log.interface.notice("Handling image for maxSize <= 150 for path: \(path, privacy: .public)")
+        if let smallThumbnail = await thumbnailGenerator.loadThumbnail(for: path, size: .small) {
+            Log.interface.notice("Loaded existing small thumbnail.")
+            cache.setImage(smallThumbnail, for: path, withSize: .small)
+            return smallThumbnail
         }
 
-        if !exists {
-            phase = .loading
-        }
-
+        Log.interface.notice("Small thumbnail not found directly, attempting generation...")
         do {
             try await thumbnailGenerator.createThumbnails(for: path)
-
-            if let thumbnailImage = await thumbnailGenerator.loadThumbnail(for: path, size: .small) {
-                cache.setImage(thumbnailImage, for: path)
-                phase = .success(thumbnailImage)
+            if let generatedSmallThumbnail = await thumbnailGenerator.loadThumbnail(for: path, size: .small) {
+                Log.interface.notice("Generated and loaded small thumbnail.")
+                cache.setImage(generatedSmallThumbnail, for: path, withSize: .small)
+                return generatedSmallThumbnail
             } else {
-                Log.data.notice("Failed to load thumbnail")
-                phase = .failure(NSError(domain: "ImageLoaderError", code: 3, userInfo: [NSLocalizedDescriptionKey: "Failed to load generated thumbnail"]))
+                Log.data.notice("Failed to load small thumbnail after generation.")
+                throw ThumbnailError.failedToLoad
             }
         } catch {
-            Log.data.notice("Error creating thumbnails for \(self.path, privacy: .public): \(error, privacy: .public)")
+            Log.data.notice("Error creating thumbnails: \(error, privacy: .public)")
             cache.setFailure(for: path)
-            phase = .failure(error)
+            throw ThumbnailError.failedToLoad
+        }
+    } else {
+        Log.interface.notice("Handling image for maxSize > 150 for path: \(path, privacy: .public)")
+        var smallImageCandidate: PlatformImage?
+
+        if let (cachedImage, cachedSize) = try? cache.getImage(for: path), cachedSize == .small {
+            smallImageCandidate = cachedImage
+            Log.interface.notice("Noted small image from cache as a fallback candidate.")
+        }
+
+        if let largeThumbnail = await thumbnailGenerator.loadThumbnail(for: path, size: .large) {
+            Log.interface.notice("Loaded existing large thumbnail.")
+            cache.setImage(largeThumbnail, for: path, withSize: .large)
+            return largeThumbnail
+        }
+
+        if smallImageCandidate == nil {
+            if let smallThumbnail = await thumbnailGenerator.loadThumbnail(for: path, size: .small) {
+                Log.interface.notice("Loaded existing small thumbnail (as large was not found).")
+                cache.setImage(smallThumbnail, for: path, withSize: .small)
+                smallImageCandidate = smallThumbnail
+            }
+        }
+
+        Log.interface.notice("Large thumbnail not found directly, attempting generation...")
+        do {
+            try await thumbnailGenerator.createThumbnails(for: path)
+            Log.interface.notice("Thumbnail generation attempt complete.")
+
+            if let generatedLargeThumbnail = await thumbnailGenerator.loadThumbnail(for: path, size: .large) {
+                Log.interface.notice("Generated and loaded large thumbnail.")
+                cache.setImage(generatedLargeThumbnail, for: path, withSize: .large)
+                if let generatedSmall = await thumbnailGenerator.loadThumbnail(for: path, size: .small) {
+                     cache.setImage(generatedSmall, for: path, withSize: .small)
+                }
+                return generatedLargeThumbnail
+            } else {
+                Log.data.notice("Failed to load large thumbnail after generation.")
+                if smallImageCandidate == nil {
+                     if let generatedSmallThumbnail = await thumbnailGenerator.loadThumbnail(for: path, size: .small) {
+                        Log.interface.notice("Loaded small thumbnail after large generation failed.")
+                        cache.setImage(generatedSmallThumbnail, for: path, withSize: .small)
+                        return generatedSmallThumbnail
+                    }
+                } else if let smallFallback = smallImageCandidate {
+                    Log.interface.notice("Returning pre-existing/cached small thumbnail as large generation/load failed.")
+                    return smallFallback
+                }
+                throw ThumbnailError.failedToLoad
+            }
+        } catch {
+            Log.data.notice("Error creating thumbnails: \(error, privacy: .public)")
+            cache.setFailure(for: path)
+            if let smallFallback = smallImageCandidate {
+                Log.interface.notice("Thumbnail creation failed, returning previously available small image.")
+                return smallFallback
+            }
+            throw ThumbnailError.failedToLoad
         }
     }
 }
 
 // MARK: - CachedAsyncImage View
 public struct CachedAsyncImage<Content: View>: View {
-    @StateObject private var loader: ImageLoader
+    @State private var loader: ImageLoader
     private let content: (ImagePhase) -> Content
     private let maxSize: CGFloat
 
     public init(path: URL, maxSize: CGFloat, @ViewBuilder content: @escaping (ImagePhase) -> Content) {
-        self._loader = StateObject(wrappedValue: ImageLoader(path: path))
+        self.loader = ImageLoader(path: path)
         self.content = content
         self.maxSize = maxSize
+        loader.prefetch()
     }
 
     public var body: some View {
@@ -452,11 +689,7 @@ public struct CachedAsyncImage<Content: View>: View {
         case .loading:
             return .loading
         case .success(let image):
-            #if os(iOS) || os(visionOS) || os(watchOS)
-            return .success(Image(uiImage: image))
-            #elseif os(macOS)
-            return .success(Image(nsImage: image))
-            #endif
+            return .success(Image(platformImage: image))
         case .failure(let error):
             return .failure(error)
         }

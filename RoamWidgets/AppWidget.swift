@@ -12,7 +12,7 @@ import WidgetKit
                 intent: DeviceAndAppChoiceIntent.self,
                 provider: AppChoiceRemoteControlProvider()
             ) { entry in
-                SmallAppView(device: entry.device, apps: entry.apps, rows: 2)
+                SmallAppView(device: entry.device, apps: entry.apps, appIcons: entry.appIcons, rows: 2)
                     .containerBackground(Color("WidgetBackground"), for: .widget)
             }
             .supportedFamilies([.systemSmall])
@@ -46,10 +46,10 @@ import WidgetKit
                 provider: AppChoiceRemoteControlProvider()
             ) { entry in
                 #if !os(watchOS)
-                SmallAppView(device: entry.device, apps: Array(entry.apps.prefix(2)), rows: 1)
+                SmallAppView(device: entry.device, apps: Array(entry.apps.prefix(2)), appIcons: entry.appIcons, rows: 1)
                     .containerBackground(Color("WidgetBackground"), for: .widget)
                 #else
-                SmallAppView(device: entry.device, apps: Array(entry.apps.prefix(3)), rows: 1)
+                SmallAppView(device: entry.device, apps: Array(entry.apps.prefix(3)), appIcons: entry.appIcons, rows: 1)
                     .containerBackground(Color("WidgetBackground"), for: .widget)
                 #endif
             }

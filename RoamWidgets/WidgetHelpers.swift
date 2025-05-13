@@ -9,6 +9,7 @@ struct DeviceChoiceTimelineEntity: TimelineEntry {
     var date: Date
     var device: DeviceAppEntity?
     var apps: [AppLinkAppEntity]
+    var appIcons: [String: Image] = [:]
 }
 
 struct SimpleRemoteControlProvider: AppIntentTimelineProvider {
@@ -101,8 +102,17 @@ struct AppChoiceRemoteControlProvider: AppIntentTimelineProvider {
             }
             apps = loadedApps
         }
+        apps = Array(apps[0..<4])
+        var appIcons: [String: Image] = [:]
 
-        let entry = DeviceChoiceTimelineEntity(date: Date(), device: targetDevice, apps: apps)
+        for app in apps {
+            if let url = app.iconURL,
+               let icon = try? await Image(platformImage: loadThumbnailForUrl(url, maxSize: 120)) {
+                appIcons[app.id] = icon
+            }
+        }
+
+        let entry = DeviceChoiceTimelineEntity(date: Date(), device: targetDevice, apps: apps, appIcons: appIcons)
         return entry
     }
 
@@ -137,12 +147,23 @@ struct AppChoiceRemoteControlProvider: AppIntentTimelineProvider {
             }
             apps = loadedApps
         }
-        let entryNow = DeviceChoiceTimelineEntity(date: Date.now, device: targetDevice, apps: apps)
+
+        apps = Array(apps[0..<4])
+        var appIcons: [String: Image] = [:]
+
+        for app in apps {
+            if let url = app.iconURL,
+               let icon = try? await Image(platformImage: loadThumbnailForUrl(url, maxSize: 120)) {
+                appIcons[app.id] = icon
+            }
+        }
+
+        let entryNow = DeviceChoiceTimelineEntity(date: Date.now, device: targetDevice, apps: apps, appIcons: appIcons)
         let timeline = Timeline(entries: [entryNow], policy: .after(Date.now.advanced(by: 3600 * 24)))
         return timeline
     }
 
     func placeholder(in _: Context) -> DeviceChoiceTimelineEntity {
-        DeviceChoiceTimelineEntity(date: Date(), device: nil, apps: [])
+        DeviceChoiceTimelineEntity(date: Date(), device: nil, apps: [], appIcons: [:])
     }
 }

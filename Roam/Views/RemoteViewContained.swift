@@ -443,10 +443,10 @@ struct RemoteViewContained: View {
 
                         if isInMenuBar {
                             Button(action: {
-                                openWindow(id: "remote")
+                                openWindow(id: "main")
                                 dismiss()
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                    NSApp.forceFront("remote")
+                                    NSApp.forceFront("main")
                                 }
                             }, label: {
                                 Label("Open main window", systemImage: "macwindow.on.rectangle")
