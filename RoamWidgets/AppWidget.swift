@@ -13,7 +13,7 @@ import WidgetKit
                 provider: AppChoiceRemoteControlProvider()
             ) { entry in
                 SmallAppView(device: entry.device, apps: entry.apps, appIcons: entry.appIcons, rows: 2)
-                    .containerBackground(Color("WidgetBackground"), for: .widget)
+                    .containerBackground(Color.widgetBackground, for: .widget)
             }
             .supportedFamilies([.systemSmall])
         }
@@ -47,10 +47,10 @@ import WidgetKit
             ) { entry in
                 #if !os(watchOS)
                 SmallAppView(device: entry.device, apps: Array(entry.apps.prefix(2)), appIcons: entry.appIcons, rows: 1)
-                    .containerBackground(Color("WidgetBackground"), for: .widget)
+                    .containerBackground(Color.widgetBackground, for: .widget)
                 #else
                 SmallAppView(device: entry.device, apps: Array(entry.apps.prefix(3)), appIcons: entry.appIcons, rows: 1)
-                    .containerBackground(Color("WidgetBackground"), for: .widget)
+                    .containerBackground(Color.widgetBackground, for: .widget)
                 #endif
             }
             .supportedFamilies([.accessoryRectangular])

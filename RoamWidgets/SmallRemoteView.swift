@@ -50,6 +50,6 @@ struct SmallRemoteView: View {
         .buttonStyle(.bordered)
         .controlSize(.small)
         .labelStyle(.iconOnly)
-        .tint(Color("AccentColor"))
+        .tint(Color.accentColor)
     }
 }

@@ -25,7 +25,7 @@ struct SmallDpadWidget: Widget {
             provider: SimpleRemoteControlProvider()
         ) { entry in
             SmallRemoteView(device: entry.device, controls: dpad)
-                .containerBackground(Color("WidgetBackground"), for: .widget)
+                .containerBackground(Color.widgetBackground, for: .widget)
         }
         .supportedFamilies([.systemSmall])
     }
@@ -51,7 +51,7 @@ struct SmallMediaWidget: Widget {
             provider: SimpleRemoteControlProvider()
         ) { entry in
             SmallRemoteView(device: entry.device, controls: controls)
-                .containerBackground(Color("WidgetBackground"), for: .widget)
+                .containerBackground(Color.widgetBackground, for: .widget)
         }
         .supportedFamilies([.systemSmall])
     }
@@ -104,10 +104,10 @@ struct SmallMediaWidget: Widget {
             ) { entry in
                 #if os(watchOS)
                 AccessoryGroupRemoteView(device: entry.device, controls: dpad[0])
-                    .containerBackground(Color("WidgetBackground"), for: .widget)
+                    .containerBackground(Color.widgetBackground, for: .widget)
                 #else
                 SmallRemoteView(device: entry.device, controls: dpad)
-                    .containerBackground(Color("WidgetBackground"), for: .widget)
+                    .containerBackground(Color.widgetBackground, for: .widget)
                 #endif
             }
             .supportedFamilies([.accessoryRectangular])
@@ -127,10 +127,10 @@ struct SmallMediaWidget: Widget {
             ) { entry in
                 #if os(watchOS)
                 AccessoryGroupRemoteView(device: entry.device, controls: dpad[0])
-                    .containerBackground(Color("WidgetBackground"), for: .widget)
+                    .containerBackground(Color.widgetBackground, for: .widget)
                 #else
                 SmallRemoteView(device: entry.device, controls: dpad)
-                    .containerBackground(Color("WidgetBackground"), for: .widget)
+                    .containerBackground(Color.widgetBackground, for: .widget)
                 #endif
             }
             .supportedFamilies([.accessoryRectangular])
@@ -171,7 +171,7 @@ struct SmallMediaWidget: Widget {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .labelStyle(.iconOnly)
-                .tint(Color("AccentColor"))
+                .tint(Color.accentColor)
             }
             .supportedFamilies([.accessoryCircular])
         }
@@ -190,7 +190,7 @@ struct SmallMediaWidget: Widget {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .labelStyle(.iconOnly)
-                .tint(Color("AccentColor"))
+                .tint(Color.accentColor)
             }
             .supportedFamilies([.accessoryCircular])
         }

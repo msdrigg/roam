@@ -168,6 +168,7 @@ actor DeviceDiscoveryActor {
     #endif
 }
 
+#if !os(watchOS)
 private func scanAddress(_ address: (Addressed4NetworkInterface, IP4Address)) async -> String? {
     let (iface, ipAddress) = address
     if Task.isCancelled {
@@ -183,3 +184,4 @@ private func scanAddress(_ address: (Addressed4NetworkInterface, IP4Address)) as
     }
     return location
 }
+#endif

@@ -232,47 +232,6 @@ struct CustomKeyboardShortcut: Identifiable, Codable, Equatable {
             return Key.caseDisplayRepresentations[self] ?? rawValue
         }
 
-        public init?(remoteButton: RemoteButton) {
-            switch remoteButton {
-            case .back:
-                self = .back
-            case .power:
-                self = .power
-            case .home:
-                self = .home
-            case .volumeDown:
-                self = .volumeDown
-            case .volumeUp:
-                self = .volumeUp
-            case .mute:
-                self = .mute
-            case .playPause:
-                self = .playPause
-            case .select:
-                self = .ok
-            case .left:
-                self = .left
-            case .right:
-                self = .right
-            case .up:
-                self = .up
-            case .down:
-                self = .down
-            case .options:
-                self = .options
-            case .headphonesMode:
-                self = .headphonesMode
-            case .instantReplay:
-                self = .instantReplay
-            case .fastForward:
-                self = .fastForward
-            case .rewind:
-                self = .rewind
-            default:
-                return nil
-            }
-        }
-
         public var matchingRemoteButton: RemoteButton? {
             switch self {
             case .back:
@@ -494,15 +453,17 @@ struct CustomKeyboardShortcutModifier: ViewModifier {
         self._shortcut = KeyboardShortcutStorage(title)
     }
 
+    @ViewBuilder
     func body(content: Content) -> some View {
         if let key = shortcut?.key?.character.lowercased().first, let modifiers = shortcut?.modifiers {
             #if os(macOS)
-            return AnyView(content.keyboardShortcut(KeyboardShortcut(KeyEquivalent(key), modifiers: modifiers)))
+            content
+               .keyboardShortcut(KeyboardShortcut(KeyEquivalent(key), modifiers: modifiers))
             #else
-            return AnyView(content)
+            content
             #endif
         } else {
-            return AnyView(content)
+            content
         }
     }
 }

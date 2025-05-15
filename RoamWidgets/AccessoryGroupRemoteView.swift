@@ -39,7 +39,7 @@ struct AccessoryGroupRemoteView: View {
             .fontDesign(.rounded)
             .font(.body.bold())
             .accessoryWidgetGroupStyle(.roundedSquare)
-            .tint(Color("AccentColor"))
+            .tint(Color.accentColor)
         }
     }
 }

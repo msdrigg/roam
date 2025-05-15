@@ -38,7 +38,7 @@
                 Spacer()
                 SmallRemoteView(device: device, controls: controlGrid)
             }
-            .containerBackground(Color("WidgetBackground"), for: .widget)
+            .containerBackground(Color.widgetBackground, for: .widget)
         }
     }
 

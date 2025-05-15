@@ -126,7 +126,7 @@ struct BreatheEffect: ViewModifier {
             ZStack {
                 // Outer circle
                 RoundedRectangle(cornerRadius: buttonRadius)
-                    .fill(Color("AccentColor"))
+                    .fill(Color.accentColor)
                     .frame(width: buttonWidth, height: buttonHeight)
                     .opacity(0.2)
                     .phaseAnimator([false, true]) { content, phase in
@@ -138,7 +138,7 @@ struct BreatheEffect: ViewModifier {
 
                 // Middle circle
                 RoundedRectangle(cornerRadius: buttonRadius)
-                    .fill(Color("AccentColor"))
+                    .fill(Color.accentColor)
                     .frame(width: buttonWidth, height: buttonHeight)
                     .opacity(0.5)
                     .phaseAnimator([false, true]) { content, phase in
@@ -150,7 +150,7 @@ struct BreatheEffect: ViewModifier {
 
                 // Inner circle
                 RoundedRectangle(cornerRadius: buttonRadius)
-                    .fill(Color("AccentColor"))
+                    .fill(Color.accentColor)
                     .frame(width: buttonWidth, height: buttonHeight)
                     .opacity(0.3)
                     .phaseAnimator([false, true]) { content, phase in
@@ -161,7 +161,7 @@ struct BreatheEffect: ViewModifier {
                     }
 
                 content
-                    .tint(Color("AccentColor"))
+                    .tint(Color.accentColor)
                     .buttonStyle(.borderedProminent)
             }
             .frame(width: buttonWidth, height: buttonHeight)

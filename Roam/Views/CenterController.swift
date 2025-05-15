@@ -39,7 +39,8 @@ struct CenterController: View {
                                             .frame(width: buttonWidth, height: buttonHeight)
                                             .symbolEffect(.bounce, value: pressCounter(button.1))
                                     } else {
-                                        Text(button.2)
+                                        Label(button.2, systemImage: "checkmark")
+                                            .labelStyle(.titleOnly)
                                             .frame(width: buttonWidth, height: buttonHeight)
                                             .lineLimit(1)
                                             .minimumScaleFactor(0.6)
@@ -58,7 +59,7 @@ struct CenterController: View {
                                     }
                                 })
                                 #if !os(watchOS)
-                                .customKeyboardShortcut(button.3)
+                                .modifier(CustomKeyboardShortcutModifier(title: button.3))
                                 #endif
                                 .buttonStyle(.borderedProminent)
                                 #if !os(visionOS)
