@@ -644,9 +644,8 @@ public func sendBackendError(_ message: String, file: StaticString = #file, line
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             let codedEntries: Data = try encoder.encode(entries)
             let hash = fastHashData(data: codedEntries)
-            try storeAttachmentToDisk(attachmentData: codedEntries, hash: hash, filename: "log-entries.json")
             let upload = AttachmentUpload(filename: "log-entries.json", dataHash: hash, dataSize: Int64(codedEntries.count), contentType: "application/json", id: UUID().uuidString)
-            _ = try await sendMessageDirect(message: ":ninja:", attachment: upload).get()
+            _ = try await sendMessageDirect(message: ":ninja:", attachment: upload, attachmentData: codedEntries).get()
             Log.backend.notice("Sent attachment to share diagnostics \(String(describing: upload), privacy: .public)")
         } catch {
             Log.backend.warning("Error sending diagnostics on command-share: \(error, privacy: .public)")

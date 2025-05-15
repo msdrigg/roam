@@ -8,7 +8,7 @@ struct AddDeviceFlow: View {
     @State private var ipAddress: String = ""
     @State private var globalError: String?
     @State private var ipAddressError: String?
-    private let isConnecting: AsyncSemaphore = AsyncSemaphore(value: 1)
+    private let isConnecting: AsyncLock = AsyncLock()
     @State private var connectionStatus: ConnectionStatus = .idle
     @State private var selfIpGuess: String = "192.168.1.1"
     @State private var connectTask: Task<Void, Never>?
@@ -258,51 +258,49 @@ struct AddDeviceFlow: View {
     }
 
     private func tryConnect() async {
-        do {
-            try await isConnecting.waitUnlessCancelled()
-        } catch {
-            return
-        }
-        defer { isConnecting.signal() }
-        withAnimation {
-            connectionStatus = .connecting
-        }
+        try? await isConnecting.withLock {
+            await MainActor.run {
+                withAnimation {
+                    connectionStatus = .connecting
+                }
+            }
 
-        let isValidIp = isValidIPAddress(ipAddress)
-
-        do {
-            let location = "http://\(ipAddress):8060/"
-            Log.connection.info("Connecting to \(location, privacy: .public)")
+            let isValidIp = await isValidIPAddress(ipAddress)
 
             do {
-                let preConnectInfo = try await fetchPreconnectionInfo(location: location)
-                await completeConnection(preConnectInfo: preConnectInfo, location: location)
+                let location = "http://\(await ipAddress):8060/"
+                Log.connection.info("Connecting to \(location, privacy: .public)")
+
+                do {
+                    let preConnectInfo = try await fetchPreconnectionInfo(location: location)
+                    await completeConnection(preConnectInfo: preConnectInfo, location: location)
+                    await MainActor.run {
+                        withAnimation {
+                            connectionStatus = .success
+                        }
+                    }
+                } catch {
+                    Log.connection.warning("Error connecting to \(location, privacy: .public), \(error, privacy: .public)")
+                    if isValidIp {
+                        throw AddDeviceError.deviceNotFound
+                    } else {
+                        throw AddDeviceError.invalidIPAddress
+                    }
+                }
+            } catch let error as AddDeviceError {
                 await MainActor.run {
                     withAnimation {
-                        connectionStatus = .success
+                        globalError = error.errorDescription
+                        connectionStatus = .failure(error)
                     }
                 }
             } catch {
-                Log.connection.warning("Error connecting to \(location, privacy: .public), \(error, privacy: .public)")
-                if isValidIp {
-                    throw AddDeviceError.deviceNotFound
-                } else {
-                    throw AddDeviceError.invalidIPAddress
-                }
-            }
-        } catch let error as AddDeviceError {
-            await MainActor.run {
-                withAnimation {
-                    globalError = error.errorDescription
-                    connectionStatus = .failure(error)
-                }
-            }
-        } catch {
-            let deviceError = AddDeviceError.unknown(error.localizedDescription)
-            await MainActor.run {
-                withAnimation {
-                    globalError = deviceError.errorDescription
-                    connectionStatus = .failure(deviceError)
+                let deviceError = AddDeviceError.unknown(error.localizedDescription)
+                await MainActor.run {
+                    withAnimation {
+                        globalError = deviceError.errorDescription
+                        connectionStatus = .failure(deviceError)
+                    }
                 }
             }
         }

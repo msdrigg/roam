@@ -62,18 +62,30 @@ private func _getSharedModelContainer() throws -> ModelContainer {
         versionedSchema: SchemaV5.self
     )
 
+#if WIDGET
     let modelConfiguration = ModelConfiguration(
         schema: schema,
         isStoredInMemoryOnly: false,
-        groupContainer: .identifier(mainAppGroup)
+        allowsSave: false,
+        groupContainer: .identifier(mainAppGroup),
     )
+#else
+    let modelConfiguration = ModelConfiguration(
+        schema: schema,
+        isStoredInMemoryOnly: false,
+        allowsSave: true,
+        groupContainer: .identifier(mainAppGroup),
+    )
+#endif
 
     let mc = try catchObjc {
-        return try ModelContainer(
-            for: schema,
-            migrationPlan: RoamSchemaMigrationPlan.self,
-            configurations: [modelConfiguration]
-        )
+        return try FileLock.shared.withLock(mode: .exclusive) {
+            return try ModelContainer(
+                for: schema,
+                migrationPlan: RoamSchemaMigrationPlan.self,
+                configurations: modelConfiguration
+            )
+        }
     }
 
     mc.mainContext.autosaveEnabled = false

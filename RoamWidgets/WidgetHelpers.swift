@@ -89,25 +89,37 @@ struct AppChoiceRemoteControlProvider: AppIntentTimelineProvider {
                     loadedApps.insert(app1, at: 0)
                 }
                 if let app2 = configuration.app2 {
-                    loadedApps.insert(app2, at: 1)
+                    if loadedApps.count >= 1 {
+                        loadedApps.insert(app2, at: 1)
+                    } else {
+                        loadedApps.append(app2)
+                    }
                 }
                 if let app3 = configuration.app3 {
-                    loadedApps.insert(app3, at: 2)
+                    if loadedApps.count >= 2 {
+                        loadedApps.insert(app3, at: 2)
+                    } else {
+                        loadedApps.append(app3)
+                    }
                 }
-                #if !os(watchOS)
+#if !os(watchOS)
                 if let app4 = configuration.app4 {
-                    loadedApps.insert(app4, at: 3)
+                    if loadedApps.count >= 3 {
+                        loadedApps.insert(app4, at: 3)
+                    } else {
+                        loadedApps.append(app4)
+                    }
                 }
-                #endif
+#endif
             }
             apps = loadedApps
         }
-        apps = Array(apps[0..<4])
-        var appIcons: [String: Image] = [:]
+        apps = Array(apps.prefix(4))
 
+        var appIcons: [String: Image] = [:]
         for app in apps {
             if let url = app.iconURL,
-               let icon = try? await Image(platformImage: loadThumbnailForUrl(url, maxSize: 120)) {
+               let icon = try? await loadThumbnailForUrl(url, maxSize: 120) {
                 appIcons[app.id] = icon
             }
         }
@@ -134,26 +146,37 @@ struct AppChoiceRemoteControlProvider: AppIntentTimelineProvider {
                     loadedApps.insert(app1, at: 0)
                 }
                 if let app2 = configuration.app2 {
-                    loadedApps.insert(app2, at: 1)
+                    if loadedApps.count >= 1 {
+                        loadedApps.insert(app2, at: 1)
+                    } else {
+                        loadedApps.append(app2)
+                    }
                 }
                 if let app3 = configuration.app3 {
-                    loadedApps.insert(app3, at: 2)
+                    if loadedApps.count >= 2 {
+                        loadedApps.insert(app3, at: 2)
+                    } else {
+                        loadedApps.append(app3)
+                    }
                 }
 #if !os(watchOS)
                 if let app4 = configuration.app4 {
-                    loadedApps.insert(app4, at: 3)
+                    if loadedApps.count >= 3 {
+                        loadedApps.insert(app4, at: 3)
+                    } else {
+                        loadedApps.append(app4)
+                    }
                 }
 #endif
             }
             apps = loadedApps
         }
+        apps = Array(apps.prefix(4))
 
-        apps = Array(apps[0..<4])
         var appIcons: [String: Image] = [:]
-
         for app in apps {
             if let url = app.iconURL,
-               let icon = try? await Image(platformImage: loadThumbnailForUrl(url, maxSize: 120)) {
+               let icon = try? await loadThumbnailForUrl(url, maxSize: 120) {
                 appIcons[app.id] = icon
             }
         }

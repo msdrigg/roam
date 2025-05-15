@@ -48,56 +48,35 @@ actor DeviceDiscoveryActor {
 
         Log.scanning.notice("Scanning IPV4 interfaces \(scannableIfaceNames, privacy: .public), but ignoring \(unscannableInterfaces, privacy: .public)")
 
-        let sem = AsyncSemaphore(value: maxConcurrentScanned)
+        var ifaceAddressPairs: [(Addressed4NetworkInterface, IP4Address)] = []
 
-        await withDiscardingTaskGroup { taskGroup in
-            for iface in scannableInterfaces {
-                let range = iface.scannableIPV4NetworkRange
-                if range.count > 1024 {
-                    Log.scanning.error("IPV4 range for \(iface.name, privacy: .public) has \(range.count, privacy: .public) items. Max is 1024")
-                } else {
-                    Log.scanning.notice("Manually scanning \(range.count, privacy: .public) devices in network range \(range, privacy: .public) with name \(iface.name, privacy: .public)")
-                }
-                var idx = 0
+        for iface in scannableInterfaces {
+            let range = iface.scannableIPV4NetworkRange
+            if range.count > 1024 {
+                Log.scanning.error("IPV4 range for \(iface.name, privacy: .public) has \(range.count, privacy: .public) items. Max is 1024. Only queuing 1024")
+            } else {
+                Log.scanning.notice("Queuing \(range.count, privacy: .public) devices in network range \(range, privacy: .public) with name \(iface.name, privacy: .public)")
+            }
+            var idx = 0
 
-                for ipAddress in range {
-                    idx += 1
-                    if Task.isCancelled {
-                        break
-                    }
-                    taskGroup.addTask {
-                        do {
-                            try await sem.waitUnlessCancelled()
-                        } catch {
-                            return
-                        }
-                        defer {
-                            sem.signal()
-                        }
-                        if Task.isCancelled {
-                            return
-                        }
+            for ipAddress in range {
+                idx += 1
+                ifaceAddressPairs.append((iface, ipAddress))
 
-                        let location = "http://\(ipAddress.addressString):8060/"
-                        Log.scanning.debug("Scanning address \(ipAddress.addressString, privacy: .public)")
-
-                        if await !canConnectTCP(location: location, timeout: 1.2, interface: iface.nwInterface) {
-                            // This device is a potential item
-                            return
-                        }
-                        if Task.isCancelled {
-                            return
-                        }
-
-                        await self.addDevice(location: location, serial: nil)
-                    }
-
-                    if idx > 1024 {
-                        break
-                    }
+                if idx > 1024 {
+                    break
                 }
             }
         }
+
+        let output = processConcurrently(items: ifaceAddressPairs, maxConcurrent: maxConcurrentScanned) { pair in await scanAddress(pair) }
+
+        for await location in output {
+            if let location {
+                await self.addDevice(location: location, serial: nil)
+            }
+        }
+
         Log.scanning.notice("Done scanning ipv4 range")
     }
 
@@ -187,4 +166,20 @@ actor DeviceDiscoveryActor {
         }
     }
     #endif
+}
+
+private func scanAddress(_ address: (Addressed4NetworkInterface, IP4Address)) async -> String? {
+    let (iface, ipAddress) = address
+    if Task.isCancelled {
+        return nil
+    }
+
+    let location = "http://\(ipAddress.addressString):8060/"
+    Log.scanning.debug("Scanning address \(ipAddress.addressString, privacy: .public)")
+
+    if await !canConnectTCP(location: location, timeout: 1.2, interface: iface.nwInterface) {
+        // This device is a potential item
+        return nil
+    }
+    return location
 }

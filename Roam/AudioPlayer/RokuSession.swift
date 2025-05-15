@@ -410,19 +410,17 @@ actor RTPSession {
     }
 
     func streamAudio() async throws {
+        let rtpAudioPlayer = AudioPlayer()
         #if !os(macOS)
-            await setupSessionForAudioPlayback()
+            await rtpAudioPlayer.configureAudioSession()
             defer {
-                do {
-                    try AVAudioSession.sharedInstance().setActive(false)
-                } catch {
-                    Log.headphones.error("Failed to disable audio session active: \(error, privacy: .public)")
+                Task {
+                    await rtpAudioPlayer.makeInactive()
                 }
             }
         #endif
 
         try await withThrowingDiscardingTaskGroup { taskGroup in
-            let rtpAudioPlayer = AudioPlayer()
 
             Log.headphones.notice("Starting receiving rtp packets")
             let decoder: OpusDecoderWithJitterBuffer =
@@ -464,7 +462,7 @@ actor RTPSession {
 
                 for await _ in AsyncTimerSequence.repeating(every: .milliseconds(10), tolerance: .microseconds(10)) {
                     Task {
-                        if let lrt = await rtpAudioPlayer.lastRender() {
+                        if let lrt = try? await rtpAudioPlayer.lastRender() {
                             if let returns = await decoder.nextPacket(atTime: consume lrt) {
                                 let pcmBuffer = returns.0
                                 let audioTime = returns.1
@@ -478,7 +476,7 @@ actor RTPSession {
 
             taskGroup.addTask {
                 for await _ in AsyncTimerSequence.repeating(every: .milliseconds(200)) {
-                    if let lrt = await rtpAudioPlayer.lastRender() {
+                    if let lrt = try? await rtpAudioPlayer.lastRender() {
                         let latency = await rtpAudioPlayer.getOutputLatency()
                         if await decoder.syncAudio(
                             time: lrt,
@@ -494,7 +492,7 @@ actor RTPSession {
                     for await latency in stream {
                         Log.headphones.error("New latency event \(latency, privacy: .public)")
                         for await _ in AsyncTimerSequence.repeating(every: .milliseconds(200)) {
-                            if let lrt = await rtpAudioPlayer.lastRender() {
+                            if let lrt = try? await rtpAudioPlayer.lastRender() {
                                 if await decoder.syncAudio(
                                     time: lrt,
                                     additionalAudioDelay: Double(globalHugeFixedVDLYMS - self.baseAudioDelayMs) /

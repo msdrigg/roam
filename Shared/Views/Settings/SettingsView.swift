@@ -402,6 +402,7 @@ struct MacSettings: View {
         SettingsNavigationWrapper(path: $navPath) {
             SettingsView(path: $navPath, destination: .global)
         }
+        .frame(minWidth: 300)
     }
 }
 

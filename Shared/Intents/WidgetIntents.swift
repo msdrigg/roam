@@ -95,10 +95,10 @@ public struct DeviceAndAppChoiceIntent: AppIntent, WidgetConfigurationIntent {
     @Parameter(title: LocalizedStringResource("App 3", comment: "Configuration field title for selecting the third app"))
     public var app3: AppLinkAppEntity?
 
-    #if !os(watchOS)
+#if !os(watchOS)
     @Parameter(title: LocalizedStringResource("App 4", comment: "Configuration field title for selecting the fourth app"))
     public var app4: AppLinkAppEntity?
-    #endif
+#endif
 
     public static var parameterSummary: some ParameterSummary {
         When(\.$manuallySelectDevice, .equalTo, true) {
@@ -110,9 +110,9 @@ public struct DeviceAndAppChoiceIntent: AppIntent, WidgetConfigurationIntent {
                     \.$app1
                     \.$app2
                     \.$app3
-                    #if !os(watchOS)
+#if !os(watchOS)
                     \.$app4
-                    #endif
+#endif
                 }
             } otherwise: {
                 Summary {
@@ -131,7 +131,7 @@ public struct DeviceAndAppChoiceIntent: AppIntent, WidgetConfigurationIntent {
                     \.$app3
 #if !os(watchOS)
                     \.$app4
-                    #endif
+#endif
                 }
             } otherwise: {
                 Summary {

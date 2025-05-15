@@ -552,7 +552,7 @@ enum ImageLoadingPhase {
 }
 
 @MainActor
-func loadThumbnailForUrl(_ path: URL, maxSize: CGFloat = 400) async throws -> PlatformImage {
+func loadThumbnailForUrl(_ path: URL, maxSize: CGFloat = 400) async throws -> Image {
     let cache = ThumbnailCache.shared
     let thumbnailGenerator = ThumbnailGenerator.shared
 
@@ -561,11 +561,11 @@ func loadThumbnailForUrl(_ path: URL, maxSize: CGFloat = 400) async throws -> Pl
             Log.interface.notice("Cache hit for path: \(path, privacy: .public) with size: \(cachedSize)")
             if maxSize <= 150 {
                 Log.interface.notice("Returning cached image (any size ok for maxSize <= 150)")
-                return cachedImage
+                return Image(platformImage: cachedImage)
             } else {
                 if cachedSize == .large {
                     Log.interface.notice("Returning cached large image")
-                    return cachedImage
+                    return Image(platformImage: cachedImage)
                 } else {
                     Log.interface.notice("Cached small image found, but large is preferred for maxSize > 150. Will attempt to load large.")
                 }
@@ -582,7 +582,7 @@ func loadThumbnailForUrl(_ path: URL, maxSize: CGFloat = 400) async throws -> Pl
         if let smallThumbnail = await thumbnailGenerator.loadThumbnail(for: path, size: .small) {
             Log.interface.notice("Loaded existing small thumbnail.")
             cache.setImage(smallThumbnail, for: path, withSize: .small)
-            return smallThumbnail
+            return Image(platformImage: smallThumbnail)
         }
 
         Log.interface.notice("Small thumbnail not found directly, attempting generation...")
@@ -591,7 +591,7 @@ func loadThumbnailForUrl(_ path: URL, maxSize: CGFloat = 400) async throws -> Pl
             if let generatedSmallThumbnail = await thumbnailGenerator.loadThumbnail(for: path, size: .small) {
                 Log.interface.notice("Generated and loaded small thumbnail.")
                 cache.setImage(generatedSmallThumbnail, for: path, withSize: .small)
-                return generatedSmallThumbnail
+                return Image(platformImage: generatedSmallThumbnail)
             } else {
                 Log.data.notice("Failed to load small thumbnail after generation.")
                 throw ThumbnailError.failedToLoad
@@ -613,7 +613,7 @@ func loadThumbnailForUrl(_ path: URL, maxSize: CGFloat = 400) async throws -> Pl
         if let largeThumbnail = await thumbnailGenerator.loadThumbnail(for: path, size: .large) {
             Log.interface.notice("Loaded existing large thumbnail.")
             cache.setImage(largeThumbnail, for: path, withSize: .large)
-            return largeThumbnail
+            return Image(platformImage: largeThumbnail)
         }
 
         if smallImageCandidate == nil {
@@ -635,18 +635,18 @@ func loadThumbnailForUrl(_ path: URL, maxSize: CGFloat = 400) async throws -> Pl
                 if let generatedSmall = await thumbnailGenerator.loadThumbnail(for: path, size: .small) {
                      cache.setImage(generatedSmall, for: path, withSize: .small)
                 }
-                return generatedLargeThumbnail
+                return Image(platformImage: generatedLargeThumbnail)
             } else {
                 Log.data.notice("Failed to load large thumbnail after generation.")
                 if smallImageCandidate == nil {
                      if let generatedSmallThumbnail = await thumbnailGenerator.loadThumbnail(for: path, size: .small) {
                         Log.interface.notice("Loaded small thumbnail after large generation failed.")
                         cache.setImage(generatedSmallThumbnail, for: path, withSize: .small)
-                        return generatedSmallThumbnail
+                        return Image(platformImage: generatedSmallThumbnail)
                     }
                 } else if let smallFallback = smallImageCandidate {
                     Log.interface.notice("Returning pre-existing/cached small thumbnail as large generation/load failed.")
-                    return smallFallback
+                    return Image(platformImage: smallFallback)
                 }
                 throw ThumbnailError.failedToLoad
             }
@@ -655,7 +655,7 @@ func loadThumbnailForUrl(_ path: URL, maxSize: CGFloat = 400) async throws -> Pl
             cache.setFailure(for: path)
             if let smallFallback = smallImageCandidate {
                 Log.interface.notice("Thumbnail creation failed, returning previously available small image.")
-                return smallFallback
+                return Image(platformImage: smallFallback)
             }
             throw ThumbnailError.failedToLoad
         }

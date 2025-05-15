@@ -155,46 +155,113 @@ enum AudioPlayerError: Error, LocalizedError {
 actor AudioPlayer {
     private let engine: AVAudioEngine
     private let streamAudioNode: AVAudioPlayerNode
-    private let convertor: AVAudioConverter
+    private let converter: AVAudioConverter
 
     public init() {
         engine = AVAudioEngine()
         streamAudioNode = AVAudioPlayerNode()
         engine.attach(streamAudioNode)
+
         let audioFormat = AVAudioFormat(opusPCMFormat: .float32, sampleRate: 48000, channels: 2)!
         engine.connect(streamAudioNode, to: engine.mainMixerNode, format: nil)
         engine.connect(engine.mainMixerNode, to: engine.outputNode, format: nil)
-        convertor = AVAudioConverter(from: audioFormat, to: engine.mainMixerNode.outputFormat(forBus: 0))!
+
+        converter = AVAudioConverter(
+            from: audioFormat,
+            to: engine.mainMixerNode.outputFormat(forBus: 0)
+        )!
     }
+
+#if !os(macOS)
+    func makeInactive() {
+        do {
+            try AVAudioSession.sharedInstance().setActive(false)
+        } catch {
+            Log.headphones.error("Failed to disable audio session active: \(error, privacy: .public)")
+        }
+    }
+    func configureAudioSession() {
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .default, options: [])
+        try? session.setActive(true)
+        self.setupNotifications()
+    }
+
+    private func setupNotifications() {
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] notification in
+            guard
+                let info = notification.userInfo,
+                let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+                let type = AVAudioSession.InterruptionType(rawValue: typeValue)
+            else { return }
+
+            let reasonValue = info[AVAudioSessionInterruptionReasonKey] as? UInt ?? 0
+            let reason = AVAudioSession.InterruptionReason(rawValue: reasonValue)
+
+            let optionsValue = info[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
+            let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+            Task { await self?.handleInterruption(reason: reason, options: options, type: type) }
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] notification in
+            guard
+                let info = notification.userInfo,
+                let reasonValue = info[AVAudioSessionRouteChangeReasonKey] as? UInt,
+                let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue)
+            else { return }
+            Task { await self?.handleRouteChange(reason: reason) }
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.mediaServicesWereResetNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            Task { await self?.handleMediaServicesReset() }
+        }
+    }
+
+#endif
 
     public func start() throws {
         try engine.start()
-        if !engine.isRunning {
+        guard engine.isRunning else {
             throw AudioPlayerError.engineNotRunningOnPlay
         }
         streamAudioNode.play()
     }
 
     #if os(macOS)
-        func getOutputLatency() -> TimeInterval {
-            engine.outputNode.presentationLatency
-        }
+    func getOutputLatency() -> TimeInterval {
+        engine.outputNode.presentationLatency
+    }
     #else
-        func getOutputLatency() -> TimeInterval {
-            AVAudioSession.sharedInstance().outputLatency
-        }
+    func getOutputLatency() -> TimeInterval {
+        AVAudioSession.sharedInstance().outputLatency
+    }
     #endif
 
-    public func sab(atTime: consuming AVAudioTime) async {
-    }
-    public func scheduleAudioBytes(buffer: sending AVAudioPCMBuffer, atTime: sending AVAudioTime) async {
+    public func scheduleAudioBytes(
+        buffer: sending AVAudioPCMBuffer,
+        atTime: sending AVAudioTime
+    ) async {
         let outputBuffer = AVAudioPCMBuffer(
-            pcmFormat: convertor.outputFormat,
-            frameCapacity: AVAudioFrameCount(convertor.outputFormat.sampleRate) * buffer
-                .frameLength / AVAudioFrameCount(buffer.format.sampleRate)
+            pcmFormat: converter.outputFormat,
+            frameCapacity: AVAudioFrameCount(converter.outputFormat.sampleRate)
+                * buffer.frameLength
+                / AVAudioFrameCount(buffer.format.sampleRate)
         )!
+
         var error: NSError?
-        convertor.convert(to: outputBuffer, error: &error) { _, outStatus in
+        converter.convert(to: outputBuffer, error: &error) { _, outStatus in
             outStatus.pointee = .haveData
             return buffer
         }
@@ -206,9 +273,11 @@ actor AudioPlayer {
         }
     }
 
-    public func lastRender() -> AVAudioTime? {
+    public func lastRender() throws -> AVAudioTime? {
         if let lrt = streamAudioNode.lastRenderTime {
-            return streamAudioNode.playerTime(forNodeTime: lrt)
+            return try catchObjc {
+                streamAudioNode.playerTime(forNodeTime: lrt)
+            }
         }
         return nil
     }
@@ -218,7 +287,115 @@ actor AudioPlayer {
         engine.stop()
         streamAudioNode.stop()
     }
+
+    private func restartAudio() {
+        try? engine.start()
+        streamAudioNode.play()
+    }
+
+    private func handleInterruption(reason: AVAudioSession.InterruptionReason?, options: AVAudioSession.InterruptionOptions, type: AVAudioSession.InterruptionType) {
+        switch type {
+        case .began:
+            stop()
+        case .ended:
+            if options.contains(.shouldResume) {
+                restartAudio()
+            }
+        @unknown default:
+            break
+        }
+    }
+
+    private func handleRouteChange(reason: AVAudioSession.RouteChangeReason) {
+        switch reason {
+        case .oldDeviceUnavailable:
+            stop()
+        case .newDeviceAvailable, .routeConfigurationChange:
+            restartAudio()
+        default:
+            break
+        }
+    }
+
+    private func handleMediaServicesReset() {
+        stop()
+        engine.reset()
+        engine.attach(streamAudioNode)
+        engine.connect(streamAudioNode, to: engine.mainMixerNode, format: nil)
+        engine.connect(engine.mainMixerNode, to: engine.outputNode, format: nil)
+        restartAudio()
+    }
 }
+
+// actor AudioPlayer {
+//    private let engine: AVAudioEngine
+//    private let streamAudioNode: AVAudioPlayerNode
+//    private let convertor: AVAudioConverter
+//
+//    public init() {
+//        engine = AVAudioEngine()
+//        streamAudioNode = AVAudioPlayerNode()
+//        engine.attach(streamAudioNode)
+//        let audioFormat = AVAudioFormat(opusPCMFormat: .float32, sampleRate: 48000, channels: 2)!
+//        engine.connect(streamAudioNode, to: engine.mainMixerNode, format: nil)
+//        engine.connect(engine.mainMixerNode, to: engine.outputNode, format: nil)
+//        convertor = AVAudioConverter(from: audioFormat, to: engine.mainMixerNode.outputFormat(forBus: 0))!
+//    }
+//
+//    public func start() throws {
+//        try engine.start()
+//        if !engine.isRunning {
+//            throw AudioPlayerError.engineNotRunningOnPlay
+//        }
+//        streamAudioNode.play()
+//    }
+//
+//    #if os(macOS)
+//        func getOutputLatency() -> TimeInterval {
+//            engine.outputNode.presentationLatency
+//        }
+//    #else
+//        func getOutputLatency() -> TimeInterval {
+//            AVAudioSession.sharedInstance().outputLatency
+//        }
+//    #endif
+//
+//    public func sab(atTime: consuming AVAudioTime) async {
+//    }
+//    public func scheduleAudioBytes(buffer: sending AVAudioPCMBuffer, atTime: sending AVAudioTime) async {
+//        let outputBuffer = AVAudioPCMBuffer(
+//            pcmFormat: convertor.outputFormat,
+//            frameCapacity: AVAudioFrameCount(convertor.outputFormat.sampleRate) * buffer
+//                .frameLength / AVAudioFrameCount(buffer.format.sampleRate)
+//        )!
+//        var error: NSError?
+//        convertor.convert(to: outputBuffer, error: &error) { _, outStatus in
+//            outStatus.pointee = .haveData
+//            return buffer
+//        }
+//
+//        if let error {
+//            Log.headphones.error("Error converting buffers \(error, privacy: .public)")
+//        } else {
+//            await streamAudioNode.scheduleBuffer(outputBuffer, at: atTime)
+//        }
+//    }
+//
+//    public func lastRender() throws -> AVAudioTime?  {
+//        if let lrt = streamAudioNode.lastRenderTime {
+//            return try catchObjc {
+//                return streamAudioNode.playerTime(forNodeTime: lrt)
+//            }
+//        }
+//        return nil
+//    }
+//
+//    public func stop() {
+//        Log.headphones.notice("Stopping audioplayer")
+//        engine.stop()
+//        streamAudioNode.stop()
+//    }
+// }
 
 func machTimeToSeconds(_ machTime: UInt64) -> Double {
     var timebaseInfo = mach_timebase_info()

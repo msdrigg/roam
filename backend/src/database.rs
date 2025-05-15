@@ -234,6 +234,7 @@ pub struct UserUpdate {
 pub struct DeviceInfo {
     pub user_id: Option<String>,
     pub build_version: Option<String>,
+    pub release_version: Option<String>,
     pub os_platform: Option<String>,
     pub os_version: Option<String>,
     pub user_locale: Option<String>,

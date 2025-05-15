@@ -317,11 +317,13 @@ impl AppContext {
             os_platform,
             os_version,
             user_locale,
+            release_version,
         } = &device_info.0;
         let message = format!(
-            ":ninja:\n\n### Device info\n\n- **User ID**: {}\n- **Build version**: {}\n- **OS platform**: {}\n- **OS version**: {}\n- **User Locale**: {}\n- **APNS Token**: {}",
+            ":ninja:\n\n### Device info\n\n- **User ID**: {}\n- **Build version**: {}\n- **Release version**: {}\n- **OS platform**: {}\n- **OS version**: {}\n- **User Locale**: {}\n- **APNS Token**: {}",
             user_id.as_deref().unwrap_or("--"),
             build_version.as_deref().unwrap_or("--"),
+            release_version.as_deref().unwrap_or("--"),
             os_platform.as_deref().unwrap_or("--"),
             os_version.as_deref().unwrap_or("--"),
             user_locale.as_deref().unwrap_or("--"),

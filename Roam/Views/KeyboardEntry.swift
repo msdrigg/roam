@@ -17,7 +17,7 @@
         @Binding var showing: Bool
         @FocusState private var keyboardFocused: Bool
 
-        let semaphore: AsyncSemaphore = AsyncSemaphore(value: 1)
+        let semaphore: AsyncLock = AsyncLock()
 
         @State private var transformations: [StrTransformation] = []
 
@@ -95,18 +95,18 @@
                             let startIndex = str.index(str.endIndex, offsetBy: -charDifference)
                             let newChars = str[startIndex..<str.endIndex]
 
-                            try await semaphore.waitUnlessCancelled()
-                            defer {
-                                semaphore.signal()
-                            }
                             do {
+                                try await semaphore.lock()
+                                defer {
+                                    semaphore.unlock()
+                                }
                                 try await withTimeout(delay: 2.0) {
                                     for char in newChars.unicodeScalars {
                                         await onKeyPress(KeyEquivalent(Character(char)))
                                     }
                                 }
                             } catch {
-                                Log.userInteraction.warning("Couldn't send kb input within 2s")
+                                Log.userInteraction.warning("Couldn't send kb input within 2s, or canccelled \(error, privacy: .public)")
                             }
                         }
                     }

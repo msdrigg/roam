@@ -955,7 +955,7 @@ actor MessageDataHandler {
     @MainActor
     static let shared: MessageDataHandler = .init(modelContainer: getSharedModelContainer())
 
-    let semaphore: AsyncSemaphore = AsyncSemaphore(value: 1)
+    let semaphore: AsyncLock = AsyncLock()
 
     @discardableResult
     public func refreshMessagesIfExpectingNewMessages() async -> Int {
@@ -1037,12 +1037,12 @@ actor MessageDataHandler {
 
     public func trySendMessages() async {
         do {
-            try await semaphore.waitUnlessCancelled()
+            try await semaphore.lock()
         } catch {
             return
         }
         defer {
-            semaphore.signal()
+            semaphore.unlock()
         }
         let messages: [Message]
         do {
@@ -1095,12 +1095,12 @@ actor MessageDataHandler {
 
     public func refreshExternalMessages(latestMessageId: String?, viewed: Bool) async -> Int {
         do {
-            try await self.semaphore.waitUnlessCancelled()
+            try await self.semaphore.lock()
         } catch {
             return 0
         }
         defer {
-            self.semaphore.signal()
+            self.semaphore.unlock()
         }
         do {
             var count = 0
