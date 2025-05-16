@@ -286,8 +286,6 @@
 		AFEBD9112D5D489C00E840FF /* SelectedAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF9DE5662D553DDE00C50894 /* SelectedAttachment.swift */; };
 		AFEBD9132D5DACA100E840FF /* MessageBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED45EB2D52BF3000FD53E2 /* MessageBubble.swift */; };
 		AFEBD9172D5DAF7A00E840FF /* WatchOSAttachButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFEBD9152D5DAF7A00E840FF /* WatchOSAttachButton.swift */; };
-		AFECDE1D2AE18511003F6676 /* Opus in Frameworks */ = {isa = PBXBuildFile; productRef = AFECDE1C2AE18511003F6676 /* Opus */; };
-		AFECDE202AE18519003F6676 /* RTP in Frameworks */ = {isa = PBXBuildFile; productRef = AFECDE1F2AE18519003F6676 /* RTP */; };
 		AFED424A2AEE8F3B0023D684 /* VolumeListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED42492AEE8F3B0023D684 /* VolumeListener.swift */; };
 		AFED45EF2D52BF3000FD53E2 /* EmojiPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED45EA2D52BF3000FD53E2 /* EmojiPicker.swift */; };
 		AFED45F02D52BF3000FD53E2 /* MessageBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED45EB2D52BF3000FD53E2 /* MessageBubble.swift */; };
@@ -622,8 +620,6 @@
 		AFC24EF82AD0E5A1002AB66C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
-				AFECDE202AE18519003F6676 /* RTP in Frameworks */,
-				AFECDE1D2AE18511003F6676 /* Opus in Frameworks */,
 			);
 		};
 		AFEDCDF12CD1331E0001D959 /* Frameworks */ = {
@@ -1144,10 +1140,6 @@
 				AF15C2522AE8672800B79FD9 /* PBXTargetDependency */,
 			);
 			name = Roam;
-			packageProductDependencies = (
-				AFECDE1C2AE18511003F6676 /* Opus */,
-				AFECDE1F2AE18519003F6676 /* RTP */,
-			);
 			productName = BetterRemote;
 			productReference = AFC24EFB2AD0E5A1002AB66C /* Roam.app */;
 			productType = "com.apple.product-type.application";
@@ -1228,8 +1220,6 @@
 			);
 			mainGroup = AFC24EF22AD0E5A1002AB66C;
 			packageReferences = (
-				AFECDE1B2AE18511003F6676 /* XCRemoteSwiftPackageReference "swift-opus" */,
-				AFECDE1E2AE18519003F6676 /* XCRemoteSwiftPackageReference "swift-rtp" */,
 				AF0042812AEAA3ED0051BB1E /* XCRemoteSwiftPackageReference "libwebp-Xcode" */,
 				AF344FE92D42D3B600179FE0 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 			);
@@ -1320,6 +1310,7 @@
 				"else",
 				"  echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"",
 				"fi",
+				"",
 				"",
 				"",
 				"",
@@ -2327,22 +2318,6 @@
 				minimumVersion = 1.5.0;
 			};
 		};
-		AFECDE1B2AE18511003F6676 /* XCRemoteSwiftPackageReference "swift-opus" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/alta/swift-opus";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
-		AFECDE1E2AE18519003F6676 /* XCRemoteSwiftPackageReference "swift-rtp" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/alta/swift-rtp";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -2355,16 +2330,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AF344FE92D42D3B600179FE0 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
 			productName = ArgumentParser;
-		};
-		AFECDE1C2AE18511003F6676 /* Opus */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AFECDE1B2AE18511003F6676 /* XCRemoteSwiftPackageReference "swift-opus" */;
-			productName = Opus;
-		};
-		AFECDE1F2AE18519003F6676 /* RTP */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AFECDE1E2AE18519003F6676 /* XCRemoteSwiftPackageReference "swift-rtp" */;
-			productName = RTP;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

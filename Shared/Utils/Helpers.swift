@@ -368,6 +368,8 @@ let globalDefaultRemoteRTCPPort: UInt16 = 5150
 let globalRTPPayloadType = 97
 let globalClockRate = 48000
 let globalPacketSizeMS: Int64 = 10
+let globalPacketsPerSec: Int64 = 1000 / globalPacketSizeMS
+
 let globalHugeFixedVDLYMS: UInt32 = 600
 
 public func installAborter() {

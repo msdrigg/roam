@@ -419,12 +419,13 @@ actor RTPSession {
                 }
             }
         #endif
+        let outputFormat = await rtpAudioPlayer.outputFormat
 
         try await withThrowingDiscardingTaskGroup { taskGroup in
 
             Log.headphones.notice("Starting receiving rtp packets")
             let decoder: OpusDecoderWithJitterBuffer =
-                try OpusDecoderWithJitterBuffer(audioBuffer: Double(videoBufferMs) / 1000)
+                try OpusDecoderWithJitterBuffer(audioBuffer: Double(videoBufferMs) / 1000, outputFormat: outputFormat)
             taskGroup.addTask {
                 var count = 0
                 var lsqNo: Int64 = 0

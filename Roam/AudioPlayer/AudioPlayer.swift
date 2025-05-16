@@ -1,8 +1,6 @@
 @preconcurrency import AVFoundation
 import CoreAudio
-import Opus
 import os
-import RTP
 
 struct AudioFrame {
     let frame: AVAudioPCMBuffer
@@ -11,26 +9,22 @@ struct AudioFrame {
 
 actor OpusDecoderWithJitterBuffer {
     var jitterBuffer = MaxHeap<RtpPacket>()
-    let opusDecoder: Opus.RoamDecoder
-    var packetsPerSec: Int64 {
-        1000 / globalPacketSizeMS
-    }
-
+    let opusDecoder: RoamDecoder
     var lastPacketNumber: Int64 = 0
     var syncPacket: RtpPacket?
     var lastSampleTime: AVAudioTime?
     let audioBufferDuration: TimeInterval
     var rollingSequenceNumber: Int64?
 
-    init(audioBuffer: TimeInterval) throws {
+    init(audioBuffer: TimeInterval, outputFormat: AVAudioFormat) throws {
         guard let opusFormat = AVAudioFormat(opusPCMFormat: .float32, sampleRate: Double(globalClockRate), channels: 2)
         else {
             loggedFatalError("Error initializing opus av format. This is a bug")
         }
         do {
-            opusDecoder = try Opus.RoamDecoder(format: opusFormat)
+            opusDecoder = try RoamDecoder(opusFormat: opusFormat, outputFormat: outputFormat)
         } catch {
-            Log.headphones.error("Error initializing opus decoder \(error, privacy: .public)")
+            Log.headphones.error("Error initializing opus decoder \(error, privacy: .public) with formats \(opusFormat, privacy: .public), \(outputFormat, privacy: .public) \(error, privacy: .public)")
             throw error
         }
         self.audioBufferDuration = audioBuffer
@@ -43,12 +37,12 @@ actor OpusDecoderWithJitterBuffer {
         }
         Log.headphones.notice("Syncing time with additional audio delay \(additionalAudioDelay, privacy: .public) buffer \(self.audioBufferDuration, privacy: .public)")
 
-        let packetsInBuffer = Int64(audioBufferDuration * Double(packetsPerSec))
+        let packetsInBuffer = Int64(audioBufferDuration * Double(globalPacketsPerSec))
 
         // Estimating getting 100 packets per second
         let currentEstimatedPacketNumber =
             Int64((machTimeToSeconds(time.hostTime) - machTimeToSeconds(syncPacket.receivedAt)) *
-                Double(packetsPerSec)) + Int64(syncPacket.sequenceNumber)
+                Double(globalPacketsPerSec)) + Int64(syncPacket.sequenceNumber)
         lastPacketNumber = (currentEstimatedPacketNumber - packetsInBuffer + Int64(UInt16.max)) % Int64(UInt16.max)
         lastSampleTime = AVAudioTime(
             hostTime: time.hostTime + secondsToMachTime(additionalAudioDelay),
@@ -116,7 +110,7 @@ actor OpusDecoderWithJitterBuffer {
         // Need to get schedule time for when to schedule the packet
         let sampleTime = AVAudioTime(
             hostTime: secondsToMachTime(Double(globalPacketSizeMS) / 1000) + lastSampleTime.hostTime,
-            sampleTime: lastSampleTime.sampleTime + Int64(lastSampleTime.sampleRate) / packetsPerSec,
+            sampleTime: lastSampleTime.sampleTime + Int64(lastSampleTime.sampleRate) / globalPacketsPerSec,
             atRate: lastSampleTime.sampleRate
         )
 
@@ -126,10 +120,14 @@ actor OpusDecoderWithJitterBuffer {
         let nextPcm: AVAudioPCMBuffer
         do {
             if let np = nextPacket {
+                Log.headphones.notice("Decoding payload len \(np.payload.count)")
                 nextPcm = try opusDecoder.decode(np.payload)
+                Log.headphones.notice("Got decoded packet \(nextPcm.frameLength, privacy: .public)")
             } else {
-                nextPcm = try opusDecoder.decode_loss_concealment(sampleCount: Int64(globalClockRate) / packetsPerSec)
                 Log.headphones.error("Getting loss concealment packet for sqNo \(self.lastPacketNumber, privacy: .public)")
+//                nextPcm = try opusDecoder.decodeLossConcealment(opusSampleCount: Int64(globalClockRate) / globalPacketsPerSec)
+                    nextPcm = try opusDecoder.decodeLossConcealment()
+                Log.headphones.notice("Got loss concealment \(nextPcm.frameLength, privacy: .public)")
             }
         } catch {
             Log.headphones.error("Error decoding packet \(error, privacy: .public)")
@@ -142,7 +140,7 @@ actor OpusDecoderWithJitterBuffer {
 
         return (nextPcm, AVAudioTime(
             hostTime: secondsToMachTime(Double(globalPacketSizeMS) / 1000) + lastSampleTime.hostTime,
-            sampleTime: lastSampleTime.sampleTime + Int64(lastSampleTime.sampleRate) / packetsPerSec,
+            sampleTime: lastSampleTime.sampleTime + Int64(lastSampleTime.sampleRate) / globalPacketsPerSec,
             atRate: lastSampleTime.sampleRate
         ))
     }
@@ -155,21 +153,17 @@ enum AudioPlayerError: Error, LocalizedError {
 actor AudioPlayer {
     private let engine: AVAudioEngine
     private let streamAudioNode: AVAudioPlayerNode
-    private let converter: AVAudioConverter
+    var outputFormat: AVAudioFormat {
+        engine.mainMixerNode.outputFormat(forBus: 0)
+    }
 
     public init() {
         engine = AVAudioEngine()
         streamAudioNode = AVAudioPlayerNode()
         engine.attach(streamAudioNode)
 
-        let audioFormat = AVAudioFormat(opusPCMFormat: .float32, sampleRate: 48000, channels: 2)!
         engine.connect(streamAudioNode, to: engine.mainMixerNode, format: nil)
         engine.connect(engine.mainMixerNode, to: engine.outputNode, format: nil)
-
-        converter = AVAudioConverter(
-            from: audioFormat,
-            to: engine.mainMixerNode.outputFormat(forBus: 0)
-        )!
     }
 
 #if !os(macOS)
@@ -285,24 +279,7 @@ actor AudioPlayer {
         buffer: sending AVAudioPCMBuffer,
         atTime: sending AVAudioTime
     ) async {
-        let outputBuffer = AVAudioPCMBuffer(
-            pcmFormat: converter.outputFormat,
-            frameCapacity: AVAudioFrameCount(converter.outputFormat.sampleRate)
-                * buffer.frameLength
-                / AVAudioFrameCount(buffer.format.sampleRate)
-        )!
-
-        var error: NSError?
-        converter.convert(to: outputBuffer, error: &error) { _, outStatus in
-            outStatus.pointee = .haveData
-            return buffer
-        }
-
-        if let error {
-            Log.headphones.error("Error converting buffers \(error, privacy: .public)")
-        } else {
-            await streamAudioNode.scheduleBuffer(outputBuffer, at: atTime)
-        }
+        await streamAudioNode.scheduleBuffer(buffer, at: atTime)
     }
 
     public func lastRender() throws -> AVAudioTime? {

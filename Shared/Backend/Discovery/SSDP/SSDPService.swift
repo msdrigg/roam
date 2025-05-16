@@ -1,33 +1,17 @@
-// Copyright (c) 2017 Pierrick Rouxel
-
 import Foundation
 
 // swiftlint:disable:next force_try
 private let headerRegex = try! NSRegularExpression(pattern: "^([^\r\n:]+): (.*)$", options: [.anchorsMatchLines])
 
 public struct SSDPService: Sendable {
-    /// The host of service
     public let host: String
-    /// The headers of the original response
     public let responseHeaders: [String: String]?
-    /// The value of `LOCATION` header
     public let location: String?
-    /// The value of `SERVER` header
     public let server: String?
-    /// The value of `ST` header
     public let searchTarget: String?
-    /// The value of `USN` header
     public let uniqueServiceName: String?
 
-    // MARK: Initialisation
 
-    /**
-         Initialize the `SSDPService` with the discovery response.
-
-         - Parameters:
-             - host: The host of service
-             - response: The discovery response.
-     */
     init(host: String, response: String) {
         self.host = host
 
@@ -40,14 +24,6 @@ public struct SSDPService: Sendable {
         uniqueServiceName = headers["USN"]
     }
 
-    // MARK: Private functions
-
-    /**
-        Parse the discovery response.
-
-        - Parameters:
-            - response: The discovery response.
-     */
     private static func parse(_ response: String) -> [String: String] {
         var result = [String: String]()
 

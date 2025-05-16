@@ -1,5 +1,5 @@
 {
-  "originHash" : "4f06c84c927e589e438d5da6491bd1b1a84aff47b07972157c8a144301c2ba0c",
+  "originHash" : "7423f4eb6a006e96ac9f014d0017d029dafbc2f23b21863c549e9a8f094b749e",
   "pins" : [
     {
       "identity" : "libwebp-xcode",
@@ -17,24 +17,6 @@
       "state" : {
         "revision" : "41982a3656a71c768319979febd796c6fd111d5c",
         "version" : "1.5.0"
-      }
-    },
-    {
-      "identity" : "swift-opus",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/alta/swift-opus",
-      "state" : {
-        "branch" : "main",
-        "revision" : "6f3cb6bd3ffed1fe5f06d00a962d5c191a50daf8"
-      }
-    },
-    {
-      "identity" : "swift-rtp",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/alta/swift-rtp",
-      "state" : {
-        "branch" : "main",
-        "revision" : "ff10c1336189135b86d962c5721e41a49c55c06a"
       }
     }
   ],
