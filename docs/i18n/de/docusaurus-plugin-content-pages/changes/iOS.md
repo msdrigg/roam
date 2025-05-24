@@ -1,2 +1,1 @@
--   Leistungsverbesserungen, wenn ein Benutzer viele Roku-Apps geladen hat
--   Behebung des Absturzes von watchOS-Nachrichten
+-   Leistungsverbesserungen und Fehlerbehebungen

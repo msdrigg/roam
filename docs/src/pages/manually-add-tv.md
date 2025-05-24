@@ -12,10 +12,11 @@ hide_table_of_contents: true
 3. Name your device however you want to, and enter the device IP exactly as shown on the Roku TV
 4. Click Save. Now your Roku should be able to connect and function normally
 
-## What if you add the TV manually and Roam still can't connect?
+## What if you add the TV manually and Roam still can't connect or the connection isn't working properly?
 
 If Roam still can't control your Roku, please try the following steps
 
+-   [WatchOS ONLY]: Please go to **Settings -> System -> Advanced System Settings -> Control by mobile apps** and make sure it is set to **Permissive**
 -   Make sure your iOS device is connected to the same WiFi network as your Roku TV
 -   Make sure your TV is turned on
 -   Make sure Local Network Permissions is enabled for Roam (or disable and re-enable it if it is already enabled)
@@ -25,7 +26,8 @@ If Roam still can't control your Roku, please try the following steps
 
 ## What if I have a complicated network/VPN setup? What protocols does this app use?
 
--   Roam uses two different protocols to communicate with the TV
-    -   TCP (HTTP/Websockets) on port 8060 for sending commands to the TV
+-   Roam uses several different protocols to communicate with the TV
+    -   TCP (HTTP/Websockets) on port 8060 for sending commands to the TV and querying device state
     -   WOL magic packet (UDP multicast to address 255.255.255.255) to wake up the TV from deep sleep
--   All Roku TV's use port 8060 and there is no way to change this on the TV side. But if you have some kind of port forwarding setup and want to use a different outgoing port from Roam, it is possible. You just need to enter `<IP>:<Port>` into the "Ip Address" field instead of just `<IP>`. E.g. enter `192.168.8.242:8061` and the chosen port will be used.
+    -   RDP (UDP) on port 6970 for the headphones mode audio stream
+-   All Roku TV's use port 8060 and there is no way to change this on the TV side. But if you have some kind of port forwarding setup and want to use a different outgoing port from Roam, it is possible. You just need to enter `[IP]:[Port]` into the "Ip Address" field instead of just `[IP]`. For example, enter `192.168.8.242:8061` and the port `8061` will be used.

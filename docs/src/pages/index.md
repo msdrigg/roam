@@ -23,6 +23,8 @@ Roam offers everything you want and nothing you don't
 
 -   What can I do if Roam doesn't auto-discover my TV
     -   [See here](/manually-add-tv)
+-   Roam isn't working correctly on my Apple Watch
+    -   Please go to **Settings -> System -> Advanced System Settings -> Control by mobile apps** and make sure it is set to **Permissive**
 -   Why doesn't headphones mode (a.k.a. private listening) work on my TV?
     -   Headphones mode currently isn't working on some TV's. If headphones mode doesn't work with Roam, but works with the official Roku app, please share your Roku's model name and any other relevant information in an email to [roam-support@msd3.io](mailto:roam-support@msd3.io). Your report will help me figure out where to look when trying to fix this bug.
 -   What if I have another problem or just want to provide feedback?

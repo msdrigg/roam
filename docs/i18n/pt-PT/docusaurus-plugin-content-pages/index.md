@@ -8,48 +8,50 @@ hide_table_of_contents: true
 
 ## Sobre o Roam
 
-Roam oferece tudo o que você quer e nada que você não queira
+Roam oferece tudo o que deseja e nada do que não precisa
 
--   Funciona em Mac, iPhone, iPad, Apple Watch, Vision Pro ou Apple TV!
--   Integração inteligente de plataforma com atalhos de teclado no Mac, usando botões de volume de hardware para controlar o volume da TV no iOS
--   Use atalhos e widgets para controlar sua TV sem nunca abrir o app!
--   Modo Headphones (também conhecido como escuta privada) suportado no Mac, iPad, iPhone, VisionOS e Apple TV (toca o áudio de sua TV através de seu dispositivo)
--   Descubra dispositivos na sua rede local assim que você abrir o app
--   Design intuitivo com o sistema de design nativo SwiftUI da Apple
+-   Funciona no Mac, iPhone, iPad, Apple Watch, Vision Pro ou Apple TV!
+-   Integração inteligente com a plataforma, incluindo atalhos de teclado no Mac e utilização dos botões de volume físico para controlar o volume da TV no iOS
+-   Use atalhos e widgets para controlar a sua TV sem sequer abrir a app!
+-   Suporte para modo de auscultadores (também conhecido como escuta privada) no Mac, iPad, iPhone, VisionOS e Apple TV (reproduza o áudio da sua TV através do seu dispositivo)
+-   Descubra dispositivos na sua rede local assim que abre a app
+-   Design intuitivo com o sistema nativo SwiftUI da Apple
 -   Rápido e leve, menos de 8 MB em todos os dispositivos e abre em menos de meio segundo!
 -   Código aberto (https://github.com/msdrigg/roam)
 
-## Questões Comuns
+## Problemas Comuns
 
--   O que posso fazer se o Roam não auto-descobrir minha TV
+-   O que posso fazer se o Roam não detetar automaticamente a minha TV?
     -   [Veja aqui](/manually-add-tv)
--   Por que o modo de headphones (também conhecido como escuta privada) não funciona na minha TV?
-    -   O modo de headphones atualmente não está funcionando em algumas TVs. Se o modo de headphones não funcionar com o Roam, mas funcionar com o app oficial da Roku, por favor compartilhe o nome do modelo de seu Roku e qualquer outra informação relevante em um e-mail para [roam-support@msd3.io](mailto:roam-support@msd3.io). Seu relatório me ajudará a descobrir onde procurar ao tentar consertar este bug.
--   E se eu tiver outro problema ou apenas quiser dar um feedback?
-    -   Se for um bug, será melhor iniciar um relatório de feedback a partir do aplicativo
-        -   Entre no app Roam e abra a página de configurações
-        -   Clique em "Enviar feedback". Isso irá gerar um relatório de diagnóstico que pode ser compartilhado com o suporte da Roam (roam-support@msd3.io)
-        -   Se o seu app estiver falhando, também certifique-se de que suas análises estejam ativadas em Configurações -> Privacidade & Segurança -> Análise & Melhorias
-            -   Ative "Compartilhar iPhone & Análises de Watch" e então ative "Compartilhar com Desenvolvedores de Apps" para que a apple possa me informar quando o seu app travar
-    -   Se se tratar do pedido de uma nova funcionalidade, você pode enviar um e-mail (roam-support@msd3.io), conversar diretamente comigo no app Roam (Configurações -> Conversa com o Desenvolvedor) ou participar do [Discord Roam](https://discord.gg/FqaTNRccbG).
--   Por que às vezes as teclas de seta não funcionam no iPad?
-    -   Isso acontece porque o iPadOS às vezes assume o controle das teclas de seta e as usa para navegar pelos botões da tela antes que possamos detectá-las.
-    -   Você pode contornar isso indo até Configurações -> Acessibilidade -> Teclados e desabilitando o "Acesso Completo ao Teclado" ou alternativamente indo até Configurações -> Acessibilidade -> Teclados -> Acesso Total ao Teclado -> Comandos -> Básico e desativando os comandos "Mover para cima", "Mover para baixo", "Mover para a esquerda" e "Mover para a direita" 
--   Por que digitar no meu teclado não aparece na TV
-    -   Em alguns apps da Roku o app ignora a entrada de teclado de hardware. Você pode testar se isso é um bug do Roam ou um bug do app tentando usar a funcionalidade de entrada de teclado no app oficial da Roku e verificando se isso funciona
-    -   Apps com bugs conhecidos
+-   Roam não está a funcionar corretamente no meu Apple Watch
+    -   Por favor vá a **Definições -> Sistema -> Definições Avançadas do Sistema -> Controlo por aplicações móveis** e certifique-se de que está definido como **Permissivo**
+-   Porque é que o modo auscultadores (também conhecido como escuta privada) não funciona na minha TV?
+    -   O modo auscultadores atualmente não está a funcionar em algumas TVs. Se o modo auscultadores não funcionar com o Roam, mas funcionar com a aplicação oficial da Roku, por favor partilhe o modelo da sua Roku e mais informações relevantes por email para [roam-support@msd3.io](mailto:roam-support@msd3.io). O seu relatório ajudará a perceber onde procurar ao tentar corrigir este erro.
+-   E se eu tiver outro problema ou apenas quiser deixar feedback?
+    -   Se for um erro, o melhor será iniciar um relatório de feedback a partir da aplicação
+        -   Abra a aplicação Roam e vá à página das definições
+        -   Clique em "Enviar feedback". Isto irá gerar um relatório de diagnóstico que pode ser partilhado através do suporte (roam-support@msd3.io)
+        -   Se a sua app estiver a falhar, certifique-se também de que as suas análises estão ativadas em Definições -> Privacidade e Segurança -> Análises e Melhorias
+            -   Ative "Partilhar Análises do iPhone & Watch" e depois ative "Partilhar com Programadores de Apps" para que a Apple me reporte quando a sua app falhar
+    -   Se for um pedido de nova funcionalidade, pode enviar um email (roam-support@msd3.io), conversar comigo diretamente na app Roam (Definições -> Conversar com o Programador) ou juntar-se ao [Roam Discord](https://discord.gg/FqaTNRccbG).
+-   Porque é que, por vezes, as setas do teclado não funcionam no iPad?
+    -   Isto acontece porque o iPadOS por vezes assume o controlo das teclas de setas e utiliza-as para navegar nos botões do ecrã antes que as possamos detetar
+    -   Pode contornar este problema indo a Definições -> Acessibilidade -> Teclados e desativando "Acesso Completo ao Teclado" ou, em alternativa, em Definições -> Acessibilidade -> Teclados -> Acesso Completo ao Teclado -> Comandos -> Básico e desativar os comandos "Mover para cima", "Mover para baixo", "Mover para a esquerda" e "Mover para a direita"
+-   Porque é que ao escrever com o meu teclado, o texto não aparece na TV?
+    -   Em algumas aplicações Roku, é ignorada a introdução de texto através do teclado físico. Pode testar se isto é um erro do Roam ou da app tentando usar a funcionalidade de introdução de teclado na aplicação oficial Roku e verificar se funciona
+    -   Aplicações com erros conhecidos:
         -   Prime Video
--   Por que o Roam funciona no meu iPhone e no app do Mac mas não no meu Apple Watch?
-    -   O app do WatchOS se conecta à TV através da API ECP da TV, que deve estar ativada em algumas TVs da Roku. Para habilitar, vá para **Configurações -> Sistema -> Configurações Avançadas do Sistema -> Controle por aplicativos móveis** e certifique-se de que o "Acesso à rede" está definido como "Permissivo"
+-   Porque é que o Roam funciona no meu iPhone e na app de Mac, mas não funciona no meu Apple Watch?
+    -   A app do WatchOS liga-se à TV através da API ECP da TV, que tem de estar ativada em algumas TVs Roku. Para ativá-la, vá a **Definições -> Sistema -> Definições Avançadas do Sistema -> Controlo por aplicações móveis** e certifique-se de que "Acesso à Rede" está definido como "Permissivo"
 
 ## Outros Recursos
 
-Se você tiver alguma pergunta ou problema, por favor me contacte em: [roam-support@msd3.io](mailto:roam-support@msd3.io). Você também pode conversar diretamente comigo no app do Roam (Configurações -> Conversa com o Desenvolvedor) ou participar do [Discord do Roam](https://discord.gg/FqaTNRccbG).
+Se tiver alguma dúvida ou problema, contacte-me por e-mail: [roam-support@msd3.io](mailto:roam-support@msd3.io). Pode também conversar diretamente comigo na aplicação Roam (Definições -> Conversar com o Programador) ou juntar-se ao [Roam Discord](https://discord.gg/FqaTNRccbG).
 
 -   [Política de Privacidade](/privacy)
--   [Repositório Core no GitHub](https://github.com/msdrigg/roam)
--   [Discord do Roam](https://discord.gg/FqaTNRccbG)
--   [Baixar na App Store](https://apps.apple.com/us/app/roam/6469834197)
--   [Roadmap](/upcoming-work)
--   [Changelog](/changes)
--   [Dispositivos Roku Testados](/tested-tvs) 
+-   [Repositório principal no GitHub](https://github.com/msdrigg/roam)
+-   [Roam Discord](https://discord.gg/FqaTNRccbG)
+-   [Descarregar na App Store](https://apps.apple.com/us/app/roam/6469834197)
+-   [Roteiro](/upcoming-work)
+-   [Registo de Alterações](/changes)
+-   [Dispositivos Roku Testados](/tested-tvs)

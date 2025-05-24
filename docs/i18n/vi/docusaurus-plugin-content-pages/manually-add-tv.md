@@ -2,30 +2,32 @@
 hide_table_of_contents: true
 ---
 
-# Thêm TV Một Cách Thủ Công
+# Thêm TV Thủ Công
 
 1. Tìm địa chỉ IP của TV
-    - Bật TV và điều hướng đến **Cài đặt** > **Mạng** > **Thông tin**
-    - Địa chỉ IP sẽ có dạng như 10.x.x.x, 172.x.x.x, 173.x.x.x hoặc 192.168.x.x
-    - Trang này có thể liệt kê một địa chỉ "Gateway" và một "Địa chỉ IP". Hãy chắc chắn bạn KHÔNG đang sử dụng địa chỉ "Gateway"
-2. Điều hướng đến cài đặt Roam và nhấp vào "Thêm một thiết bị thủ công"
-3. Đặt tên cho thiết bị của bạn như bạn muốn và nhập địa chỉ IP của thiết bị chính xác như được hiển thị trên Roku TV
-4. Nhấp vào Lưu (Save). Bây giờ Roku của bạn nên có thể kết nối và hoạt động bình thường
+    - Bật TV và vào **Cài đặt** > **Mạng** > **Giới thiệu**
+    - Địa chỉ IP thường có dạng 10.x.x.x, 172.x.x.x, 173.x.x.x hoặc 192.168.x.x
+    - Trang này có thể hiển thị cả địa chỉ "Gateway" và "IP Address". Đảm bảo bạn KHÔNG sử dụng địa chỉ "Gateway"
+2. Truy cập vào cài đặt Roam và nhấn "Thêm thiết bị thủ công"
+3. Đặt tên thiết bị tùy ý và nhập địa chỉ IP chính xác như hiển thị trên Roku TV
+4. Nhấn Lưu. Bây giờ Roku của bạn sẽ có thể kết nối và hoạt động bình thường
 
-## Nếu bạn thêm TV thủ công và Roam vẫn không thể kết nối?
+## Nếu bạn đã thêm TV thủ công mà Roam vẫn không thể kết nối hoặc kết nối không ổn định thì sao?
 
-Nếu Roam vẫn không thể điều khiển Roku của bạn, hãy thử những bước sau
+Nếu Roam vẫn không thể điều khiển Roku của bạn, hãy thử các bước sau:
 
--   Đảm bảo rằng thiết bị iOS của bạn đã kết nối với cùng một mạng WiFi với Roku TV của bạn
--   Đảm bảo rằng TV của bạn đang được bật
--   Đảm bảo Quyền Hạn Mạng Địa Phương (Local Network Permissions) đã được kích hoạt cho Roam (hoặc vô hiệu hóa và kích hoạt lại nếu nó đã được kích hoạt)
-    -   Trên macOS: Đi đến Cài đặt Hệ thống -> Quyền riêng tư và An ninh -> Mạng Địa phương -> Roam
-    -   Trên iOS: Đi đến Cài đặt -> Ứng dụng -> Roam -> Mạng Địa phương
--   Xem thêm khả năng khác tại đây [https://support.roku.com/article/115001480188](https://support.roku.com/article/115001480188)
+-   [Chỉ dành cho WatchOS]: Vào **Cài đặt -> Hệ thống -> Cài đặt hệ thống nâng cao -> Điều khiển qua ứng dụng di động** và đảm bảo tùy chọn này được đặt thành **Cho phép**
+-   Đảm bảo thiết bị iOS của bạn kết nối cùng mạng WiFi với Roku TV
+-   Đảm bảo TV của bạn đang bật
+-   Đảm bảo Quyền truy cập Mạng Cục bộ đã được bật cho Roam (hoặc tắt đi và bật lại nếu đã được bật)
+    -   Trên macOS: Vào Cài đặt Hệ thống -> Quyền riêng tư & Bảo mật -> Mạng Cục bộ -> Roam
+    -   Trên iOS: Vào Cài đặt -> Ứng dụng -> Roam -> Mạng Cục bộ
+-   Xem thêm các khả năng khác tại đây [https://support.roku.com/article/115001480188](https://support.roku.com/article/115001480188)
 
-## Nếu tôi có một cấu hình mạng/VPN phức tạp? Ứng dụng này sử dụng giao thức gì?
+## Nếu tôi có cấu hình mạng phức tạp/VPN thì sao? Ứng dụng này sử dụng những giao thức nào?
 
--   Roam sử dụng hai giao thức khác nhau để giao tiếp với TV
-     -   TCP (HTTP/Websockets) trên cổng 8060 để gửi lệnh đến TV
-     -   WOL magic packet (UDP multicast đến địa chỉ 255.255.255.255) để đánh thức TV từ trạng thái ngủ sâu
--   Tất cả Roku TV đều sử dụng cổng 8060 và không có cách nào để thay đổi điều này trên phía TV. Nhưng nếu bạn có một loại cấu hình chuyển tiếp cổng và muốn sử dụng một cổng gửi đi khác từ Roam, điều này có thể. Bạn chỉ cần nhập `<IP>:<Port>` vào trường "Địa chỉ IP" thay vì chỉ `<IP>`. Ví dụ: nhập `192.168.8.242:8061` và cổng được chọn sẽ được sử dụng.
+-   Roam sử dụng nhiều giao thức khác nhau để giao tiếp với TV
+    -   TCP (HTTP/Websockets) trên cổng 8060 để gửi lệnh đến TV và truy vấn trạng thái thiết bị
+    -   Gói ma thuật WOL (UDP multicast đến địa chỉ 255.255.255.255) để đánh thức TV từ chế độ ngủ sâu
+    -   RDP (UDP) trên cổng 6970 dùng cho tính năng âm thanh tai nghe
+-   Tất cả các TV Roku đều sử dụng cổng 8060 và không thể thay đổi trên TV. Tuy nhiên, nếu bạn thiết lập chuyển tiếp cổng và muốn sử dụng cổng khác từ Roam, bạn có thể làm được. Chỉ cần nhập `[IP]:[Port]` vào trường "Ip Address" thay vì chỉ nhập `[IP]`. Ví dụ, nhập `192.168.8.242:8061` thì cổng `8061` sẽ được sử dụng.

@@ -1,2 +1,1 @@
-- Cải thiện hiệu suất khi người dùng đã tải nhiều ứng dụng Roku
-- Sửa lỗi ứng dụng tin nhắn watchOS bị đổ vỡ
+-   Cải thiện hiệu suất và sửa lỗi
