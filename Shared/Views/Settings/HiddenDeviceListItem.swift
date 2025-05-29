@@ -17,8 +17,9 @@ struct HiddenDeviceListItem: View {
         .contextMenu {
             Button(role: .destructive) {
                 let pid = device.persistentModelID
-                Task.detached {
+                Task {
                     do {
+                        // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
                         try await RoamDataHandler().delete(pid)
                         Log.userInteraction
                             .notice(
@@ -36,7 +37,8 @@ struct HiddenDeviceListItem: View {
             }
             Button {
                 let pid = device.persistentModelID
-                Task.detached {
+                Task {
+                    // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
                     await RoamDataHandler().updateDevice(
                         pid,
                         hidden: false
@@ -56,7 +58,8 @@ struct HiddenDeviceListItem: View {
         .swipeActions(edge: .leading) {
             Button {
                 let pid = device.persistentModelID
-                Task.detached {
+                Task {
+                    // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
                     await RoamDataHandler().updateDevice(
                         pid,
                         hidden: false

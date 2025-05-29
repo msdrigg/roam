@@ -348,3 +348,4 @@ public func sendMessageDirect(message: String?, attachment: AttachmentUpload?, a
         return .failure(.retryable(error))
     }
 }
+

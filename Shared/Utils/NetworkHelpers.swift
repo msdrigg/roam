@@ -65,6 +65,7 @@ public func tryConnectTCP(
                 }
 
                 var iterator = stream.makeAsyncIterator()
+                // TODO: Stop with the global queue
                 connection.start(queue: .global())
                 return await iterator.next() ?? nil
             } onCancel: {

@@ -96,6 +96,7 @@
 
         if isWebP {
             return try await withCheckedThrowingContinuation { continuation in
+                // TODO: Stop with the global queue
                 DispatchQueue.global().async {
                     do {
                         let cgImage = try decode(data)
@@ -115,6 +116,7 @@
         return data
     }
 #else
+    import Foundation
     func decodeImage(data: Data, mimeType: String) async throws -> Data {
         return data
     }

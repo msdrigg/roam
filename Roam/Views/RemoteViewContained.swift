@@ -91,7 +91,7 @@ struct RemoteViewContained: View {
     }
 
     var hideAppsForKeyboardEntry: Bool {
-#if os(iOS)
+#if os(iOS) || os(visionOS)
         return showKeyboardEntry
 #else
         return false
@@ -242,6 +242,7 @@ struct RemoteViewContained: View {
                         // swiftlint:disable:next force_try
                         try! await RoamDataHandler().loadTestData()
                         // try! await RoamDataHandler().loadLoadTestData()
+                        updater?.update()
                     } else if usingTestingDataContainer() {
                         // swiftlint:disable:next force_try
                         try! await RoamDataHandler().clearData()
@@ -434,7 +435,6 @@ struct RemoteViewContained: View {
                             ecpSessionState: ecpSessionState,
                             showScanning: true
                         )
-                        .accessibilityIdentifier("DevicePickerTop")
                         .buttonStyle(PaddedBorderlessButtonStyleWithChevron())
                         .menuStyle(.button)
                         .controlSize(.extraLarge)
@@ -517,7 +517,6 @@ struct RemoteViewContained: View {
                             ecpSessionState: ecpSessionState,
                             showScanning: true
                         )
-                        .accessibilityIdentifier("DevicePickerCenter")
                         .buttonStyle(PaddedBorderlessButtonStyle())
                         .menuStyle(.button)
                         .controlSize(.extraLarge)
@@ -540,7 +539,6 @@ struct RemoteViewContained: View {
                                 ecpSessionState: ecpSessionState,
                                 showScanning: true
                             )
-                            .accessibilityIdentifier("DevicePickerCenter")
                             .buttonStyle(PaddedBorderlessButtonStyle())
                             .glowing(enabled: selectedDevice == nil)
 
@@ -787,7 +785,6 @@ struct RemoteViewContained: View {
                         }),
                         ecpSessionState: ecpSessionState
                     )
-                    .accessibilityIdentifier("DevicePickerTop")
                     .buttonStyle(.plain)
                     .frame(idealWidth: 100, maxWidth: 350)
                     .disabled(selectedDevice == nil)
@@ -1004,14 +1001,14 @@ struct RemoteViewContained: View {
     func launchApp(_ app: AppLinkAppEntity) {
         donateAppLaunchIntent(app)
         incrementButtonPressCount(.inputAV1)
-        Task.detached {
+        Task {
             do {
                 try await ecpSession?.launchApp(app.id)
             } catch {
                 Log.connection.error("Error opening app \(app.id, privacy: .public): \(error, privacy: .public)")
             }
         }
-        Task.detached {
+        Task {
             if let modelId = app.modelId {
                 await RoamDataHandler().setSelectedApp(modelId)
             }

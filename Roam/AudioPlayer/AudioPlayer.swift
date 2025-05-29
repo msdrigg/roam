@@ -2,7 +2,6 @@
 import CoreAudio
 import Opus
 import os
-import RTP
 
 struct AudioFrame {
     let frame: AVAudioPCMBuffer
@@ -307,9 +306,7 @@ actor AudioPlayer {
 
     public func lastRender() throws -> AVAudioTime? {
         if let lrt = streamAudioNode.lastRenderTime {
-            return try catchObjc {
-                streamAudioNode.playerTime(forNodeTime: lrt)
-            }
+            streamAudioNode.playerTime(forNodeTime: lrt)
         }
         return nil
     }

@@ -102,7 +102,6 @@ final class ECPProtocol: NWProtocolFramerImplementation {
             framer.markFailed(error: .posix(.ETIMEDOUT))
             self.state = .stopped
         } else if self.state == .ready && self.needProgressBy.timeIntervalSinceNow < 4 && self.lastPingSent.timeIntervalSinceNow < -0.6 {
-//            Log.connection.debug("Sending ping with time due \(self.needProgressBy.timeIntervalSinceNow, privacy: .public)  and last ping sent \(self.lastPingSent.timeIntervalSinceNow, privacy: .public)")
             self.lastPingSent = .now
 
             self.sendPing(framer: framer)
@@ -166,30 +165,24 @@ final class ECPProtocol: NWProtocolFramerImplementation {
                 header = nextHeader
                 self.partialheader = Data()
             case .failed(let data, let needed):
-//                Log.connection.debug("Failed to parse data with partial \(data.count, privacy: .public) needed \(needed, privacy: .public)")
                 self.partialheader = data
                 return .doneForNow(needed)
             }
         }
-//        Log.connection.debug("Parsed header \(header.debugOpcode, privacy: .public) with len \(header.payloadLength, privacy: .public)")
 
         var nextWsFrame: WebsocketMessage?
         if header.payloadLength == 0 {
             nextWsFrame = try WebsocketMessage.parse(header: header, data: nil)
             self.nextHeader = nil
         } else {
-//            Log.connection.debug("Requesting data for payload length \(header.payloadLength, privacy: .public)")
             let parseResult = framer.parseInput(minimumIncompleteLength: header.payloadLength, maximumLength: header.payloadLength) { buffer, _ in
                 guard let buffer = buffer else {
-//                    Log.connection.debug("No buffer, not consuming anything")
                     return 0
                 }
-//                Log.connection.debug("Got buffer with count \(buffer.count, privacy: .public)")
 
                 do {
                     let frame = try WebsocketMessage.parse(header: header, data: buffer)
                     nextWsFrame = frame
-//                    Log.connection.debug("Consuming \(header.payloadLength, privacy: .public) for \(frame.debugDescription, privacy: .public)")
                     return header.payloadLength
                 } catch {
                     Log.connection.error("Error parsing unknown ws frame \(error, privacy: .public). Consuming \(header.payloadLength, privacy: .public)")
@@ -210,7 +203,6 @@ final class ECPProtocol: NWProtocolFramerImplementation {
         }
 
         guard let frame = nextWsFrame else {
-//            Log.connection.debug("Returning bc no frame from nextwsframe")
             return .doneForNow(header.payloadLength)
         }
         switch (self.state, frame) {
@@ -248,7 +240,6 @@ final class ECPProtocol: NWProtocolFramerImplementation {
         case (.ready, .pong):
             self.needProgressBy = Date.now.addingTimeInterval(5)
         case (.ready, .text(let data)):
-//            Log.connection.debug("Getting text while ready \(data.count, privacy: .public)")
             let response: ECPResponseMessage = try self.decoder.decode(ECPResponseMessage.self, from: data)
             self.needProgressBy = Date.now.addingTimeInterval(5)
             _ = framer.deliverInputNoCopy(length: 0, message: .init(ecpResponseMessage: response), isComplete: true)
@@ -266,10 +257,8 @@ final class ECPProtocol: NWProtocolFramerImplementation {
                 let parseResult = try self.handleSignleInput(framer: framer)
                 switch parseResult {
                 case .canContinue:
-//                    Log.connection.debug("Continuing to next input seamlessly")
                     continue
                 case .doneForNow(let needed):
-//                    Log.connection.debug("Requesting data amount \(needed, privacy: .public)")
                     return needed
                 }
             } catch {
@@ -326,26 +315,20 @@ extension NWProtocolFramer.Instance {
             maximumLength: max(1, WebsocketHeader.maxSize - partialHeader.count),
             parse: { (buffer, _) -> Int in
                 guard let buffer = buffer, buffer.count != 0 else {
-//                    Log.connection.debug("No buffer or empty buffer. Not parsing header")
                     return 0
                 }
                 partialData += Data(buffer)
                 if let header = WebsocketHeader.parse(from: partialData) {
                     parsedHeader = header
                     let consumed = header.encodedSize - partialHeader.count
-//                    Log.connection.debug("Consuming \(consumed, privacy: .public) more bytes to parse header (\(header.encodedSize, privacy: .public)-\(partialHeader.count, privacy: .public))")
                     return consumed
                 }
 
-                // How much data do we take if it's failed? All of it
-//                Log.connection.debug("Consuming all \(buffer.count, privacy: .public) bytes to parse header \(Data(partialData).toHexString(), privacy: .public)")
                 return buffer.count
             }
         )
 
         guard framerParseResult, let header = parsedHeader else {
-//            Log.connection.debug("No header parsed result=\(framerParseResult, privacy: .public) parsedSize=\(partialHeader.count, privacy: .public). Not consuming anything")
-
             let nextNeededSize = if partialData.count < 2 {
                 2
             } else if partialData.count < 4 {
@@ -363,7 +346,6 @@ extension NWProtocolFramer.Instance {
 
 extension ECPProtocol {
     func sendPing(framer: NWProtocolFramer.Instance) {
-//        Log.connection.debug("Sending ping \(self.uuid, privacy: .public)")
         framer.writeOutput(data: WebsocketMessage.ping.rawData)
     }
 

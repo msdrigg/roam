@@ -48,8 +48,9 @@ struct DeviceListItem: View {
         .contextMenu {
             Button(role: .destructive) {
                 let pid = device.persistentModelID
-                Task.detached {
+                Task {
                     do {
+                        // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
                         try await RoamDataHandler().delete(pid)
                         Log.userInteraction
                             .notice(

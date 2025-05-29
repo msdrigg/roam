@@ -54,7 +54,7 @@ final class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
 
         Task {
             do {
-                let selectedDevice = await RoamDataHandler().fetchSelectedDeviceAppEntity()
+                let selectedDevice = try? await RoamDataHandler.checkedCreate().fetchSelectedDeviceAppEntity()
 
                 if let selectedDevice, ecpMonitor.ecpClient == nil {
                     ecpMonitor.setDevice(selectedDevice)
@@ -349,7 +349,7 @@ extension NSApplication {
 
             Task {
                 do {
-                    let selectedDevice = await RoamDataHandler().fetchSelectedDeviceAppEntity()
+                    let selectedDevice = try? await RoamDataHandler.checkedCreate().fetchSelectedDeviceAppEntity()
 
                     if let selectedDevice, ecpMonitor.ecpClient == nil {
                         ecpMonitor.setDevice(selectedDevice)

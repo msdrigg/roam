@@ -18,6 +18,11 @@ public actor RoamDataHandler {
         self.init(modelContainer: getSharedModelContainer())
     }
 
+    @MainActor
+    static func checkedCreate() throws (ModelContainerFailureReason) -> Self {
+        return try self.init(modelContainer: getSharedModelContainerChecked())
+    }
+
     private func allDevices() async throws -> [Device] {
         let descriptor = FetchDescriptor<Device>(
             predicate: #Predicate {
@@ -476,9 +481,32 @@ extension RoamDataHandler {
     }
 }
 
-enum DataHandlerError: Error {
+enum DataHandlerError: Error, LocalizedError {
     case suspending
-    case errorStoring
+    case noSpaceOnDisk
+    case noContainerURL
+
+    var errorDescription: String {
+        switch self {
+        case .noContainerURL:
+            return String(localized: "Error saving data, no valid container found")
+        case .noSpaceOnDisk:
+            return String(localized: "Error saving data. No disk storage left.")
+        case .suspending:
+            return String(localized: "Error saving data. App currently shutting down.")
+        }
+    }
+
+    var recoverySuggestion: String? {
+        switch self {
+        case .noContainerURL:
+            return String(localized: "This is a bug. Please reach out to roam-support@msd3.io for help.")
+        case .noSpaceOnDisk:
+            return String(localized: "Please delete some files to clear up some space and try again.")
+        case .suspending:
+            return String(localized: "Please re-open the app and try again.")
+        }
+    }
 }
 
 public extension RoamDataHandler {
@@ -488,9 +516,7 @@ public extension RoamDataHandler {
         var result: [T]?
         do {
             if await !assertion.isReleased() {
-                result = try catchObjc {
-                    return try self.modelContext.fetch(descriptor)
-                }
+                return try self.modelContext.fetch(descriptor)
             }
             await assertion.release()
         } catch {
@@ -505,9 +531,7 @@ public extension RoamDataHandler {
     }
     #else
     func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
-        return try catchObjc {
-            return try self.modelContext.fetch(descriptor)
-        }
+        return try self.modelContext.fetch(descriptor)
     }
     #endif
 
@@ -516,9 +540,7 @@ public extension RoamDataHandler {
         let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
         do {
             if await !assertion.isReleased() {
-                try catchObjc {
-                    try self.modelContext.save()
-                }
+                try self.modelContext.save()
             } else {
                 throw DataHandlerError.suspending
             }
@@ -530,9 +552,7 @@ public extension RoamDataHandler {
     }
     #else
     func saveSafer() async throws {
-        try catchObjc {
-            try self.modelContext.save()
-        }
+        try self.modelContext.save()
     }
     #endif
 }
@@ -950,6 +970,7 @@ extension RoamDataHandler {
         await deleteInPast()
     }
 }
+
 @ModelActor
 actor MessageDataHandler {
     @MainActor
@@ -1165,9 +1186,7 @@ extension MessageDataHandler {
         var result: [T]?
         do {
             if await !assertion.isReleased() {
-                result = try catchObjc {
-                    return try self.modelContext.fetch(descriptor)
-                }
+                return try self.modelContext.fetch(descriptor)
             }
             await assertion.release()
         } catch {
@@ -1182,9 +1201,7 @@ extension MessageDataHandler {
     }
     #else
     func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
-        return try catchObjc {
-            return try self.modelContext.fetch(descriptor)
-        }
+        return try self.modelContext.fetch(descriptor)
     }
     #endif
 
@@ -1193,9 +1210,7 @@ extension MessageDataHandler {
         let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
         do {
             if await !assertion.isReleased() {
-                try catchObjc {
-                    try self.modelContext.save()
-                }
+                try self.modelContext.save()
             } else {
                 throw DataHandlerError.suspending
             }
@@ -1207,9 +1222,7 @@ extension MessageDataHandler {
     }
     #else
     func saveSafer() async throws {
-        try catchObjc {
-            try self.modelContext.save()
-        }
+        try self.modelContext.save()
     }
     #endif
 }
@@ -1218,7 +1231,7 @@ extension MessageDataHandler {
 @discardableResult
 func storeUserFileToDisk(data: Data, filename: String, path: [String]) throws -> URL {
     guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
-        throw DataHandlerError.errorStoring
+        throw DataHandlerError.noContainerURL
     }
 
     var iconDirectoryURL = containerURL
@@ -1233,7 +1246,16 @@ func storeUserFileToDisk(data: Data, filename: String, path: [String]) throws ->
     let iconFileURL = iconDirectoryURL.appendingPathComponent(filename)
 
     // Write data atomically to prevent corruption
-    try data.write(to: iconFileURL, options: .atomic)
+    do {
+        try data.write(to: iconFileURL, options: .atomic)
+    } catch let error as NSError {
+        if error.domain == NSCocoaErrorDomain && error.code == NSFileWriteOutOfSpaceError {
+            throw DataHandlerError.noSpaceOnDisk
+        }
+        throw error
+    } catch {
+        throw error
+    }
     return iconFileURL
 }
 
@@ -1249,7 +1271,7 @@ func storeAttachmentToDisk(attachmentData: Data, hash: String, filename: String)
 
 func loadAttachmentFromDisk(hash: String, filename: String) throws -> Data {
     guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
-        throw DataHandlerError.errorStoring
+        throw DataHandlerError.noContainerURL
     }
 
     let iconDirectoryURL = containerURL

@@ -1,10 +1,3 @@
-//
-//  DevicePicker.swift
-//  Roam
-//
-//  Created by Scott Driggers on 10/20/23.
-//
-
 import Foundation
 import os
 import SwiftUI
@@ -25,27 +18,27 @@ struct DevicePicker: View {
         device?.isOnline() ?? false ? Color.green : Color.secondary
     }
 
+    @ViewBuilder
     var mainButton: some View {
         if #available(watchOS 11.0, *) {
-            return AnyView(Button(action: { showingPicker.toggle() }, label: {
+            Button(action: { showingPicker.toggle() }, label: {
                 Label("Devices", systemImage: "list.bullet")
                     .labelStyle(.iconOnly)
-                    .accessibilityIdentifier("DevicePickerLabel")
             })
-            .handGestureShortcut(.primaryAction, isEnabled: inScreenshotTestingContext()))
+            .accessibilityIdentifier("DevicePicker")
+            .handGestureShortcut(.primaryAction, isEnabled: inScreenshotTestingContext())
         } else {
             // Fallback on earlier versions
-            return AnyView(Button(action: { showingPicker.toggle() }, label: {
+            Button(action: { showingPicker.toggle() }, label: {
                 Label("Devices", systemImage: "list.bullet")
                     .labelStyle(.iconOnly)
-                    .accessibilityIdentifier("DevicePickerLabel")
-            }))
+            })
+            .accessibilityIdentifier("DevicePicker")
         }
     }
 
     var body: some View {
         mainButton
-        .accessibilityIdentifier("DevicePicker")
         .sheet(isPresented: $showingPicker) {
             SettingsNavigationWrapper(path: $navPath) {
                 List {
@@ -57,7 +50,8 @@ struct DevicePicker: View {
                                 }) {
                                     Log.connection.notice("Setting last selected at")
                                     let id = chosenDevice.persistentModelID
-                                    Task.detached {
+                                    Task {
+                                        // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
                                         await RoamDataHandler().setSelectedDevice(id)
                                     }
                                 }
@@ -73,7 +67,8 @@ struct DevicePicker: View {
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
                                     let pid = listItemDevice.persistentModelID
-                                    Task.detached {
+                                    Task {
+                                        // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
                                         do {
                                             try await RoamDataHandler().delete(pid)
                                         } catch {
@@ -93,7 +88,8 @@ struct DevicePicker: View {
                             for index in indexSet {
                                 if let model = devices[safe: index] {
                                     let pid = model.persistentModelID
-                                    Task.detached {
+                                    Task {
+                                        // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
                                         do {
                                             try await RoamDataHandler().delete(pid)
                                         } catch {

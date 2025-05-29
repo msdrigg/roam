@@ -23,7 +23,7 @@
             if session.isReachable {
                 Task {
                     do {
-                        let devices = try await RoamDataHandler().allDeviceEntities()
+                        let devices = try await RoamDataHandler.checkedCreate().allDeviceEntities()
                         DispatchQueue.main.async {
                             self.transferDevices(session, devices: devices)
                         }
@@ -39,7 +39,7 @@
             DispatchQueue.main.async {
                 Task {
                     do {
-                        let devices = try await RoamDataHandler().allDeviceEntities()
+                        let devices = try await RoamDataHandler.checkedCreate().allDeviceEntities()
                         DispatchQueue.main.async {
                             self.transferDevices(session, devices: devices)
                         }
@@ -73,7 +73,8 @@
                     transferingDevicesBuilder.append(device.modelId)
                 }
                 let transferingDevices = transferingDevicesBuilder
-                if deviceMap.isEmpty {
+                let completeDeviceMap = deviceMap
+                if completeDeviceMap.isEmpty {
                     Log.watch.notice("Not sending because all devices have been sent in the past day")
                     return
                 }
@@ -83,21 +84,23 @@
                     session.outstandingUserInfoTransfers.last?.cancel()
                 }
                 do {
-                    try session.updateApplicationContext(deviceMap)
+                    try session.updateApplicationContext(completeDeviceMap)
                 } catch {
-                    Log.watch.error("Error transfering app context \(deviceMap, privacy: .public)")
+                    Log.watch.error("Error transfering app context \(completeDeviceMap, privacy: .public)")
                 }
 
-                session.sendMessage(deviceMap, replyHandler: { reply in
-                    Task.detached {
-                        let dataHandler = await RoamDataHandler()
+                session.sendMessage(completeDeviceMap, replyHandler: { @Sendable reply in
+                    Task {
+                        guard let dataHandler = try? await RoamDataHandler.checkedCreate() else {
+                            return
+                        }
                         for device in transferingDevices {
                             await dataHandler.sentToWatch(deviceId: device)
                         }
                     }
                     Log.watch.notice("Successfully sent devices to watch with reply \(reply, privacy: .public)")
-                }, errorHandler: { error in
-                    Log.watch.error("Error sending message \(deviceMap, privacy: .public). \(error, privacy: .public)")
+                }, errorHandler: { @Sendable error in
+                    Log.watch.error("Error sending message \(completeDeviceMap, privacy: .public). \(error, privacy: .public)")
                 })
 
                 session.transferUserInfo(deviceMap)
@@ -111,13 +114,13 @@
             if let error {
                 Log.watch.error("WCSession activated with error: \(error, privacy: .public)")
                 Task {
-                    await RoamDataHandler().watchPossiblyDead()
+                    try? await RoamDataHandler.checkedCreate().watchPossiblyDead()
                 }
             } else {
                 Log.watch.notice("WCSession activated no error")
                 Task {
                     do {
-                        let devices = try await RoamDataHandler().allDeviceEntities()
+                        let devices = try await RoamDataHandler.checkedCreate().allDeviceEntities()
 
                         DispatchQueue.main.async {
                             self.transferDevices(session, devices: devices)
@@ -133,7 +136,7 @@
             Log.watch.notice("WatchConnectivity session became inactive")
 
             Task {
-                await RoamDataHandler().watchPossiblyDead()
+                try? await RoamDataHandler.checkedCreate().watchPossiblyDead()
             }
         }
 
@@ -141,7 +144,7 @@
             Log.watch.notice("WatchConnectivity session deactivated")
 
             Task {
-                await RoamDataHandler().watchPossiblyDead()
+                try? await RoamDataHandler.checkedCreate().watchPossiblyDead()
             }
         }
     }

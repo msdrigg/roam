@@ -14,5 +14,8 @@
 
 ## Next Steps
 
+0. Figure out how to jailbreak and intercept traffic from my device
+    - https://andydavies.me/blog/2019/12/12/capturing-and-decrypting-https-traffic-from-ios-apps/
+    - https://github.com/doronz88/harlogger
 1. Figure out how to authenticate to the API
 2. Write a simple API client to send data to the server and see if I can get intents back.

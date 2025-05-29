@@ -52,7 +52,10 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
         if let deviceMap = devices as? [String: [String: String]] {
             Log.watch.notice("Trying to add devices \(deviceMap, privacy: .public)")
             Task {
-                let dataHandler = await RoamDataHandler()
+                guard let dataHandler = try? await RoamDataHandler.checkedCreate() else {
+                    Log.watch.notice("Error getting data handler in watch connector")
+                    return
+                }
                 for device in deviceMap {
                     if let existingDevice = await dataHandler.deviceEntityForUdn(udn: device.key) {
                         Log.watch

@@ -256,6 +256,7 @@ private func listInterfacesDarwin() -> [Addressed4NetworkInterface] {
 
 private func listInterfacesNW() async -> [NWInterface] {
     let monitor = NWPathMonitor()
+    // TODO: Stop with the global queue
     monitor.start(queue: DispatchQueue.global())
 
     var matchedNWInterfacesStream = AsyncStream { continuation in

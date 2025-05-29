@@ -16,7 +16,7 @@ public struct OpenDeviceIntent: OpenIntent {
 
     @MainActor
     public func perform() async throws -> some IntentResult {
-        await RoamDataHandler().setSelectedDevice(target.modelId)
+        try await RoamDataHandler.checkedCreate().setSelectedDevice(target.modelId)
         return .result()
     }
 }
@@ -95,10 +95,8 @@ public struct DeviceAndAppChoiceIntent: AppIntent, WidgetConfigurationIntent {
     @Parameter(title: LocalizedStringResource("App 3", comment: "Configuration field title for selecting the third app"))
     public var app3: AppLinkAppEntity?
 
-#if !os(watchOS)
     @Parameter(title: LocalizedStringResource("App 4", comment: "Configuration field title for selecting the fourth app"))
     public var app4: AppLinkAppEntity?
-#endif
 
     public static var parameterSummary: some ParameterSummary {
         When(\.$manuallySelectDevice, .equalTo, true) {
@@ -110,9 +108,7 @@ public struct DeviceAndAppChoiceIntent: AppIntent, WidgetConfigurationIntent {
                     \.$app1
                     \.$app2
                     \.$app3
-#if !os(watchOS)
                     \.$app4
-#endif
                 }
             } otherwise: {
                 Summary {
@@ -129,9 +125,7 @@ public struct DeviceAndAppChoiceIntent: AppIntent, WidgetConfigurationIntent {
                     \.$app1
                     \.$app2
                     \.$app3
-#if !os(watchOS)
                     \.$app4
-#endif
                 }
             } otherwise: {
                 Summary {
@@ -198,7 +192,7 @@ public struct ButtonPressIntent: AppIntent, CustomIntentMigratedAppIntent, Predi
 public func clickButton(button: RemoteButton, device: DeviceAppEntity?) async throws {
     Log.userInteraction.notice("Pressing widget button \(button.apiValue ?? "nil", privacy: .public) on device \(device?.name ?? "nil", privacy: .public)")
 
-    let dataHandler = await RoamDataHandler()
+    let dataHandler = try await RoamDataHandler.checkedCreate()
 
     var targetDevice = device
     if targetDevice == nil {
@@ -245,7 +239,7 @@ public func clickButton(button: RemoteButton, device: DeviceAppEntity?) async th
 }
 
 public func launchApp(app: AppLinkAppEntity, device: DeviceAppEntity?) async throws {
-    let dataHandler = await RoamDataHandler()
+    let dataHandler = try await RoamDataHandler.checkedCreate()
 
     var targetDevice = device
     if targetDevice == nil {
@@ -308,17 +302,17 @@ extension AppLinkAppEntity: AppEntity {
         public init() {}
 
         public func entities(for identifiers: [AppLinkAppEntity.ID]) async throws -> [AppLinkAppEntity] {
-            let appLinkActor = await RoamDataHandler()
+            let appLinkActor = try await RoamDataHandler.checkedCreate()
             return try await appLinkActor.appEntities(for: identifiers, deviceUid: launchAppIntent?.device.udn)
         }
 
         func entities(matching string: String) async throws -> [AppLinkAppEntity] {
-            let appLinkActor = await RoamDataHandler()
+            let appLinkActor = try await RoamDataHandler.checkedCreate()
             return try await appLinkActor.appEntities(matching: string, deviceUid: launchAppIntent?.device.udn)
         }
 
         public func suggestedEntities() async throws -> [AppLinkAppEntity] {
-            let appLinkActor = await RoamDataHandler()
+            let appLinkActor = try await RoamDataHandler.checkedCreate()
             return try await appLinkActor.appEntities(deviceUid: launchAppIntent?.device.udn)
         }
     }

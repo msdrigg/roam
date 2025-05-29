@@ -83,8 +83,9 @@ struct DevicePicker: View {
                     set: {
                         device.wrappedValue = $0
                         if let pid = $0?.persistentModelID {
-                            Task.detached {
+                            Task {
                                 try? await Task.sleep(duration: 0.5)
+                                // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
                                 await RoamDataHandler().setSelectedDevice(pid)
                             }
                         }
@@ -165,6 +166,7 @@ struct DevicePicker: View {
         #if os(iOS)
         .menuStyle(.button)
         #endif
+        .accessibilityIdentifier("DevicePicker")
         .animation(nil, value: UUID())
         .onReceive(timer) { _ in
             currentDate = .now

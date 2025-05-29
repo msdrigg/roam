@@ -340,7 +340,7 @@ struct MessageView: View {
             let latestMessageId = messages.last { $0.fetchedBackend == true }?.id
 
             if latestMessageId != nil {
-                let result = await Task.detached {
+                let result = await Task {
                     return await MessageDataHandler.shared.refreshMessages(
                         viewed: true
                     )

@@ -44,7 +44,7 @@ final class FileLock {
         }()
 
 #if !os(macOS)
-        let dontKillAssertion = QRunInBackgroundAssertion(name: "OSFileLock")
+        let dontKillAssertion = QActivityRunInBackgroundAssertion(name: "OSFileLock")
         if dontKillAssertion.isReleased() {
             throw DataHandlerError.suspending
         }

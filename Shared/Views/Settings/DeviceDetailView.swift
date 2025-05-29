@@ -227,10 +227,11 @@ struct DeviceDetailView: View {
 #endif
 
             Button(role: .destructive, action: {
+                // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
                 // Don't block the dismiss waiting for save
                 Log.userInteraction.notice("Deleting \("device", privacy: .public)")
                 let deviceId = deviceId
-                Task.detached {
+                Task {
                     DispatchQueue.main.async {
                         dismiss()
                     }
@@ -273,6 +274,7 @@ struct DeviceDetailView: View {
     }
 
     func save() {
+        // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
         if let device = device {
             // Try to get device id
             // Watchos can't check tcp connection, so just do the request

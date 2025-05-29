@@ -58,6 +58,7 @@ struct CenterController: View {
                                             .environment(\.layoutDirection, layoutDirection)
                                     }
                                 })
+                                .accessibilityIdentifier(button.2)
                                 #if !os(watchOS)
                                 .modifier(CustomKeyboardShortcutModifier(title: button.3))
                                 #endif

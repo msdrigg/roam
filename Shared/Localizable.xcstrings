@@ -3167,7 +3167,86 @@
       }
     },
     "Before you add your TV, go to **Settings > System > Advanced system settings > Control by mobile apps > Network access** and make sure it's set to 'Permissive' or 'Enabled'" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "قبل إضافة التلفاز الخاص بك، اذهب إلى **الإعدادات > النظام > الإعدادات المتقدمة للنظام > التحكم من خلال تطبيقات الجوال > الوصول إلى الشبكة** وتأكد من أنها مضبوطة على 'متسامح' أو 'مفعل'"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bevor Sie Ihren Fernseher hinzufügen, gehen Sie zu **Einstellungen > System > Erweiterte Systemeinstellungen > Steuerung durch mobile Apps > Netzwerkzugriff** und stellen Sie sicher, dass er auf 'Permissive' oder 'Aktiviert' eingestellt ist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antes de agregar tu televisor, ve a **Configuración > Sistema > Configuración avanzada del sistema > Control por aplicaciones móviles > Acceso a la red** y asegúrate de que esté configurado en 'Permisivo' o 'Habilitado'"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antes de agregar tu TV, ve a **Configuración > Sistema > Configuraciones avanzadas del sistema > Control por aplicaciones móviles > Acceso a la red** y asegúrate de que esté configurado en 'Permisivo' o 'Habilitado'"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bago mo idagdag ang iyong TV, pumunta sa **Mga Setting > Sistema > Advanced system settings > Kontrol sa pamamagitan ng mobile apps > Network access** at siguraduhing ito'y naka-set sa 'Permissive' o 'Enabled'"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avant d'ajouter votre téléviseur, allez à **Paramètres > Système > Paramètres système avancés > Contrôle par applications mobiles > Accès réseau** et assurez-vous qu'il est réglé sur 'Permissif' ou 'Activé'"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avant d'ajouter votre télévision, allez à **Paramètres > Système > Paramètres système avancés > Contrôle par applications mobiles > Accès réseau** et assurez-vous qu'il est réglé sur 'Permissif' ou 'Activé'"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prima di aggiungere la tua TV, vai su **Impostazioni > Sistema > Impostazioni di sistema avanzate > Controllo tramite app mobili > Accesso alla rete** e assicurati che sia impostato su 'Permissivo' o 'Abilitato'."
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਤੁਹਾਡੇ ਟੀਵੀ ਨੂੰ ਜੋੜਨ ਤੋਂ ਪਹਿਲਾਂ, **ਸੈਟਿੰਗਜ਼ > ਸਿਸਟਮ > ਅਗੇਤਰ ਸਿਸਟਮ ਸੈਟਿੰਗਜ਼ > ਮੋਬਾਈਲ ਐਪਸ ਦੁਆਰਾ ਨਿਯੰਤਰਣ > ਨੈੱਟਵਰਕ ਪਹੁੰਚ** 'ਤੇ ਜਾਓ ਅਤੇ ਸੁਨਿਸ਼ਚਿਤ ਕਰੋ ਕਿ ਇਹ 'ਸੱਭਿਆਚਾਰੀ' ਜਾਂ 'ਯੋਗ' 'ਤੇ ਸੈੱਟ ਹੋਵੇ।"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antes de adicionar sua TV, vá para **Configurações > Sistema > Configurações avançadas do sistema > Controle por aplicativos móveis > Acesso à rede** e certifique-se de que está configurado para 'Permissivo' ou 'Habilitado'."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antes de adicionar a sua TV, vá para **Configurações > Sistema > Configurações avançadas do sistema > Controlo por apps móveis > Acesso à rede** e certifique-se de que está definido para 'Permissivo' ou 'Ativado'."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trước khi bạn thêm TV của mình, hãy vào **Cài đặt > Hệ thống > Cài đặt hệ thống nâng cao > Điều khiển bằng ứng dụng di động > Truy cập mạng** và đảm bảo nó được đặt thành 'Cho phép' hoặc 'Đã kích hoạt'"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在您添加电视之前，请前往 **设置 > 系统 > 高级系统设置 > 由移动应用控制 > 网络访问** ，并确保其设置为 '宽松' 或 '已启用'"
+          }
+        }
+      }
     },
     "Behavior" : {
       "comment" : "Settings section label",
@@ -5485,6 +5564,9 @@
         }
       }
     },
+    "Container failed to load" : {
+
+    },
     "Copy" : {
       "comment" : "Keyboard shortcut to copy\nLabel on a button to copy the text",
       "localizations" : {
@@ -6724,6 +6806,252 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "输入一些文字..."
+          }
+        }
+      }
+    },
+    "Error saving data, no valid container found" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "خطأ في حفظ البيانات، لم يتم العثور على حاوية صالحة"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fehler beim Speichern von Daten, kein gültiger Container gefunden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error al guardar datos, no se encontró un contenedor válido"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error al guardar datos, no se encontró un contenedor válido"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error sa pag-save ng data, walang natagpuang valid na container"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erreur lors de l'enregistrement des données, aucun conteneur valide trouvé"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erreur d'enregistrement des données, aucun conteneur valide trouvé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Errore nel salvataggio dei dati, nessun contenitore valido trovato"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਡਾਟਾ ਸੇਵ ਕਰਨ ਦੀ ਗਲਤੀ, ਕੋਈ ਵੈਧ ਕੰਟੇਨਰ ਨਹੀਂ ਮਿਲਿਆ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erro ao salvar dados, nenhum contêiner válido encontrado"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erro ao salvar dados, nenhum container válido encontrado"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lỗi lưu dữ liệu, không tìm thấy bộ nhớ chứa hợp lệ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存数据错误，未找到有效的容器"
+          }
+        }
+      }
+    },
+    "Error saving data. App currently shutting down." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "خطأ في حفظ البيانات. التطبيق يتم إغلاقه حاليًا."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fehler beim Speichern von Daten. App wird gerade heruntergefahren."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error al guardar los datos. La aplicación se está cerrando actualmente."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error al guardar datos. La aplicación está cerrando ahora mismo."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mali sa pag-iimbak ng datos. Ang app ay kasalukuyang nagsasara."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erreur lors de l'enregistrement des données. L'application est actuellement en cours de fermeture."
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erreur lors de l'enregistrement des données. L'application est en train de se fermer."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Errore nel salvataggio dei dati. App attualmente in fase di chiusura."
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਡਾਟਾ ਸੰਭਾਲਣ 'ਚ ਤਰੁੱਟੀ. ਐਪ ਇਸ ਸਮੇਂ ਬੰਦ ਹੋ ਰਹੀ ਹੈ."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erro ao salvar dados. Aplicativo atualmente em processo de desligamento."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erro ao guardar dados. Aplicação em processo de encerramento."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lỗi khi lưu dữ liệu. Ứng dụng đang được tắt."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存数据出错。应用程序正在关闭。"
+          }
+        }
+      }
+    },
+    "Error saving data. No disk storage left." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "خطأ في حفظ البيانات. لا يوجد مساحة تخزينية متبقية في القرص."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fehler beim Speichern von Daten. Kein Speicherplatz mehr auf der Festplatte."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error al guardar los datos. No queda espacio de almacenamiento en disco."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error al guardar datos. No queda espacio de almacenamiento en disco."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error sa pag-save ng data. Wala nang natitirang disk storage."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erreur lors de l'enregistrement des données. Plus d'espace de stockage sur le disque."
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erreur lors de l'enregistrement des données. Plus d'espace de stockage sur le disque."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Errore nel salvataggio dei dati. Non c'è più spazio su disco."
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਡਾਟਾ ਸੇਵ ਕਰਨ ਦੀ ਗਲਤੀ. ਡਿਸਕ ਸਟੋਰੇਜ ਬਾਕੀ ਨਹੀਂ ਹੈ."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erro ao salvar dados. Não há espaço em disco disponível."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erro ao guardar dados. Não há espaço em disco disponível."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lỗi lưu dữ liệu. Không còn dung lượng đĩa."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "错误保存数据。磁盘存储空间不足。"
           }
         }
       }
@@ -12857,6 +13185,88 @@
         }
       }
     },
+    "No space on disk to save attachment" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لا يوجد مساحة في القرص لحفظ المرفق"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Speicherplatz auf der Festplatte, um den Anhang zu speichern"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay espacio en el disco para guardar el archivo adjunto"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay espacio en el disco para guardar el archivo adjunto"
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Walang puwang sa disk para isave ang attachment"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas d'espace sur le disque pour enregistrer la pièce jointe"
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas d'espace sur le disque pour sauvegarder la pièce jointe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non c'è spazio sul disco per salvare l'allegato"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਅਟੈਚਮੈਂਟ ਸਟੋਰ ਕਰਨ ਲਈ ਡਿਸਕ 'ਤੇ ਕੋਈ ਖਾਲੀ ਥਾਂ ਨਹੀਂ ਹੈ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem espaço no disco para salvar o anexo"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não há espaço no disco para guardar o anexo"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không có không gian trên đĩa để lưu tệp đính kèm"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "磁盘空间不足，无法保存附件"
+          }
+        }
+      }
+    },
     "No valid WiFi connection detected. You may be connected to a hotspot instead of your home WiFi network" : {
       "comment" : "Warning indicator message that there is no WiFi network connection",
       "localizations" : {
@@ -14425,6 +14835,170 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "请耐心等待，因为我没有苹果手表，所以无法测试这个的效果。如果你无法使它工作，请与我取得联系:)。你可以通过点击Roam设置中的“与开发者聊天”来给我发消息。"
+          }
+        }
+      }
+    },
+    "Please delete some files to clear up some space and try again." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يرجى حذف بعض الملفات لتوفير بعض المساحة وحاول مرة أخرى."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitte löschen Sie einige Dateien, um Platz zu schaffen, und versuchen Sie es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por favor, elimina algunos archivos para liberar espacio e intenta de nuevo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por favor, elimina algunos archivos para liberar espacio e intenta de nuevo."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mangyaring magtanggal ng ilang mga file para malinisan ang ilang espasyo at subukang muli."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veuillez supprimer certains fichiers pour libérer de l'espace et réessayer."
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veuillez supprimer quelques fichiers pour libérer de l'espace et réessayer."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si prega di eliminare alcuni file per liberare spazio e riprovare."
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਕਿਰਪਾ ਕਰਕੇ ਕੁਝ ਫਾਈਲਾਂ ਨੂੰ ਹਟਾਓ ਤਾਂ ਜੋ ਥੋੜ੍ਹਾ ਜਗ੍ਹਾ ਖਾਲੀ ਹੋ ਜਾਵੇ ਅਤੇ ਫੇਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por favor, exclua alguns arquivos para liberar espaço e tente novamente."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por favor, apague alguns ficheiros para libertar espaço e tente novamente."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vui lòng xóa một số tệp để giải phóng không gian và thử lại."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请删除一些文件以释放一些空间，然后再试一次。"
+          }
+        }
+      }
+    },
+    "Please re-open the app and try again." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يرجى إعادة فتح التطبيق والمحاولة مرة أخرى."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitte öffnen Sie die App erneut und versuchen Sie es noch einmal."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por favor, vuelve a abrir la aplicación e inténtalo de nuevo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por favor, vuelve a abrir la aplicación e inténtalo de nuevo."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mangyaring muling buksan ang app at subukang muli."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veuillez rouvrir l'application et réessayer."
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veuillez rouvrir l'application et réessayer."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si prega di riaprire l'app e provare di nuovo."
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਕਿਰਪਾ ਕਰਕੇ ਐਪਨੂੰ ਮੁੜ"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por favor, reabra o aplicativo e tente novamente."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por favor, reabra o aplicativo e tente novamente."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vui lòng mở lại ứng dụng và thử lại."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请重新打开应用并再次尝试。"
           }
         }
       }
@@ -18901,6 +19475,88 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "开发者给你回复了"
+          }
+        }
+      }
+    },
+    "This is a bug. Please reach out to roam-support@msd3.io for help." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "هذا خطأ. يرجى التواصل مع roam-support@msd3.io للحصول على المساعدة."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dies ist ein Fehler. Bitte wenden Sie sich für Hilfe an roam-support@msd3.io."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este es un error. Por favor, ponte en contacto con roam-support@msd3.io para obtener ayuda."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este es un error. Por favor, contacta a roam-support@msd3.io para obtener ayuda."
+          }
+        },
+        "fil" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ito ay isang bug. Mangyaring makipag-ugnay sa roam-support@msd3.io para sa tulong."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C'est un bug. Veuillez contacter roam-support@msd3.io pour obtenir de l'aide."
+          }
+        },
+        "fr-CA" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il s'agit d'un bug. Veuillez contacter roam-support@msd3.io pour obtenir de l'aide."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo è un bug. Contatta roam-support@msd3.io per aiuto."
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਇਹ ਇਕ ਬਗ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ roam-support@msd3.io ਤੇ ਸਹਾਇਤਾ ਲਈ ਸੰਪਰਕ ਕਰੋ।"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Isso é um bug. Por favor, contate roam-support@msd3.io para obter ajuda."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Isto é um bug. Por favor, contacte roam-support@msd3.io para obter ajuda."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đây là một lỗi. Vui lòng liên hệ với roam-support@msd3.io để được giúp đỡ."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这是一个错误。请联系roam-support@msd3.io寻求帮助。"
           }
         }
       }

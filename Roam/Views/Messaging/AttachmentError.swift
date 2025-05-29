@@ -4,6 +4,7 @@ enum AttachmentError: Error {
     case fileTooLarge(Int)
     case unsupportedFileType(UTType)
     case loadingFailed
+    case noSpaceOnDisk
     case cancelled
     case failedToEncode
 
@@ -19,6 +20,8 @@ enum AttachmentError: Error {
             )
             let maxSizeString = style.format(Int64(1000000 * 10))
             return String(localized: "Max upload size \(maxSizeString)")
+        case .noSpaceOnDisk:
+            return String(localized: "No space on disk to save attachment")
         case .cancelled:
             return String(localized: "Attachment upload cancelled")
         case .loadingFailed:

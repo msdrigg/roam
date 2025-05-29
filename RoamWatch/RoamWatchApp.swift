@@ -6,11 +6,14 @@ import ImageIO
 
 @main
 struct RoamWatch: App {
-    var sharedModelContainer: ModelContainer
+    var sharedModelContainer: ModelContainerResult
+
     @WKApplicationDelegateAdaptor var appDelegate: RoamWatchAppDelegate
 
     init() {
-        sharedModelContainer = getSharedModelContainer()
+        do {
+            sharedModelContainer = getSharedModelContainerResult()
+        }
 
         try? Tips.configure([
             .displayFrequency(.immediate),
@@ -32,8 +35,8 @@ struct RoamWatch: App {
     var body: some Scene {
         WindowGroup {
             WatchAppView(navigationPath: navigationPath)
+                .checkedModelContainer(sharedModelContainer)
         }
-        .modelContainer(sharedModelContainer)
     }
 }
 
@@ -149,10 +152,10 @@ struct WatchAppView: View {
                 .task {
                     if loadTestingData() {
                         // swiftlint:disable:next force_try
-                        try! await RoamDataHandler().loadTestData()
+                        try! await RoamDataHandler.checkedCreate().loadTestData()
                     } else if usingTestingDataContainer() {
                         // swiftlint:disable:next force_try
-                        try! await RoamDataHandler().clearData()
+                        try! await RoamDataHandler.checkedCreate().clearData()
                     }
                 }
                 .task(id: selectedDevice?.persistentModelID, priority: .medium) {
@@ -163,8 +166,8 @@ struct WatchAppView: View {
                             if Task.isCancelled {
                                 return
                             }
-                            let handler = RoamDataHandler()
-                            await handler.refreshDevice(client: WatchOSRefreshClient(id: selectedDevice.persistentModelID, location: selectedDevice.location))
+                            let handler = try? RoamDataHandler.checkedCreate()
+                            await handler?.refreshDevice(client: WatchOSRefreshClient(id: selectedDevice.persistentModelID, location: selectedDevice.location))
                         } else {
                             Log.connection.info("No selected device to refresh")
                             return

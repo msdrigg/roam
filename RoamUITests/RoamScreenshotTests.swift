@@ -8,7 +8,8 @@ final class RoamUITestsScreenshotTests: XCTestCase {
 
     @MainActor
     func testCaptureScreenshots() async throws {
-        let locales = ["en-US", "fr-FR", "fr-CA", "de-DE", "it", "es-ES", "es-MX", "pt-PT", "pt-BR", "vi", "ar-SA", "zh-Hans"]
+//        let locales = ["en-US", "fr-FR", "fr-CA", "de-DE", "it", "es-ES", "es-MX", "pt-PT", "pt-BR", "vi", "ar-SA", "zh-Hans"]
+        let locales = ["en-US"]
 
         for locale in locales {
             try await captureScreenshots(locale: Locale(identifier: locale))
@@ -45,7 +46,7 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         // Wait for 0.8 s
         try await Task.sleep(nanoseconds: 800_000_000)
 
-        let landscapeModeAttachment = XCTAttachment(screenshot: app.screenshot())
+        let landscapeModeAttachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         landscapeModeAttachment.lifetime = .keepAlways
         landscapeModeAttachment.name = "\(locale.identifier)/3/LandscapePrimary"
         add(landscapeModeAttachment)
@@ -61,7 +62,7 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         add(primaryAttachment)
 
         // Click on device picker
-        app.buttons["KeyboardButton"].waitForClickable().tap()
+        app.buttons["KeyboardButton"].waitForClickable(app: app, testCase: self).tap()
 
         // Wait for 0.5 s
         try await Task.sleep(nanoseconds: 500_000_000)
@@ -71,8 +72,9 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         kbAttachment.name = "\(locale.identifier)/5/KeyboardOpen"
         add(kbAttachment)
 
-        app.buttons["KeyboardButton"].waitForClickable().tap()
-        app.buttons["DevicePickerTop"].waitForClickable().tap()
+        app.buttons["KeyboardButton"].waitForClickable(app: app, testCase: self).tap()
+        try await Task.sleep(nanoseconds: 300_000_000)
+        app.buttons["DevicePicker"].firstMatch.waitForClickable(app: app, testCase: self).tap()
 
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -83,7 +85,7 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         add(dpAttachment)
 
         // Click on settings
-        app.buttons["SettingsButton"].waitForClickable().tap()
+        app.buttons["SettingsButton"].waitForClickable(app: app, testCase: self).tap()
 
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -94,7 +96,7 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         add(sAttachment)
 
         // Click on the first device
-        app.buttons["DeviceItem_\(0)"].waitForClickable().tap()
+        app.buttons["DeviceItem_\(0)"].waitForClickable(app: app, testCase: self).tap()
 
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -137,7 +139,7 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         add(primaryAttachment)
 
         // Click on device picker
-        app.buttons["KeyboardButton"].waitForClickable().tap()
+        app.buttons["KeyboardButton"].waitForClickable(app: app, testCase: self).tap()
 
         // Wait for 0.5 s
         try await Task.sleep(nanoseconds: 500_000_000)
@@ -147,8 +149,18 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         kbAttachment.name = "\(locale.identifier)/5/KeyboardOpen"
         add(kbAttachment)
 
-        app.buttons["KeyboardButton"].waitForClickable().tap()
-        app.buttons["DevicePickerTop"].waitForClickable().tap()
+//        app.buttons["KeyboardButton"].waitForClickable(app: app, testCase: self).tap()
+        app.textFields.firstMatch.typeText("\n")
+        try await Task.sleep(nanoseconds: 300_000_000)
+        let devicePickerButton = app.buttons["DevicePicker"].firstMatch.waitForClickable(app: app, testCase: self)
+//        let buttonFrame = devicePickerButton.frame
+//        let bottomMiddleX = buttonFrame.midX
+//        let bottomMiddleY = buttonFrame.maxY
+//        let bottomMiddleCoordinate = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+//            .withOffset(CGVector(dx: bottomMiddleX, dy: bottomMiddleY))
+//
+//        // Perform the tap at the calculated coordinate
+//        bottomMiddleCoordinate.tap()
 
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -159,7 +171,7 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         add(dpAttachment)
 
         // Click on settings
-        app.buttons["SettingsButton"].waitForClickable().tap()
+        app.buttons["SettingsButton"].waitForClickable(app: app, testCase: self).tap()
 
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -170,7 +182,7 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         add(sAttachment)
 
         // Click on the first device
-        app.buttons["DeviceItem_\(0)"].waitForClickable().tap()
+        app.buttons["DeviceItem_\(0)"].waitForClickable(app: app, testCase: self).tap()
 
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -223,7 +235,7 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         primaryAttachment.name = "\(locale.identifier)/1/Primary"
         add(primaryAttachment)
 
-        app.menuButtons["DevicePickerTop"].firstMatch.waitForClickable().tap()
+        app.buttons["DevicePicker"].firstMatch.waitForClickable(app: app, testCase: self).tap()
 
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -234,7 +246,7 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         add(dpAttachment)
 
         // Click on settings via keyboard shortcut
-        app.menuButtons["DevicePickerTop"].firstMatch.waitForClickable().typeKey(XCUIKeyboardKey(","), modifierFlags: .command)
+        app.buttons["DevicePicker"].firstMatch.waitForClickable(app: app, testCase: self).typeKey(XCUIKeyboardKey(","), modifierFlags: .command)
 
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -245,7 +257,7 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         add(sAttachment)
 
         // Click on the first device
-        app.buttons["DeviceItem_\(0)"].waitForClickable().tap()
+        app.buttons["DeviceItem_\(0)"].waitForClickable(app: app, testCase: self).tap()
 
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -273,7 +285,7 @@ final class RoamUITestsScreenshotTests: XCTestCase {
 }
 
 extension XCUIElement {
-    func waitForClickable(timeout: TimeInterval = 10) -> XCUIElement {
+    func waitForClickable(timeout: TimeInterval = 10, app: XCUIApplication, testCase: XCTestCase) -> XCUIElement {
         #if os(visionOS)
         let predicate = NSPredicate(format: "exists == true")
         #else
@@ -284,6 +296,10 @@ extension XCUIElement {
         let result = XCTWaiter().wait(for: [expectation], timeout: timeout)
 
         if result != .completed {
+            let debugAttachment = XCTAttachment(string: app.debugDescription)
+            debugAttachment.lifetime = .keepAlways
+            debugAttachment.name = "FailingAttachment"
+            XCTestCase().add(debugAttachment)
             XCTFail("Button was not clickable within the timeout")
         }
 

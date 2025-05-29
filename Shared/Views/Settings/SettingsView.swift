@@ -148,10 +148,11 @@ struct SettingsView: View {
                         DeviceListItem(device: device, idx: idx)
                     }
                     .onDelete { indexSet in
+                        // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
                         for index in indexSet {
                             if let model = devices[safe: index] {
                                 let pid = model.persistentModelID
-                                Task.detached {
+                                Task {
                                     do {
                                         try await RoamDataHandler().delete(pid)
                                         DispatchQueue.main.async {
@@ -324,10 +325,11 @@ struct SettingsView: View {
                                 HiddenDeviceListItem(device: device)
                             }
                             .onDelete { indexSet in
+                                // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
                                 for index in indexSet {
                                     if let model = devices[safe: index] {
                                         let pid = model.persistentModelID
-                                        Task.detached {
+                                        Task {
                                             do {
                                                 try await RoamDataHandler().delete(pid)
                                                 DispatchQueue.main.async {

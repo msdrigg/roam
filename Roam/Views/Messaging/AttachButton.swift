@@ -38,7 +38,7 @@ struct AttachButton: View {
     var bodyContent: some View {
         Menu {
             Button(action: {
-                handleAttachment(DiagnosticsImport())
+                handleAttachment(DiagnosticsImport(userInitiated: true))
                 diagnosticsPressCounter += 1
             }, label: {
                 Label(String(localized: "Attach Diagnostics", comment: "Label on a button"), systemImage: "latch.2.case")

@@ -307,6 +307,7 @@ struct AddDeviceFlow: View {
     }
 
     private func completeConnection(preConnectInfo: PreconnectionDeviceInfo, location: String) async {
+        // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
         let dataHandler = RoamDataHandler()
 
         let device = await dataHandler.addDeviceIndistriminantly(

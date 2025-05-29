@@ -7,12 +7,40 @@ let loadAppGroup = "group.com.msdrigg.roam.load"
 
 public final class GlobalModelContainer {
     @MainActor
-    static let sharedModelContainer = demandSharedModelContainer()
+    fileprivate static let sharedModelContainerOrFailure = getModelContainerOrFailure()
+}
+
+public enum ModelContainerFailureReason: Error, LocalizedError {
+    case schemaMigrationImpossible
+    case noSpaceOnDisk
+    case schemaInvalidState
+    case unknown
+}
+
+public typealias ModelContainerResult = Result<ModelContainer, ModelContainerFailureReason>
+
+@MainActor
+public func getModelContainerFailureReason() -> ModelContainerFailureReason {
+    // TODO: Get a real result here :)
+    return .unknown
+}
+
+@MainActor
+public func getSharedModelContainerResult() -> ModelContainerResult {
+    return GlobalModelContainer.sharedModelContainerOrFailure
+}
+
+@MainActor
+public func getSharedModelContainerChecked() throws (ModelContainerFailureReason) -> ModelContainer {
+    return try GlobalModelContainer.sharedModelContainerOrFailure.get()
 }
 
 @MainActor
 public func getSharedModelContainer() -> ModelContainer {
-    GlobalModelContainer.sharedModelContainer
+    guard let mc = try? GlobalModelContainer.sharedModelContainerOrFailure.get() else {
+        loggedFatalError("Error getting shared model container")
+    }
+    return mc
 }
 
 public func inScreenshotTestingContext() -> Bool {
@@ -40,54 +68,42 @@ public func loadTestingData() -> Bool {
 }
 
 @MainActor
-private func demandSharedModelContainer() -> ModelContainer {
-    do {
-        #if DEBUG
-        if usingTestingDataContainer() {
-            return getTestingContainer()
-        } else {
-            return try _getSharedModelContainer()
-        }
-        #else
-        return try _getSharedModelContainer()
-        #endif
-    } catch {
-        loggedFatalError("Error getting shared model container \(error)")
+private func getModelContainerOrFailure() -> Result<ModelContainer, ModelContainerFailureReason> {
+    #if DEBUG
+    if usingTestingDataContainer() {
+        return .success(getTestingContainer())
+    } else {
+        return _getSharedModelContainer()
     }
+    #else
+    return _getSharedModelContainer()
+    #endif
 }
 
 @MainActor
-private func _getSharedModelContainer() throws -> ModelContainer {
+private func _getSharedModelContainer() -> Result<ModelContainer, ModelContainerFailureReason> {
+    // TODO: Attempt to resolve .schemaMigrationImpossible errors by wiping all data and re-trying *ONCE*
     let schema = Schema(
         versionedSchema: SchemaV5.self
     )
 
-#if WIDGET
     let modelConfiguration = ModelConfiguration(
         schema: schema,
         isStoredInMemoryOnly: false,
-        allowsSave: false,
         groupContainer: .identifier(mainAppGroup),
     )
-#else
-    let modelConfiguration = ModelConfiguration(
-        schema: schema,
-        isStoredInMemoryOnly: false,
-        allowsSave: true,
-        groupContainer: .identifier(mainAppGroup),
-    )
-#endif
 
-    let mc = try catchObjc {
-        return try FileLock.shared.withLock(mode: .exclusive) {
+    do {
+        let mc = try FileLock.shared.withLock(mode: .exclusive) {
             return try ModelContainer(
                 for: schema,
                 migrationPlan: RoamSchemaMigrationPlan.self,
                 configurations: modelConfiguration
             )
         }
+        return .success(mc)
+    } catch {
+        Log.data.error("Error getting model container: \(error)")
+        return .failure(getModelContainerFailureReason())
     }
-
-    mc.mainContext.autosaveEnabled = false
-    return mc
 }

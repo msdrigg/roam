@@ -6,24 +6,33 @@ struct DiagnosticsImport: PendingAttachment {
     nonisolated let utType: UTType = .json
     nonisolated let id: String
 
+    nonisolated let userInitiated: Bool
+
     nonisolated var filename: String {
         "Diagnostics.json"
     }
 
-    nonisolated init() {
+    nonisolated init(userInitiated: Bool = false) {
         id = "diagnostics-\(UUID().uuidString)"
+        self.userInitiated = userInitiated
     }
 
     nonisolated func load() async -> Result<AttachmentUpload, AttachmentError> {
         let loggingAt = Date.now
         Log.userInteraction.notice("Starting to send logs \(loggingAt, privacy: .public)")
-        let logs = await getDebugInfo()
+        let logs = await getDebugInfo(userInitiated: userInitiated)
         Log.userInteraction.notice("Sending logs \(logs.installationInfo.userId, privacy: .public)")
 
         if let data = trimmedDebugInfoIfNeeded(logs) {
             let hash = fastHashData(data: data)
             do {
                 try storeAttachmentToDisk(attachmentData: data, hash: hash, filename: self.filename)
+            } catch let error as DataHandlerError {
+                if case DataHandlerError.noSpaceOnDisk = error {
+                    return .failure(.noSpaceOnDisk)
+                } else {
+                    return .failure(.loadingFailed)
+                }
             } catch {
                 return .failure(.loadingFailed)
             }
@@ -39,7 +48,7 @@ struct DiagnosticsImport: PendingAttachment {
         }
     }
 
-    nonisolated private static func getDebugLogMessageString(_ debugInfo: DebugInfo) -> String {
+    nonisolated static func getDebugLogMessageString(_ debugInfo: DebugInfo) -> String {
         var message: String = ":ninja:\n\n"
 
         message += "### Installation Info\n\n"
