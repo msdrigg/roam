@@ -66,6 +66,12 @@ Additionally I can't send one query multiple times. I can only send each one 1x 
 -   help_hud_v2
 -   time_hud
 
+### Web API: voice-service.voice.roku.com
+
+-   Roku doesn't actually do the analysis on-device. This makes sense because edge machine learning is hard. Instead it makes a request to a remote service (voice-service.voice.roku.com) to do the voice analysis.
+-   Basically all of these intents are created by the remote service even the speech-recognition.
+-   See my subfolder (voice-service.voice.roku.com) for more details.
+
 ### Next Steps
 
 We are still in the information gathering phase so all work is about getting information on how this API works and how to replicate it

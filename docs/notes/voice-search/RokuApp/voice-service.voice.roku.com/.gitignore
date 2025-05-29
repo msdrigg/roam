@@ -1,0 +1,5 @@
+!*.py
+!requirements.txt
+!.gitignore
+/.venv
+/capture
