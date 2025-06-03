@@ -10,6 +10,8 @@ use discord::{DiscordClient, DiscordMessage, DiscordMessageOptions};
 use presence::{PresenceClient, UserPresenceInfo};
 use server::ApiError;
 
+use crate::symbolicate::{ApplePlatformVersion, RoamDebugInfo};
+
 pub mod apns;
 pub mod cli;
 pub mod database;

@@ -456,9 +456,16 @@ async fn upload_metric_diagnostics(
             .await
             .map_err(|e| ApiError::BadRequest(format!("Error writing metric file: {}", e)))?;
 
-        let symbolicated = app_context
+        let symbolicated = match app_context
             .symbolicate_diagnostics(&diagnostics, &installation_info, &metric_file_path)
-            .await;
+            .await
+        {
+            Ok(s) => s,
+            Err(e) => {
+                tracing::error!(?e, "Error creating symbolicated diagnostics");
+                continue;
+            }
+        };
 
         let report = match tokio::fs::read_to_string(&symbolicated)
             .await

@@ -1,105 +1,120 @@
 use crate::database::DeviceInfo;
-use crate::symbolicate::diagnostics::{CpuExceptionDiagnostic, DiskWriteExceptionDiagnostic};
-use anyhow::{anyhow, Result};
-use futures::future::BoxFuture;
-use futures::FutureExt;
+use crate::symbolicate::{ApplePlatformVersion, RoamDebugInfo};
+use anyhow::Result;
 use samply_symbols::debugid::DebugId;
 use samply_symbols::{
     CandidatePathInfo, FileAndPathHelper, FileAndPathHelperResult, FileLocation, FrameDebugInfo,
-    FramesLookupResult, LibraryInfo, LookupAddress, OptionallySendFuture,
+    FramesLookupResult, LibraryInfo, LookupAddress, OptionallySendFuture, SymbolManager,
 };
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::fmt::Display;
 use std::fs::File;
-use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
-use std::sync::Arc;
+use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct SymbolicationClient {
-    dsym_path: PathBuf,
-    symbol_manager: Arc<samply_symbols::SymbolManager<RoamFileAndPathHelper>>,
+    symbolication_root: PathBuf,
 }
 
 #[derive(Clone)]
 pub struct RoamFileAndPathHelper {
-    dsym_path: PathBuf,
+    symbolication_root: PathBuf,
+    device_uuid: Uuid,
 }
 
 impl RoamFileAndPathHelper {
-    pub fn new(dsym_path: PathBuf) -> Self {
-        RoamFileAndPathHelper { dsym_path }
+    pub fn new(symbolication_root: PathBuf, device_uuid: Uuid) -> Self {
+        RoamFileAndPathHelper {
+            symbolication_root,
+            device_uuid,
+        }
     }
 
-    fn cache_dir(&self) -> PathBuf {
-        self.dsym_path.join("cache")
+    fn device_dir(&self, device_uuid: Uuid) -> PathBuf {
+        self.symbolication_root.join(device_uuid.to_string())
     }
 
     async fn load_file_impl(
         &self,
-        location: LocalFilePath,
+        location: RoamFileLocation,
     ) -> FileAndPathHelperResult<memmap2::Mmap> {
-        let file = File::open(location.0)?;
+        let file = File::open(&location.path)?;
         Ok(unsafe { memmap2::MmapOptions::new().map(&file)? })
     }
 
     fn expand_library_info(&self, library_info: &mut LibraryInfo) {
         // TODO: Add the path to the lib info if it's not set
+        // Copy work from mxsymbolicate...
         todo!()
     }
 }
-
 #[derive(Debug, Clone)]
-struct LocalFilePath(PathBuf);
+pub struct RoamFileLocation {
+    path: PathBuf,
+    device_uuid: Uuid,
+    symbolicate_root: PathBuf,
+}
 
-impl Display for LocalFilePath {
+impl Display for RoamFileLocation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0.display())
+        write!(f, "{}", self.path.display())
     }
 }
 
-impl FileLocation for LocalFilePath {
+impl RoamFileLocation {
+    fn with_path(&self, path: PathBuf) -> Self {
+        Self {
+            device_uuid: self.device_uuid,
+            path,
+            symbolicate_root: self.symbolicate_root.clone(),
+        }
+    }
+
+    fn device_path(&self) -> PathBuf {
+        self.symbolicate_root.join(self.device_uuid.to_string())
+    }
+}
+
+impl FileLocation for RoamFileLocation {
     fn location_for_dyld_subcache(&self, suffix: &str) -> Option<Self> {
         // Dyld shared caches are only loaded from local files.
-        let mut filename = self.0.file_name().unwrap().to_owned();
+        let mut filename = self.path.file_name().unwrap().to_owned();
         filename.push(suffix);
-        Some(Self(self.0.with_file_name(filename)))
+        Some(self.with_path(self.path.with_file_name(filename)))
     }
 
     fn location_for_external_object_file(&self, object_file: &str) -> Option<Self> {
         // External object files are referred to by absolute file path, so we only
         // load them if those paths were found in a local file.
-        Some(Self(object_file.into()))
+        let obj_path = self.device_path().join(object_file);
+        Some(self.with_path(obj_path))
     }
 
     fn location_for_pdb_from_binary(&self, pdb_path_in_binary: &str) -> Option<Self> {
         // We only respect absolute paths to PDB files if those paths were found in a local binary.
-        Some(Self(pdb_path_in_binary.into()))
+        let obj_path = self.device_path().join(pdb_path_in_binary);
+        Some(self.with_path(obj_path))
     }
 
     fn location_for_source_file(&self, source_file_path: &str) -> Option<Self> {
-        let debug_file_path = &self.0;
+        let debug_file_path = &self.path;
         if source_file_path.starts_with("https://") || source_file_path.starts_with("http://") {
             // Treat the path as a URL. One case where we get URLs is in jitdump files:
             // E.g. profiling a browser which executes JITted JS code from a script on
             // the web will create a jitdump file where the debug information for an
             // address has a URL as the file path.
-            //
-            // SECURITY: This URL is referred to by a debug file on the local file system.
-            // We trust the contents of these files, and we allow them to refer to
-            // arbitrary URLs.
-            // return Some(Self::UrlForSourceFile(source_file_path.to_owned()));
             return None;
         }
         let source_file_path = Path::new(source_file_path);
+
         if source_file_path.is_absolute() {
-            Some(Self(source_file_path.to_owned()))
+            Some(self.with_path(self.device_path().join(source_file_path)))
         } else {
             // Resolve relative paths with respect to the location of the debug file.
             debug_file_path
                 .parent()
-                .map(|base_path| Self(base_path.join(source_file_path)))
+                .map(|base_path| self.with_path(base_path.join(source_file_path)))
         }
     }
 
@@ -108,20 +123,20 @@ impl FileLocation for LocalFilePath {
     }
 
     fn location_for_dwo(&self, comp_dir: &str, path: &str) -> Option<Self> {
-        let debug_file_path = &self.0;
+        let debug_file_path = &self.path;
         if path.starts_with('/') {
-            return Some(Self(path.into()));
+            return Some(self.with_path(self.device_path().join(path)));
         }
         // Resolve relative paths with respect to comp_dir.
         if comp_dir.starts_with('/') {
             let comp_dir = comp_dir.trim_end_matches('/');
             let dwo_path = format!("{comp_dir}/{path}");
-            return Some(Self(Path::new(&dwo_path).into()));
+            return Some(self.with_path(self.device_path().join(&dwo_path).into()));
         }
         // Resolve relative paths with respect to the location of the debug file.
         debug_file_path
             .parent()
-            .map(|base_path| Self(base_path.join(comp_dir).join(path)))
+            .map(|base_path| self.with_path(base_path.join(comp_dir).join(path)))
     }
 
     fn location_for_dwp(&self) -> Option<Self> {
@@ -133,90 +148,103 @@ impl FileLocation for LocalFilePath {
         // only useful in combination with the debug info inside the binary
         // (the "skeleton units"); a DWP file by itself cannot be used to
         // look up symbols if the binary has been stripped of debug info.
-        let binary_path = &self.0;
+        let binary_path = &self.path;
         let mut dwp_path = binary_path.as_os_str().to_os_string();
         dwp_path.push(".dwp");
-        Some(Self(dwp_path.into()))
+        Some(self.with_path(dwp_path.into()))
     }
 }
 
 impl FileAndPathHelper for RoamFileAndPathHelper {
     type F = memmap2::Mmap;
-    type FL = LocalFilePath;
+    type FL = RoamFileLocation;
 
     fn get_candidate_paths_for_debug_file(
         &self,
         library_info: &LibraryInfo,
-    ) -> FileAndPathHelperResult<Vec<CandidatePathInfo<LocalFilePath>>> {
+    ) -> FileAndPathHelperResult<Vec<CandidatePathInfo<RoamFileLocation>>> {
         let mut library_info = library_info.clone();
         self.expand_library_info(&mut library_info);
 
-        if let Some(uuid) = library_info.debug_id.as_ref().map(|id| id.uuid()) {
-            let cache_dir = self.cache_dir();
-            let mut options = Vec::new();
+        // Need to work on my process for this
+        // Where am I storing the device files
+        // Where am I storing the binaries
+        // What about dyld shared cache?
+        // Still not sure about symlinking binaries in the cache, but this might work... How would work for dyld_shared_caches...
+        // We could do something else with RoamFileLocation like RoamFileLocation::DatabaseReferenced because this fn isn't async
+        // Reference how wholesym handles shared caches...
+        // We could also ignore shared cache totally
+        todo!();
+        // if let Some(uuid) = library_info.debug_id.as_ref().map(|id| id.uuid()) {
+        //     let cache_dir = self.cache_dir();
+        //     let mut options = Vec::new();
 
-            // Add uuid.dSYM to the binary
-            options.push(CandidatePathInfo::SingleFile(LocalFilePath(
-                cache_dir.join("dsym").join(format!("{}", uuid)),
-            )));
+        //     // Add uuid.dSYM to the binary
+        //     options.push(CandidatePathInfo::SingleFile(RoamFileLocation(
+        //         cache_dir.join("dsym").join(format!("{}", uuid)),
+        //     )));
 
-            if let Some(debug_name) = &library_info.debug_name {
-                // Add uuid.dSYM to the binary with a .dSYM suffix
-                options.push(CandidatePathInfo::SingleFile(LocalFilePath(
-                    cache_dir
-                        .join("dsym")
-                        .join(format!("{}", uuid))
-                        .join("Contents")
-                        .join("Resources")
-                        .join("DWARF")
-                        .join(debug_name),
-                )));
-            }
+        //     if let Some(debug_name) = &library_info.debug_name {
+        //         // Add uuid.dSYM to the binary with a .dSYM suffix
+        //         options.push(CandidatePathInfo::SingleFile(RoamFileLocation(
+        //             cache_dir
+        //                 .join("dsym")
+        //                 .join(format!("{}", uuid))
+        //                 .join("Contents")
+        //                 .join("Resources")
+        //                 .join("DWARF")
+        //                 .join(debug_name),
+        //         )));
+        //     }
 
-            if let Ok(dyld_cache_paths) =
-                self.get_dyld_shared_cache_paths(library_info.arch.as_deref())
-            {
-                if let Some(path) = library_info.path.as_ref() {
-                    for dyld_cache_path in dyld_cache_paths {
-                        options.push(CandidatePathInfo::InDyldCache {
-                            dyld_cache_path,
-                            dylib_path: path.clone(),
-                        });
-                    }
-                }
-            }
+        //     if let Ok(dyld_cache_paths) =
+        //         self.get_dyld_shared_cache_paths(library_info.arch.as_deref())
+        //     {
+        //         if let Some(path) = library_info.path.as_ref() {
+        //             for dyld_cache_path in dyld_cache_paths {
+        //                 options.push(CandidatePathInfo::InDyldCache {
+        //                     dyld_cache_path,
+        //                     dylib_path: path.clone(),
+        //                 });
+        //             }
+        //         }
+        //     }
 
-            options.push(CandidatePathInfo::SingleFile(LocalFilePath(
-                cache_dir.join("so").join(format!("{}", uuid)),
-            )));
+        //     options.push(CandidatePathInfo::SingleFile(RoamFileLocation(
+        //         cache_dir.join("so").join(format!("{}", uuid)),
+        //     )));
 
-            FileAndPathHelperResult::Ok(options)
-        } else {
-            tracing::warn!(?library_info, "No debug ID found for library");
+        //     FileAndPathHelperResult::Ok(options)
+        // } else {
+        //     tracing::warn!(?library_info, "No debug ID found for library");
 
-            FileAndPathHelperResult::Err(Box::new(
-                samply_symbols::Error::NotEnoughInformationToIdentifyBinary,
-            ))
-        }
+        //     FileAndPathHelperResult::Err(Box::new(
+        //         samply_symbols::Error::NotEnoughInformationToIdentifyBinary,
+        //     ))
+        // }
     }
 
     fn get_candidate_paths_for_binary(
         &self,
         library_info: &LibraryInfo,
-    ) -> FileAndPathHelperResult<Vec<CandidatePathInfo<LocalFilePath>>> {
+    ) -> FileAndPathHelperResult<Vec<CandidatePathInfo<RoamFileLocation>>> {
         return self.get_candidate_paths_for_debug_file(library_info);
     }
 
     fn get_dyld_shared_cache_paths(
         &self,
         arch: Option<&str>,
-    ) -> FileAndPathHelperResult<Vec<LocalFilePath>> {
+    ) -> FileAndPathHelperResult<Vec<RoamFileLocation>> {
         let mut vec = Vec::new();
 
         let mut add_entries_in_dir = |dir: &str| {
             let mut add_entry_for_arch = |arch: &str| {
                 let path = format!("{dir}/dyld_shared_cache_{arch}");
-                vec.push(LocalFilePath(PathBuf::from(path)));
+                vec.push(RoamFileLocation {
+                    path: PathBuf::from(path),
+                    device_uuid: self.device_uuid,
+                    symbolicate_root: self.symbolication_root.clone(),
+                });
             };
             match arch {
                 None => {
@@ -245,7 +273,7 @@ impl FileAndPathHelper for RoamFileAndPathHelper {
 
     fn load_file(
         &self,
-        location: LocalFilePath,
+        location: RoamFileLocation,
     ) -> std::pin::Pin<Box<dyn OptionallySendFuture<Output = FileAndPathHelperResult<Self::F>> + '_>>
     {
         Box::pin(self.load_file_impl(location))
@@ -323,12 +351,9 @@ impl LookedUpAddresses {
 }
 
 impl SymbolicationClient {
-    pub fn new(dsym_path: PathBuf) -> Self {
+    pub fn new(symbolication_root: PathBuf) -> Self {
         SymbolicationClient {
-            dsym_path: dsym_path.clone(),
-            symbol_manager: Arc::new(samply_symbols::SymbolManager::with_helper(
-                RoamFileAndPathHelper::new(dsym_path.clone()),
-            )),
+            symbolication_root: symbolication_root.clone(),
         }
     }
 
@@ -336,6 +361,7 @@ impl SymbolicationClient {
         &self,
         breakpad_id: &str,
         mut addresses: Vec<u32>,
+        symbol_manager: &SymbolManager<impl FileAndPathHelper>,
     ) -> Result<LookedUpAddresses, samply_symbols::Error> {
         // Sort the addresses before the lookup, to have a higher chance of hitting
         // the same external file for subsequent addresses.
@@ -362,7 +388,7 @@ impl SymbolicationClient {
             debug_id: Some(debug_id),
             ..Default::default()
         };
-        let symbol_map = self.symbol_manager.load_symbol_map(&info).await?;
+        let symbol_map = symbol_manager.load_symbol_map(&info).await?;
 
         symbolication_result.set_total_symbol_count(symbol_map.symbol_count() as u32);
 
@@ -402,96 +428,12 @@ impl SymbolicationClient {
     }
 }
 
-pub struct SymbolicatedFrame {
-    pub original_frame: Frame,
-    pub symbol_name: Option<String>,
-    pub file_name: Option<String>,
-    pub line_number: Option<u64>,
-    pub symbolicated_description: Option<String>,
-    pub error: Option<String>,
-    pub subframes: Option<Vec<SymbolicatedFrame>>,
-}
-
-pub struct SymbolicatedCallStack {
-    pub thread_attributed: bool,
-    pub frames: Vec<SymbolicatedFrame>,
-}
-
-struct SymbolicatedDiagnosticInternal {
-    pub diagnostic_type: String,
-    pub metadata: HashMap<String, String>,
-    pub call_stacks: Vec<SymbolicatedCallStack>,
-    pub summary: String,
-}
-
-impl SymbolicatedDiagnosticInternal {
-    pub fn report(&self) -> String {
-        let mut report = format!("Type: {}\n", self.diagnostic_type);
-        report += "Metadata:\n";
-        for (key, value) in &self.metadata {
-            report += &format!("  {}: {}\n", key, value);
-        }
-        report += "Call Stacks:\n";
-        for stack in &self.call_stacks {
-            report += &format!("  Thread Attributed: {}\n", stack.thread_attributed);
-            for frame in &stack.frames {
-                report += &format!(
-                    "    Frame: {} ({}:{})\n",
-                    frame.symbol_name.as_deref().unwrap_or("unknown"),
-                    frame.file_name.as_deref().unwrap_or("unknown"),
-                    frame.line_number.unwrap_or(0)
-                );
-            }
-        }
-        report += &format!("Summary: {}\n", self.summary);
-        report
-    }
-}
-
-pub struct SymbolicatedDiagnostics {
-    pub notable_info: String,
-    pub report: String,
-}
-
-pub enum ApplePlatformVersion {
-    IOs,
-    MacOs,
-    VisionOs,
-    WatchOs,
-}
-
-impl Display for ApplePlatformVersion {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ApplePlatformVersion::IOs => write!(f, "iOS"),
-            ApplePlatformVersion::MacOs => write!(f, "macOS"),
-            ApplePlatformVersion::VisionOs => write!(f, "visionOS"),
-            ApplePlatformVersion::WatchOs => write!(f, "watchOS"),
-        }
-    }
-}
-impl FromStr for ApplePlatformVersion {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "ios" => Ok(ApplePlatformVersion::IOs),
-            "macos" => Ok(ApplePlatformVersion::MacOs),
-            "visionos" => Ok(ApplePlatformVersion::VisionOs),
-            "watchos" => Ok(ApplePlatformVersion::WatchOs),
-            _ => Err(anyhow!("Unknown OS version: {}", s)),
-        }
-    }
-}
-
 impl SymbolicationClient {
     // Placeholder methods that you would implement based on your storage
     fn device_dsym_dir(&self, device_uuid: &str) -> PathBuf {
-        self.dsym_path.join("device-dsyms").join(device_uuid)
-    }
-
-    fn dsym_cache_dir(&self) -> PathBuf {
-        self.dsym_path.join("cache")
+        self.symbolication_root
+            .join("device-roots")
+            .join(device_uuid)
     }
 
     fn binary_dsym_path(
@@ -500,7 +442,7 @@ impl SymbolicationClient {
         bundle_identifier: &str,
         os_platform: &ApplePlatformVersion,
     ) -> PathBuf {
-        self.dsym_path
+        self.symbolication_root
             .join("binaries")
             .join(build_version)
             .join(os_platform.to_string())
@@ -512,17 +454,19 @@ impl SymbolicationClient {
         device_type_identifier: &str,
         os_build_id: &str,
     ) -> Result<PathBuf> {
-        let device_dsym_path = self
-            .dsym_path
-            .join("device-dsyms")
-            .join(device_type_identifier)
-            .join(os_build_id);
-
-        tokio::fs::create_dir_all(&device_dsym_path).await?;
-
-        // 1. Need to get the ipsw file from https://api.ipsw.me/v4/ipsw/download/identifier/buildid
+        // 0. Need to get the firmware UUID and download path from https://api.ipsw.me/v4/
+        // 0.5 Need to check our downloads to make sure we don't already have everything downloaded
+        // 1. Need to get the ipsw file from the download path retrieved above
         // 2. Need to extract all relevant dSYMs from it using available methods
         // 3. Need to symlink all binaries from from <dsym_path>/cache/<binary_UUID> to the dsym_path
+        let device_uuid: Uuid = todo!();
+
+        let device_dsym_path = self
+            .symbolication_root
+            .join("device-roots")
+            .join(device_uuid.to_string());
+
+        tokio::fs::create_dir_all(&device_dsym_path).await?;
         todo!()
     }
 
@@ -542,8 +486,7 @@ impl SymbolicationClient {
 
     async fn symlink_dsym_binaries(&self, binary_dsym_path: &Path) -> anyhow::Result<()> {
         // TODO: Get the UUIDs of the binaries from the dSYM
-        // TODO: Then create symlinks in the dsym_path/cache/<binary_UUID> to the actual binary files
-        let cache_dir = self.dsym_cache_dir();
+        // TODO: Then create symlinks in the symbolication_path_root/cache/<binary_UUID> to the actual binary files
         todo!()
     }
 }
@@ -563,231 +506,14 @@ impl SymbolicationClient {
         new_filename.push(".symbolicated");
         report_path.set_file_name(new_filename);
 
-        // Process crash diagnostics
-        for crash_diag in &payload.crash_diagnostics {
-            if let Some(symbolicated) = self
-                .symbolicate_crash_diagnostic(device_id, crash_diag, installation_info)
-                .await
-            {
-                results.push(symbolicated);
-            }
-        }
+        // TODO: Load the diagnostics from the file, symbolicate them into a report, and then output the report to a path
+        // TODO: Get the device_uuid from ipsw API and make sure the files are loaded
+        let device_uuid = todo!();
 
-        // Process CPU exception diagnostics
-        for cpu_diag in &payload.cpu_exception_diagnostics {
-            if let Some(symbolicated) = self
-                .symbolicate_cpu_diagnostic(device_id, cpu_diag, installation_info)
-                .await
-            {
-                results.push(symbolicated);
-            }
-        }
-
-        // Process disk write diagnostics
-        for disk_diag in &payload.disk_write_exception_diagnostics {
-            if let Some(symbolicated) = self
-                .symbolicate_disk_diagnostic(device_id, disk_diag, installation_info)
-                .await
-            {
-                results.push(symbolicated);
-            }
-        }
-
-        // Process hang diagnostics
-        for hang_diag in &payload.hang_diagnostics {
-            if let Some(symbolicated) = self
-                .symbolicate_hang_diagnostic(device_id, hang_diag, installation_info)
-                .await
-            {
-                results.push(symbolicated);
-            }
-        }
-
-        // Process app launch diagnostics
-        for launch_diag in &payload.app_launch_diagnostics {
-            if let Some(symbolicated) = self
-                .symbolicate_app_launch_diagnostic(device_id, launch_diag, installation_info)
-                .await
-            {
-                results.push(symbolicated);
-            }
-        }
-    }
-
-    async fn symbolicate_crash_diagnostic(
-        &self,
-        device_id: &str,
-        diagnostic: &CrashDiagnostic,
-        installation_info: &DeviceInfo,
-    ) -> Option<SymbolicatedDiagnosticInternal> {
-        let mut metadata = HashMap::new();
-        metadata.insert(
-            "exception_type".to_string(),
-            diagnostic
-                .exception_type
-                .map(|t| t.to_string())
-                .unwrap_or_default(),
+        let symbol_manager = samply_symbols::SymbolManager::with_helper(
+            RoamFileAndPathHelper::new(self.symbolication_root.clone(), device_uuid),
         );
-        metadata.insert(
-            "exception_code".to_string(),
-            diagnostic
-                .exception_code
-                .map(|c| c.to_string())
-                .unwrap_or_default(),
-        );
-        metadata.insert(
-            "signal".to_string(),
-            diagnostic.signal.map(|s| s.to_string()).unwrap_or_default(),
-        );
-        metadata.insert(
-            "application_version".to_string(),
-            diagnostic.application_version.clone(),
-        );
-        metadata.insert(
-            "os_version".to_string(),
-            diagnostic.meta_data.os_version.clone(),
-        );
-
-        if let Some(termination_reason) = &diagnostic.termination_reason {
-            metadata.insert("termination_reason".to_string(), termination_reason.clone());
-        }
-
-        let call_stacks = if let Some(stack_trace) = &diagnostic.stack_trace {
-            self.symbolicate_stack_trace(
-                device_id,
-                stack_trace,
-                &diagnostic.meta_data,
-                installation_info,
-            )
-            .await
-        } else {
-            Vec::new()
-        };
-
-        let summary = self.format_crash_summary(&diagnostic);
-
-        Some(SymbolicatedDiagnosticInternal {
-            diagnostic_type: "crash".to_string(),
-            metadata,
-            call_stacks,
-            summary,
-        })
-    }
-
-    async fn symbolicate_stack_trace(
-        &self,
-        device_id: &str,
-        stack_trace: &StackTrace,
-        metadata: &MetaData,
-        installation_info: &DeviceInfo,
-    ) -> Vec<SymbolicatedCallStack> {
-        let mut result = Vec::new();
-        let device_id: Arc<str> = Arc::from(device_id);
-        let metadata = Arc::new(metadata.clone());
-        let installation_info = Arc::new(installation_info.clone());
-
-        for call_stack in &stack_trace.call_stacks {
-            let mut symbolicated_frames = Vec::new();
-
-            for frame in call_stack.call_stack_root_frames.iter().cloned() {
-                let symbolicated_frame = self
-                    .symbolicate_frame_recursive(
-                        device_id.clone(),
-                        frame,
-                        metadata.clone(),
-                        installation_info.clone(),
-                    )
-                    .await;
-                symbolicated_frames.push(symbolicated_frame);
-            }
-
-            result.push(SymbolicatedCallStack {
-                thread_attributed: call_stack.thread_attributed,
-                frames: symbolicated_frames,
-            });
-        }
-
-        result
-    }
-
-    fn symbolicate_frame_recursive(
-        &self,
-        device_id: Arc<str>,
-        frame: Frame,
-        metadata: Arc<MetaData>,
-        installation_info: Arc<DeviceInfo>,
-    ) -> BoxFuture<'static, SymbolicatedFrame> {
-        let cloned_client = self.clone();
-        return async move {
-            let mut symbolicated_frame = cloned_client
-                .symbolicate_single_frame(
-                    device_id.as_ref(),
-                    &frame,
-                    metadata.as_ref(),
-                    installation_info.as_ref(),
-                )
-                .await;
-
-            if let Some(subframes) = &frame.subframes {
-                let mut symbolicated_subframes: Vec<SymbolicatedFrame> = Vec::new();
-                for subframe in subframes.deref().iter().cloned() {
-                    let client_cloned = cloned_client.clone();
-                    let device_id = device_id.clone();
-                    let metadata = metadata.clone();
-                    let installation_info = installation_info.clone();
-
-                    let symbolicated_subframe = client_cloned
-                        .symbolicate_frame_recursive(
-                            device_id,
-                            subframe,
-                            metadata,
-                            installation_info,
-                        )
-                        .await;
-
-                    symbolicated_subframes.push(symbolicated_subframe);
-                }
-                symbolicated_frame.subframes = Some(symbolicated_subframes);
-            }
-
-            symbolicated_frame
-        }
-        .boxed();
-    }
-
-    fn format_crash_summary(&self, diagnostic: &CrashDiagnostic) -> String {
-        let exception_type_name = match diagnostic.exception_type {
-            Some(1) => "EXC_BAD_ACCESS",
-            Some(2) => "EXC_BAD_INSTRUCTION",
-            Some(3) => "EXC_ARITHMETIC",
-            Some(4) => "EXC_EMULATION",
-            Some(5) => "EXC_SOFTWARE",
-            Some(6) => "EXC_BREAKPOINT",
-            Some(7) => "EXC_SYSCALL",
-            Some(8) => "EXC_MACH_SYSCALL",
-            Some(9) => "EXC_RPC_ALERT",
-            Some(10) => "EXC_CRASH",
-            Some(11) => "EXC_RESOURCE",
-            Some(12) => "EXC_GUARD",
-            Some(13) => "EXC_CORPSE_NOTIFY",
-            _ => "UNKNOWN",
-        };
-
-        let signal_name = match diagnostic.signal {
-            Some(9) => "SIGKILL",
-            Some(11) => "SIGSEGV",
-            Some(6) => "SIGABRT",
-            Some(4) => "SIGILL",
-            _ => "UNKNOWN",
-        };
-
-        format!(
-            "Crash: {} ({}), Signal: {} ({})",
-            exception_type_name,
-            diagnostic.exception_type.unwrap_or(0),
-            signal_name,
-            diagnostic.signal.unwrap_or(0)
-        )
+        todo!()
     }
 }
 
