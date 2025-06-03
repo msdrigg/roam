@@ -1,10 +1,9 @@
 use crate::{
     database::{DeviceInfo, User, UserUpdate},
-    diagnostics::{RoamDebugInfo, RoamMetricDiagnosticPayload},
     discord::{DiscordAuthor, DiscordFile, DiscordFileUpload, DiscordMessageOptions},
     presence::UserPresenceInfo,
+    symbolicate::RoamDebugInfo,
     utils::{base64_data_de, i64_to_string, string_to_i64_optional},
-    SymbolicatedDiagnostics,
 };
 use anyhow::Context;
 use axum::{
@@ -15,6 +14,7 @@ use axum::{
     Json,
 };
 use axum::{routing::get, serve::ListenerExt, Router};
+use base64::{prelude::BASE64_STANDARD, Engine};
 pub use error::ApiError;
 use futures::{stream, FutureExt, StreamExt};
 use opentelemetry::trace::{SpanKind, TraceContextExt};
@@ -175,7 +175,6 @@ fn router(app_context: AppContext) -> Router {
         .route("/v2/new-message", post(new_message))
         .route("/v2/upload-diagnostics", post(upload_metric_diagnostics))
         .route("/v2/upload-roam-dsym", post(upload_roam_dsym))
-        .route("/v2/upload-device-dsym", post(upload_device_dsym))
         .route("/new-apns", post(new_apns))
         .route(
             "/upload-diagnostics/{diagnostic_key}",
@@ -371,7 +370,7 @@ struct MessageRequestV2 {
 #[serde(rename_all = "camelCase")]
 struct DiagnosticRequest {
     user_id: String,
-    metrics_payloads: Vec<RoamMetricDiagnosticPayload>,
+    metrics_payloads: Vec<String>,
     diagnostics: RoamDebugInfo,
     installation_info: DeviceInfo,
 }
@@ -436,25 +435,51 @@ async fn upload_metric_diagnostics(
         )
         .await?;
 
-    let symbolicated = app_context
-        .symbolicate_diagnostics(
-            &device_id,
-            &diagnostics,
-            &metrics_payloads,
-            &installation_info,
-        )
-        .await;
+    for (idx, payload_b64) in metrics_payloads.iter().enumerate() {
+        let payload = match BASE64_STANDARD.decode(&payload_b64) {
+            Ok(data) => data,
+            Err(e) => {
+                tracing::error!(?payload_b64, "Error decoding base64 payload: {}", e);
+                continue;
+            }
+        };
 
-    for SymbolicatedDiagnostics {
-        notable_info,
-        report,
-    } in symbolicated
-    {
+        let symbolication_dir = app_context.data_dir.join("symbolication").join(&device_id);
+        let metric_uuid = Uuid::new_v4();
+        tokio::fs::create_dir_all(&symbolication_dir)
+            .await
+            .map_err(|e| {
+                ApiError::BadRequest(format!("Error creating symbolication dir: {}", e))
+            })?;
+        let metric_file_path = symbolication_dir.join(format!("{}.json", metric_uuid));
+        tokio::fs::write(&metric_file_path, payload)
+            .await
+            .map_err(|e| ApiError::BadRequest(format!("Error writing metric file: {}", e)))?;
+
+        let symbolicated = app_context
+            .symbolicate_diagnostics(&diagnostics, &installation_info, &metric_file_path)
+            .await;
+
+        let report = match tokio::fs::read_to_string(&symbolicated)
+            .await
+            .map_err(|e| ApiError::SymbolicationError(anyhow::anyhow!(e)))
+        {
+            Ok(report) => report,
+            Err(e) => {
+                tracing::error!(?e, "Error reading symbolicated diagnostics");
+                continue;
+            }
+        };
+
         app_context
             .discord_client()
             .send_message(
                 user.thread_id,
-                &format!(":ninja: MK Diagnostics Symbolicated \n{}", notable_info),
+                &format!(
+                    ":ninja: MK Diagnostics {} Symbolicated at {}",
+                    idx,
+                    symbolicated.display()
+                ),
                 Some(DiscordFileUpload {
                     content_type: "text/plain".to_string(),
                     filename: "symbolicated.txt".to_string(),
@@ -490,17 +515,6 @@ async fn upload_roam_dsym(
 struct DeviceDsymUploadRequest {
     #[serde(deserialize_with = "base64_data_de")]
     dsym_zip: Vec<u8>,
-}
-
-async fn upload_device_dsym(
-    State(app_context): State<AppContext>,
-    Json(dsym_request): Json<DeviceDsymUploadRequest>,
-) -> Result<(), ApiError> {
-    // TODO: Download ipsw dSYM files https://ipswdownloads.docs.apiary.io/#reference/api/ipswidentifierbuildid/v-4-.-get-ipsw-information
-    // TODO: See here for a good practice: https://recoursive.com/2024/09/04/symbolicating-MetricKit-crashDiagnostic-MXCrashDiagnostic/
-    // TODO: Implement decoding the zip archive
-    // TODO: Implement decoding and storing all files from the zip archive
-    todo!("Implement Roam dSYM upload");
 }
 
 async fn new_message(

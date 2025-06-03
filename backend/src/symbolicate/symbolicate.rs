@@ -1,5 +1,5 @@
 use crate::database::DeviceInfo;
-use crate::diagnostics::*;
+use crate::symbolicate::diagnostics::{CpuExceptionDiagnostic, DiskWriteExceptionDiagnostic};
 use anyhow::{anyhow, Result};
 use futures::future::BoxFuture;
 use futures::FutureExt;
@@ -15,7 +15,6 @@ use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
-use tracing_subscriber::field::debug;
 
 #[derive(Clone)]
 pub struct SymbolicationClient {
@@ -552,72 +551,67 @@ impl SymbolicationClient {
 impl SymbolicationClient {
     pub async fn symbolicate_diagnostics(
         &self,
-        device_id: &str,
         diagnostics: &RoamDebugInfo,
-        metrics_payload: &[RoamMetricDiagnosticPayload],
         installation_info: &DeviceInfo,
-    ) -> Vec<SymbolicatedDiagnostics> {
-        let mut results = Vec::new();
+        metrics_payload: &Path,
+    ) -> Result<PathBuf, anyhow::Error> {
+        let mut report_path = PathBuf::from(metrics_payload);
+        let mut new_filename = report_path
+            .file_name()
+            .map(|x| x.to_os_string())
+            .unwrap_or_else(|| "unknown-payload".into());
+        new_filename.push(".symbolicated");
+        report_path.set_file_name(new_filename);
 
-        for payload in metrics_payload {
-            // Process crash diagnostics
-            for crash_diag in &payload.crash_diagnostics {
-                if let Some(symbolicated) = self
-                    .symbolicate_crash_diagnostic(device_id, crash_diag, installation_info)
-                    .await
-                {
-                    results.push(symbolicated);
-                }
-            }
-
-            // Process CPU exception diagnostics
-            for cpu_diag in &payload.cpu_exception_diagnostics {
-                if let Some(symbolicated) = self
-                    .symbolicate_cpu_diagnostic(device_id, cpu_diag, installation_info)
-                    .await
-                {
-                    results.push(symbolicated);
-                }
-            }
-
-            // Process disk write diagnostics
-            for disk_diag in &payload.disk_write_exception_diagnostics {
-                if let Some(symbolicated) = self
-                    .symbolicate_disk_diagnostic(device_id, disk_diag, installation_info)
-                    .await
-                {
-                    results.push(symbolicated);
-                }
-            }
-
-            // Process hang diagnostics
-            for hang_diag in &payload.hang_diagnostics {
-                if let Some(symbolicated) = self
-                    .symbolicate_hang_diagnostic(device_id, hang_diag, installation_info)
-                    .await
-                {
-                    results.push(symbolicated);
-                }
-            }
-
-            // Process app launch diagnostics
-            for launch_diag in &payload.app_launch_diagnostics {
-                if let Some(symbolicated) = self
-                    .symbolicate_app_launch_diagnostic(device_id, launch_diag, installation_info)
-                    .await
-                {
-                    results.push(symbolicated);
-                }
+        // Process crash diagnostics
+        for crash_diag in &payload.crash_diagnostics {
+            if let Some(symbolicated) = self
+                .symbolicate_crash_diagnostic(device_id, crash_diag, installation_info)
+                .await
+            {
+                results.push(symbolicated);
             }
         }
 
-        results
-            .into_iter()
-            .map(|sd| SymbolicatedDiagnostics {
-                notable_info: sd.summary.clone(),
-                report: sd.report(),
-            })
-            .collect()
+        // Process CPU exception diagnostics
+        for cpu_diag in &payload.cpu_exception_diagnostics {
+            if let Some(symbolicated) = self
+                .symbolicate_cpu_diagnostic(device_id, cpu_diag, installation_info)
+                .await
+            {
+                results.push(symbolicated);
+            }
+        }
+
+        // Process disk write diagnostics
+        for disk_diag in &payload.disk_write_exception_diagnostics {
+            if let Some(symbolicated) = self
+                .symbolicate_disk_diagnostic(device_id, disk_diag, installation_info)
+                .await
+            {
+                results.push(symbolicated);
+            }
+        }
+
+        // Process hang diagnostics
+        for hang_diag in &payload.hang_diagnostics {
+            if let Some(symbolicated) = self
+                .symbolicate_hang_diagnostic(device_id, hang_diag, installation_info)
+                .await
+            {
+                results.push(symbolicated);
+            }
+        }
+
+        // Process app launch diagnostics
+        for launch_diag in &payload.app_launch_diagnostics {
+            if let Some(symbolicated) = self
+                .symbolicate_app_launch_diagnostic(device_id, launch_diag, installation_info)
+                .await
+            {
+                results.push(symbolicated);
+            }
+        }
     }
 
     async fn symbolicate_crash_diagnostic(
@@ -674,184 +668,6 @@ impl SymbolicationClient {
 
         Some(SymbolicatedDiagnosticInternal {
             diagnostic_type: "crash".to_string(),
-            metadata,
-            call_stacks,
-            summary,
-        })
-    }
-
-    async fn symbolicate_cpu_diagnostic(
-        &self,
-        device_id: &str,
-        diagnostic: &CpuExceptionDiagnostic,
-        installation_info: &DeviceInfo,
-    ) -> Option<SymbolicatedDiagnosticInternal> {
-        let mut metadata = HashMap::new();
-        metadata.insert(
-            "total_cpu_time".to_string(),
-            diagnostic.total_cpu_time.to_string(),
-        );
-        metadata.insert(
-            "total_sampled_time".to_string(),
-            diagnostic.total_sampled_time.to_string(),
-        );
-        metadata.insert(
-            "application_version".to_string(),
-            diagnostic.application_version.clone(),
-        );
-        metadata.insert(
-            "os_version".to_string(),
-            diagnostic.meta_data.os_version.clone(),
-        );
-
-        let call_stacks = if let Some(stack_trace) = &diagnostic.stack_trace {
-            self.symbolicate_stack_trace(
-                device_id,
-                stack_trace,
-                &diagnostic.meta_data,
-                installation_info,
-            )
-            .await
-        } else {
-            Vec::new()
-        };
-
-        let summary = format!(
-            "CPU Exception: {:.2}s CPU time out of {:.2}s sampled",
-            diagnostic.total_cpu_time, diagnostic.total_sampled_time
-        );
-
-        Some(SymbolicatedDiagnosticInternal {
-            diagnostic_type: "cpu_exception".to_string(),
-            metadata,
-            call_stacks,
-            summary,
-        })
-    }
-
-    async fn symbolicate_disk_diagnostic(
-        &self,
-        device_id: &str,
-        diagnostic: &DiskWriteExceptionDiagnostic,
-        installation_info: &DeviceInfo,
-    ) -> Option<SymbolicatedDiagnosticInternal> {
-        let mut metadata = HashMap::new();
-        metadata.insert(
-            "total_writes".to_string(),
-            diagnostic.total_writes.to_string(),
-        );
-        metadata.insert(
-            "application_version".to_string(),
-            diagnostic.application_version.clone(),
-        );
-        metadata.insert(
-            "os_version".to_string(),
-            diagnostic.meta_data.os_version.clone(),
-        );
-
-        let call_stacks = if let Some(stack_trace) = &diagnostic.stack_trace {
-            self.symbolicate_stack_trace(
-                device_id,
-                stack_trace,
-                &diagnostic.meta_data,
-                installation_info,
-            )
-            .await
-        } else {
-            Vec::new()
-        };
-
-        let summary = format!(
-            "Disk Write Exception: {:.2} writes",
-            diagnostic.total_writes
-        );
-
-        Some(SymbolicatedDiagnosticInternal {
-            diagnostic_type: "disk_write_exception".to_string(),
-            metadata,
-            call_stacks,
-            summary,
-        })
-    }
-
-    async fn symbolicate_hang_diagnostic(
-        &self,
-        device_id: &str,
-        diagnostic: &HangDiagnostic,
-        installation_info: &DeviceInfo,
-    ) -> Option<SymbolicatedDiagnosticInternal> {
-        let mut metadata = HashMap::new();
-        metadata.insert(
-            "hang_duration".to_string(),
-            diagnostic.hang_duration.to_string(),
-        );
-        metadata.insert(
-            "application_version".to_string(),
-            diagnostic.application_version.clone(),
-        );
-        metadata.insert(
-            "os_version".to_string(),
-            diagnostic.meta_data.os_version.clone(),
-        );
-
-        let call_stacks = if let Some(stack_trace) = &diagnostic.stack_trace {
-            self.symbolicate_stack_trace(
-                device_id,
-                stack_trace,
-                &diagnostic.meta_data,
-                installation_info,
-            )
-            .await
-        } else {
-            Vec::new()
-        };
-
-        let summary = format!("Hang: {:.2}s duration", diagnostic.hang_duration);
-
-        Some(SymbolicatedDiagnosticInternal {
-            diagnostic_type: "hang".to_string(),
-            metadata,
-            call_stacks,
-            summary,
-        })
-    }
-
-    async fn symbolicate_app_launch_diagnostic(
-        &self,
-        device_id: &str,
-        diagnostic: &AppLaunchDiagnostic,
-        installation_info: &DeviceInfo,
-    ) -> Option<SymbolicatedDiagnosticInternal> {
-        let mut metadata = HashMap::new();
-        metadata.insert(
-            "launch_duration".to_string(),
-            diagnostic.launch_duration.to_string(),
-        );
-        metadata.insert(
-            "application_version".to_string(),
-            diagnostic.application_version.clone(),
-        );
-        metadata.insert(
-            "os_version".to_string(),
-            diagnostic.meta_data.os_version.clone(),
-        );
-
-        let call_stacks = if let Some(stack_trace) = &diagnostic.stack_trace {
-            self.symbolicate_stack_trace(
-                device_id,
-                stack_trace,
-                &diagnostic.meta_data,
-                installation_info,
-            )
-            .await
-        } else {
-            Vec::new()
-        };
-
-        let summary = format!("App Launch: {:.2}s duration", diagnostic.launch_duration);
-
-        Some(SymbolicatedDiagnosticInternal {
-            diagnostic_type: "app_launch".to_string(),
             metadata,
             call_stacks,
             summary,

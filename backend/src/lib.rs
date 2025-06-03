@@ -1,20 +1,18 @@
-use std::sync::Arc;
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use anyhow::Context;
 use apns::ApnsClient;
 use database::{DatabaseClient, DeviceInfo, User, UserUpdate};
-use diagnostics::{RoamDebugInfo, RoamMetricDiagnosticPayload};
 use discord::{DiscordClient, DiscordMessage, DiscordMessageOptions};
 use presence::{PresenceClient, UserPresenceInfo};
 use server::ApiError;
-use symbolicate::SymbolicatedDiagnostics;
-
-use crate::symbolicate::ApplePlatformVersion;
 
 pub mod apns;
 pub mod cli;
 pub mod database;
-mod diagnostics;
 pub mod discord;
 pub mod gateway;
 pub mod logging;
@@ -39,6 +37,7 @@ pub struct AppContext {
     backend_url: String,
     apns_disabled: bool,
     backend_api_key: String,
+    data_dir: PathBuf,
     port: u16,
 }
 
@@ -74,6 +73,7 @@ impl AppContext {
             presence_info: Default::default(),
             port: cli.port,
             symbolicate_client: symbolicate::SymbolicationClient::new(dsym_dir),
+            data_dir: cli.data_dir.clone().into(),
             apns_disabled: cli.apns_disabled,
         })
     }
@@ -127,14 +127,13 @@ impl AppContext {
 
     async fn symbolicate_diagnostics(
         &self,
-        device_id: &str,
         diagnostics: &RoamDebugInfo,
-        metrics_payload: &[RoamMetricDiagnosticPayload],
         installation_info: &DeviceInfo,
-    ) -> Vec<SymbolicatedDiagnostics> {
+        metrics_payload: &Path,
+    ) -> anyhow::Result<PathBuf> {
         return self
             .symbolicate_client
-            .symbolicate_diagnostics(device_id, diagnostics, metrics_payload, installation_info)
+            .symbolicate_diagnostics(diagnostics, installation_info, metrics_payload)
             .await;
     }
 }
