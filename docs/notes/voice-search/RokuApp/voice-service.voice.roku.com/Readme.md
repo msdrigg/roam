@@ -12,6 +12,10 @@
 4. Interestingly enough, the audio is sent in raw PCM format, so no compression or encryption of any kind. If we can figure out the authentication part, it will likely be very straightforward to replicate this API.
 5. This API connects very well to the research I did because I am seeing the traffic from the app to the TV that it looks like is generated on the server here (not on the device). This is interesting, because I thought to replicate this API, it would be necessary to build some kind of voice-recognition/machine learning model. But it looks like we just need to implement this API somehow.
 
+## Analyzing Auth
+
+-   Need to find a way to perform the analysis to figure out how the in-app signature occurs. There is some kind of secret signature scheme that we need to figure out to make this work. This was always expected, but we'll see if we can crack it.
+
 ## Next Steps
 
 0. Figure out how to jailbreak and intercept traffic from my device
