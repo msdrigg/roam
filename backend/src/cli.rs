@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::Parser;
 
 /// A simple application to manage Discord and backend configuration
@@ -60,4 +62,17 @@ pub struct RoamCli {
     /// Disable APNS
     #[arg(long, env)]
     pub apns_disabled: bool,
+}
+
+impl RoamCli {
+    pub async fn dsym_dir(&self) -> Result<PathBuf, std::io::Error> {
+        let mut path = PathBuf::from(&self.data_dir);
+        path.push("dsym");
+        if !path.exists() {
+            tokio::fs::create_dir_all(&path).await?;
+        }
+        // Normalize the path to ensure it is absolute
+        path = tokio::fs::canonicalize(path).await?;
+        Ok(path)
+    }
 }

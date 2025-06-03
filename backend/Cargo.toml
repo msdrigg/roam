@@ -14,10 +14,12 @@ serde = { version = "^1", features = ["derive"] }
 dotenvy = "^0.15"
 futures = "^0.3"
 anyhow = "^1"
-uuid = "^1.16"
+uuid = "^1.17"
 base64 = "^0.22"
 chrono = { version = "^0.4", default-features = false, features = ["serde"] }
 ahash = "^0.8"
+thiserror = "^2"
+serde_json = "^1"
 
 clap = { version = "^4.5", features = ["derive", "env"] }
 clap_derive = { version = "^4.5" }
@@ -48,15 +50,17 @@ sqlx = { version = "^0.8", default-features = false, features = [
     "migrate",
 ] }
 
+
+memmap2 = { version = "^0.9" }
+samply-symbols = { version = "^0.24.1" }
+
 tracing = { version = "^0.1", features = ["attributes"] }
 tracing-subscriber = { version = "^0.3", features = ["env-filter"] }
-tracing-opentelemetry = "^0.30"
-opentelemetry = { version = "^0.29" }
-opentelemetry_sdk = { version = "^0.29", features = ["rt-tokio"] }
-opentelemetry-otlp = { version = "^0.29", features = ["grpc-tonic"] }
-opentelemetry-semantic-conventions = "^0.29"
-thiserror = "^2"
-serde_json = "^1"
+tracing-opentelemetry = "^0.31"
+opentelemetry = { version = "^0.30" }
+opentelemetry_sdk = { version = "^0.30", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "^0.30", features = ["grpc-tonic"] }
+opentelemetry-semantic-conventions = "^0.30"
 
 axum = { version = "^0.8", features = ["http2", "macros", "ws"] }
 axum-macros = "^0.5"
