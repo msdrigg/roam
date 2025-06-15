@@ -6,18 +6,14 @@ import ImageIO
 
 @main
 struct RoamWatch: App {
-    var sharedModelContainer: ModelContainerResult
-
     @WKApplicationDelegateAdaptor var appDelegate: RoamWatchAppDelegate
 
     init() {
-        do {
-            sharedModelContainer = getSharedModelContainerResult()
-        }
+        _ = getSharedModelContainer()
 
         try? Tips.configure([
             .displayFrequency(.immediate),
-            .datastoreLocation(.groupContainer(identifier: tipsAppGroup))
+            .datastoreLocation(.groupContainer(identifier: mainAppGroup))
         ])
 
         Log.lifecycle.notice("Getting WatchConnectivity \(String(describing: WatchConnectivity.shared), privacy: .public)")
@@ -35,7 +31,6 @@ struct RoamWatch: App {
     var body: some Scene {
         WindowGroup {
             WatchAppView(navigationPath: navigationPath)
-                .checkedModelContainer(sharedModelContainer)
         }
     }
 }
@@ -227,6 +222,5 @@ struct AppListViewWrapper: View {
         get: {[]},
         set: {_ in }
     ))
-        .modelContainer(getTestingContainer())
 }
 #endif

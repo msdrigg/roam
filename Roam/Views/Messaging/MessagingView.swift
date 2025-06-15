@@ -479,7 +479,6 @@ struct MessageView: View {
     traits: .fixedLayout(width: 400, height: 300)
 ) {
     MessageView()
-        .modelContainer(previewContainer)
 }
 
 #Preview(
@@ -490,6 +489,5 @@ struct MessageView: View {
         MessageView()
             .messageList
     }
-        .modelContainer(previewContainer)
 }
 #endif

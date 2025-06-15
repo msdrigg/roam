@@ -17,7 +17,7 @@
         @Binding var showing: Bool
         @FocusState private var keyboardFocused: Bool
 
-        let semaphore: AsyncLock = AsyncLock()
+        let queue = AsyncQueue()
 
         @State private var transformations: [StrTransformation] = []
 
@@ -88,7 +88,7 @@
                     }
                 } else {
                     let strSentNow = strSent
-                    Task {
+                    queue.async {
                         let charDifference = str.count - strSentNow.count
 
                         if charDifference > 0 {
@@ -96,10 +96,6 @@
                             let newChars = str[startIndex..<str.endIndex]
 
                             do {
-                                try await semaphore.lock()
-                                defer {
-                                    semaphore.unlock()
-                                }
                                 try await withTimeout(delay: 2.0) {
                                     for char in newChars.unicodeScalars {
                                         await onKeyPress(KeyEquivalent(Character(char)))

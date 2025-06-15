@@ -267,8 +267,14 @@ enum SpaceAvailability: Encodable, Sendable {
 func getAvailableSpaceOnDevice() -> SpaceAvailability {
     let fileURL = URL(fileURLWithPath: "/")
     do {
+        #if !os(watchOS)
         let values = try fileURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
-        if let capacity = values.volumeAvailableCapacityForImportantUsage {
+        let capacity = values.volumeAvailableCapacityForImportantUsage
+        #else
+        let values = try fileURL.resourceValues(forKeys: [.volumeAvailableCapacityKey])
+        let capacity = values.volumeAvailableCapacity
+        #endif
+        if let capacity {
             Log.backend.notice("Available capacity for important usage: \(capacity, privacy: .public)")
             // If we have more than 100 MB available, we are OK
             if capacity > 100_000_000 {

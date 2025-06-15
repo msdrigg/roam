@@ -1180,7 +1180,6 @@ extension MessageDataHandler {
     #if !os(macOS)
     func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
         let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
-        var result: [T]?
         do {
             if await !assertion.isReleased() {
                 return try self.modelContext.fetch(descriptor)
@@ -1190,11 +1189,7 @@ extension MessageDataHandler {
             await assertion.release()
             throw error
         }
-        if let result {
-            return result
-        } else {
-            throw DataHandlerError.suspending
-        }
+        throw DataHandlerError.suspending
     }
     #else
     func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {

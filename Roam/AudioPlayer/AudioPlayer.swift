@@ -351,4 +351,3 @@ extension AVAudioTime {
         return machTimeInSeconds
     }
 }
-

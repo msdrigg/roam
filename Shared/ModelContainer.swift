@@ -1,9 +1,8 @@
 import SwiftData
 import OSLog
 
-let mainAppGroup = "group.com.msdrigg.roam.models"
-let tipsAppGroup = "group.com.msdrigg.roam.tips"
-let loadAppGroup = "group.com.msdrigg.roam.load"
+let legacyContainerAppGroup = "group.com.msdrigg.roam.models"
+let mainAppGroup = "group.com.msdrigg.roam"
 
 public final class GlobalModelContainer {
     @MainActor
@@ -68,15 +67,7 @@ public func loadTestingData() -> Bool {
 
 @MainActor
 private func getModelContainerOrFailure() -> Result<ModelContainer, ModelContainerFailureReason> {
-    #if DEBUG
-    if usingTestingDataContainer() {
-        return .success(getTestingContainer())
-    } else {
-        return _getSharedModelContainer()
-    }
-    #else
     return _getSharedModelContainer()
-    #endif
 }
 
 @MainActor
@@ -88,7 +79,7 @@ private func _getSharedModelContainer() -> Result<ModelContainer, ModelContainer
     let modelConfiguration = ModelConfiguration(
         schema: schema,
         isStoredInMemoryOnly: false,
-        groupContainer: .identifier(mainAppGroup),
+        groupContainer: .identifier(legacyContainerAppGroup),
     )
 
     do {

@@ -310,6 +310,5 @@ struct DeviceDetailView: View {
     traits: .fixedLayout(width: 400, height: 300)
 ) {
     DeviceDetailView(deviceId: getTestingDevices()[0].id, dismiss: {})
-        .modelContainer(previewContainer)
 }
 #endif

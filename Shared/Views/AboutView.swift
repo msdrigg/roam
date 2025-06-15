@@ -112,6 +112,5 @@ struct AboutView: View {
     traits: .fixedLayout(width: 400.0, height: 300.0)
 ) {
     AboutView()
-        .modelContainer(previewContainer)
 }
 #endif

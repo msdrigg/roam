@@ -39,6 +39,5 @@ extension LabelStyle where Self == BadgeLabelStyle {
     Label(String("Test Badge!"), systemImage: "keyboard")
         .padding()
         .labelStyle(.badge(Color.green))
-        .modelContainer(previewContainer)
 }
 #endif

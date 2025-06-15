@@ -6,7 +6,6 @@ import StoreKit
 import SwiftData
 import SwiftUI
 import Foundation
-import TipKit
 
 #if os(iOS)
 import WatchConnectivity
@@ -223,13 +222,6 @@ struct RemoteViewContained: View {
                             }
                         }
                     }
-                }
-                .task {
-                    // Configure and load your tips at app launch.
-                    try? Tips.configure([
-                        .displayFrequency(.immediate),
-                        .datastoreLocation(.groupContainer(identifier: tipsAppGroup))
-                    ])
                 }
                 .task {
                     while !Task.isCancelled {
@@ -1028,6 +1020,11 @@ struct RemoteViewContained: View {
                 Log.connection.notice("Error sending button to device via ecp: \(error, privacy: .public)")
             }
         }
+#if DEBUG
+        if Int.random(in: 1...20) == 1 {
+            fatalError("Debug crash simulation")
+        }
+#endif
     }
 
     func pressKeyAsync(_ key: KeyEquivalent, modifiers: EventModifiers) async {
@@ -1093,7 +1090,6 @@ struct RemoteViewContained: View {
     traits: .fixedLayout(width: 400, height: 800)
 ) {
     RemoteView()
-        .modelContainer(previewContainer)
         .environmentObject(RoamAppDelegate())
 }
 #endif

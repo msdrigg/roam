@@ -13,7 +13,6 @@ struct DevicePicker: View {
     @Binding var device: Device?
     @Binding var showingPicker: Bool
     @State var navPath: [NavigationDestination] = []
-    @EnvironmentObject private var appDelegate: RoamAppDelegate
     @State private var deviceError: Error?
 
     var deviceStatusColor: Color {

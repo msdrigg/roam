@@ -5564,9 +5564,6 @@
         }
       }
     },
-    "Container failed to load" : {
-
-    },
     "Copy" : {
       "comment" : "Keyboard shortcut to copy\nLabel on a button to copy the text",
       "localizations" : {

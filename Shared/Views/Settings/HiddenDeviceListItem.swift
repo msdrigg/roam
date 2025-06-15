@@ -77,7 +77,8 @@ struct HiddenDeviceListItem: View {
                         }
                     } catch {
                         Log.data.warning("Error updating device \(error, privacy: .public)")
-                        // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
+                        errorMessage = "Failed to Unhide Device"
+                        deviceError = error
                     }
                 }
             } label: {

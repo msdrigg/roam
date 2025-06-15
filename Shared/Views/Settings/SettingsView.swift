@@ -419,6 +419,5 @@ struct MacSettings: View {
 ) {
     @Previewable @State var path: [NavigationDestination] = []
     return SettingsView(path: $path, destination: .global)
-        .modelContainer(previewContainer)
 }
 #endif

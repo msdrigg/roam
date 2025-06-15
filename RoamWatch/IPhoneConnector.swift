@@ -67,7 +67,7 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
                                 let formatter = ISO8601DateFormatter()
                                 return formatter.date(from: $0)
                             }
-                            await dataHandler.updateDevice(
+                            try? await dataHandler.updateDevice(
                                 existingDevice.modelId,
                                 name: name,
                                 location: location,
@@ -83,7 +83,7 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
                             return formatter.date(from: $0)
                         }
                         let name = device.value["name"] ?? getGlobalNewDeviceName()
-                        await dataHandler.addDeviceIndistriminantly(
+                        _ = try? await dataHandler.addDeviceIndistriminantly(
                             location: location,
                             friendlyDeviceName: name,
                             udn: udn,
