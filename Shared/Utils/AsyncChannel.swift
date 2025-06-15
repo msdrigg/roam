@@ -46,11 +46,11 @@ public final class Channel<T: Sendable>: @unchecked Sendable {
 
 extension Channel: AsyncSequence, AsyncIteratorProtocol {
     public typealias Element = T
-    
+
     public func makeAsyncIterator() -> Channel {
         return self
     }
-    
+
     public func next() async -> T? {
         return await self.receive()
     }
@@ -81,12 +81,12 @@ func toValue<T: Sendable>(_ ptr: UnsafeRawPointer?) -> T? {
     guard let ptr = ptr else {
         return nil
     }
-    
+
     // Handle arc managed pointer types
     if T.self is AnyObject.Type {
         return Unmanaged<AnyObject>.fromOpaque(ptr).takeRetainedValue() as? T
     }
-    
+
     // Handle struct/value types
     let pt = UnsafeMutablePointer<T>(mutating: ptr.assumingMemoryBound(to: T.self))
     defer {
@@ -110,7 +110,7 @@ final class ChannelInternal: @unchecked Sendable {
         self.capacity = capacity
         self.buffer = LinkedList()
     }
-    
+
     var isClosed: Bool {
         mutex.lock()
         defer { mutex.unlock() }
@@ -123,7 +123,7 @@ final class ChannelInternal: @unchecked Sendable {
             mutex.unlock()
             throw ChannelError.closed
         }
-        
+
         if !recvQueue.isEmpty {
             let r = recvQueue.removeFirst()!
             mutex.unlock()
@@ -137,25 +137,25 @@ final class ChannelInternal: @unchecked Sendable {
             mutex.unlock()
             return true
         }
-        
+
         return false
     }
-    
+
     @inline(__always)
     @usableFromInline
     func send(_ p: UnsafeRawPointer) async throws {
         mutex.lock()
-        
+
         if try nonBlockingSend(p) {
             return
         }
-        
+
         await withUnsafeContinuation { continuation in
             sendQueue.append((p, continuation))
             mutex.unlock()
         }
     }
-    
+
     @inline(__always)
     @usableFromInline
     func syncSend(_ p: UnsafeRawPointer) throws -> Bool {
@@ -166,7 +166,7 @@ final class ChannelInternal: @unchecked Sendable {
         mutex.unlock()
         return false
     }
-    
+
     @inline(__always)
     @usableFromInline
     func nonBlockingReceive() -> UnsafeRawPointer? {
@@ -180,10 +180,10 @@ final class ChannelInternal: @unchecked Sendable {
                 return nil
             }
         }
-        
+
         let p = buffer.removeFirst()
         bufferCount -= 1
-        
+
         if !sendQueue.isEmpty {
             let (value, continuation) = sendQueue.removeFirst()!
             buffer.append(value)
@@ -204,19 +204,19 @@ final class ChannelInternal: @unchecked Sendable {
         if let p = nonBlockingReceive() {
             return p
         }
-        
+
         if closed {
             mutex.unlock()
             return nil
         }
-        
+
         let p = await withUnsafeContinuation { continuation in
             recvQueue.append(continuation)
             mutex.unlock()
         }
         return p
     }
-    
+
     @inline(__always)
     @usableFromInline
     func syncReceive() -> UnsafeRawPointer? {
@@ -227,13 +227,13 @@ final class ChannelInternal: @unchecked Sendable {
         mutex.unlock()
         return nil
     }
-    
+
     @inline(__always)
     func close() {
         mutex.lock()
         defer { mutex.unlock() }
         closed = true
-        
+
         while let recvW = recvQueue.removeFirst() {
             recvW.resume(returning: nil)
         }

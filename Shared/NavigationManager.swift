@@ -14,21 +14,9 @@ final class NavigationManager {
     var messagingWindowOpenTrigger: UUID?
     var focusedWindow: WindowDestination?
     var showAddDevice: Bool = false
-    private var showingError: Error?
-    private var showingErrorMessage: String?
 
     var last: NavigationDestination? {
         navigationPath.last
-    }
-
-    var displayedErrorMessage: String? {
-        // TODO: THIS
-        return nil
-    }
-
-    var displayedRecoverysuggestion: String? {
-        // TODO: THIS
-        return nil
     }
 
     func showingAddDevice(for focusedWindow: WindowDestination) -> Binding<Bool> {
@@ -41,15 +29,5 @@ final class NavigationManager {
 
     func append(_ destination: NavigationDestination) {
         navigationPath.append(destination)
-    }
-
-    func showError(_ message: String, error: Error) {
-        self.showingErrorMessage = message
-        self.showingError = error
-    }
-
-    func clearError() {
-        self.showingError = nil
-        self.showingErrorMessage = nil
     }
 }

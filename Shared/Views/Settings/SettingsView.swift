@@ -69,6 +69,7 @@ struct SettingsView: View {
     @AppStorage(UserDefaultKeys.userMajorActionCount) private var majorActionsCount: Int = 0
 
     @State private var variableColor: CGFloat = 0.0
+    @State private var deviceError: Error?
 
     #if !os(watchOS)
     func initiateScan() {
@@ -148,7 +149,7 @@ struct SettingsView: View {
                         DeviceListItem(device: device, idx: idx)
                     }
                     .onDelete { indexSet in
-                        // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
+                        // TODO: Move this into some async-compatible iterator so cancel if one fails
                         for index in indexSet {
                             if let model = devices[safe: index] {
                                 let pid = model.persistentModelID
@@ -160,6 +161,7 @@ struct SettingsView: View {
                                         }
                                     } catch {
                                         Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
+                                        deviceError = error
                                     }
                                 }
                             }
@@ -325,7 +327,7 @@ struct SettingsView: View {
                                 HiddenDeviceListItem(device: device)
                             }
                             .onDelete { indexSet in
-                                // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
+                                // TODO: Move this into some async-compatible iterator so cancel if one fails
                                 for index in indexSet {
                                     if let model = devices[safe: index] {
                                         let pid = model.persistentModelID
@@ -337,6 +339,7 @@ struct SettingsView: View {
                                                 }
                                             } catch {
                                                 Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
+                                                deviceError = error
                                             }
                                         }
                                     }
@@ -381,6 +384,7 @@ struct SettingsView: View {
         .navigationTitle(String(localized: "Settings", comment: "Navigation title on the settings page"))
 #endif
         .formStyle(.grouped)
+        .alertingError(message: "Failed to Delete Device", error: $deviceError)
     }
 
     @ViewBuilder

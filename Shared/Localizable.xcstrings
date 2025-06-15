@@ -6974,6 +6974,9 @@
         }
       }
     },
+    "Error saving data. Cannot update device that is deleted." : {
+
+    },
     "Error saving data. No disk storage left." : {
       "localizations" : {
         "ar" : {
@@ -7301,6 +7304,9 @@
           }
         }
       }
+    },
+    "Failed to save device" : {
+      "comment" : "Error when saving device fails"
     },
     "Failed to send data" : {
       "localizations" : {
@@ -11616,6 +11622,7 @@
     },
     "Make sure you are connected to a WiFi network and try agai" : {
       "comment" : "Recovery suggestion for network error",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -11696,6 +11703,9 @@
           }
         }
       }
+    },
+    "Make sure you are connected to a WiFi network and try again" : {
+      "comment" : "Recovery suggestion for network error"
     },
     "Manually Adding TVs" : {
       "localizations" : {
@@ -13682,6 +13692,9 @@
         }
       }
     },
+    "OK" : {
+
+    },
     "Open" : {
       "comment" : "Siri shortcut to open a device",
       "localizations" : {
@@ -14921,6 +14934,9 @@
         }
       }
     },
+    "Please make sure the device you are updating has been added." : {
+
+    },
     "Please re-open the app and try again." : {
       "localizations" : {
         "ar" : {
@@ -15002,6 +15018,9 @@
           }
         }
       }
+    },
+    "Please try saving the device again" : {
+      "comment" : "Recovery suggestion for save device error"
     },
     "Power" : {
       "comment" : "Keyboard shortcut to power on/off the TV\nSiri shortcut to power on/off the device",

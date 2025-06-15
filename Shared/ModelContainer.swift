@@ -21,7 +21,6 @@ public typealias ModelContainerResult = Result<ModelContainer, ModelContainerFai
 
 @MainActor
 public func getModelContainerFailureReason() -> ModelContainerFailureReason {
-    // TODO: Get a real result here :)
     return .unknown
 }
 
@@ -82,7 +81,6 @@ private func getModelContainerOrFailure() -> Result<ModelContainer, ModelContain
 
 @MainActor
 private func _getSharedModelContainer() -> Result<ModelContainer, ModelContainerFailureReason> {
-    // TODO: Attempt to resolve .schemaMigrationImpossible errors by wiping all data and re-trying *ONCE*
     let schema = Schema(
         versionedSchema: SchemaV5.self
     )

@@ -15,19 +15,17 @@ actor DeviceDiscoveryActor {
     }
 
     #if !os(watchOS)
-    @discardableResult
-    func addDevice(location: String, serial: String?) async -> Bool {
+    func addDevice(location: String, serial: String?) async throws {
         guard URL(string: location) != nil else {
             Log.scanning.error("Not adding device with location \(location, privacy: .public) b/c it's not a valid url")
-            return false
+            throw APIError.badURLError(location)
         }
         Log.scanning.notice("Trying to add device with location \(location, privacy: .public)")
 
-        if await dataHandler.addOrReplaceDevice(location: location, serial: serial) != nil {
-            Log.scanning.notice("Saved new device \(location, privacy: .public), \(location, privacy: .public)")
-            return true
-        } else {
-            return false
+        do {
+            try await dataHandler.addOrReplaceDevice(location: location, serial: serial)
+        } catch {
+            Log.scanning.notice("Failed to add scanned device \(error, privacy: .public)")
         }
     }
 
@@ -73,7 +71,9 @@ actor DeviceDiscoveryActor {
 
         for await location in output {
             if let location {
-                await self.addDevice(location: location, serial: nil)
+                do {
+                    try await self.addDevice(location: location, serial: nil)
+                } catch {}
             }
         }
 
@@ -108,7 +108,9 @@ actor DeviceDiscoveryActor {
                                 Log.scanning.notice("Found SSDP service at \(device.location ?? "--", privacy: .public)")
                                 if let location = device.location {
                                     taskGroup.addTask {
-                                        await self.addDevice(location: location, serial: device.uniqueServiceName?.stripPrefix("uuid:").stripPrefix("roku:ecp:"))
+                                        do {
+                                            try await self.addDevice(location: location, serial: device.uniqueServiceName?.stripPrefix("uuid:").stripPrefix("roku:ecp:"))
+                                        } catch {}
                                     }
                                 }
                             }

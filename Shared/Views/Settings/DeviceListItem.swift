@@ -5,6 +5,7 @@ struct DeviceListItem: View {
     var idx: Int
 
     @Environment(\.uuidUpdater) private var updater
+    @State private var deviceError: Error?
 
     var body: some View {
         NavigationLink(value: NavigationDestination.deviceSettingsDestination(device.persistentModelID)) {
@@ -50,7 +51,6 @@ struct DeviceListItem: View {
                 let pid = device.persistentModelID
                 Task {
                     do {
-                        // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
                         try await RoamDataHandler().delete(pid)
                         Log.userInteraction
                             .notice(
@@ -61,6 +61,7 @@ struct DeviceListItem: View {
                         }
                     } catch {
                         Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
+                        deviceError = error
                     }
                 }
             } label: {
@@ -71,6 +72,7 @@ struct DeviceListItem: View {
             }
         }
 #endif
+        .alertingError(message: "Failed to Delete Device", error: $deviceError)
     }
 }
 

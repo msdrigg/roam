@@ -273,11 +273,16 @@ struct AddDeviceFlow: View {
 
                 do {
                     let preConnectInfo = try await fetchPreconnectionInfo(location: location)
-                    await completeConnection(preConnectInfo: preConnectInfo, location: location)
-                    await MainActor.run {
-                        withAnimation {
-                            connectionStatus = .success
+                    do {
+                        try await addDevice(preConnectInfo: preConnectInfo, location: location)
+                        await MainActor.run {
+                            withAnimation {
+                                connectionStatus = .success
+                            }
                         }
+                    } catch let error as LocalizedError {
+                        Log.data.warning("Error adding the device: \(error, privacy: .public)")
+                        throw AddDeviceError.saveDeviceError(error)
                     }
                 } catch {
                     Log.connection.warning("Error connecting to \(location, privacy: .public), \(error, privacy: .public)")
@@ -306,11 +311,10 @@ struct AddDeviceFlow: View {
         }
     }
 
-    private func completeConnection(preConnectInfo: PreconnectionDeviceInfo, location: String) async {
-        // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
+    private func addDevice(preConnectInfo: PreconnectionDeviceInfo, location: String) async throws {
         let dataHandler = RoamDataHandler()
 
-        let device = await dataHandler.addDeviceIndistriminantly(
+        let device = try await dataHandler.addDeviceIndistriminantly(
             location: location,
             friendlyDeviceName: preConnectInfo.friendlyName,
             udn: preConnectInfo.udn,
@@ -318,9 +322,7 @@ struct AddDeviceFlow: View {
             hidden: false
         )
 
-        if let deviceId = device {
-            await dataHandler.setSelectedDevice(deviceId)
-        }
+        try await dataHandler.setSelectedDevice(device)
     }
 
     func submit() {
@@ -347,6 +349,7 @@ enum AddDeviceError: Error {
     case invalidIPAddress
     case deviceNotFound
     case networkError
+    case saveDeviceError(LocalizedError)
     case unknown(String)
 }
 
@@ -359,6 +362,8 @@ extension AddDeviceError: LocalizedError {
             return String(localized: "Device not found at the specified IP address", comment: "Error when device not found")
         case .networkError:
             return String(localized: "No WiFi network connection", comment: "Network error with message")
+        case .saveDeviceError(let error):
+            return error.errorDescription ?? String(localized: "Failed to save device", comment: "Error when saving device fails")
         case .unknown(let message):
             return String(localized: "An unknown error occurred: \(message)", comment: "Unknown error with message")
         }
@@ -374,13 +379,14 @@ extension AddDeviceError: LocalizedError {
                 comment: "Recovery suggestion for device not found"
             )
         case .networkError:
-            return String(localized: "Make sure you are connected to a WiFi network and try agai", comment: "Recovery suggestion for network error")
+            return String(localized: "Make sure you are connected to a WiFi network and try again", comment: "Recovery suggestion for network error")
+        case .saveDeviceError(let error):
+            return error.recoverySuggestion ?? String(localized: "Please try saving the device again", comment: "Recovery suggestion for save device error")
         case .unknown:
             return String(localized: "Try again later or contact support", comment: "Recovery suggestion for unknown error")
         }
     }
 }
-
 #Preview("Add Device") {
     Text("Hello world!")
         .sheet(isPresented: Binding(

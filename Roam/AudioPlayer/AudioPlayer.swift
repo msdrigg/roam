@@ -83,7 +83,7 @@ actor OpusDecoderWithJitterBuffer {
         }
     }
 
-    func nextPacket(atTime _: sending AVAudioTime) -> (AVAudioPCMBuffer, AVAudioTime)? {
+    func nextPacket(atTime _: sending AVAudioTime) -> sending (AVAudioPCMBuffer, AVAudioTime)? {
         guard let lastSampleTime else {
             Log.headphones.notice("Not returning packet because not synced yet")
             return nil
@@ -292,7 +292,7 @@ actor AudioPlayer {
         )!
 
         var error: NSError?
-        converter.convert(to: outputBuffer, error: &error) { _, outStatus in
+        converter.convert(to: outputBuffer, error: &error) { [buffer] _, outStatus in
             outStatus.pointee = .haveData
             return buffer
         }
@@ -351,3 +351,4 @@ extension AVAudioTime {
         return machTimeInSeconds
     }
 }
+

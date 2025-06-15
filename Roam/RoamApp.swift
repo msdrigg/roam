@@ -125,7 +125,7 @@ struct RoamApp: App {
                             Text("About Roam", comment: "Button to open the about page of the Roam app")
                         })
                     }
-                    
+
                     if appDelegate.navigationPath.focusedWindow == .remote {
                         CommandGroup(replacing: CommandGroupPlacement.pasteboard) {
                             PasteButton(payloadType: String.self, onPaste: { item in
@@ -136,7 +136,7 @@ struct RoamApp: App {
                                     }
                                     guard let texteditId = appDelegate.ecpMonitor.textEditStatus.texteditId else {
                                         Log.lifecycle.notice("Failed to paste because no textedit id")
-                                        
+
                                         if let (app, params) = parsePastedUrl(first) {
                                             do {
                                                 try await appDelegate.ecpMonitor.ecpClient?.launchApp(app, params: params)
@@ -144,10 +144,10 @@ struct RoamApp: App {
                                                 Log.lifecycle.error("Error opening app from url app=\(app, privacy: .public) params=\(params, privacy: .public): \(error, privacy: .public)")
                                             }
                                         }
-                                        
+
                                         return
                                     }
-                                    
+
                                     do {
                                         try await appDelegate.ecpMonitor.ecpClient?.setTextEdit(first, texteditId: texteditId)
                                     } catch {
@@ -156,20 +156,20 @@ struct RoamApp: App {
                                 }
                             })
                             .customKeyboardShortcut(.paste)
-                            
+
                             Button("Cut", systemImage: "clipboard", action: {
                                 Task {
                                     guard let texteditId = appDelegate.ecpMonitor.textEditStatus.texteditId else {
                                         Log.lifecycle.notice("Failed to paste because no textedit id")
                                         return
                                     }
-                                    
+
                                     if let texteditText = appDelegate.ecpMonitor.textEditStatus.text {
                                         Log.lifecycle.notice("Cutting text \(texteditText, privacy: .public)")
                                         NSPasteboard.general.clearContents()
                                         NSPasteboard.general.setString(texteditText, forType: .string)
                                     }
-                                    
+
                                     do {
                                         try await appDelegate.ecpMonitor.ecpClient?.setTextEdit("", texteditId: texteditId)
                                     } catch {
@@ -179,7 +179,7 @@ struct RoamApp: App {
                             })
                             .customKeyboardShortcut(.cut)
                             .disabled(appDelegate.ecpMonitor.textEditStatus.texteditId == nil)
-                            
+
                             Button("Copy", systemImage: "clipboard", action: {
                                 Task {
                                     if let texteditText = appDelegate.ecpMonitor.textEditStatus.text {
@@ -193,7 +193,7 @@ struct RoamApp: App {
                             .disabled(appDelegate.ecpMonitor.textEditStatus.texteditId == nil)
                         }
                     }
-                    
+
                     if appDelegate.navigationPath.focusedWindow == .settings || appDelegate.navigationPath.focusedWindow == .remote {
                         CommandGroup(after: .appSettings) {
                             Divider()
@@ -203,7 +203,7 @@ struct RoamApp: App {
                             .customKeyboardShortcut(.addDevice)
                         }
                     }
-                    
+
                     if appDelegate.navigationPath.focusedWindow == .messages {
                         CommandGroup(after: .appSettings) {
                             Divider()
@@ -212,12 +212,12 @@ struct RoamApp: App {
                             }
                         }
                     }
-                    
+
                     CommandGroup(replacing: .help) {
                         Button("Roam Help", systemImage: "info.circle") {
                             openURL(URL(string: "https://roam.msd3.io/")!)
                         }
-                        
+
                         Button("Chat with the Developer", systemImage: "message") {
                             openWindow(id: "messages")
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {

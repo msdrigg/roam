@@ -21,7 +21,7 @@ public struct AsyncLock: Sendable {
 
         func lock() async throws {
             try Task.checkCancellation()
-            
+
             lock.lock()
             if !isLocked {
                 isLocked = true
@@ -82,8 +82,6 @@ public struct AsyncLock: Sendable {
         return try await operation()
     }
 }
-
-
 
 func processConcurrently<T: Sendable, U: Sendable>(
     items: [T],
@@ -187,8 +185,8 @@ final class LinkedList<T: Sendable> {
     }
 }
 
-/// MARK: FastLock
-/// See https://github.com/gh123man/Async-Channels for source
+// MARK: FastLock
+// See https://github.com/gh123man/Async-Channels for source
 #if canImport(Darwin)
 class FastLock {
     let unfairLock = {
@@ -196,7 +194,7 @@ class FastLock {
         l.initialize(to: os_unfair_lock())
         return l
     }()
-    
+
     deinit {
         unfairLock.deinitialize(count: 1)
         unfairLock.deallocate()
@@ -207,7 +205,7 @@ class FastLock {
     func lock() {
         os_unfair_lock_lock(unfairLock)
     }
-   
+
     @inlinable
     @inline(__always)
     func unlock() {

@@ -30,7 +30,7 @@ final class RoamMetricManager: NSObject, MXMetricManagerSubscriber, Sendable {
             do {
                 let hash = fastHashData(data: diagnosticsJSON)
                 let upload = AttachmentUpload(filename: "MetricDiagnostics-\(idx).json", dataHash: hash, dataSize: Int64(diagnosticsJSON.count), contentType: "application/json", id: UUID().uuidString)
-                let result = try await sendMessageDirect(message: ":ninja: Diagnostics Reported", attachment: upload, attachmentData: diagnosticsJSON).get()
+                _ = try await sendMessageDirect(message: ":ninja: Diagnostics Reported", attachment: upload, attachmentData: diagnosticsJSON).get()
                 Log.backend.notice("Send diagnostics successfully")
             } catch {
                 Log.backend.notice("Failed to send diagnostics: \(error, privacy: .public)")
@@ -38,10 +38,10 @@ final class RoamMetricManager: NSObject, MXMetricManagerSubscriber, Sendable {
         }
         // Reporting diagnostics as well
         let logs = await getDebugInfo()
-        
+
         if let data = trimmedDebugInfoIfNeeded(logs) {
             let hash = fastHashData(data: data)
-            
+
             let upload = AttachmentUpload(
                 filename: "MetricDiagnostics-Extra.json",
                 dataHash: hash,
@@ -51,7 +51,7 @@ final class RoamMetricManager: NSObject, MXMetricManagerSubscriber, Sendable {
                 pairedMessages: [DiagnosticsImport.getDebugLogMessageString(logs)]
             )
             do {
-                let result = try await sendMessageDirect(message: ":ninja: Diagnostics Reported", attachment: upload, attachmentData: data).get()
+                _ = try await sendMessageDirect(message: ":ninja: Diagnostics Reported", attachment: upload, attachmentData: data).get()
                 Log.backend.notice("Send extra diagnostics successfully")
             } catch {
                 Log.backend.notice("Failed to send extra diagnostics: \(error, privacy: .public)")

@@ -39,20 +39,6 @@ public actor RoamDataHandler {
         return links
     }
 
-    func setSelectedApp(_ appId: PersistentIdentifier) async {
-        Log.data.notice("Updating selectedAt for app with id \(appId.described(), privacy: .public)")
-
-        if let appLink = await self.existingApp(for: appId) {
-            Log.data.notice("Setting appId selected to now")
-            appLink.lastSelected = Date.now
-            do {
-                try await self.saveSafer()
-            } catch {
-                Log.data.error("Error marking app as selected \(appLink.id, privacy: .public)")
-            }
-        }
-    }
-
     func setSelectedDevice(_ id: PersistentIdentifier) async throws {
         Log.data.notice("Updating selectedAt for device with id \(String(describing: id), privacy: .public)")
         if let device = await self.existingDevice(for: id) {
@@ -67,7 +53,7 @@ public actor RoamDataHandler {
         }
     }
 
-    func updateDevice(_ id: PersistentIdentifier, name: String? = nil, location: String? = nil, hidden: Bool? = nil) async {
+    func updateDevice(_ id: PersistentIdentifier, name: String? = nil, location: String? = nil, hidden: Bool? = nil) async throws {
         Log.data.notice("Updating device at \(id.described(), privacy: .public)")
         if let device = await self.existingDevice(for: id) {
             Log.data.notice("Found device to update with id \(id.described(), privacy: .public))")
@@ -90,12 +76,14 @@ public actor RoamDataHandler {
             } catch {
                 Log.data.warning("Error updating device at location \(device.location, privacy: .public)")
             }
+        } else {
+            throw DataHandlerError.deviceNotFound
         }
         Log.data.notice("Updated device at \(id.described(), privacy: .public)")
     }
 
     @discardableResult
-    func addDeviceIndistriminantly(location: String, friendlyDeviceName: String, udn: String, serial: String, hidden: Bool) async -> PersistentIdentifier? {
+    func addDeviceIndistriminantly(location: String, friendlyDeviceName: String, udn: String, serial: String, hidden: Bool) async throws -> PersistentIdentifier {
         if let device = await deviceForUdn(udn: udn) {
             device.location = location
             device.name = friendlyDeviceName
@@ -104,6 +92,7 @@ public actor RoamDataHandler {
                 try await self.saveSafer()
             } catch {
                 Log.data.warning("Error updating device fields \(error, privacy: .public)")
+                throw error
             }
             return device.persistentModelID
         } else {
@@ -123,7 +112,7 @@ public actor RoamDataHandler {
                 return device.persistentModelID
             } catch {
                 Log.data.warning("Error adding device at \(location, privacy: .public), \(error, privacy: .public)")
-                return nil
+                throw error
             }
         }
     }
@@ -488,6 +477,7 @@ enum DataHandlerError: Error, LocalizedError {
     case suspending
     case noSpaceOnDisk
     case noContainerURL
+    case deviceNotFound
 
     var errorDescription: String {
         switch self {
@@ -497,6 +487,8 @@ enum DataHandlerError: Error, LocalizedError {
             return String(localized: "Error saving data. No disk storage left.")
         case .suspending:
             return String(localized: "Error saving data. App currently shutting down.")
+        case .deviceNotFound:
+            return String(localized: "Error saving data. Cannot update device that is deleted.")
         }
     }
 
@@ -508,6 +500,8 @@ enum DataHandlerError: Error, LocalizedError {
             return String(localized: "Please delete some files to clear up some space and try again.")
         case .suspending:
             return String(localized: "Please re-open the app and try again.")
+        case .deviceNotFound:
+            return String(localized: "Please make sure the device you are updating has been added.")
         }
     }
 }

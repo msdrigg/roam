@@ -472,8 +472,7 @@ func compressPNGOffthread(image: UnifiedImage, maxFileSize: Int = 9 * 1024 * 102
         return nil
     }
     return await withCheckedContinuation { continuation in
-        // TODO: Stop with the global queue
-        DispatchQueue.global(qos: .userInitiated).async {
+        DispatchQueue.computation.async {
             let compressedData = compressPNG(image: data, maxFileSize: maxFileSize)
             continuation.resume(returning: compressedData)
         }
@@ -705,16 +704,22 @@ public func loggedFatalError(_ message: @autoclosure () -> String = String(), fi
         let group = DispatchGroup()
         group.enter()
 
-        var didComplete = false
+        let didCompleteLock = OSAllocatedUnfairLock(initialState: false)
 
         Task {
             await sendBackendError(message, file: file, line: line)
 
-            didComplete = true
+            didCompleteLock.withLock { lock in
+                lock = true
+            }
             group.leave()
         }
 
         _ = group.wait(timeout: .now() + 15.0)
+
+        let didComplete = didCompleteLock.withLock { lock in
+            return lock
+        }
 
         if didComplete {
             Log.lifecycle.warning("Error logged to backend before fatal error: \(message, privacy: .public)")

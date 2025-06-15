@@ -4,6 +4,7 @@ struct RemoteView: View {
     @Environment(\.openWindow) var openWindow
 
     @EnvironmentObject private var appDelegate: RoamAppDelegate
+    @State private var deviceError: Error?
 
     private var runningInPreview: Bool {
         ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
@@ -32,6 +33,7 @@ struct RemoteView: View {
                     }
                 #endif
             }
+            .alertingError(message: "Failed to Add Device", error: $deviceError)
         }
     }
 
@@ -80,7 +82,7 @@ struct RemoteView: View {
                     try await dh.setSelectedDevice(pid)
                 } catch {
                     Log.data.error("Error adding device")
-                    appDelegate.navigationPath.showError("Error adding device", error: error)
+                    deviceError = error
                 }
             }
         }

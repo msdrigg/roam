@@ -265,7 +265,7 @@ enum SpaceAvailability: Encodable, Sendable {
 }
 
 func getAvailableSpaceOnDevice() -> SpaceAvailability {
-    let fileURL = URL(fileURLWithPath:"/")
+    let fileURL = URL(fileURLWithPath: "/")
     do {
         let values = try fileURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
         if let capacity = values.volumeAvailableCapacityForImportantUsage {

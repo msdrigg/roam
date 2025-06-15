@@ -24,6 +24,7 @@ struct DevicePicker: View {
 
     let timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
     @State private var currentDate: Date = .now
+    @State private var deviceError: Error?
 
     var deviceStatusColor: Color {
         if inScreenshotTestingContext() {
@@ -84,9 +85,12 @@ struct DevicePicker: View {
                         device.wrappedValue = $0
                         if let pid = $0?.persistentModelID {
                             Task {
-                                try? await Task.sleep(duration: 0.5)
-                                // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
-                                await RoamDataHandler().setSelectedDevice(pid)
+                                do {
+                                    try await RoamDataHandler().setSelectedDevice(pid)
+                                } catch {
+                                    Log.userInteraction.error("Error setting selected device \(error, privacy: .public)")
+                                    deviceError = error
+                                }
                             }
                         }
                     }
@@ -172,6 +176,7 @@ struct DevicePicker: View {
             currentDate = .now
         }
         .id(updater?.uuid.uuidString ?? "--")
+        .alertingError(message: "Failed to Select Device", error: $deviceError)
     }
 }
 

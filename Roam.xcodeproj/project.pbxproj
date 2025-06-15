@@ -75,6 +75,11 @@
 		AF20AD0D2AE01E9100D371C7 /* Device.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF11D36C2AD2D41100527AF6 /* Device.swift */; };
 		AF20AD142AE01ED100D371C7 /* NetworkHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF95B74F2ADF43FD005FC338 /* NetworkHelpers.swift */; };
 		AF20AD172AE01EDB00D371C7 /* RemoteButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E68B2ADDDF450036EC90 /* RemoteButton.swift */; };
+		AF21300C2DFF35E300B3F2D6 /* DispatchQueueExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF21300B2DFF35E300B3F2D6 /* DispatchQueueExtension.swift */; };
+		AF21300D2DFF35E300B3F2D6 /* DispatchQueueExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF21300B2DFF35E300B3F2D6 /* DispatchQueueExtension.swift */; };
+		AF21300E2DFF35E300B3F2D6 /* DispatchQueueExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF21300B2DFF35E300B3F2D6 /* DispatchQueueExtension.swift */; };
+		AF21300F2DFF35EC00B3F2D6 /* DispatchQueueExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF21300B2DFF35E300B3F2D6 /* DispatchQueueExtension.swift */; };
+		AF2130102DFF35F300B3F2D6 /* DispatchQueueExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF21300B2DFF35E300B3F2D6 /* DispatchQueueExtension.swift */; };
 		AF2480582BDB42F600EF47AE /* TestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2480572BDB42F600EF47AE /* TestData.swift */; };
 		AF2480592BDB42F600EF47AE /* TestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2480572BDB42F600EF47AE /* TestData.swift */; };
 		AF24805A2BDB42F600EF47AE /* TestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2480572BDB42F600EF47AE /* TestData.swift */; };
@@ -195,6 +200,9 @@
 		AF94AEF42C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AF94AEF22C0BEA8200D8D7CF /* Localizable.xcstrings */; };
 		AF94AEF52C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AF94AEF22C0BEA8200D8D7CF /* Localizable.xcstrings */; };
 		AF95B76F2ADF5BA1005FC338 /* AppLinksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF11D36A2AD2D0B800527AF6 /* AppLinksView.swift */; };
+		AF9A00612DFF4705000F764F /* ErrorAlertingModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF9A00602DFF4705000F764F /* ErrorAlertingModifier.swift */; };
+		AF9A00622DFF4705000F764F /* ErrorAlertingModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF9A00602DFF4705000F764F /* ErrorAlertingModifier.swift */; };
+		AF9A00632DFF4705000F764F /* ErrorAlertingModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF9A00602DFF4705000F764F /* ErrorAlertingModifier.swift */; };
 		AF9DE5672D553DE300C50894 /* SelectedAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF9DE5662D553DDE00C50894 /* SelectedAttachment.swift */; };
 		AFA079DA2AE02561003E2754 /* DeviceAppEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6872ADDDE110036EC90 /* DeviceAppEntity.swift */; };
 		AFA079DB2AE02561003E2754 /* ButtonPressIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6862ADDDE110036EC90 /* ButtonPressIntents.swift */; };
@@ -438,6 +446,7 @@
 		AF19CA3B2AE6BFC300A42DFF /* DeviceApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceApi.swift; sourceTree = "<group>"; };
 		AF1C74832CE035440061E9F8 /* NetworkPermissionsCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkPermissionsCheck.swift; sourceTree = "<group>"; };
 		AF20ACFB2AE017B600D371C7 /* RemoteButtonAppEnum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteButtonAppEnum.swift; sourceTree = "<group>"; };
+		AF21300B2DFF35E300B3F2D6 /* DispatchQueueExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchQueueExtension.swift; sourceTree = "<group>"; };
 		AF2480572BDB42F600EF47AE /* TestData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestData.swift; sourceTree = "<group>"; };
 		AF24805C2BDB475A00EF47AE /* DebugImages.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = DebugImages.xcassets; sourceTree = "<group>"; };
 		AF2480642BDB4D9F00EF47AE /* RoamWatchRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RoamWatchRelease.entitlements; sourceTree = "<group>"; };
@@ -513,6 +522,7 @@
 		AF95B71D2ADF3BA7005FC338 /* MediumRemoteWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediumRemoteWidget.swift; sourceTree = "<group>"; };
 		AF95B74F2ADF43FD005FC338 /* NetworkHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkHelpers.swift; sourceTree = "<group>"; };
 		AF95B7532ADF4435005FC338 /* DiscoveryActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryActor.swift; sourceTree = "<group>"; };
+		AF9A00602DFF4705000F764F /* ErrorAlertingModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorAlertingModifier.swift; sourceTree = "<group>"; };
 		AF9DE5662D553DDE00C50894 /* SelectedAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedAttachment.swift; sourceTree = "<group>"; };
 		AF9FC8232B9F9C9500109268 /* scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = scripts; sourceTree = "<group>"; };
 		AFA165BF2AE92F92003F45ED /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
@@ -800,11 +810,13 @@
 			children = (
 				AF5A49482DE8CF5F00385A51 /* AsyncChannel.swift */,
 				AFC6E67E2ADCE5D80036EC90 /* AsyncLock.swift */,
+				AF9A00602DFF4705000F764F /* ErrorAlertingModifier.swift */,
 				AF3BDD132DCF8F8F00DABFA6 /* XMLStreamingDecoder.swift */,
 				AFCD235D2DCBC6210000E80E /* QBackgroundExecution.swift */,
 				AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */,
 				AF468D362D333A9C00DF0F2E /* QSocket.swift */,
 				AF0D09EE2CDE5C3B0098122E /* Helpers.swift */,
+				AF21300B2DFF35E300B3F2D6 /* DispatchQueueExtension.swift */,
 				AF6E29492C1A2ACB0062DFB3 /* ViewHelpers.swift */,
 				AF19CA132AE4471200A42DFF /* AsyncHelpers.swift */,
 				AF95B74F2ADF43FD005FC338 /* NetworkHelpers.swift */,
@@ -1316,6 +1328,8 @@
 				"",
 				"",
 				"",
+				"",
+				"",
 			);
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -1341,6 +1355,7 @@
 				AF5ED8E52AE99D95007DB2B8 /* ButtonGridView.swift in Sources */,
 				AFEBD9172D5DAF7A00E840FF /* WatchOSAttachButton.swift in Sources */,
 				AF3F350B2D3E9234009AF2F8 /* ImageDecoder.swift in Sources */,
+				AF9A00632DFF4705000F764F /* ErrorAlertingModifier.swift in Sources */,
 				AF1C74872CE035480061E9F8 /* NetworkPermissionsCheck.swift in Sources */,
 				AF1899F42C1CB204001EDA78 /* NavigationManager.swift in Sources */,
 				AF6EE1C52DCD1D1C0005EE78 /* PaddedRoundedTextFieldStyle.swift in Sources */,
@@ -1386,6 +1401,7 @@
 				AFDB4FF82D53C09F004E27A4 /* SettingsView.swift in Sources */,
 				AF5ED8E32AE992D1007DB2B8 /* AppListView.swift in Sources */,
 				AFEBD9112D5D489C00E840FF /* SelectedAttachment.swift in Sources */,
+				AF21300D2DFF35E300B3F2D6 /* DispatchQueueExtension.swift in Sources */,
 				AFD9C4EB2AE980BD00C4079C /* AsyncHelpers.swift in Sources */,
 				AFD9C4FC2AE983C700C4079C /* AsyncLock.swift in Sources */,
 				AF7A6C572D762F800008DB05 /* WatchOSNote.swift in Sources */,
@@ -1420,6 +1436,7 @@
 				AF205B2A2AE02D1C00041CDF /* RemoteButtonAppEnum.swift in Sources */,
 				AF205B212AE02CAF00041CDF /* SmallRemoteWidget.swift in Sources */,
 				AF1899FD2C1CE2E5001EDA78 /* AccessoryGroupRemoteView.swift in Sources */,
+				AF9A00612DFF4705000F764F /* ErrorAlertingModifier.swift in Sources */,
 				AF2C85A42D370DAF00A167B2 /* ECPWebsocket.swift in Sources */,
 				AF205B2C2AE02D1C00041CDF /* WidgetIntents.swift in Sources */,
 				AF19CA242AE455B400A42DFF /* DataHelpers.swift in Sources */,
@@ -1436,6 +1453,7 @@
 				AF0042772AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */,
 				AFCD235E2DCBC6270000E80E /* QBackgroundExecution.swift in Sources */,
 				AFA9F8972B1B878600829B7C /* Shortcuts.swift in Sources */,
+				AF21300C2DFF35E300B3F2D6 /* DispatchQueueExtension.swift in Sources */,
 				AF736A832DCD57DD0028A2B4 /* Attachment.swift in Sources */,
 				AF6A8F942D060834004AB1D2 /* NetworkUtils.swift in Sources */,
 				AF0042872AEABA9F0051BB1E /* CollectionHelpers.swift in Sources */,
@@ -1468,6 +1486,7 @@
 				AF344FEC2D42DB6C00179FE0 /* ECPWebsocket.swift in Sources */,
 				AF344FFE2D42E9D200179FE0 /* NetworkHelpers.swift in Sources */,
 				AF344FF52D42E27000179FE0 /* StatelessDeviceAPI.swift in Sources */,
+				AF21300F2DFF35EC00B3F2D6 /* DispatchQueueExtension.swift in Sources */,
 				AF344FF62D42E28500179FE0 /* AppLinkAppEntity.swift in Sources */,
 				AF344FF42D42E24D00179FE0 /* Helpers.swift in Sources */,
 				AF344FFD2D42E76600179FE0 /* DataHelpers.swift in Sources */,
@@ -1520,6 +1539,7 @@
 				AF2C85A32D370DAF00A167B2 /* ECPWebsocket.swift in Sources */,
 				AF70BB092BA7CBC1009A06EC /* PaddedHoverButtonStyle.swift in Sources */,
 				AF6EE1C42DCD1D1C0005EE78 /* PaddedRoundedTextFieldStyle.swift in Sources */,
+				AF9A00622DFF4705000F764F /* ErrorAlertingModifier.swift in Sources */,
 				AF3AD55D2AE299BD00E2D780 /* DevicePicker.swift in Sources */,
 				AF779BF02BA4D82600231BC5 /* Badge.swift in Sources */,
 				AF736A922DCDD9250028A2B4 /* CachedAsyncImage.swift in Sources */,
@@ -1557,6 +1577,7 @@
 				AFED45F02D52BF3000FD53E2 /* MessageBubble.swift in Sources */,
 				AFED45F12D52BF3000FD53E2 /* MessagingView.swift in Sources */,
 				AFED45F22D52BF3000FD53E2 /* AttachButton.swift in Sources */,
+				AF21300E2DFF35E300B3F2D6 /* DispatchQueueExtension.swift in Sources */,
 				AF2480582BDB42F600EF47AE /* TestData.swift in Sources */,
 				AF5853932D4BCD690027C279 /* GlobalHotkey.swift in Sources */,
 				AF19CA312AE6947600A42DFF /* ManagedCriticalState.swift in Sources */,
@@ -1622,6 +1643,7 @@
 				AF3F350D2D3E99A2009AF2F8 /* ECPMessages.swift in Sources */,
 				AF3F350C2D3E98C9009AF2F8 /* ECPProtocol.swift in Sources */,
 				AFEDCDFD2CD134130001D959 /* NetworkUtils.swift in Sources */,
+				AF2130102DFF35F300B3F2D6 /* DispatchQueueExtension.swift in Sources */,
 			);
 		};
 /* End PBXSourcesBuildPhase section */

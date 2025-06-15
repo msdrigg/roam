@@ -96,8 +96,7 @@
 
         if isWebP {
             return try await withCheckedThrowingContinuation { continuation in
-                // TODO: Stop with the global queue
-                DispatchQueue.global().async {
+                DispatchQueue.computation.async {
                     do {
                         let cgImage = try decode(data)
                         let webpImage = UIImage(cgImage: cgImage)

@@ -1008,11 +1008,6 @@ struct RemoteViewContained: View {
                 Log.connection.error("Error opening app \(app.id, privacy: .public): \(error, privacy: .public)")
             }
         }
-        Task {
-            if let modelId = app.modelId {
-                await RoamDataHandler().setSelectedApp(modelId)
-            }
-        }
     }
 
     func pressButton(_ button: RemoteButton) {

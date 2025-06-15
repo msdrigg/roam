@@ -14,6 +14,7 @@ struct DevicePicker: View {
     @Binding var showingPicker: Bool
     @State var navPath: [NavigationDestination] = []
     @EnvironmentObject private var appDelegate: RoamAppDelegate
+    @State private var deviceError: Error?
 
     var deviceStatusColor: Color {
         device?.isOnline() ?? false ? Color.green : Color.secondary
@@ -56,7 +57,7 @@ struct DevicePicker: View {
                                             try await RoamDataHandler().setSelectedDevice(id)
                                         } catch {
                                             Log.connection.error("Error setting selected \(error, privacy: .public)")
-                                            // TODO: Set error here
+                                            deviceError = error
                                         }
                                     }
                                 }
@@ -77,7 +78,7 @@ struct DevicePicker: View {
                                             try await RoamDataHandler().delete(pid)
                                         } catch {
                                             Log.connection.error("Error deleting device \(error, privacy: .public)")
-                                            
+                                            deviceError = error
                                         }
                                     }
 
@@ -94,11 +95,11 @@ struct DevicePicker: View {
                                 if let model = devices[safe: index] {
                                     let pid = model.persistentModelID
                                     Task {
-                                        // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
                                         do {
                                             try await RoamDataHandler().delete(pid)
                                         } catch {
                                             Log.connection.error("Error deleting device \(error, privacy: .public)")
+                                            deviceError = error
                                         }
                                     }
                                 }
@@ -119,5 +120,6 @@ struct DevicePicker: View {
                 }
             }
         }
+        .alertingError(message: "Device Selection Failed", error: $deviceError)
     }
 }
