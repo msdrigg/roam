@@ -13,6 +13,7 @@ struct DevicePicker: View {
     @Binding var device: Device?
     @Binding var showingPicker: Bool
     @State var navPath: [NavigationDestination] = []
+    @EnvironmentObject private var appDelegate: RoamAppDelegate
 
     var deviceStatusColor: Color {
         device?.isOnline() ?? false ? Color.green : Color.secondary
@@ -51,8 +52,12 @@ struct DevicePicker: View {
                                     Log.connection.notice("Setting last selected at")
                                     let id = chosenDevice.persistentModelID
                                     Task {
-                                        // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
-                                        await RoamDataHandler().setSelectedDevice(id)
+                                        do {
+                                            try await RoamDataHandler().setSelectedDevice(id)
+                                        } catch {
+                                            Log.connection.error("Error setting selected \(error, privacy: .public)")
+                                            // TODO: Set error here
+                                        }
                                     }
                                 }
                                 showingPicker = false
@@ -68,11 +73,11 @@ struct DevicePicker: View {
                                 Button(role: .destructive) {
                                     let pid = listItemDevice.persistentModelID
                                     Task {
-                                        // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
                                         do {
                                             try await RoamDataHandler().delete(pid)
                                         } catch {
                                             Log.connection.error("Error deleting device \(error, privacy: .public)")
+                                            
                                         }
                                     }
 

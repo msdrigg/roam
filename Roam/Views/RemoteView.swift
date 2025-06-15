@@ -73,15 +73,13 @@ struct RemoteView: View {
             }
 
             Task {
-                // TODO: Make sure the save here shows an error if device save fails, and ideally show the reason
                 let dh = RoamDataHandler()
                 do {
-                    if let pid = try await dh.addOrReplaceDevice(location: location) {
-                        Log.lifecycle.notice("Added device with PID \(pid.described(), privacy: .public)")
-                        await dh.setSelectedDevice(pid)
-                    }
+                    let pid = try await dh.addOrReplaceDevice(location: location)
+                    Log.lifecycle.notice("Added device with PID \(pid.described(), privacy: .public)")
+                    try await dh.setSelectedDevice(pid)
                 } catch {
-                    Log.data.error("Error adding device: \(error)")
+                    Log.data.error("Error adding device")
                     appDelegate.navigationPath.showError("Error adding device", error: error)
                 }
             }

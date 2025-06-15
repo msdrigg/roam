@@ -53,7 +53,7 @@ public actor RoamDataHandler {
         }
     }
 
-    func setSelectedDevice(_ id: PersistentIdentifier) async {
+    func setSelectedDevice(_ id: PersistentIdentifier) async throws {
         Log.data.notice("Updating selectedAt for device with id \(String(describing: id), privacy: .public)")
         if let device = await self.existingDevice(for: id) {
             Log.data.notice("Found device to update with location \(device.location, privacy: .public)")
@@ -62,6 +62,7 @@ public actor RoamDataHandler {
                 try await self.saveSafer()
             } catch {
                 Log.data.error("Error marking device as selected \(device.location, privacy: .public)")
+                throw error
             }
         }
     }
@@ -129,13 +130,14 @@ public actor RoamDataHandler {
 
 #if !WIDGET
     @discardableResult
-    func addOrReplaceDevice(location: String, udn: String? = nil, serial: String? = nil) async -> PersistentIdentifier? {
+    func addOrReplaceDevice(location: String, udn: String? = nil, serial: String? = nil) async throws -> PersistentIdentifier {
         if let udn, let device = await deviceForUdn(udn: udn) {
             device.location = location
             do {
                 try await self.saveSafer()
             } catch {
                 Log.data.warning("Error updating device fields \(error, privacy: .public)")
+                throw error
             }
             return device.persistentModelID
         }
@@ -146,6 +148,7 @@ public actor RoamDataHandler {
                 try await self.saveSafer()
             } catch {
                 Log.data.warning("Error updating device fields \(error, privacy: .public)")
+                throw error
             }
             return device.persistentModelID
         }
@@ -167,7 +170,7 @@ public actor RoamDataHandler {
             }
         } catch {
             Log.data.warning("Trying to add device but no preconnection info available \(location, privacy: .public). Error: \(error, privacy: .public)")
-            return nil
+            throw error
         }
 
         let device: Device
@@ -217,7 +220,7 @@ public actor RoamDataHandler {
             return device.persistentModelID
         } catch {
             Log.data.warning("Error adding device at \(location, privacy: .public), \(error, privacy: .public)")
-            return nil
+            throw error
         }
     }
 
