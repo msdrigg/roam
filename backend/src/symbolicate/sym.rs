@@ -131,7 +131,7 @@ impl FileLocation for RoamFileLocation {
         if comp_dir.starts_with('/') {
             let comp_dir = comp_dir.trim_end_matches('/');
             let dwo_path = format!("{comp_dir}/{path}");
-            return Some(self.with_path(self.device_path().join(&dwo_path).into()));
+            return Some(self.with_path(self.device_path().join(&dwo_path)));
         }
         // Resolve relative paths with respect to the location of the debug file.
         debug_file_path
@@ -228,7 +228,7 @@ impl FileAndPathHelper for RoamFileAndPathHelper {
         &self,
         library_info: &LibraryInfo,
     ) -> FileAndPathHelperResult<Vec<CandidatePathInfo<RoamFileLocation>>> {
-        return self.get_candidate_paths_for_debug_file(library_info);
+        self.get_candidate_paths_for_debug_file(library_info)
     }
 
     fn get_dyld_shared_cache_paths(
@@ -446,7 +446,7 @@ impl SymbolicationClient {
             .join("binaries")
             .join(build_version)
             .join(os_platform.to_string())
-            .join(format!("{}.dSYM", bundle_identifier))
+            .join(format!("{bundle_identifier}.dSYM"))
     }
 
     pub async fn download_device_dsyms(

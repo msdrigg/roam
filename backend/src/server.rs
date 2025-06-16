@@ -42,7 +42,7 @@ pub async fn start_server(app_context: AppContext) -> anyhow::Result<JoinHandle<
     let future = async move {
         let tcp_listener = TcpListener::bind(format!("0.0.0.0:{port}"))
             .await
-            .context(format!("Error binding to port {}", port))?
+            .context(format!("Error binding to port {port}"))?
             .tap_io(|tcp_stream| {
                 if let Err(err) = tcp_stream.set_nodelay(true) {
                     tracing::info!("failed to set TCP_NODELAY on incoming connection: {err:#}");
@@ -220,15 +220,13 @@ impl DiscordMessageDownload {
                         Ok(bytes) => bytes.to_vec(),
                         Err(e) => {
                             return Err(ApiError::BadRequest(format!(
-                                "Error reading attachment: {}",
-                                e
+                                "Error reading attachment: {e}"
                             )))
                         }
                     },
                     Err(e) => {
                         return Err(ApiError::BadRequest(format!(
-                            "Error downloading attachment: {}",
-                            e
+                            "Error downloading attachment: {e}"
                         )))
                     }
                 };
@@ -410,7 +408,7 @@ async fn upload_metric_diagnostics(
                 content_type: "application/json".to_string(),
                 filename: "diagnostics.json".to_string(),
                 data: serde_json::to_vec(&metrics_payloads).map_err(|e| {
-                    ApiError::BadRequest(format!("Error serializing diagnostics: {}", e))
+                    ApiError::BadRequest(format!("Error serializing diagnostics: {e}"))
                 })?,
                 paired_messages: vec![],
             }),
@@ -427,7 +425,7 @@ async fn upload_metric_diagnostics(
                 content_type: "application/json".to_string(),
                 filename: "diagnostics.json".to_string(),
                 data: serde_json::to_vec(&diagnostics).map_err(|e| {
-                    ApiError::BadRequest(format!("Error serializing diagnostics: {}", e))
+                    ApiError::BadRequest(format!("Error serializing diagnostics: {e}"))
                 })?,
                 paired_messages: vec![],
             }),
@@ -436,7 +434,7 @@ async fn upload_metric_diagnostics(
         .await?;
 
     for (idx, payload_b64) in metrics_payloads.iter().enumerate() {
-        let payload = match BASE64_STANDARD.decode(&payload_b64) {
+        let payload = match BASE64_STANDARD.decode(payload_b64) {
             Ok(data) => data,
             Err(e) => {
                 tracing::error!(?payload_b64, "Error decoding base64 payload: {}", e);
@@ -449,12 +447,12 @@ async fn upload_metric_diagnostics(
         tokio::fs::create_dir_all(&symbolication_dir)
             .await
             .map_err(|e| {
-                ApiError::BadRequest(format!("Error creating symbolication dir: {}", e))
+                ApiError::BadRequest(format!("Error creating symbolication dir: {e}"))
             })?;
-        let metric_file_path = symbolication_dir.join(format!("{}.json", metric_uuid));
+        let metric_file_path = symbolication_dir.join(format!("{metric_uuid}.json"));
         tokio::fs::write(&metric_file_path, payload)
             .await
-            .map_err(|e| ApiError::BadRequest(format!("Error writing metric file: {}", e)))?;
+            .map_err(|e| ApiError::BadRequest(format!("Error writing metric file: {e}")))?;
 
         let symbolicated = match app_context
             .symbolicate_diagnostics(&diagnostics, &installation_info, &metric_file_path)
@@ -644,7 +642,7 @@ async fn upload_diagnostics(
 
     let body = to_bytes(body, UPLOAD_LIMIT)
         .await
-        .map_err(|e| ApiError::BadRequest(format!("Error reading body: {}", e)))?;
+        .map_err(|e| ApiError::BadRequest(format!("Error reading body: {e}")))?;
     app_context
         .discord_client()
         .send_message_multiple_attachments(
@@ -679,7 +677,7 @@ async fn get_user_info(
         .get_user_with_id(&user_id)
         .await
         .map_err(ApiError::DatabaseError)?
-        .ok_or_else(|| ApiError::NotFound(format!("User with id {} not found", user_id)))?;
+        .ok_or_else(|| ApiError::NotFound(format!("User with id {user_id} not found")))?;
 
     let messages = app_context
         .discord_client()
@@ -729,7 +727,7 @@ async fn get_thread_info(
         .get_user_with_thread(thread_id)
         .await
         .map_err(ApiError::DatabaseError)?
-        .ok_or_else(|| ApiError::NotFound(format!("Thread with id {} not found", thread_id)))?;
+        .ok_or_else(|| ApiError::NotFound(format!("Thread with id {thread_id} not found")))?;
 
     let messages = app_context
         .discord_client()

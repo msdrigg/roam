@@ -196,7 +196,7 @@ impl DiscordClient {
         );
 
         if let Some(last_id) = last_message_id {
-            url = format!("{}?after={}", url, last_id);
+            url = format!("{url}?after={last_id}");
         }
 
         tracing::info!("Fetching messages in thread: {}", thread_id);
@@ -218,7 +218,7 @@ impl DiscordClient {
 
         let messages: Vec<DiscordMessage> =
             response.json().await.map_err(|e| DiscordError::ApiError {
-                message: format!("Failed to parse messages: {}", e),
+                message: format!("Failed to parse messages: {e}"),
                 status,
             })?;
 

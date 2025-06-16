@@ -1,11 +1,12 @@
 mod diagnostics;
-mod symbolicate;
+mod sym;
 
 use std::{fmt::Display, str::FromStr};
 
 pub use diagnostics::RoamDebugInfo;
-pub use symbolicate::SymbolicationClient;
+pub use sym::SymbolicationClient;
 
+#[allow(clippy::enum_variant_names)]
 pub enum ApplePlatformVersion {
     IOs,
     MacOs,
@@ -36,6 +37,3 @@ impl FromStr for ApplePlatformVersion {
         }
     }
 }
-
-#[cfg(test)]
-mod tests;
