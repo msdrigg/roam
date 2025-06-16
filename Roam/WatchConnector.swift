@@ -70,7 +70,9 @@
                     }
                     deviceMap[device.id] = map
 
-                    transferingDevicesBuilder.append(device.modelId)
+                    if let modelId = device.modelId {
+                        transferingDevicesBuilder.append(modelId)
+                    }
                 }
                 let transferingDevices = transferingDevicesBuilder
                 let completeDeviceMap = deviceMap

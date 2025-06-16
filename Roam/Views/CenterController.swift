@@ -74,6 +74,7 @@ struct CenterController: View {
                 }
             }
             .environment(\.layoutDirection, .leftToRight)
+            .customAccentColorTint()
         }
         .fixedSize()
         .id("controllerGrid")

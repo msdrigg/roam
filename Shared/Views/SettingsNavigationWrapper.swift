@@ -32,5 +32,6 @@ struct SettingsNavigationWrapper<Content>: View where Content: View {
                     }
                 }
         }
+        .customAccentColorTint()
     }
 }

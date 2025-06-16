@@ -510,21 +510,18 @@ public extension RoamDataHandler {
     #if !os(macOS)
     func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
         let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
-        var result: [T]?
         do {
             if await !assertion.isReleased() {
-                return try self.modelContext.fetch(descriptor)
+                let res = try self.modelContext.fetch(descriptor)
+                await assertion.release()
+                return res
             }
             await assertion.release()
         } catch {
             await assertion.release()
             throw error
         }
-        if let result {
-            return result
-        } else {
-            throw DataHandlerError.suspending
-        }
+        throw DataHandlerError.suspending
     }
     #else
     func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
@@ -534,7 +531,7 @@ public extension RoamDataHandler {
 
     #if !os(macOS)
     func saveSafer() async throws {
-        let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
+        let assertion = await QRunInBackgroundAssertion(name: "SaveSafer")
         do {
             if await !assertion.isReleased() {
                 try self.modelContext.save()
@@ -1179,10 +1176,12 @@ actor MessageDataHandler {
 extension MessageDataHandler {
     #if !os(macOS)
     func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
-        let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
+        let assertion = await QRunInBackgroundAssertion(name: "MessagingFetchSafer")
         do {
             if await !assertion.isReleased() {
-                return try self.modelContext.fetch(descriptor)
+                let res = try self.modelContext.fetch(descriptor)
+                await assertion.release()
+                return res
             }
             await assertion.release()
         } catch {
@@ -1199,7 +1198,7 @@ extension MessageDataHandler {
 
     #if !os(macOS)
     func saveSafer() async throws {
-        let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
+        let assertion = await QRunInBackgroundAssertion(name: "MessagingSaveSafer")
         do {
             if await !assertion.isReleased() {
                 try self.modelContext.save()

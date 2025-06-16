@@ -695,6 +695,7 @@ struct KeyboardShortcutPanel: View {
     @EnvironmentObject private var appDelegate: RoamAppDelegate
     @State private var focusedShortcut: CustomKeyboardShortcut.Key?
     @Environment(\.openURL) var openURL
+    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
 
     @ViewBuilder
     var body: some View {
@@ -703,6 +704,7 @@ struct KeyboardShortcutPanel: View {
             TipView(GlobalKeyboardShortcutTip(), action: { _ in
                 openURL(URL(string: "shortcuts://create-shortcut")!)
             })
+            .customAccentColorTint()
 #endif
 
 #if os(macOS)
@@ -798,7 +800,7 @@ struct KeyboardShortcutPanel: View {
                 .buttonStyle(.plain)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.accentColor.secondary, lineWidth: 4)
+                        .stroke(customAccentColor.secondary, lineWidth: 4)
                         .opacity(focusedShortcut == shortcut.title ? 1 : 0)
                         .scaleEffect(focusedShortcut == shortcut.title ? 1 : 1.04)
                         .animation(focusedShortcut == shortcut.title ? .easeIn(duration: 0.2) : .easeOut(duration: 0.0), value: focusedShortcut == shortcut.title)

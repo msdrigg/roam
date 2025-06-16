@@ -136,6 +136,7 @@ struct WatchAppView: View {
             .onAppear {
                 scanningActor = DeviceDiscoveryActor(updater: { })
             }
+            .customAccentColorTint()
         }
     }
 

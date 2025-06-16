@@ -2,6 +2,8 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use crate::database::DeviceInfo;
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DebugError {
     pub message: String,
@@ -38,7 +40,7 @@ pub struct DeviceDebugInfo {
     pub error_response: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct InstallationInfo {
     pub user_id: String,
@@ -59,7 +61,7 @@ pub struct DebugLanguage {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RoamDebugInfo {
-    pub installation_info: InstallationInfo,
+    pub installation_info: DeviceInfo,
     pub user_defaults: HashMap<String, String>,
     pub space_on_device: Option<i64>,
     pub devices: Vec<DeviceDebugInfo>,

@@ -89,6 +89,6 @@ struct ButtonGridView: View {
         .controlSize(.small)
         .labelStyle(.iconOnly)
         .environment(\.layoutDirection, .leftToRight)
-        .tint(Color.accentColor)
+        .customAccentColorTint()
     }
 }

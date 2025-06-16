@@ -67,12 +67,14 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
                                 let formatter = ISO8601DateFormatter()
                                 return formatter.date(from: $0)
                             }
-                            try? await dataHandler.updateDevice(
-                                existingDevice.modelId,
-                                name: name,
-                                location: location,
-                                hidden: hiddenAt != nil
-                            )
+                            if let modelId = existingDevice.modelId {
+                                try? await dataHandler.updateDevice(
+                                    modelId,
+                                    name: name,
+                                    location: location,
+                                    hidden: hiddenAt != nil
+                                )
+                            }
                         }
                         continue
                     }

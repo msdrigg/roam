@@ -169,6 +169,7 @@ struct RemoteViewContained: View {
     @Namespace var animation
 
     @Environment(\.uuidUpdater) private var updater
+    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
 
     func buttonPressCount(_ key: RemoteButton) -> Int {
         buttonPresses[key] ?? 0
@@ -549,7 +550,7 @@ struct RemoteViewContained: View {
 #if os(iOS)
                         .offset(y: -20)
                         .buttonStyle(.bordered)
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(customAccentColor)
 #else
                         .buttonStyle(.borderless)
                         .foregroundStyle(Color.secondary)
@@ -787,6 +788,7 @@ struct RemoteViewContained: View {
                 .sensoryFeedback(.error, trigger: errorTrigger)
 #endif
         }
+        .customAccentColorTint()
         .sheet(isPresented: appDelegate.navigationPath.showingAddDevice(for: .remote)) {
             AddDeviceFlow()
         }

@@ -35,8 +35,11 @@ public func getSharedModelContainerChecked() throws (ModelContainerFailureReason
 
 @MainActor
 public func getSharedModelContainer() -> ModelContainer {
-    guard let mc = try? GlobalModelContainer.sharedModelContainerOrFailure.get() else {
-        loggedFatalError("Error getting shared model container")
+    let mc: ModelContainer
+    do {
+        mc = try GlobalModelContainer.sharedModelContainerOrFailure.get()
+    } catch {
+        loggedFatalError("Error getting shared model container: \(error)")
     }
     return mc
 }

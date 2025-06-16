@@ -21,6 +21,7 @@ struct MessageView: View {
     @AppStorage(UserDefaultKeys.lastSupportTypingTime) private var lastSupportTypingTimeInterval: TimeInterval = Date.distantPast.timeIntervalSince1970
     @State private var lastSelfTypingTime: Date = Date.distantPast
     @Environment(\.colorScheme) var colorScheme
+    @AppStorageColor(UserDefaultKeys.customAccentColor) private var meColor: Color = .accentColor
 
     private var showSupportTypingIndicator: Bool {
         let lastSupportTypingDate = Date(timeIntervalSince1970: lastSupportTypingTimeInterval)
@@ -202,9 +203,9 @@ struct MessageView: View {
                         .font(.caption.leading(.loose))
                         .foregroundStyle(.foreground)
                         .padding(.vertical, 8)
-                        .background(Color.accentColor.opacity(0.8))
+                        .background(meColor.opacity(0.8))
                         .clipShape(Capsule())
-                        .tint(Color.accentColor)
+                        .tint(meColor)
                 } onSubmit: { text in
                     sendMessageText(messageText: text)
                 }

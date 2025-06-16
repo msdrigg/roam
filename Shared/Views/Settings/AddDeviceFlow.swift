@@ -18,6 +18,7 @@ struct AddDeviceFlow: View {
         case idle
         case connecting
         case success
+        case permissionFailed
         case failure(AddDeviceError)
 
         var isSuccess: Bool {
@@ -45,6 +46,21 @@ struct AddDeviceFlow: View {
         }
     }
 
+    var deviceTypeName: String {
+        #if os(macOS)
+        String(localized: "Mac")
+        #elseif os(visionOS)
+        String(localized: "Vision Pro")
+        #elseif os(watchOS)
+        String(localized: "Apple Watch")
+        #else
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            String(localized: "iPad")
+        } else {
+            String(localized: "iPhone")
+        }
+        #endif
+    }
     var ipHint: String {
         selfIpGuess.split(separator: ".").dropLast(1).joined(separator: ".") + ".*"
     }
@@ -71,7 +87,7 @@ struct AddDeviceFlow: View {
     var bodyContent: some View {
         VStack(spacing: 0) {
             #if !os(watchOS)
-            VStack(spacing: 0) {
+            HStack(spacing: 0) {
                 ZStack {
                     Circle()
                         .fill(Color.secondary.opacity(0.4))
@@ -86,7 +102,9 @@ struct AddDeviceFlow: View {
                             .offset(x: 4, y: 0)
                     }
                 }
-                .padding(.vertical, 10)
+                .padding(.horizontal, 20)
+
+                Spacer()
 
                 Text("Add Device")
 #if os(macOS)
@@ -94,6 +112,10 @@ struct AddDeviceFlow: View {
 #else
                     .font(.title.bold())
 #endif
+                Spacer()
+
+                Spacer()
+                    .frame(maxWidth: 95)
             }
             .padding(.top, 30)
             #if os(visionOS)
@@ -116,18 +138,6 @@ struct AddDeviceFlow: View {
                         }
                         .autocorrectionDisabled()
                 }
-#if os(watchOS)
-                Section {
-                    if connectionStatus.isIdle || connectionStatus.isInvalidIp {
-                        Text(
-                            // swiftlint:disable:next line_length
-                            "Before you add your TV, go to **Settings > System > Advanced system settings > Control by mobile apps > Network access** and make sure it's set to 'Permissive' or 'Enabled'"
-                        )
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                }
-#endif
                 Section {
                     if !connectionStatus.isIdle {
                         connectionStatusView(status: connectionStatus)
@@ -136,7 +146,7 @@ struct AddDeviceFlow: View {
                             }
                     }
                     if connectionStatus.isIdle || connectionStatus.isInvalidIp {
-                        Text("Find the IP address of your Roku by going to **Settings > Network > About**. Your IP address will look something like **\(ipHint)**")
+                        Text("Find the IP address of your Roku by going to **Settings > Network > About** in your Roku device's Settings. Your Roku's IP address will look something like **\(ipHint)**")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -147,7 +157,7 @@ struct AddDeviceFlow: View {
             }
             .scrollContentBackground(.hidden)
             .formStyle(.grouped)
-            .presentationBackground(.thinMaterial)
+            .presentationBackground(.thickMaterial)
             .presentationDetents([.medium, .large])
 #if os(watchOS)
             .navigationTitle("Add Device")
@@ -174,7 +184,7 @@ struct AddDeviceFlow: View {
                     case .success:
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.green)
-                    case .failure:
+                    case .failure, .permissionFailed:
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.red)
                     }
@@ -196,6 +206,10 @@ struct AddDeviceFlow: View {
                     Text("Connection failed")
                         .foregroundColor(.red)
                         .fontWeight(.medium)
+                case .permissionFailed:
+                    Text("TV permission disabled")
+                        .foregroundColor(.red)
+                        .fontWeight(.medium)
                 }
 
                 Spacer()
@@ -205,6 +219,11 @@ struct AddDeviceFlow: View {
                         .foregroundStyle(.primary)
                 }
                 #endif
+            }
+
+            if case .permissionFailed = status {
+                // swiftlint:disable:next line_length
+                Text("Your need to enable \"Control by mobile apps\" in your TV's settings. You can update this setting by going to **Settings > System > Advanced system settings > Control by mobile apps > Network access** and make sure it's set to 'Permissive' or 'Enabled'")
             }
 
             if case .failure(let error) = status {
@@ -218,6 +237,17 @@ struct AddDeviceFlow: View {
                         .foregroundColor(.red.opacity(0.8))
                 }
             }
+        }
+
+        if case .permissionFailed = status {
+            Button("Try again", action: {
+                Task {
+                    await tryConnect()
+                }
+            }).foregroundStyle(.primary)
+            #if !os(watchOS)
+                .buttonStyle(.bordered)
+            #endif
         }
 
 #if os(watchOS)
@@ -375,7 +405,7 @@ extension AddDeviceError: LocalizedError {
             return String(localized: "Check the IP address you entered and try again", comment: "Recovery suggestion for invalid IP address")
         case .deviceNotFound:
             return String(
-                localized: "Check the IP address you entered is correct, and ensure that you and the device are connected to the same WiFi network",
+                localized: "Check the IP address you entered is correct, and ensure that your Apple device and the Roku device are connected to the same WiFi network",
                 comment: "Recovery suggestion for device not found"
             )
         case .networkError:

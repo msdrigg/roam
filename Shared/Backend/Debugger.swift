@@ -11,7 +11,7 @@ struct BadResponseError: Error {
     let message: String
 }
 
-struct LogEntry: Encodable {
+struct LogEntry: Codable {
     let message: String
     let timestamp: Date
     let level: String?
@@ -53,19 +53,19 @@ struct LogEntry: Encodable {
     }
 }
 
-struct ResponseData: Encodable {
+struct ResponseData: Codable {
     let headers: [String: String]
     let statusCode: Int
     let data: String
 }
 
-struct DeviceDebugInfo: Encodable {
+struct DeviceDebugInfo: Codable {
     let device: DeviceAppEntity
     let successResponse: ResponseData?
     let errorResponse: String?
 }
 
-public struct InstallationInfo: Encodable, Sendable {
+public struct InstallationInfo: Codable, Sendable {
     let userId: String
     let buildVersion: String?
     let releaseVersion: String?
@@ -99,12 +99,12 @@ public struct InstallationInfo: Encodable, Sendable {
     }
 }
 
-public struct DebugLanguage: Encodable, Sendable {
+public struct DebugLanguage: Codable, Sendable {
     let deviceLanguageCode: String
     let translatedLanguageCode: String
 }
 
-public struct DebugInfo: Encodable, Sendable {
+public struct DebugInfo: Codable, Sendable {
     let installationInfo: InstallationInfo
     let userDefaults: [String: String]
     let spaceOnDevice: SpaceAvailability?
@@ -257,7 +257,7 @@ func getDebugInfo(userInitiated: Bool = false) async -> DebugInfo {
     )
 }
 
-enum SpaceAvailability: Encodable, Sendable {
+enum SpaceAvailability: Codable, Sendable {
     case failed
     case ok
     case constrained

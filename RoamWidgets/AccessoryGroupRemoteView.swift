@@ -6,6 +6,7 @@ import WidgetKit
 struct AccessoryGroupRemoteView: View {
     let device: DeviceAppEntity?
     let controls: [RemoteButton?]
+    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
 
     var body: some View {
         if #available(watchOS 11.0, *) {
@@ -39,7 +40,7 @@ struct AccessoryGroupRemoteView: View {
             .fontDesign(.rounded)
             .font(.body.bold())
             .accessoryWidgetGroupStyle(.roundedSquare)
-            .tint(Color.accentColor)
+            .tint(customAccentColor)
         }
     }
 }

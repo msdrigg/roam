@@ -1428,8 +1428,11 @@
         }
       }
     },
+    "Accent Color" : {
+      "comment" : "Label for accent color picker"
+    },
     "Add a device manually" : {
-      "comment" : "Label on a button to add a device",
+      "comment" : "Label on a button to add a device\nLabel on a button to open the device setup page",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2422,7 +2425,7 @@
       }
     },
     "App Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2503,6 +2506,9 @@
           }
         }
       }
+    },
+    "Apple Watch" : {
+
     },
     "Are you having trouble connecting your TV?" : {
       "localizations" : {
@@ -3167,6 +3173,7 @@
       }
     },
     "Before you add your TV, go to **Settings > System > Advanced system settings > Control by mobile apps > Network access** and make sure it's set to 'Permissive' or 'Enabled'" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3332,7 +3339,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3997,6 +4004,7 @@
     },
     "Check the IP address you entered is correct, and ensure that you and the device are connected to the same WiFi network" : {
       "comment" : "Recovery suggestion for device not found",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4077,6 +4085,9 @@
           }
         }
       }
+    },
+    "Check the IP address you entered is correct, and ensure that your Apple device and the Roku device are connected to the same WiFi network" : {
+      "comment" : "Recovery suggestion for device not found"
     },
     "Choose a device" : {
       "comment" : "Configuration title for a settings page",
@@ -7635,7 +7646,11 @@
         }
       }
     },
+    "Find the IP address of your Roku by going to **Settings > Network > About** in your Roku device's Settings. Your Roku's IP address will look something like **%@**" : {
+
+    },
     "Find the IP address of your Roku by going to **Settings > Network > About**. Your IP address will look something like **%@**" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8130,6 +8145,9 @@
           }
         }
       }
+    },
+    "HI" : {
+
     },
     "Hi, I'm Scott. I make the Roam app. What's on your mind? I'll do my best to respond to these messages as quick as I can." : {
       "comment" : "First message to user in a chat",
@@ -9867,6 +9885,12 @@
           }
         }
       }
+    },
+    "iPad" : {
+
+    },
+    "iPhone" : {
+
     },
     "Keyboard" : {
       "comment" : "Label on a button to open the keyboard",
@@ -16927,6 +16951,9 @@
         }
       }
     },
+    "Reset to default accent color" : {
+
+    },
     "Rewind" : {
       "comment" : "Keyboard shortcut to rewind\nRemote button to rewind",
       "localizations" : {
@@ -17424,7 +17451,7 @@
       }
     },
     "Roku Apps" : {
-      "comment" : "Siri spotlight recommendation",
+      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -17507,7 +17534,7 @@
       }
     },
     "Roku Controls" : {
-      "comment" : "Siri spotlight recommendation",
+      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -20073,6 +20100,9 @@
         }
       }
     },
+    "Try again" : {
+
+    },
     "Try again later or contact support" : {
       "comment" : "Recovery suggestion for unknown error",
       "localizations" : {
@@ -20320,6 +20350,9 @@
           }
         }
       }
+    },
+    "TV permission disabled" : {
+
     },
     "Unhide" : {
       "localizations" : {
@@ -21394,6 +21427,9 @@
           }
         }
       }
+    },
+    "Your need to enable \"Control by mobile apps\" in your TV's settings. You can update this setting by going to **Settings > System > Advanced system settings > Control by mobile apps > Network access** and make sure it's set to 'Permissive' or 'Enabled'" : {
+
     },
     "Your Roku device supports streaming audio directly to Roam. Click the headphones button in the main view to see it in action!" : {
       "comment" : "Descriptive caption in a device settings page",

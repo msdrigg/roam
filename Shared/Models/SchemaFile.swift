@@ -603,6 +603,8 @@ public enum SchemaV6: VersionedSchema {
         public var name: String
         public var location: String
         public var serial: String?
+        // swiftlint:disable:next identifier_name
+        public var _dead: Bool?
 
         public var lastSelectedAt: Date?
         public var lastOnlineAt: Date?
@@ -761,7 +763,7 @@ enum RoamSchemaMigrationPlan: SchemaMigrationPlan {
             MigrationStage.lightweight(fromVersion: SchemaV2.self, toVersion: SchemaV3.self),
             MigrationStage.lightweight(fromVersion: SchemaV3.self, toVersion: SchemaV4.self),
             MigrationStage.lightweight(fromVersion: SchemaV4.self, toVersion: SchemaV5.self),
-            MigrationStage.custom(fromVersion: SchemaV5.self, toVersion: SchemaV6.self, willMigrate: migrateSchemaOffSwiftData, didMigrate: cleanupSwiftData)
+//            MigrationStage.custom(fromVersion: SchemaV5.self, toVersion: SchemaV6.self, willMigrate: migrateSchemaOffSwiftData, didMigrate: cleanupSwiftData)
         ]
     }
 
@@ -771,9 +773,9 @@ enum RoamSchemaMigrationPlan: SchemaMigrationPlan {
 }
 
 func migrateSchemaOffSwiftData(_ context: ModelContext) throws {
-    
+    // TODO: Build this out
 }
 
 func cleanupSwiftData(_ context: ModelContext) {
-    
+    // TODO: Build this out
 }

@@ -3,7 +3,7 @@ import Foundation
 import SwiftData
 
 @available(iOS 16.0, macOS 13.0, watchOS 9.0, *)
-public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Encodable {
+public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Codable {
     public static let typeDisplayRepresentation = TypeDisplayRepresentation(name: LocalizedStringResource("Device", comment: "TV Device Selection Option"))
 
     public struct DeviceAppEntityQuery: EntityQuery {
@@ -32,7 +32,7 @@ public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Enc
     public var location: String
     public var udn: String
     public var lastSentToWatch: Date?
-    public var modelId: PersistentIdentifier
+    public var modelId: PersistentIdentifier?
 
     public var lastSelectedAt: Date?
     public var lastOnlineAt: Date?
@@ -102,6 +102,32 @@ public struct DeviceAppEntity: AppEntity, Equatable, Identifiable, Hashable, Enc
 
         try container.encodeIfPresent(rtcpPort, forKey: .rtcpPort)
         try container.encodeIfPresent(supportsDatagram, forKey: .supportsDatagram)
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        udn = try container.decode(String.self, forKey: .udn)
+        name = try container.decode(String.self, forKey: .name)
+        location = try container.decode(String.self, forKey: .location)
+
+        lastSelectedAt = try container.decodeIfPresent(Date.self, forKey: .lastSelectedAt)
+        lastOnlineAt = try container.decodeIfPresent(Date.self, forKey: .lastOnlineAt)
+        lastScannedAt = try container.decodeIfPresent(Date.self, forKey: .lastScannedAt)
+        lastSentToWatch = try container.decodeIfPresent(Date.self, forKey: .lastSentToWatch)
+        deletedAt = try container.decodeIfPresent(Date.self, forKey: .deletedAt)
+        hiddenAt = try container.decodeIfPresent(Date.self, forKey: .hiddenAt)
+
+        powerMode = try container.decodeIfPresent(String.self, forKey: .powerMode)
+        networkType = try container.decodeIfPresent(String.self, forKey: .networkType)
+        wifiMAC = try container.decodeIfPresent(String.self, forKey: .wifiMAC)
+        ethernetMAC = try container.decodeIfPresent(String.self, forKey: .ethernetMAC)
+
+        rtcpPort = try container.decodeIfPresent(UInt16.self, forKey: .rtcpPort)
+        supportsDatagram = try container.decodeIfPresent(Bool.self, forKey: .supportsDatagram)
+
+        modelId = nil
+        iconHash = nil
     }
 
     public var iconURL: URL? {

@@ -2,6 +2,8 @@ import Foundation
 import SwiftUI
 
 struct SmallRemoteView: View {
+    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
+
     let device: DeviceAppEntity?
     let controls: [[RemoteButton?]]
 
@@ -50,6 +52,6 @@ struct SmallRemoteView: View {
         .buttonStyle(.bordered)
         .controlSize(.small)
         .labelStyle(.iconOnly)
-        .tint(Color.accentColor)
+        .tint(customAccentColor)
     }
 }

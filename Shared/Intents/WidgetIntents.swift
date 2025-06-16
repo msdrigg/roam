@@ -16,7 +16,9 @@ public struct OpenDeviceIntent: OpenIntent {
 
     @MainActor
     public func perform() async throws -> some IntentResult {
-        try await RoamDataHandler.checkedCreate().setSelectedDevice(target.modelId)
+        if let modelId = target.modelId {
+            try await RoamDataHandler.checkedCreate().setSelectedDevice(modelId)
+        }
         return .result()
     }
 }
