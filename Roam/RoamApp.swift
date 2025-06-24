@@ -39,6 +39,15 @@ struct RoamApp: App {
         installSIGPIPEHandler()
         _ = getSharedModelContainer()
 
+#if !os(macOS)
+        let dontKillAssertion = QActivityRunInBackgroundAssertion(name: "Tips.configure")
+        if dontKillAssertion.isReleased() {
+            return
+        }
+        defer {
+            dontKillAssertion.release()
+        }
+#endif
         try? Tips.configure([
             .displayFrequency(.immediate),
             .datastoreLocation(.groupContainer(identifier: mainAppGroup))

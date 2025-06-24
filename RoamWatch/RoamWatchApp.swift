@@ -11,12 +11,19 @@ struct RoamWatch: App {
     init() {
         _ = getSharedModelContainer()
 
+        Log.lifecycle.notice("Getting WatchConnectivity \(String(describing: WatchConnectivity.shared), privacy: .public)")
+
+        let dontKillAssertion = QActivityRunInBackgroundAssertion(name: "Tips.configure")
+        if dontKillAssertion.isReleased() {
+            return
+        }
+        defer {
+            dontKillAssertion.release()
+        }
         try? Tips.configure([
             .displayFrequency(.immediate),
             .datastoreLocation(.groupContainer(identifier: mainAppGroup))
         ])
-
-        Log.lifecycle.notice("Getting WatchConnectivity \(String(describing: WatchConnectivity.shared), privacy: .public)")
     }
 
     private var navigationPath: Binding<[NavigationDestination]> {
