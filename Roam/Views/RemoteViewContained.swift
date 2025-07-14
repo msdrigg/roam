@@ -6,7 +6,6 @@ import StoreKit
 import SwiftData
 import SwiftUI
 import Foundation
-import TipKit
 
 #if os(iOS)
 import WatchConnectivity
@@ -91,7 +90,7 @@ struct RemoteViewContained: View {
     }
 
     var hideAppsForKeyboardEntry: Bool {
-#if os(iOS)
+#if os(iOS) || os(visionOS)
         return showKeyboardEntry
 #else
         return false
@@ -170,6 +169,7 @@ struct RemoteViewContained: View {
     @Namespace var animation
 
     @Environment(\.uuidUpdater) private var updater
+    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
 
     func buttonPressCount(_ key: RemoteButton) -> Int {
         buttonPresses[key] ?? 0
@@ -225,13 +225,6 @@ struct RemoteViewContained: View {
                     }
                 }
                 .task {
-                    // Configure and load your tips at app launch.
-                    try? Tips.configure([
-                        .displayFrequency(.immediate),
-                        .datastoreLocation(.groupContainer(identifier: tipsAppGroup))
-                    ])
-                }
-                .task {
                     while !Task.isCancelled {
                         await MessageDataHandler.shared.refreshMessagesIfExpectingNewMessages()
                         try? await Task.sleep(nanoseconds: 1000 * 1000 * 1000 * 3600)
@@ -242,6 +235,7 @@ struct RemoteViewContained: View {
                         // swiftlint:disable:next force_try
                         try! await RoamDataHandler().loadTestData()
                         // try! await RoamDataHandler().loadLoadTestData()
+                        updater?.update()
                     } else if usingTestingDataContainer() {
                         // swiftlint:disable:next force_try
                         try! await RoamDataHandler().clearData()
@@ -434,7 +428,6 @@ struct RemoteViewContained: View {
                             ecpSessionState: ecpSessionState,
                             showScanning: true
                         )
-                        .accessibilityIdentifier("DevicePickerTop")
                         .buttonStyle(PaddedBorderlessButtonStyleWithChevron())
                         .menuStyle(.button)
                         .controlSize(.extraLarge)
@@ -517,7 +510,6 @@ struct RemoteViewContained: View {
                             ecpSessionState: ecpSessionState,
                             showScanning: true
                         )
-                        .accessibilityIdentifier("DevicePickerCenter")
                         .buttonStyle(PaddedBorderlessButtonStyle())
                         .menuStyle(.button)
                         .controlSize(.extraLarge)
@@ -540,7 +532,6 @@ struct RemoteViewContained: View {
                                 ecpSessionState: ecpSessionState,
                                 showScanning: true
                             )
-                            .accessibilityIdentifier("DevicePickerCenter")
                             .buttonStyle(PaddedBorderlessButtonStyle())
                             .glowing(enabled: selectedDevice == nil)
 
@@ -559,7 +550,7 @@ struct RemoteViewContained: View {
 #if os(iOS)
                         .offset(y: -20)
                         .buttonStyle(.bordered)
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(customAccentColor)
 #else
                         .buttonStyle(.borderless)
                         .foregroundStyle(Color.secondary)
@@ -787,7 +778,6 @@ struct RemoteViewContained: View {
                         }),
                         ecpSessionState: ecpSessionState
                     )
-                    .accessibilityIdentifier("DevicePickerTop")
                     .buttonStyle(.plain)
                     .frame(idealWidth: 100, maxWidth: 350)
                     .disabled(selectedDevice == nil)
@@ -798,6 +788,7 @@ struct RemoteViewContained: View {
                 .sensoryFeedback(.error, trigger: errorTrigger)
 #endif
         }
+        .customAccentColorTint()
         .sheet(isPresented: appDelegate.navigationPath.showingAddDevice(for: .remote)) {
             AddDeviceFlow()
         }
@@ -1004,16 +995,11 @@ struct RemoteViewContained: View {
     func launchApp(_ app: AppLinkAppEntity) {
         donateAppLaunchIntent(app)
         incrementButtonPressCount(.inputAV1)
-        Task.detached {
+        Task {
             do {
                 try await ecpSession?.launchApp(app.id)
             } catch {
                 Log.connection.error("Error opening app \(app.id, privacy: .public): \(error, privacy: .public)")
-            }
-        }
-        Task.detached {
-            if let modelId = app.modelId {
-                await RoamDataHandler().setSelectedApp(modelId)
             }
         }
     }
@@ -1036,6 +1022,11 @@ struct RemoteViewContained: View {
                 Log.connection.notice("Error sending button to device via ecp: \(error, privacy: .public)")
             }
         }
+#if DEBUG
+        if Int.random(in: 1...20) == 1 {
+            fatalError("Debug crash simulation")
+        }
+#endif
     }
 
     func pressKeyAsync(_ key: KeyEquivalent, modifiers: EventModifiers) async {
@@ -1101,7 +1092,6 @@ struct RemoteViewContained: View {
     traits: .fixedLayout(width: 400, height: 800)
 ) {
     RemoteView()
-        .modelContainer(previewContainer)
         .environmentObject(RoamAppDelegate())
 }
 #endif

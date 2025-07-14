@@ -18,6 +18,11 @@ public actor RoamDataHandler {
         self.init(modelContainer: getSharedModelContainer())
     }
 
+    @MainActor
+    static func checkedCreate() throws (ModelContainerFailureReason) -> Self {
+        return try self.init(modelContainer: getSharedModelContainerChecked())
+    }
+
     private func allDevices() async throws -> [Device] {
         let descriptor = FetchDescriptor<Device>(
             predicate: #Predicate {
@@ -34,21 +39,7 @@ public actor RoamDataHandler {
         return links
     }
 
-    func setSelectedApp(_ appId: PersistentIdentifier) async {
-        Log.data.notice("Updating selectedAt for app with id \(appId.described(), privacy: .public)")
-
-        if let appLink = await self.existingApp(for: appId) {
-            Log.data.notice("Setting appId selected to now")
-            appLink.lastSelected = Date.now
-            do {
-                try await self.saveSafer()
-            } catch {
-                Log.data.error("Error marking app as selected \(appLink.id, privacy: .public)")
-            }
-        }
-    }
-
-    func setSelectedDevice(_ id: PersistentIdentifier) async {
+    func setSelectedDevice(_ id: PersistentIdentifier) async throws {
         Log.data.notice("Updating selectedAt for device with id \(String(describing: id), privacy: .public)")
         if let device = await self.existingDevice(for: id) {
             Log.data.notice("Found device to update with location \(device.location, privacy: .public)")
@@ -57,11 +48,12 @@ public actor RoamDataHandler {
                 try await self.saveSafer()
             } catch {
                 Log.data.error("Error marking device as selected \(device.location, privacy: .public)")
+                throw error
             }
         }
     }
 
-    func updateDevice(_ id: PersistentIdentifier, name: String? = nil, location: String? = nil, hidden: Bool? = nil) async {
+    func updateDevice(_ id: PersistentIdentifier, name: String? = nil, location: String? = nil, hidden: Bool? = nil) async throws {
         Log.data.notice("Updating device at \(id.described(), privacy: .public)")
         if let device = await self.existingDevice(for: id) {
             Log.data.notice("Found device to update with id \(id.described(), privacy: .public))")
@@ -84,12 +76,14 @@ public actor RoamDataHandler {
             } catch {
                 Log.data.warning("Error updating device at location \(device.location, privacy: .public)")
             }
+        } else {
+            throw DataHandlerError.deviceNotFound
         }
         Log.data.notice("Updated device at \(id.described(), privacy: .public)")
     }
 
     @discardableResult
-    func addDeviceIndistriminantly(location: String, friendlyDeviceName: String, udn: String, serial: String, hidden: Bool) async -> PersistentIdentifier? {
+    func addDeviceIndistriminantly(location: String, friendlyDeviceName: String, udn: String, serial: String, hidden: Bool) async throws -> PersistentIdentifier {
         if let device = await deviceForUdn(udn: udn) {
             device.location = location
             device.name = friendlyDeviceName
@@ -98,6 +92,7 @@ public actor RoamDataHandler {
                 try await self.saveSafer()
             } catch {
                 Log.data.warning("Error updating device fields \(error, privacy: .public)")
+                throw error
             }
             return device.persistentModelID
         } else {
@@ -117,20 +112,21 @@ public actor RoamDataHandler {
                 return device.persistentModelID
             } catch {
                 Log.data.warning("Error adding device at \(location, privacy: .public), \(error, privacy: .public)")
-                return nil
+                throw error
             }
         }
     }
 
 #if !WIDGET
     @discardableResult
-    func addOrReplaceDevice(location: String, udn: String? = nil, serial: String? = nil) async -> PersistentIdentifier? {
+    func addOrReplaceDevice(location: String, udn: String? = nil, serial: String? = nil) async throws -> PersistentIdentifier {
         if let udn, let device = await deviceForUdn(udn: udn) {
             device.location = location
             do {
                 try await self.saveSafer()
             } catch {
                 Log.data.warning("Error updating device fields \(error, privacy: .public)")
+                throw error
             }
             return device.persistentModelID
         }
@@ -141,6 +137,7 @@ public actor RoamDataHandler {
                 try await self.saveSafer()
             } catch {
                 Log.data.warning("Error updating device fields \(error, privacy: .public)")
+                throw error
             }
             return device.persistentModelID
         }
@@ -162,7 +159,7 @@ public actor RoamDataHandler {
             }
         } catch {
             Log.data.warning("Trying to add device but no preconnection info available \(location, privacy: .public). Error: \(error, privacy: .public)")
-            return nil
+            throw error
         }
 
         let device: Device
@@ -212,7 +209,7 @@ public actor RoamDataHandler {
             return device.persistentModelID
         } catch {
             Log.data.warning("Error adding device at \(location, privacy: .public), \(error, privacy: .public)")
-            return nil
+            throw error
         }
     }
 
@@ -476,49 +473,68 @@ extension RoamDataHandler {
     }
 }
 
-enum DataHandlerError: Error {
+enum DataHandlerError: Error, LocalizedError {
     case suspending
-    case errorStoring
+    case noSpaceOnDisk
+    case noContainerURL
+    case deviceNotFound
+
+    var errorDescription: String {
+        switch self {
+        case .noContainerURL:
+            return String(localized: "Error saving data, no valid container found")
+        case .noSpaceOnDisk:
+            return String(localized: "Error saving data. No disk storage left.")
+        case .suspending:
+            return String(localized: "Error saving data. App currently shutting down.")
+        case .deviceNotFound:
+            return String(localized: "Error saving data. Cannot update device that is deleted.")
+        }
+    }
+
+    var recoverySuggestion: String? {
+        switch self {
+        case .noContainerURL:
+            return String(localized: "This is a bug. Please reach out to roam-support@msd3.io for help.")
+        case .noSpaceOnDisk:
+            return String(localized: "Please delete some files to clear up some space and try again.")
+        case .suspending:
+            return String(localized: "Please re-open the app and try again.")
+        case .deviceNotFound:
+            return String(localized: "Please make sure the device you are updating has been added.")
+        }
+    }
 }
 
 public extension RoamDataHandler {
     #if !os(macOS)
     func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
         let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
-        var result: [T]?
         do {
             if await !assertion.isReleased() {
-                result = try catchObjc {
-                    return try self.modelContext.fetch(descriptor)
-                }
+                let res = try self.modelContext.fetch(descriptor)
+                await assertion.release()
+                return res
             }
             await assertion.release()
         } catch {
             await assertion.release()
             throw error
         }
-        if let result {
-            return result
-        } else {
-            throw DataHandlerError.suspending
-        }
+        throw DataHandlerError.suspending
     }
     #else
     func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
-        return try catchObjc {
-            return try self.modelContext.fetch(descriptor)
-        }
+        return try self.modelContext.fetch(descriptor)
     }
     #endif
 
     #if !os(macOS)
     func saveSafer() async throws {
-        let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
+        let assertion = await QRunInBackgroundAssertion(name: "SaveSafer")
         do {
             if await !assertion.isReleased() {
-                try catchObjc {
-                    try self.modelContext.save()
-                }
+                try self.modelContext.save()
             } else {
                 throw DataHandlerError.suspending
             }
@@ -530,9 +546,7 @@ public extension RoamDataHandler {
     }
     #else
     func saveSafer() async throws {
-        try catchObjc {
-            try self.modelContext.save()
-        }
+        try self.modelContext.save()
     }
     #endif
 }
@@ -950,6 +964,7 @@ extension RoamDataHandler {
         await deleteInPast()
     }
 }
+
 @ModelActor
 actor MessageDataHandler {
     @MainActor
@@ -1161,41 +1176,32 @@ actor MessageDataHandler {
 extension MessageDataHandler {
     #if !os(macOS)
     func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
-        let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
-        var result: [T]?
+        let assertion = await QRunInBackgroundAssertion(name: "MessagingFetchSafer")
         do {
             if await !assertion.isReleased() {
-                result = try catchObjc {
-                    return try self.modelContext.fetch(descriptor)
-                }
+                let res = try self.modelContext.fetch(descriptor)
+                await assertion.release()
+                return res
             }
             await assertion.release()
         } catch {
             await assertion.release()
             throw error
         }
-        if let result {
-            return result
-        } else {
-            throw DataHandlerError.suspending
-        }
+        throw DataHandlerError.suspending
     }
     #else
     func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
-        return try catchObjc {
-            return try self.modelContext.fetch(descriptor)
-        }
+        return try self.modelContext.fetch(descriptor)
     }
     #endif
 
     #if !os(macOS)
     func saveSafer() async throws {
-        let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
+        let assertion = await QRunInBackgroundAssertion(name: "MessagingSaveSafer")
         do {
             if await !assertion.isReleased() {
-                try catchObjc {
-                    try self.modelContext.save()
-                }
+                try self.modelContext.save()
             } else {
                 throw DataHandlerError.suspending
             }
@@ -1207,9 +1213,7 @@ extension MessageDataHandler {
     }
     #else
     func saveSafer() async throws {
-        try catchObjc {
-            try self.modelContext.save()
-        }
+        try self.modelContext.save()
     }
     #endif
 }
@@ -1218,7 +1222,7 @@ extension MessageDataHandler {
 @discardableResult
 func storeUserFileToDisk(data: Data, filename: String, path: [String]) throws -> URL {
     guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
-        throw DataHandlerError.errorStoring
+        throw DataHandlerError.noContainerURL
     }
 
     var iconDirectoryURL = containerURL
@@ -1233,7 +1237,16 @@ func storeUserFileToDisk(data: Data, filename: String, path: [String]) throws ->
     let iconFileURL = iconDirectoryURL.appendingPathComponent(filename)
 
     // Write data atomically to prevent corruption
-    try data.write(to: iconFileURL, options: .atomic)
+    do {
+        try data.write(to: iconFileURL, options: .atomic)
+    } catch let error as NSError {
+        if error.domain == NSCocoaErrorDomain && error.code == NSFileWriteOutOfSpaceError {
+            throw DataHandlerError.noSpaceOnDisk
+        }
+        throw error
+    } catch {
+        throw error
+    }
     return iconFileURL
 }
 
@@ -1249,7 +1262,7 @@ func storeAttachmentToDisk(attachmentData: Data, hash: String, filename: String)
 
 func loadAttachmentFromDisk(hash: String, filename: String) throws -> Data {
     guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
-        throw DataHandlerError.errorStoring
+        throw DataHandlerError.noContainerURL
     }
 
     let iconDirectoryURL = containerURL

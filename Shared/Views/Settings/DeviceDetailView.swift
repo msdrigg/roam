@@ -10,6 +10,8 @@ struct DeviceDetailView: View {
     @State var hidden: Bool = false
 
     @State var showHeadphonesModeDescription: Bool = false
+    @State private var deviceError: Error?
+    @State private var errorMessage: String = ""
 
     @Query private var selectedDevices: [Device]
     @Environment(\.uuidUpdater) private var updater
@@ -227,10 +229,10 @@ struct DeviceDetailView: View {
 #endif
 
             Button(role: .destructive, action: {
-                // Don't block the dismiss waiting for save
                 Log.userInteraction.notice("Deleting \("device", privacy: .public)")
                 let deviceId = deviceId
-                Task.detached {
+                Task {
+                    // Don't block the dismiss waiting for save
                     DispatchQueue.main.async {
                         dismiss()
                     }
@@ -240,6 +242,8 @@ struct DeviceDetailView: View {
                         Log.userInteraction.notice("Deleted device with id \(String(describing: deviceId), privacy: .public)")
                     } catch {
                         Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
+                        errorMessage = "Failed to Delete Device"
+                        deviceError = error
                     }
                     DispatchQueue.main.async {
                         updater?.update()
@@ -270,6 +274,7 @@ struct DeviceDetailView: View {
             save()
         }
         .formStyle(.grouped)
+        .alertingError(message: errorMessage, error: $deviceError)
     }
 
     func save() {
@@ -283,10 +288,16 @@ struct DeviceDetailView: View {
 
             let dh = RoamDataHandler()
             Task {
-                await dh.updateDevice(device.persistentModelID, name: deviceName, location: deviceUrl, hidden: hidden)
+                do {
+                    try await dh.updateDevice(device.persistentModelID, name: deviceName, location: deviceUrl, hidden: hidden)
 
-                DispatchQueue.main.async {
-                    updater?.update()
+                    DispatchQueue.main.async {
+                        updater?.update()
+                    }
+                } catch {
+                    Log.data.info("Error updating device \(error, privacy: .public)")
+                    errorMessage = "Failed to Save Device Settings"
+                    deviceError = error
                 }
             }
         }
@@ -299,6 +310,5 @@ struct DeviceDetailView: View {
     traits: .fixedLayout(width: 400, height: 300)
 ) {
     DeviceDetailView(deviceId: getTestingDevices()[0].id, dismiss: {})
-        .modelContainer(previewContainer)
 }
 #endif

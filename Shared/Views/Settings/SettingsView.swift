@@ -63,12 +63,17 @@ struct SettingsView: View {
 #endif
     @Environment(\.layoutDirection) var layoutDirection
 
+    @Environment(\.self) var env
+
     @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanIpAutomatically: Bool = true
     @AppStorage(UserDefaultKeys.shouldControlVolumeWithHWButtons) private var controlVolumeWithHWButtons: Bool = true
     @AppStorage(UserDefaultKeys.showMenuBar) private var showMenuBar: Bool = false
     @AppStorage(UserDefaultKeys.userMajorActionCount) private var majorActionsCount: Int = 0
 
+    @State private var customAccentColor: Color = .accentColor
+
     @State private var variableColor: CGFloat = 0.0
+    @State private var deviceError: Error?
 
     #if !os(watchOS)
     func initiateScan() {
@@ -82,6 +87,21 @@ struct SettingsView: View {
         }
     }
     #endif
+
+    func saveCustomAccentColor(_ color: Color?) {
+        if let color {
+            let resolved = color.resolve(in: env)
+            Log.data.notice("Setting color to \(resolved)")
+            UserDefaults.standard.setColor(resolved, forKey: UserDefaultKeys.customAccentColor)
+        } else {
+            Log.data.notice("Resetting color")
+            UserDefaults.standard.removeObject(forKey: UserDefaultKeys.customAccentColor)
+        }
+    }
+
+    func loadCustomAccentColor() {
+        customAccentColor = UserDefaults.standard.color(forKey: UserDefaultKeys.customAccentColor) ?? .accentColor
+    }
 
     var devices: [Device] {
         allDevices.filter { $0.visible }
@@ -101,6 +121,7 @@ struct SettingsView: View {
                 }
                 .onAppear {
                     Log.lifecycle.notice("Showing \(#fileID, privacy: .public) view")
+                    loadCustomAccentColor()
                 }
                 .onDisappear {
                     Log.lifecycle.notice("Closing \(#fileID, privacy: .public) view")
@@ -148,10 +169,11 @@ struct SettingsView: View {
                         DeviceListItem(device: device, idx: idx)
                     }
                     .onDelete { indexSet in
+                        // TODO: Move this into some async-compatible iterator so cancel if one fails
                         for index in indexSet {
                             if let model = devices[safe: index] {
                                 let pid = model.persistentModelID
-                                Task.detached {
+                                Task {
                                     do {
                                         try await RoamDataHandler().delete(pid)
                                         DispatchQueue.main.async {
@@ -159,6 +181,7 @@ struct SettingsView: View {
                                         }
                                     } catch {
                                         Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
+                                        deviceError = error
                                     }
                                 }
                             }
@@ -251,6 +274,26 @@ struct SettingsView: View {
                         }
                     })
                 )
+
+                HStack {
+                    Text("Accent Color", comment: "Label for accent color picker")
+                    Spacer()
+                    ColorPicker("", selection: Binding(get: { customAccentColor }, set: { c in
+                        saveCustomAccentColor(c)
+                        customAccentColor = c
+                    }), supportsOpacity: false)
+                        .labelsHidden()
+                    Button(action: {
+                        customAccentColor = .accentColor
+                        saveCustomAccentColor(nil)
+                    }, label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .foregroundColor(.secondary)
+                            .font(.caption)
+                    })
+                    .buttonStyle(PlainButtonStyle())
+                    .help("Reset to default accent color")
+                }
             }
 #endif
 
@@ -324,10 +367,11 @@ struct SettingsView: View {
                                 HiddenDeviceListItem(device: device)
                             }
                             .onDelete { indexSet in
+                                // TODO: Move this into some async-compatible iterator so cancel if one fails
                                 for index in indexSet {
                                     if let model = devices[safe: index] {
                                         let pid = model.persistentModelID
-                                        Task.detached {
+                                        Task {
                                             do {
                                                 try await RoamDataHandler().delete(pid)
                                                 DispatchQueue.main.async {
@@ -335,6 +379,7 @@ struct SettingsView: View {
                                                 }
                                             } catch {
                                                 Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
+                                                deviceError = error
                                             }
                                         }
                                     }
@@ -379,6 +424,8 @@ struct SettingsView: View {
         .navigationTitle(String(localized: "Settings", comment: "Navigation title on the settings page"))
 #endif
         .formStyle(.grouped)
+        .alertingError(message: "Failed to Delete Device", error: $deviceError)
+        .customAccentColorTint()
     }
 
     @ViewBuilder
@@ -413,6 +460,5 @@ struct MacSettings: View {
 ) {
     @Previewable @State var path: [NavigationDestination] = []
     return SettingsView(path: $path, destination: .global)
-        .modelContainer(previewContainer)
 }
 #endif

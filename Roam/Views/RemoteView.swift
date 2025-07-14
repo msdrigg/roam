@@ -4,6 +4,7 @@ struct RemoteView: View {
     @Environment(\.openWindow) var openWindow
 
     @EnvironmentObject private var appDelegate: RoamAppDelegate
+    @State private var deviceError: Error?
 
     private var runningInPreview: Bool {
         ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
@@ -32,6 +33,7 @@ struct RemoteView: View {
                     }
                 #endif
             }
+            .alertingError(message: "Failed to Add Device", error: $deviceError)
         }
     }
 
@@ -74,9 +76,13 @@ struct RemoteView: View {
 
             Task {
                 let dh = RoamDataHandler()
-                if let pid = await dh.addOrReplaceDevice(location: location) {
+                do {
+                    let pid = try await dh.addOrReplaceDevice(location: location)
                     Log.lifecycle.notice("Added device with PID \(pid.described(), privacy: .public)")
-                    await dh.setSelectedDevice(pid)
+                    try await dh.setSelectedDevice(pid)
+                } catch {
+                    Log.data.error("Error adding device")
+                    deviceError = error
                 }
             }
         }

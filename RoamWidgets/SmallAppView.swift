@@ -95,7 +95,7 @@ struct SmallAppView: View {
         .buttonStyle(.bordered)
         .controlSize(.small)
         .labelStyle(.iconOnly)
-        .tint(Color.accentColor)
+        .customAccentColorTint()
     }
 }
 #else
@@ -142,7 +142,7 @@ struct SmallAppView: View {
             .accessoryWidgetGroupStyle(.roundedSquare)
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .tint(Color.accentColor)
+            .customAccentColorTint()
         }
     }
 }

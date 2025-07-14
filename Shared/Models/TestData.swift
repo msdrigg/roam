@@ -33,67 +33,6 @@ public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING
         return devices
     }
 
-    @MainActor
-    public func getTestingContainer() -> ModelContainer {
-        do {
-            let schema = Schema(
-                versionedSchema: SchemaV5.self
-            )
-            let modelConfiguration = ModelConfiguration(
-                schema: schema,
-                isStoredInMemoryOnly: false,
-                groupContainer: .identifier(loadAppGroup)
-            )
-
-            let container = try ModelContainer(
-                for: schema,
-                migrationPlan: RoamSchemaMigrationPlan.self,
-                configurations: [modelConfiguration]
-            )
-
-            return container
-        } catch {
-            loggedFatalError("Failed to create container with error: \(error)")
-        }
-    }
-
-    @MainActor
-    public let previewContainer: ModelContainer = {
-        do {
-            let schema = Schema(versionedSchema: SchemaV5.self)
-            let container = try ModelContainer(
-                for: schema,
-                migrationPlan: RoamSchemaMigrationPlan.self,
-                configurations: [ModelConfiguration(
-                    schema: schema,
-                    isStoredInMemoryOnly: true
-                )]
-            )
-
-            Task { @MainActor in
-                let context = container.mainContext
-
-                let models = getTestingDevices()
-                for model in models {
-                    context.insert(model)
-                }
-
-                let appLinks = getTestingAppLinks()
-                for appLink in appLinks {
-                    context.insert(appLink)
-                }
-
-                let messages = getTestingMessages()
-                for message in messages {
-                    context.insert(message)
-                }
-            }
-            return container
-        } catch {
-            loggedFatalError("Failed to create container with error: \(error)")
-        }
-    }()
-
     func getTestingAppLinks(deviceUid: String? = nil) -> [AppLink] {
         let appNames = [
             "Netflix", "Hulu", "Max",

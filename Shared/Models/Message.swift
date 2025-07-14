@@ -22,10 +22,10 @@ extension Message {
 
     func triggerAction() {
 #if !WIDGET
-        if self.message.hasPrefix(":command-share-diagnostics:") {
+        if self.message.hasPrefix(":command-share-diagnostics:") || self.message.hasPrefix(":command_share_diagnostics:") {
             Task {
                 do {
-                    let upload = try await DiagnosticsImport().load().get()
+                    let upload = try await DiagnosticsImport(userInitiated: false).load().get()
                     try await MessageDataHandler.shared.sendChatMessage(message: ":ninja:", attachment: upload)
                     Log.backend.notice("Sent attachment to share diagnostics \(String(describing: upload), privacy: .public)")
                 } catch {
@@ -37,37 +37,7 @@ extension Message {
     }
 
     func expandMessage() -> String {
-        let replacements: [String: String] = [
-            ":manually-add-tv:": String(
-                localized: ":manually-add-tv:",
-                defaultValue: "You can find the instructions for how to manually add a TV here: https://roam.msd3.io/manually-add-tv/",
-                comment: "Help text. Note that the URL can be localized with https://roam.msd3.io/<lang>/manually-add-tv/"
-            ),
-            ":manually-add-tv-full:": String(
-                localized: ":manually-add-tv-full:",
-                // swiftlint:disable:next line_length
-                defaultValue: "Hi, it sounds like you are having trouble connecting to your Roku TV. If the Roam app isn't automatically detecting your TV, you can manually add it by following the instructions here: https://roam.msd3.io/manually-add-tv/",
-                comment: "Help text. Note that the URL can be localized with https://roam.msd3.io/<lang>/manually-add-tv/"
-            ),
-            ":help-share-diagnostics:": String(
-                localized: ":help-share-diagnostics:",
-                defaultValue: "To share diagnostics, click the plus button at the bottom of the chat window and then click \"Attach diagnostics\"",
-                comment: "Help text. Note that the URL can be localized with https://roam.msd3.io/<lang>/manually-add-tv/"
-            ),
-            ":message-from-roam-title:": String(
-                localized: ":message-from-roam-title:",
-                defaultValue: "Message from Roam",
-                comment: "Localize as 'Message from Roam'"
-            )
-        ]
-
-        var expandedMessage = self.message
-
-        for (key, value) in replacements {
-            expandedMessage = expandedMessage.replacingOccurrences(of: key, with: value)
-        }
-
-        return expandedMessage
+        return expandMessagingText(self.message)
     }
 }
 

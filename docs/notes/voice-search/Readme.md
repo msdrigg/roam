@@ -4,6 +4,19 @@
 
 The voice control functionality is one of the final good features that separates my app from the official Roku app, and I have been trying several methods for a long time to develop this feature. Unfortunately there is no documentation and this is a very complex feature. Additionally there are no 3rd party implementations (open source or otherwise) to rely on to understand the protocol better.
 
+## Future Research Ideas
+
+1. Wait for WWDC 2025 to see if there are any AI API's that would help me implement this in-device
+    - Ideally better transcription API's and some kind of NLU API's
+2. Get and investigate a better packet capture from the Voice Remote Pro
+    - Could it be PCM-encoded audio? I know they use this in other places?
+    - Could it be LibSAS?
+3. Investigate the /voice ECP API more fully
+    - Does it send any data to the internet corresponding to the requests we send?
+    - Can we send anything to this API to get it to respond in some way? Fuzzing? Guessing?
+    - See if we can find the code in /bin/Application that handles the 8060 API and see if we can find the piece that handles this
+4. Can I try to get a serial console on my old Roku TV motherboard? If so, maybe I could attach a debugger and step through some of the code, install root certs, re-dump the firmware, or use some other techniques...
+
 ## Implementation Possibilities
 
 ### Option 1: Mishmash of Apple pre-built models
@@ -61,11 +74,3 @@ The voice control functionality is one of the final good features that separates
 
 -   Add keyboard entry search to do the same searching without voice
 -   Checkout how cardhop does their search--it's really good
-
-## Voice Remote Pro API
-
--   See [voice-search/VoiceRemotePro/Readme.md](./VoiceRemotePro/Readme.md)
-
-## Roku App API
-
--   See [voice-search/RokuApp/Readme.md](./RokuApp/Readme.md)

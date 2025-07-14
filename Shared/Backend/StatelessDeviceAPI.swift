@@ -150,7 +150,7 @@ private func wakeOnLAN(macAddress: String, interface: NWInterface?) async -> Boo
     let timeout = DispatchTime.now() + .seconds(5) // Set a 5-second timeout
     let statusStream = AsyncStream { continuation in
         // Start a timer to handle timeout
-        DispatchQueue.global().asyncAfter(deadline: timeout) {
+        DispatchQueue.network.asyncAfter(deadline: timeout) {
             continuation.yield(false)
             connection.cancel()
         }
@@ -177,7 +177,7 @@ private func wakeOnLAN(macAddress: String, interface: NWInterface?) async -> Boo
                 }
             }
         }
-        connection.start(queue: .global())
+        connection.start(queue: .network)
     }
 
     var iterator = statusStream.makeAsyncIterator()

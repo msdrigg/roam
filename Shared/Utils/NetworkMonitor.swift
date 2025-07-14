@@ -7,7 +7,7 @@ final class NetworkMonitor {
     var networkConnection: NetworkType = .local
     private let monitor: NWPathMonitor
     private let queue = DispatchQueue(label: "NetworkMonitor")
-    var appDelegate: RoamAppDelegate?
+    weak var appDelegate: RoamAppDelegate?
 
     init() {
         monitor = NWPathMonitor()

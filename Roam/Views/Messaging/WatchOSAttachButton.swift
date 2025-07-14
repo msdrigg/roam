@@ -26,7 +26,7 @@ struct AttachButton: View {
             NavigationStack {
                 List {
                     Button(action: {
-                        handleAttachment(DiagnosticsImport())
+                        handleAttachment(DiagnosticsImport(userInitiated: true))
                         diagnosticsPressCounter += 1
                         showingSheet = false
                     }, label: {

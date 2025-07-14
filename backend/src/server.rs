@@ -2,7 +2,8 @@ use crate::{
     database::{DeviceInfo, User, UserUpdate},
     discord::{DiscordAuthor, DiscordFile, DiscordFileUpload, DiscordMessageOptions},
     presence::UserPresenceInfo,
-    utils::{i64_to_string, string_to_i64_optional},
+    symbolicate::RoamDebugInfo,
+    utils::{base64_data_de, i64_to_string, string_to_i64_optional},
 };
 use anyhow::Context;
 use axum::{
@@ -13,6 +14,7 @@ use axum::{
     Json,
 };
 use axum::{routing::get, serve::ListenerExt, Router};
+use base64::{prelude::BASE64_STANDARD, Engine};
 pub use error::ApiError;
 use futures::{stream, FutureExt, StreamExt};
 use opentelemetry::trace::{SpanKind, TraceContextExt};
@@ -40,7 +42,7 @@ pub async fn start_server(app_context: AppContext) -> anyhow::Result<JoinHandle<
     let future = async move {
         let tcp_listener = TcpListener::bind(format!("0.0.0.0:{port}"))
             .await
-            .context(format!("Error binding to port {}", port))?
+            .context(format!("Error binding to port {port}"))?
             .tap_io(|tcp_stream| {
                 if let Err(err) = tcp_stream.set_nodelay(true) {
                     tracing::info!("failed to set TCP_NODELAY on incoming connection: {err:#}");
@@ -171,6 +173,8 @@ fn router(app_context: AppContext) -> Router {
         .route("/updates/{user_id}", get(get_user_state))
         .route("/new-message", post(new_message_old))
         .route("/v2/new-message", post(new_message))
+        .route("/v2/upload-diagnostics", post(upload_metric_diagnostics))
+        .route("/v2/upload-roam-dsym", post(upload_roam_dsym))
         .route("/new-apns", post(new_apns))
         .route(
             "/upload-diagnostics/{diagnostic_key}",
@@ -216,15 +220,13 @@ impl DiscordMessageDownload {
                         Ok(bytes) => bytes.to_vec(),
                         Err(e) => {
                             return Err(ApiError::BadRequest(format!(
-                                "Error reading attachment: {}",
-                                e
+                                "Error reading attachment: {e}"
                             )))
                         }
                     },
                     Err(e) => {
                         return Err(ApiError::BadRequest(format!(
-                            "Error downloading attachment: {}",
-                            e
+                            "Error downloading attachment: {e}"
                         )))
                     }
                 };
@@ -362,6 +364,164 @@ struct MessageRequestV2 {
     nonce: Option<String>,
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DiagnosticRequest {
+    user_id: String,
+    metrics_payloads: Vec<String>,
+    diagnostics: RoamDebugInfo,
+    installation_info: DeviceInfo,
+}
+
+async fn upload_metric_diagnostics(
+    State(app_context): State<AppContext>,
+    Json(diagnostic_request): Json<DiagnosticRequest>,
+) -> Result<(), ApiError> {
+    let DiagnosticRequest {
+        user_id: device_id,
+        installation_info,
+        diagnostics,
+        metrics_payloads,
+    } = diagnostic_request;
+
+    let user = app_context
+        .get_or_create_user(
+            &device_id,
+            &UserUpdate {
+                apns_token: None,
+                device_info: Some(installation_info.clone()),
+                thread_id: None,
+            },
+        )
+        .await?;
+
+    let user = app_context
+        .refresh_user(user, None, &Some(installation_info.clone()))
+        .await?;
+
+    app_context
+        .discord_client()
+        .send_message(
+            user.thread_id,
+            ":ninja: MK Diagnostics Payload Received",
+            Some(DiscordFileUpload {
+                content_type: "application/json".to_string(),
+                filename: "diagnostics.json".to_string(),
+                data: serde_json::to_vec(&metrics_payloads).map_err(|e| {
+                    ApiError::BadRequest(format!("Error serializing diagnostics: {e}"))
+                })?,
+                paired_messages: vec![],
+            }),
+            Some(&DiscordMessageOptions::default()),
+        )
+        .await?;
+
+    app_context
+        .discord_client()
+        .send_message(
+            user.thread_id,
+            ":ninja: MK Diagnostics Supporting Data",
+            Some(DiscordFileUpload {
+                content_type: "application/json".to_string(),
+                filename: "diagnostics.json".to_string(),
+                data: serde_json::to_vec(&diagnostics).map_err(|e| {
+                    ApiError::BadRequest(format!("Error serializing diagnostics: {e}"))
+                })?,
+                paired_messages: vec![],
+            }),
+            Some(&DiscordMessageOptions::default()),
+        )
+        .await?;
+
+    for (idx, payload_b64) in metrics_payloads.iter().enumerate() {
+        let payload = match BASE64_STANDARD.decode(payload_b64) {
+            Ok(data) => data,
+            Err(e) => {
+                tracing::error!(?payload_b64, "Error decoding base64 payload: {}", e);
+                continue;
+            }
+        };
+
+        let symbolication_dir = app_context.data_dir.join("symbolication").join(&device_id);
+        let metric_uuid = Uuid::new_v4();
+        tokio::fs::create_dir_all(&symbolication_dir)
+            .await
+            .map_err(|e| {
+                ApiError::BadRequest(format!("Error creating symbolication dir: {e}"))
+            })?;
+        let metric_file_path = symbolication_dir.join(format!("{metric_uuid}.json"));
+        tokio::fs::write(&metric_file_path, payload)
+            .await
+            .map_err(|e| ApiError::BadRequest(format!("Error writing metric file: {e}")))?;
+
+        let symbolicated = match app_context
+            .symbolicate_diagnostics(&diagnostics, &installation_info, &metric_file_path)
+            .await
+        {
+            Ok(s) => s,
+            Err(e) => {
+                tracing::error!(?e, "Error creating symbolicated diagnostics");
+                continue;
+            }
+        };
+
+        let report = match tokio::fs::read_to_string(&symbolicated)
+            .await
+            .map_err(|e| ApiError::SymbolicationError(anyhow::anyhow!(e)))
+        {
+            Ok(report) => report,
+            Err(e) => {
+                tracing::error!(?e, "Error reading symbolicated diagnostics");
+                continue;
+            }
+        };
+
+        app_context
+            .discord_client()
+            .send_message(
+                user.thread_id,
+                &format!(
+                    ":ninja: MK Diagnostics {} Symbolicated at {}",
+                    idx,
+                    symbolicated.display()
+                ),
+                Some(DiscordFileUpload {
+                    content_type: "text/plain".to_string(),
+                    filename: "symbolicated.txt".to_string(),
+                    data: report.as_bytes().to_vec(),
+                    paired_messages: vec![],
+                }),
+                Some(&DiscordMessageOptions::default()),
+            )
+            .await?;
+    }
+
+    Ok(())
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DsymUploadRequest {
+    #[serde(deserialize_with = "base64_data_de")]
+    dsym_zip: Vec<u8>,
+}
+
+async fn upload_roam_dsym(
+    State(app_context): State<AppContext>,
+    Json(dsym_request): Json<DsymUploadRequest>,
+) -> Result<(), ApiError> {
+    // TODO: Implement decoding the zip archive
+    // TODO: Implement decoding the dsym plist file to get the bundle version, os version and build number
+    todo!("Implement Roam dSYM upload");
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DeviceDsymUploadRequest {
+    #[serde(deserialize_with = "base64_data_de")]
+    dsym_zip: Vec<u8>,
+}
+
 async fn new_message(
     State(app_context): State<AppContext>,
     Json(message_request): Json<MessageRequestV2>,
@@ -482,7 +642,7 @@ async fn upload_diagnostics(
 
     let body = to_bytes(body, UPLOAD_LIMIT)
         .await
-        .map_err(|e| ApiError::BadRequest(format!("Error reading body: {}", e)))?;
+        .map_err(|e| ApiError::BadRequest(format!("Error reading body: {e}")))?;
     app_context
         .discord_client()
         .send_message_multiple_attachments(
@@ -517,7 +677,7 @@ async fn get_user_info(
         .get_user_with_id(&user_id)
         .await
         .map_err(ApiError::DatabaseError)?
-        .ok_or_else(|| ApiError::NotFound(format!("User with id {} not found", user_id)))?;
+        .ok_or_else(|| ApiError::NotFound(format!("User with id {user_id} not found")))?;
 
     let messages = app_context
         .discord_client()
@@ -567,7 +727,7 @@ async fn get_thread_info(
         .get_user_with_thread(thread_id)
         .await
         .map_err(ApiError::DatabaseError)?
-        .ok_or_else(|| ApiError::NotFound(format!("Thread with id {} not found", thread_id)))?;
+        .ok_or_else(|| ApiError::NotFound(format!("Thread with id {thread_id} not found")))?;
 
     let messages = app_context
         .discord_client()
@@ -595,6 +755,8 @@ mod error {
     pub enum ApiError {
         #[error("Discord error {0}")]
         DiscordError(#[from] crate::discord::DiscordError),
+        #[error("Symbolication error {0}")]
+        SymbolicationError(#[serde(serialize_with = "serialize_anyhow")] anyhow::Error),
         #[error("Unauthorized")]
         Unauthorized(String),
         #[error("Bad request: {0}")]
@@ -636,6 +798,7 @@ mod error {
                 Self::DiscordError(crate::discord::DiscordError::RateLimited { .. }) => {
                     StatusCode::TOO_MANY_REQUESTS
                 }
+                Self::SymbolicationError(_) => StatusCode::INTERNAL_SERVER_ERROR,
                 Self::DiscordError(_) => StatusCode::INTERNAL_SERVER_ERROR,
                 Self::BadRequest(_) => StatusCode::BAD_REQUEST,
             }

@@ -111,16 +111,15 @@ import os.log
         func startListening() {
             Log.headphones.notice("Starting Latency observations")
 
-            var defaultDeviceAddress = defaultDeviceAddress
-
             audioDeviceChangeListener = { _, _ in
+                var deviceAddress = self.defaultDeviceAddress
                 var size = UInt32(MemoryLayout<AudioDeviceID>.size)
 
                 // Listener for latency changes on the default output device
                 var listeningDeviceId: AudioDeviceID = 0
                 AudioObjectGetPropertyData(
                     AudioObjectID(kAudioObjectSystemObject),
-                    &defaultDeviceAddress,
+                    &deviceAddress,
                     0,
                     nil,
                     &size,
@@ -130,9 +129,10 @@ import os.log
                 self.latencyChangeHandlerIsolated(self.getDeviceLatency(deviceID: listeningDeviceId) ?? 0)
             }
 
+            var deviceAddress = self.defaultDeviceAddress
             let err = AudioObjectAddPropertyListenerBlock(
                 AudioObjectID(kAudioObjectSystemObject),
-                &defaultDeviceAddress,
+                &deviceAddress,
                 nil,
                 audioDeviceChangeListener!
             )

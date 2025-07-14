@@ -8,7 +8,11 @@ final class FileLock {
         case exclusive
     }
 
-    static let shared = FileLock(fileName: ".swiftData.lock", appGroupIdentifier: mainAppGroup)
+    enum LockError: Error {
+        case error(Error)
+    }
+
+    static let shared = FileLock(fileName: ".roamData.lock", appGroupIdentifier: mainAppGroup)
 
     private let fileName: String
     private let appGroupIdentifier: String
@@ -32,8 +36,11 @@ final class FileLock {
             FileManager.default.createFile(atPath: path, contents: nil, attributes: nil)
         }
 
-        guard let fd = try? FileDescriptor.open(path, .readWrite) else {
-            loggedFatalError("Unable to open lock file")
+        let fd: FileDescriptor
+        do {
+            fd = try FileDescriptor.open(path, .readWrite)
+        } catch {
+            throw FileLock.LockError.error(error)
         }
 
         let op: Int32 = {
@@ -44,7 +51,7 @@ final class FileLock {
         }()
 
 #if !os(macOS)
-        let dontKillAssertion = QRunInBackgroundAssertion(name: "OSFileLock")
+        let dontKillAssertion = QActivityRunInBackgroundAssertion(name: "OSFileLock")
         if dontKillAssertion.isReleased() {
             throw DataHandlerError.suspending
         }

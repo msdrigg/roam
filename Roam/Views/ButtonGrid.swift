@@ -73,7 +73,7 @@ struct ButtonGrid: View {
                             .breatheEffect(enabled.contains(button.2))
                             .symbolEffect(.bounce, value: pressCounter(button.2))
 #if os(macOS)
-                            .tint(macTintColor)
+                            .tint(Color.secondary)
                             .buttonStyle(.borderedProminent)
 #endif
 #if !os(visionOS)
@@ -89,5 +89,6 @@ struct ButtonGrid: View {
             }
         }
         .fixedSize()
+        .customAccentColorTint()
     }
 }

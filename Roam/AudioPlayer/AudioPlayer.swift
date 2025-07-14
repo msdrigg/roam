@@ -2,7 +2,6 @@
 import CoreAudio
 import Opus
 import os
-import RTP
 
 struct AudioFrame {
     let frame: AVAudioPCMBuffer
@@ -84,7 +83,7 @@ actor OpusDecoderWithJitterBuffer {
         }
     }
 
-    func nextPacket(atTime _: sending AVAudioTime) -> (AVAudioPCMBuffer, AVAudioTime)? {
+    func nextPacket(atTime _: sending AVAudioTime) -> sending (AVAudioPCMBuffer, AVAudioTime)? {
         guard let lastSampleTime else {
             Log.headphones.notice("Not returning packet because not synced yet")
             return nil
@@ -293,7 +292,7 @@ actor AudioPlayer {
         )!
 
         var error: NSError?
-        converter.convert(to: outputBuffer, error: &error) { _, outStatus in
+        converter.convert(to: outputBuffer, error: &error) { [buffer] _, outStatus in
             outStatus.pointee = .haveData
             return buffer
         }
@@ -307,9 +306,7 @@ actor AudioPlayer {
 
     public func lastRender() throws -> AVAudioTime? {
         if let lrt = streamAudioNode.lastRenderTime {
-            return try catchObjc {
-                streamAudioNode.playerTime(forNodeTime: lrt)
-            }
+            streamAudioNode.playerTime(forNodeTime: lrt)
         }
         return nil
     }

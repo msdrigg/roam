@@ -6,18 +6,24 @@ import ImageIO
 
 @main
 struct RoamWatch: App {
-    var sharedModelContainer: ModelContainer
     @WKApplicationDelegateAdaptor var appDelegate: RoamWatchAppDelegate
 
     init() {
-        sharedModelContainer = getSharedModelContainer()
-
-        try? Tips.configure([
-            .displayFrequency(.immediate),
-            .datastoreLocation(.groupContainer(identifier: tipsAppGroup))
-        ])
+        _ = getSharedModelContainer()
 
         Log.lifecycle.notice("Getting WatchConnectivity \(String(describing: WatchConnectivity.shared), privacy: .public)")
+
+        let dontKillAssertion = QActivityRunInBackgroundAssertion(name: "Tips.configure")
+        if dontKillAssertion.isReleased() {
+            return
+        }
+        defer {
+            dontKillAssertion.release()
+        }
+        try? Tips.configure([
+            .displayFrequency(.immediate),
+            .datastoreLocation(.groupContainer(identifier: mainAppGroup))
+        ])
     }
 
     private var navigationPath: Binding<[NavigationDestination]> {
@@ -33,7 +39,6 @@ struct RoamWatch: App {
         WindowGroup {
             WatchAppView(navigationPath: navigationPath)
         }
-        .modelContainer(sharedModelContainer)
     }
 }
 
@@ -138,6 +143,7 @@ struct WatchAppView: View {
             .onAppear {
                 scanningActor = DeviceDiscoveryActor(updater: { })
             }
+            .customAccentColorTint()
         }
     }
 
@@ -149,10 +155,10 @@ struct WatchAppView: View {
                 .task {
                     if loadTestingData() {
                         // swiftlint:disable:next force_try
-                        try! await RoamDataHandler().loadTestData()
+                        try! await RoamDataHandler.checkedCreate().loadTestData()
                     } else if usingTestingDataContainer() {
                         // swiftlint:disable:next force_try
-                        try! await RoamDataHandler().clearData()
+                        try! await RoamDataHandler.checkedCreate().clearData()
                     }
                 }
                 .task(id: selectedDevice?.persistentModelID, priority: .medium) {
@@ -163,8 +169,8 @@ struct WatchAppView: View {
                             if Task.isCancelled {
                                 return
                             }
-                            let handler = RoamDataHandler()
-                            await handler.refreshDevice(client: WatchOSRefreshClient(id: selectedDevice.persistentModelID, location: selectedDevice.location))
+                            let handler = try? RoamDataHandler.checkedCreate()
+                            await handler?.refreshDevice(client: WatchOSRefreshClient(id: selectedDevice.persistentModelID, location: selectedDevice.location))
                         } else {
                             Log.connection.info("No selected device to refresh")
                             return
@@ -224,6 +230,5 @@ struct AppListViewWrapper: View {
         get: {[]},
         set: {_ in }
     ))
-        .modelContainer(getTestingContainer())
 }
 #endif

@@ -5,6 +5,7 @@ struct DeviceListItem: View {
     var idx: Int
 
     @Environment(\.uuidUpdater) private var updater
+    @State private var deviceError: Error?
 
     var body: some View {
         NavigationLink(value: NavigationDestination.deviceSettingsDestination(device.persistentModelID)) {
@@ -48,7 +49,7 @@ struct DeviceListItem: View {
         .contextMenu {
             Button(role: .destructive) {
                 let pid = device.persistentModelID
-                Task.detached {
+                Task {
                     do {
                         try await RoamDataHandler().delete(pid)
                         Log.userInteraction
@@ -60,6 +61,7 @@ struct DeviceListItem: View {
                         }
                     } catch {
                         Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
+                        deviceError = error
                     }
                 }
             } label: {
@@ -70,6 +72,7 @@ struct DeviceListItem: View {
             }
         }
 #endif
+        .alertingError(message: "Failed to Delete Device", error: $deviceError)
     }
 }
 

@@ -4,6 +4,8 @@ struct HiddenDeviceListItem: View {
     @Bindable var device: Device
 
     @Environment(\.uuidUpdater) private var updater
+    @State private var deviceError: Error?
+    @State private var errorMessage: String = ""
 
     var body: some View {
         NavigationLink(value: NavigationDestination.deviceSettingsDestination(device.persistentModelID)) {
@@ -17,7 +19,7 @@ struct HiddenDeviceListItem: View {
         .contextMenu {
             Button(role: .destructive) {
                 let pid = device.persistentModelID
-                Task.detached {
+                Task {
                     do {
                         try await RoamDataHandler().delete(pid)
                         Log.userInteraction
@@ -29,6 +31,8 @@ struct HiddenDeviceListItem: View {
                         }
                     } catch {
                         Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
+                        errorMessage = "Failed to Delete Device"
+                        deviceError = error
                     }
                 }
             } label: {
@@ -36,13 +40,19 @@ struct HiddenDeviceListItem: View {
             }
             Button {
                 let pid = device.persistentModelID
-                Task.detached {
-                    await RoamDataHandler().updateDevice(
-                        pid,
-                        hidden: false
-                    )
-                    DispatchQueue.main.async {
-                        self.updater?.update()
+                Task {
+                    do {
+                        try await RoamDataHandler().updateDevice(
+                            pid,
+                            hidden: false
+                        )
+                        DispatchQueue.main.async {
+                            self.updater?.update()
+                        }
+                    } catch {
+                        Log.data.warning("Error updating device \(error, privacy: .public)")
+                        errorMessage = "Failed to Unhide Device"
+                        deviceError = error
                     }
                 }
             } label: {
@@ -56,18 +66,25 @@ struct HiddenDeviceListItem: View {
         .swipeActions(edge: .leading) {
             Button {
                 let pid = device.persistentModelID
-                Task.detached {
-                    await RoamDataHandler().updateDevice(
-                        pid,
-                        hidden: false
-                    )
-                    DispatchQueue.main.async {
-                        self.updater?.update()
+                Task {
+                    do {
+                        try await RoamDataHandler().updateDevice(
+                            pid,
+                            hidden: false
+                        )
+                        DispatchQueue.main.async {
+                            self.updater?.update()
+                        }
+                    } catch {
+                        Log.data.warning("Error updating device \(error, privacy: .public)")
+                        errorMessage = "Failed to Unhide Device"
+                        deviceError = error
                     }
                 }
             } label: {
                 Label("Unhide", systemImage: "eye")
             }
         }
+        .alertingError(message: errorMessage, error: $deviceError)
     }
 }

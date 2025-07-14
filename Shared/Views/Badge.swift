@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct BadgeLabelStyle: LabelStyle {
-    var color: Color = .blue
     @ScaledMetric(relativeTo: .footnote) private var iconWidth = 10.0
+    var color: Color = .blue
 
     func makeBody(configuration: Configuration) -> some View {
         HStack(alignment: .center, spacing: iconWidth) {
@@ -14,14 +14,13 @@ struct BadgeLabelStyle: LabelStyle {
         .padding(.horizontal, 10)
         .padding(.vertical, 3)
         #else
-        .padding(.horizontal, 6)
-        .padding(.vertical, 3)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
         #endif
         .truncationMode(.tail)
         .lineLimit(1)
-        .background(color)
+        .background(color.opacity(0.6))
         .clipShape(Capsule())
-        .foregroundColor(color.isLightColor ? .black : .white)
         .font(.caption2)
     }
 }
@@ -32,36 +31,6 @@ extension LabelStyle where Self == BadgeLabelStyle {
     }
 }
 
-#if canImport(UIKit)
-    extension Color {
-        var isLightColor: Bool {
-            var red: CGFloat = 0
-            var green: CGFloat = 0
-            var blue: CGFloat = 0
-            UIColor(self).getRed(&red, green: &green, blue: &blue, alpha: nil)
-
-            let brightness = (red * 299 + green * 587 + blue * 114) / 1000
-            return brightness > 0.5
-        }
-    }
-#else
-    extension Color {
-        var isLightColor: Bool {
-            guard let rgbColor = NSColor(self).usingColorSpace(.deviceRGB) else {
-                return false
-            }
-
-            var red: CGFloat = 0
-            var green: CGFloat = 0
-            var blue: CGFloat = 0
-            rgbColor.getRed(&red, green: &green, blue: &blue, alpha: nil)
-
-            let brightness = (red * 299 + green * 587 + blue * 114) / 1000
-            return brightness > 0.5
-        }
-    }
-#endif
-
 #if DEBUG
 #Preview(
     "About",
@@ -70,6 +39,5 @@ extension LabelStyle where Self == BadgeLabelStyle {
     Label(String("Test Badge!"), systemImage: "keyboard")
         .padding()
         .labelStyle(.badge(Color.green))
-        .modelContainer(previewContainer)
 }
 #endif

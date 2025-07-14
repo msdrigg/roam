@@ -7,7 +7,7 @@ struct GlowingModifier: ViewModifier {
     @ScaledMetric var buttonRadius = globalButtonRadius
     @ScaledMetric var glowRadius = globalGlowingRadius
 
-    let gradientColors = Gradient(colors: [.teal, .blue, .pink, .accentColor, .indigo])
+    let gradientColors = Gradient(colors: [.teal, .blue, .pink, .purple, .indigo])
 
     func body(content: Content) -> some View {
         content

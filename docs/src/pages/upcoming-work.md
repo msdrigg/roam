@@ -32,21 +32,13 @@ hide_table_of_contents: true
     -   Support visionos gestures as well...
     -   Make standard buttons larger
 
--   Look into optimizing bundle size for ios app? What is making the size bigger now??
-
 ## General Future Ideas
 
 -   Make custom menu bar icon
 
 -   How to do voice-to-text or general voice commands?
 
-    -   Need to reverse-engineer the roku voice remote udp protocol
-    -   Or need to add custom text-to-speech with remote button engine?
-    -   Are there 3rd party voice remotes? Is there some kind of oss protocol for voice remotes that I can use?
-
--   Investigate official voice API
-
-    -   See Desktop -> RokuScanning -> voice
+    -   See /docs/notes/voice-search
 
 -   Try more keyboard hacks on iPad
 

@@ -35,9 +35,11 @@ struct MessageBubble: View {
         return nil
     }
 
+    @AppStorageColor(UserDefaultKeys.customAccentColor) private var meColor: Color = .accentColor
+
     var color: Color {
         if message.author == .me {
-            Color.me
+            meColor
         } else {
             Color.support
         }
@@ -208,10 +210,6 @@ struct SupportTypingIndicator: View {
 extension Color {
     static var support: Color {
         Color.gray.opacity(0.5)
-    }
-
-    static var me: Color {
-        Color.accentColor.opacity(0.5)
     }
 }
 

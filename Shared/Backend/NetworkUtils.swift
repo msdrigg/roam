@@ -2,7 +2,7 @@ import Darwin
 import Foundation
 import Network
 
-struct IP4Address: Comparable, Equatable, Strideable, Encodable {
+struct IP4Address: Comparable, Equatable, Strideable, Codable {
     func distance(to other: IP4Address) -> Int {
         let distance64 = Int64(other.address) - Int64(address)
 
@@ -45,15 +45,40 @@ struct IP4Address: Comparable, Equatable, Strideable, Encodable {
         var container = encoder.singleValueContainer()
         try container.encode(addressString)
     }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let addressString = try container.decode(String.self)
+
+        guard let address = ipToUInt32(addressString) else {
+            throw DecodingError.dataCorrupted(
+                DecodingError.Context(
+                    codingPath: decoder.codingPath,
+                    debugDescription: "Invalid IP address string: \(addressString)"
+                )
+            )
+        }
+
+        self.address = address
+    }
 }
 
-struct Addressed4NetworkInterface: Encodable {
+struct Addressed4NetworkInterface: Codable {
     let name: String
     let family: Int32
     let address: IP4Address
     let netmask: IP4Address
     let flags: UInt32
     let nwInterface: NWInterface?
+
+    init(name: String, family: Int32, address: IP4Address, netmask: IP4Address, flags: UInt32, nwInterface: NWInterface?) {
+        self.name = name
+        self.family = family
+        self.address = address
+        self.netmask = netmask
+        self.flags = flags
+        self.nwInterface = nwInterface
+    }
 
     var isIPv4: Bool {
         family == AF_INET
@@ -123,6 +148,17 @@ struct Addressed4NetworkInterface: Encodable {
         try container.encode(familyDescription, forKey: .familyDescription)
         try container.encode(getFlagList(), forKey: .flagList)
         try container.encode(interfaceType, forKey: .interfaceType)
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        name = try container.decode(String.self, forKey: .name)
+        family = try container.decode(Int32.self, forKey: .family)
+        address = try container.decode(IP4Address.self, forKey: .address)
+        netmask = try container.decode(IP4Address.self, forKey: .netmask)
+        flags = try container.decode(UInt32.self, forKey: .flags)
+        nwInterface = nil
     }
 
     func getFlagList() -> [String] {
@@ -256,7 +292,7 @@ private func listInterfacesDarwin() -> [Addressed4NetworkInterface] {
 
 private func listInterfacesNW() async -> [NWInterface] {
     let monitor = NWPathMonitor()
-    monitor.start(queue: DispatchQueue.global())
+    monitor.start(queue: .network)
 
     var matchedNWInterfacesStream = AsyncStream { continuation in
         monitor.pathUpdateHandler = { path in

@@ -1,4 +1,7 @@
-use std::sync::Arc;
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use anyhow::Context;
 use apns::ApnsClient;
@@ -6,6 +9,8 @@ use database::{DatabaseClient, DeviceInfo, User, UserUpdate};
 use discord::{DiscordClient, DiscordMessage, DiscordMessageOptions};
 use presence::{PresenceClient, UserPresenceInfo};
 use server::ApiError;
+
+use crate::symbolicate::{ApplePlatformVersion, RoamDebugInfo};
 
 pub mod apns;
 pub mod cli;
@@ -15,6 +20,7 @@ pub mod gateway;
 pub mod logging;
 pub mod presence;
 pub mod server;
+mod symbolicate;
 pub mod tasks;
 mod utils;
 
@@ -25,6 +31,7 @@ pub struct AppContext {
     db_client: DatabaseClient,
     presence_info: PresenceClient,
     discord_client: DiscordClient,
+    symbolicate_client: symbolicate::SymbolicationClient,
     apns_client: ApnsClient,
     user_create_lock: Arc<tokio::sync::Mutex<()>>,
     discord_token: String,
@@ -32,6 +39,7 @@ pub struct AppContext {
     backend_url: String,
     apns_disabled: bool,
     backend_api_key: String,
+    data_dir: PathBuf,
     port: u16,
 }
 
@@ -40,6 +48,7 @@ impl AppContext {
         let db_client = DatabaseClient::new(&cli)
             .await
             .context("Error creating database client")?;
+        let dsym_dir = cli.dsym_dir().await.context("Error getting dsym dir")?;
 
         let discord_client = DiscordClient::new(
             cli.discord_token.clone(),
@@ -65,6 +74,8 @@ impl AppContext {
             user_create_lock: Arc::new(tokio::sync::Mutex::new(())),
             presence_info: Default::default(),
             port: cli.port,
+            symbolicate_client: symbolicate::SymbolicationClient::new(dsym_dir),
+            data_dir: cli.data_dir.clone().into(),
             apns_disabled: cli.apns_disabled,
         })
     }
@@ -99,6 +110,33 @@ impl AppContext {
 
     async fn presence_info(&self, device_id: &UserId) -> UserPresenceInfo {
         self.presence_info.get_user_presence_info(device_id).await
+    }
+
+    async fn store_dsym(
+        &self,
+        build_version: &str,
+        bundle_identifier: &str,
+        os_platform: &ApplePlatformVersion,
+        dsym: Vec<u8>,
+    ) -> Result<(), ApiError> {
+        self.symbolicate_client
+            .store_dsym(build_version, bundle_identifier, os_platform, dsym)
+            .await
+            .map_err(ApiError::SymbolicationError)?;
+
+        Ok(())
+    }
+
+    async fn symbolicate_diagnostics(
+        &self,
+        diagnostics: &RoamDebugInfo,
+        installation_info: &DeviceInfo,
+        metrics_payload: &Path,
+    ) -> anyhow::Result<PathBuf> {
+        return self
+            .symbolicate_client
+            .symbolicate_diagnostics(diagnostics, installation_info, metrics_payload)
+            .await;
     }
 }
 

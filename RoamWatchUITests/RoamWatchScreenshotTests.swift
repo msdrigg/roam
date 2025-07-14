@@ -41,7 +41,7 @@ final class RoamWatchUITestsScreenshotTests: XCTestCase {
         primaryAttachment.name = "\(locale.identifier)/1/Primary"
         add(primaryAttachment)
 
-        app.otherElements["MainTabView"].waitForClickable().swipeUp()
+        app.otherElements["MainTabView"].waitForClickable(app: app, testCase: self).swipeUp()
 
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -51,7 +51,7 @@ final class RoamWatchUITestsScreenshotTests: XCTestCase {
         secondaryAttachment.name = "\(locale.identifier)/2/Secondary"
         add(secondaryAttachment)
 
-        app.otherElements["MainTabView"].waitForClickable().swipeUp()
+        app.otherElements["MainTabView"].waitForClickable(app: app, testCase: self).swipeUp()
 
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -81,7 +81,7 @@ final class RoamWatchUITestsScreenshotTests: XCTestCase {
         add(dpAttachment)
 
         // Click on settings
-        app.buttons["SettingsButton"].waitForClickable().tap()
+        app.buttons["SettingsButton"].waitForClickable(app: app, testCase: self).tap()
 
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -92,7 +92,7 @@ final class RoamWatchUITestsScreenshotTests: XCTestCase {
         add(sAttachment)
 
         // Click on the first device
-        app.buttons["DeviceItem_\(0)"].waitForClickable().tap()
+        app.buttons["DeviceItem_\(0)"].waitForClickable(app: app, testCase: self).tap()
 
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)

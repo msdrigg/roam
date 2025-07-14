@@ -196,7 +196,7 @@ impl DiscordClient {
         );
 
         if let Some(last_id) = last_message_id {
-            url = format!("{}?after={}", url, last_id);
+            url = format!("{url}?after={last_id}");
         }
 
         tracing::info!("Fetching messages in thread: {}", thread_id);
@@ -218,7 +218,7 @@ impl DiscordClient {
 
         let messages: Vec<DiscordMessage> =
             response.json().await.map_err(|e| DiscordError::ApiError {
-                message: format!("Failed to parse messages: {}", e),
+                message: format!("Failed to parse messages: {e}"),
                 status,
             })?;
 
@@ -564,8 +564,9 @@ impl DiscordClient {
 }
 
 mod types {
-    use crate::utils::{i64_to_string, string_to_i64, string_to_i64_optional};
-    use base64::{prelude::BASE64_STANDARD, Engine};
+    use crate::utils::{
+        base64_data_de, base64_data_ser, i64_to_string, string_to_i64, string_to_i64_optional,
+    };
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -676,24 +677,6 @@ mod types {
                 .field("data", &self.data.len())
                 .finish()
         }
-    }
-
-    fn base64_data_de<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        BASE64_STANDARD
-            .decode(s.as_bytes())
-            .map_err(serde::de::Error::custom)
-    }
-
-    fn base64_data_ser<S>(data: &Vec<u8>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let s = BASE64_STANDARD.encode(data);
-        serializer.serialize_str(&s)
     }
 
     #[derive(Debug, Clone, Deserialize)]

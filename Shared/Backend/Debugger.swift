@@ -11,7 +11,7 @@ struct BadResponseError: Error {
     let message: String
 }
 
-struct LogEntry: Encodable {
+struct LogEntry: Codable {
     let message: String
     let timestamp: Date
     let level: String?
@@ -53,19 +53,19 @@ struct LogEntry: Encodable {
     }
 }
 
-struct ResponseData: Encodable {
+struct ResponseData: Codable {
     let headers: [String: String]
     let statusCode: Int
     let data: String
 }
 
-struct DeviceDebugInfo: Encodable {
+struct DeviceDebugInfo: Codable {
     let device: DeviceAppEntity
     let successResponse: ResponseData?
     let errorResponse: String?
 }
 
-public struct InstallationInfo: Encodable, Sendable {
+public struct InstallationInfo: Codable, Sendable {
     let userId: String
     let buildVersion: String?
     let releaseVersion: String?
@@ -99,13 +99,15 @@ public struct InstallationInfo: Encodable, Sendable {
     }
 }
 
-public struct DebugLanguage: Encodable, Sendable {
+public struct DebugLanguage: Codable, Sendable {
     let deviceLanguageCode: String
     let translatedLanguageCode: String
 }
 
-public struct DebugInfo: Encodable, Sendable {
+public struct DebugInfo: Codable, Sendable {
     let installationInfo: InstallationInfo
+    let userDefaults: [String: String]
+    let spaceOnDevice: SpaceAvailability?
     let devices: [DeviceDebugInfo]
     let appLinks: [AppLinkAppEntity]
     let interfaces: [Addressed4NetworkInterface]
@@ -148,7 +150,7 @@ func trimmedDebugInfoIfNeeded(_ debugInfo: DebugInfo, maxFileSize: Int = 9 * 102
     }
 }
 
-func getDebugInfo() async -> DebugInfo {
+func getDebugInfo(userInitiated: Bool = false) async -> DebugInfo {
     var debugErrors: [String] = []
     var entries: [LogEntry] = []
     do {
@@ -160,7 +162,7 @@ func getDebugInfo() async -> DebugInfo {
 
     var devices: [DeviceAppEntity] = []
     do {
-        devices = try await RoamDataHandler().allDeviceEntitiesIncludingDeleted()
+        devices = try await RoamDataHandler.checkedCreate().allDeviceEntitiesIncludingDeleted()
     } catch {
         debugErrors.append("Error Getting Devices: \n\(error)")
     }
@@ -211,13 +213,38 @@ func getDebugInfo() async -> DebugInfo {
 
     var appLinks: [AppLinkAppEntity] = []
     do {
-        appLinks = try await RoamDataHandler().allAppEntitiesIncludingDeleted()
+        appLinks = try await RoamDataHandler.checkedCreate().allAppEntitiesIncludingDeleted()
     } catch {
         debugErrors.append("Error Getting AppLinks: \n\(error)")
     }
 
+    let userDefaults = UserDefaults.standard.dictionaryRepresentation().mapValues { anyValue in
+        switch anyValue {
+        case let string as String:
+            return string
+        case let number as NSNumber:
+            return number.stringValue
+        case let date as Date:
+            return ISO8601DateFormatter().string(from: date)
+        case let data as Data:
+            return data.base64EncodedString()
+        case let array as [Any]:
+            return array.map { String(describing: $0) }.joined(separator: ", ")
+        default:
+            return String(describing: anyValue)
+        }
+    }
+
+    let spaceOnDevice: SpaceAvailability? = if userInitiated {
+        getAvailableSpaceOnDevice()
+    } else {
+        nil
+    }
+
     return DebugInfo(
         installationInfo: InstallationInfo(),
+        userDefaults: userDefaults,
+        spaceOnDevice: spaceOnDevice,
         devices: deviceDebugInfos,
         appLinks: appLinks,
         interfaces: localInterfaces,
@@ -228,6 +255,46 @@ func getDebugInfo() async -> DebugInfo {
             translatedLanguageCode: String(localized: "locale.translated")
         )
     )
+}
+
+enum SpaceAvailability: Codable, Sendable {
+    case failed
+    case ok
+    case constrained
+    case critical
+}
+
+func getAvailableSpaceOnDevice() -> SpaceAvailability {
+    let fileURL = URL(fileURLWithPath: "/")
+    do {
+        #if !os(watchOS)
+        let values = try fileURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+        let capacity = values.volumeAvailableCapacityForImportantUsage
+        #else
+        let values = try fileURL.resourceValues(forKeys: [.volumeAvailableCapacityKey])
+        let capacity = values.volumeAvailableCapacity
+        #endif
+        if let capacity {
+            Log.backend.notice("Available capacity for important usage: \(capacity, privacy: .public)")
+            // If we have more than 100 MB available, we are OK
+            if capacity > 100_000_000 {
+                return .ok
+            }
+            // If we have more than 10 MB available, we are OK for most tasks, but some file and image creation tasks could fail
+            if capacity > 10_000_000 {
+                return .constrained
+            }
+
+            // If we have less than 10MB available, errors are possible at any time (my wal file is 2MB with only 1 device)
+            return .critical
+        } else {
+            Log.backend.notice("Available capacity for important usage is unavailable")
+            return .failed
+        }
+    } catch {
+        Log.backend.notice("Available capacity for important usage errored: \(error, privacy: .public)")
+        return .failed
+    }
 }
 
 func getLogEntries(limit: Int = 500000) throws -> [LogEntry] {

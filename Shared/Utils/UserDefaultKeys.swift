@@ -10,6 +10,7 @@ enum UserDefaultKeys {
     static let shouldScanIPRangeAutomatically: String = "scanIPAutomatically"
     static let shouldControlVolumeWithHWButtons: String = "controlVolumeWithHWButtons"
     static let showMenuBar: String = "showMenuBar"
+    static let customAccentColor: String = "customAccentColor"
     static let networkPermissionBannerDismissed = "networkPermissionBannerDismissed"
     static let networkExpensiveBannerDismissed = "networkExpensiveBannerDismissed"
     static let localNetworkPermissionGranted = "localNetworkPermissionGranted"

@@ -8,6 +8,7 @@ struct NotificationBanner: View {
     let onClick: (() -> Void)?
 
     @Environment(\.colorScheme) private var colorScheme
+    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
 
     init(message: String, onClick: (() -> Void)? = nil, onDismiss: (() -> Void)? = nil, level: Level = .error) {
         self.message = message
@@ -65,7 +66,7 @@ struct NotificationBanner: View {
     private var backgroundColor: Color {
         switch level {
         case .info:
-            Color.accentColor.opacity(0.3)
+            customAccentColor.opacity(0.3)
         case .warning:
             Color.orange.opacity(0.3)
         case .error:

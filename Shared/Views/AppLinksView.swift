@@ -160,6 +160,5 @@ struct AppLinkButton: View {
     AppLinksView(deviceId: nil, rows: 2, handleOpenApp: { _ in })
         .padding(.bottom, 10)
         .padding(.horizontal, 10)
-        .modelContainer(previewContainer)
 }
 #endif

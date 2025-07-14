@@ -24,6 +24,7 @@ struct DevicePicker: View {
 
     let timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
     @State private var currentDate: Date = .now
+    @State private var deviceError: Error?
 
     var deviceStatusColor: Color {
         if inScreenshotTestingContext() {
@@ -83,9 +84,13 @@ struct DevicePicker: View {
                     set: {
                         device.wrappedValue = $0
                         if let pid = $0?.persistentModelID {
-                            Task.detached {
-                                try? await Task.sleep(duration: 0.5)
-                                await RoamDataHandler().setSelectedDevice(pid)
+                            Task {
+                                do {
+                                    try await RoamDataHandler().setSelectedDevice(pid)
+                                } catch {
+                                    Log.userInteraction.error("Error setting selected device \(error, privacy: .public)")
+                                    deviceError = error
+                                }
                             }
                         }
                     }
@@ -165,11 +170,13 @@ struct DevicePicker: View {
         #if os(iOS)
         .menuStyle(.button)
         #endif
+        .accessibilityIdentifier("DevicePicker")
         .animation(nil, value: UUID())
         .onReceive(timer) { _ in
             currentDate = .now
         }
         .id(updater?.uuid.uuidString ?? "--")
+        .alertingError(message: "Failed to Select Device", error: $deviceError)
     }
 }
 

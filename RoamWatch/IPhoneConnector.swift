@@ -52,7 +52,10 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
         if let deviceMap = devices as? [String: [String: String]] {
             Log.watch.notice("Trying to add devices \(deviceMap, privacy: .public)")
             Task {
-                let dataHandler = await RoamDataHandler()
+                guard let dataHandler = try? await RoamDataHandler.checkedCreate() else {
+                    Log.watch.notice("Error getting data handler in watch connector")
+                    return
+                }
                 for device in deviceMap {
                     if let existingDevice = await dataHandler.deviceEntityForUdn(udn: device.key) {
                         Log.watch
@@ -64,12 +67,14 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
                                 let formatter = ISO8601DateFormatter()
                                 return formatter.date(from: $0)
                             }
-                            await dataHandler.updateDevice(
-                                existingDevice.modelId,
-                                name: name,
-                                location: location,
-                                hidden: hiddenAt != nil
-                            )
+                            if let modelId = existingDevice.modelId {
+                                try? await dataHandler.updateDevice(
+                                    modelId,
+                                    name: name,
+                                    location: location,
+                                    hidden: hiddenAt != nil
+                                )
+                            }
                         }
                         continue
                     }
@@ -80,7 +85,7 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
                             return formatter.date(from: $0)
                         }
                         let name = device.value["name"] ?? getGlobalNewDeviceName()
-                        await dataHandler.addDeviceIndistriminantly(
+                        _ = try? await dataHandler.addDeviceIndistriminantly(
                             location: location,
                             friendlyDeviceName: name,
                             udn: udn,

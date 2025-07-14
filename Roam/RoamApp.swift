@@ -30,19 +30,27 @@ struct RoamApp: App {
         appDelegate.uuidUpdater
     }
 
-    var sharedModelContainer: ModelContainer
+    var metricManager = RoamMetricManager()
     init() {
         Log.lifecycle.notice("Starting Roam")
         #if !os(macOS)
         installAborter()
         #endif
         installSIGPIPEHandler()
+        _ = getSharedModelContainer()
 
-        sharedModelContainer = getSharedModelContainer()
-
+#if !os(macOS)
+        let dontKillAssertion = QActivityRunInBackgroundAssertion(name: "Tips.configure")
+        if dontKillAssertion.isReleased() {
+            return
+        }
+        defer {
+            dontKillAssertion.release()
+        }
+#endif
         try? Tips.configure([
             .displayFrequency(.immediate),
-            .datastoreLocation(.groupContainer(identifier: tipsAppGroup))
+            .datastoreLocation(.groupContainer(identifier: mainAppGroup))
         ])
     }
 
@@ -224,11 +232,9 @@ struct RoamApp: App {
                     .customKeyboardShortcut(.chatWithDeveloper)
                 }
             }
-            .modelContainer(sharedModelContainer)
 
             MenuBarExtra("Roam Menu Bar", systemImage: "appletvremote.gen3", isInserted: self.$showMenuBar) {
                 RemoteViewContained(isInMenuBar: true)
-                    .modelContainer(sharedModelContainer)
                     .environment(\.uuidUpdater, uuidUpdater)
                     .environmentObject(appDelegate)
                     .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
@@ -254,7 +260,6 @@ struct RoamApp: App {
             .windowResizability(windowResizability)
             .defaultSize(width: visionOSWidth, height: 1000)
             #endif
-            .modelContainer(sharedModelContainer)
         #endif
 
         #if os(macOS)
@@ -277,7 +282,6 @@ struct RoamApp: App {
             }
             .keyboardShortcut(messagesShortcut?.shortcut)
             .windowResizability(.contentSize)
-            .modelContainer(sharedModelContainer)
 
             Window("Keyboard Shortcuts", id: "keyboard-shortcuts") {
                 KeyboardShortcutPanel()
@@ -295,7 +299,6 @@ struct RoamApp: App {
             }
             .keyboardShortcut(keyboardShortcutPanelShortcut?.shortcut)
             .windowResizability(.contentSize)
-            .modelContainer(sharedModelContainer)
         #endif
 
         #if os(macOS)
@@ -314,7 +317,6 @@ struct RoamApp: App {
                     }
                     .preferredColorScheme(.dark)
             }
-            .modelContainer(sharedModelContainer)
             .windowToolbarStyle(.unifiedCompact(showsTitle: false))
             .defaultSize(width: 500, height: 600)
             .windowResizability(.contentSize)

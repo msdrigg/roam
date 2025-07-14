@@ -1,72 +1,91 @@
 import Foundation
+import os
 
-private struct Waiter: Identifiable, Hashable {
-    let id: UUID
-    let continuation: CheckedContinuation<Void, Error>?
+public struct AsyncLock: Sendable {
+    private final class Inner: Sendable {
+        private let lock: OSAllocatedUnfairLock<LockState>
 
-    func hash(into hasher: inout Hasher) {
-        id.hash(into: &hasher)
-    }
+        init(isLocked: Bool = false) {
+            self.lock = OSAllocatedUnfairLock(uncheckedState: LockState())
+        }
 
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.id == rhs.id
-    }
-}
-
-public actor AsyncLock {
-    private actor Inner {
-        var isLocked = false
-        var waiters: OrderedSet<Waiter> = OrderedSet()
-
-        func cancelWaiter(_ cancellableId: UUID) {
-            let waiter = waiters.remove(Waiter(id: cancellableId, continuation: nil))
-            waiter?.continuation?.resume(throwing: CancellationError())
+        private func cancelWaiter(_ waiterNode: sending Node<Waiter>) {
+            let waiter = lock.withLock { [waiterNode] ls in
+                return ls.waiters.remove(node: waiterNode)
+            }
+            waiter.resume(throwing: CancellationError())
         }
 
         func lock() async throws {
             try Task.checkCancellation()
-            if !isLocked {
-                isLocked = true
+
+            let fastLocked = lock.withLock { ls in
+                if !ls.isLocked {
+                    ls.isLocked = true
+                    return true
+                } else {
+                    return false
+                }
+            }
+            if fastLocked {
                 return
             }
-            let cancellableId = UUID()
+            let node: OSAllocatedUnfairLock<Node<Waiter>?> = OSAllocatedUnfairLock(initialState: nil)
             try await withTaskCancellationHandler(operation: {
                 try await withCheckedThrowingContinuation { continuation in
-                    waiters.append(Waiter(id: cancellableId, continuation: continuation))
+                    let waitedNode = lock.withLock { ls in
+                        return ls.waiters.append(continuation)
+                    }
+                    node.withLock { node in
+                        node = waitedNode
+                    }
                 }
             }, onCancel: {
-                Task {
-                    await self.cancelWaiter(cancellableId)
+                let cancelling = node.withLock { receivedNode in
+                    return receivedNode.take()
+                }
+
+                if let cancelling {
+                    self.cancelWaiter(cancelling)
                 }
             })
         }
 
         func unlock() {
-            if let next = waiters.popFirst() {
-                next.continuation?.resume()
-            } else {
-                isLocked = false
+            let resumingNext = lock.withLock { ls in
+                if let next = ls.waiters.removeFirst() {
+                    return Optional.some(next)
+                } else {
+                    ls.isLocked = false
+                    return nil
+                }
             }
+            resumingNext?.resume()
         }
+    }
+
+    struct LockState {
+        var isLocked: Bool = false
+        var waiters: LinkedList<Waiter> = LinkedList()
     }
 
     private let inner = Inner()
 
     public init() {}
 
-    public nonisolated func lock() async throws {
+    public func lock() async throws {
         try Task.checkCancellation()
         try await inner.lock()
     }
 
-    public nonisolated func unlock() {
-        Task { await inner.unlock() }
+    public func unlock() {
+        inner.unlock()
     }
 
-    public nonisolated func withLock<T>(_ operation: @Sendable () async throws -> T) async throws -> T {
+    public func withLock<T>(_ operation: @Sendable () async throws -> T) async throws -> T {
         try Task.checkCancellation()
         try await inner.lock()
-        defer { Task { await inner.unlock() } }
+        defer { inner.unlock() }
         return try await operation()
     }
 }
@@ -101,5 +120,74 @@ func processConcurrently<T: Sendable, U: Sendable>(
             }
             continuation.finish()
         }
+    }
+}
+
+typealias Waiter = CheckedContinuation<Void, Error>
+
+final class Node<T: Sendable>: @unchecked Sendable {
+    fileprivate let value: T
+    fileprivate var next: Node?
+    fileprivate weak var previous: Node?
+
+    fileprivate init(value: T, next: Node? = nil, previous: Node? = nil) {
+        self.value = value
+        self.next = next
+        self.previous = previous
+    }
+}
+
+final class LinkedList<T: Sendable> {
+    var head: Node<T>?
+    var tail: Node<T>?
+
+    @discardableResult
+    func append(_ value: T) -> Node<T> {
+        let newNode = Node(value: value)
+        if let tailNode = tail {
+            newNode.previous = tailNode
+            tailNode.next = newNode
+        } else {
+            head = newNode
+        }
+        tail = newNode
+        return newNode
+    }
+
+    func removeFirst() -> T? {
+        if let head {
+            return self.remove(node: head)
+        } else {
+            return nil
+        }
+    }
+
+    public func remove(node: sending Node<T>) -> T {
+        let prev = node.previous
+        let next = node.next
+
+        if let prev = prev {
+            prev.next = next
+        } else {
+            head = next
+        }
+        next?.previous = prev
+
+        if next == nil {
+            tail = prev
+        }
+
+        node.previous = nil
+        node.next = nil
+
+        return node.value
+    }
+
+    var isEmpty: Bool {
+        return head == nil
+    }
+
+    private func lastNode() -> Node<T>? {
+        return tail
     }
 }

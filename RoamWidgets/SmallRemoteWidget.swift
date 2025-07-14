@@ -171,7 +171,7 @@ struct SmallMediaWidget: Widget {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .labelStyle(.iconOnly)
-                .tint(Color.accentColor)
+                .customAccentColorTint()
             }
             .supportedFamilies([.accessoryCircular])
         }
@@ -190,7 +190,6 @@ struct SmallMediaWidget: Widget {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .labelStyle(.iconOnly)
-                .tint(Color.accentColor)
             }
             .supportedFamilies([.accessoryCircular])
         }

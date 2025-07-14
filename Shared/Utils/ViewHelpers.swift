@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 #if os(visionOS)
     let globalButtonWidth: CGFloat = 44
@@ -35,6 +36,113 @@ import SwiftUI
     let globalGlowingRadius: CGFloat = 6
     let globalButtonWidthPaddingSmall: CGFloat = 18
 #endif
+
+@propertyWrapper
+struct AppStorageColor: DynamicProperty {
+    private let defaultValue: Color
+
+    @AppStorage var colorData: Data?
+    @Environment(\.self) var env
+
+    init(wrappedValue defaultValue: Color, _ key: String) {
+        self._colorData  = AppStorage(key)
+        self.defaultValue = defaultValue
+    }
+
+    var wrappedValue: Color {
+        get {
+            if let colorData {
+                return Color(fromData: colorData) ?? defaultValue
+            } else {
+                return defaultValue
+            }
+        }
+        nonmutating set {
+            let resolved = newValue.resolve(in: env)
+            colorData = resolved.toData()
+        }
+    }
+
+    @MainActor
+    var projectedValue: Binding<Color> {
+        Binding(
+            get: { self.wrappedValue },
+            set: { self.wrappedValue = $0 }
+        )
+    }
+}
+
+struct CustomAccentColorTint: ViewModifier {
+    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
+
+    func body(content: Content) -> some View {
+        content
+            .tint(customAccentColor)
+    }
+}
+
+struct CustomAccentColorForeground: ViewModifier {
+    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
+
+    func body(content: Content) -> some View {
+        content
+            .foregroundStyle(customAccentColor)
+    }
+}
+
+extension View {
+    func customAccentColorTint() -> some View {
+        modifier(CustomAccentColorTint())
+    }
+
+    func customAccentColorForeground() -> some View {
+        modifier(CustomAccentColorForeground())
+    }
+}
+
+extension Color.Resolved {
+    func toData() -> Data? {
+        let colorData = ColorData(red: red, green: green, blue: blue, opacity: opacity)
+        let encoder = PropertyListEncoder()
+        return try? encoder.encode(colorData)
+    }
+
+    init?(fromData data: Data) {
+        let decoder = PropertyListDecoder()
+        guard let colorData = try? decoder.decode(ColorData.self, from: data) else {
+            return nil
+        }
+
+        self.init(red: colorData.red, green: colorData.green, blue: colorData.blue, opacity: colorData.opacity)
+    }
+}
+
+extension Color {
+    init?(fromData data: Data) {
+        guard let resolved = Color.Resolved(fromData: data) else { return nil }
+        self = Color(cgColor: resolved.cgColor)
+    }
+}
+
+// Helper struct for encoding/decoding
+private struct ColorData: Codable {
+    let red: Float
+    let green: Float
+    let blue: Float
+    let opacity: Float
+}
+
+extension UserDefaults {
+    func setColor(_ color: Color.Resolved, forKey key: String) {
+        self.setValue(color.toData(), forKey: key)
+    }
+
+    func color(forKey key: String) -> Color? {
+        guard let data = data(forKey: key) else { return nil }
+        guard let resolved = Color.Resolved(fromData: data) else { return nil }
+        return Color(cgColor: resolved.cgColor)
+    }
+}
 
 extension View {
     func applyBuilder<V: View>(@ViewBuilder _ block: (Self) -> V) -> V { block(self) }
@@ -119,6 +227,7 @@ struct BreatheEffect: ViewModifier {
     @ScaledMetric var buttonWidth = (globalButtonWidth + globalButtonWidthPadding)
     @ScaledMetric var buttonHeight = (globalButtonHeight + globalButtonHeightPadding)
     @ScaledMetric var buttonRadius = globalButtonRadius
+    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
     var enabled: Bool
 
     func body(content: Content) -> some View {
@@ -126,7 +235,7 @@ struct BreatheEffect: ViewModifier {
             ZStack {
                 // Outer circle
                 RoundedRectangle(cornerRadius: buttonRadius)
-                    .fill(Color.accentColor)
+                    .fill(customAccentColor)
                     .frame(width: buttonWidth, height: buttonHeight)
                     .opacity(0.2)
                     .phaseAnimator([false, true]) { content, phase in
@@ -138,7 +247,7 @@ struct BreatheEffect: ViewModifier {
 
                 // Middle circle
                 RoundedRectangle(cornerRadius: buttonRadius)
-                    .fill(Color.accentColor)
+                    .fill(customAccentColor)
                     .frame(width: buttonWidth, height: buttonHeight)
                     .opacity(0.5)
                     .phaseAnimator([false, true]) { content, phase in
@@ -150,7 +259,7 @@ struct BreatheEffect: ViewModifier {
 
                 // Inner circle
                 RoundedRectangle(cornerRadius: buttonRadius)
-                    .fill(Color.accentColor)
+                    .fill(customAccentColor)
                     .frame(width: buttonWidth, height: buttonHeight)
                     .opacity(0.3)
                     .phaseAnimator([false, true]) { content, phase in
@@ -161,7 +270,7 @@ struct BreatheEffect: ViewModifier {
                     }
 
                 content
-                    .tint(Color.accentColor)
+                    .tint(customAccentColor)
                     .buttonStyle(.borderedProminent)
             }
             .frame(width: buttonWidth, height: buttonHeight)

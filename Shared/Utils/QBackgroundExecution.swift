@@ -86,12 +86,17 @@ import UIKit
     }
 
     private func taskDidExpire() {
+        Log.backend.notice("Background task did expire!")
         self.consumeValidTaskID {
             self.systemDidReleaseAssertion?()
         }
     }
 }
 #elseif !os(macOS)
+typealias QRunInBackgroundAssertion = QActivityRunInBackgroundAssertion
+#endif
+
+#if !os(macOS)
 import Foundation
 import os
 
@@ -121,8 +126,9 @@ import os
 ///
 /// I could fix this by having all the instances share a single assertion but…
 /// well… let’s just say this code is already complicated.
+///
 @MainActor
-final class QRunInBackgroundAssertion {
+final class QActivityRunInBackgroundAssertion {
 
     /// The name used when creating the assertion.
 
@@ -153,7 +159,6 @@ final class QRunInBackgroundAssertion {
     /// Must be called on the main thread.
     @MainActor
     init(name: String) {
-        dispatchPrecondition(condition: .onQueue(.main))
         self.name = name
         self.systemDidReleaseAssertion = nil
         self.state = OSAllocatedUnfairLock(initialState: .starting)
@@ -204,7 +209,6 @@ final class QRunInBackgroundAssertion {
     ///
     /// Must be called on the main thread.
     func release() {
-        dispatchPrecondition(condition: .onQueue(.main))
         self.releaseOnAnyThread()
         // Set to `nil` to reduce the chances of a retain loop.
         self.systemDidReleaseAssertion = nil
@@ -238,28 +242,13 @@ final class QRunInBackgroundAssertion {
     }
 
     private func runSystemDidReleaseAssertion() {
-        dispatchPrecondition(condition: .onQueue(.main))
         self.systemDidReleaseAssertion?()
         // Set to `nil` to reduce the chances of a retain loop.
         self.systemDidReleaseAssertion = nil
     }
 
     deinit {
-        // We don’t apply this assert because it’s hard to force the last object
-        // reference to be released on the main thread.  Fortunately,
-        // `releaseOnAnyThread()` is thread safe.
-        //
-        // dispatchPrecondition(condition: .onQueue(.main))
-
         self.releaseOnAnyThread()
-
-        // We don’t nil out `systemDidReleaseAssertion` here because that
-        // property is confined to the main thread and we can’t be sure we’re
-        // running on the main thread.  However, that’s not a problem because
-        // the rationale for nil’ing this out is to minimise retain loop and, if
-        // we got to this deinitialiser, that’s not a problem.
-
-        // self.systemDidReleaseAssertion = nil
     }
 }
 #endif

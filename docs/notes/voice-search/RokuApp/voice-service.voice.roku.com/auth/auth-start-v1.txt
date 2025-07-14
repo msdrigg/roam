@@ -1,0 +1,101 @@
+==== Intercepted URLSession Request ====
+URL: https://auth.prod.mobile.roku.com/identity/register
+Method: POST
+Headers: <CFBasicHash 0x283a5e180 [0x1fb4036c8]>{type = mutable dict, count = 22,
+entries =>
+	1 : x-roku-reserved-lat = true
+	2 : x-roku-reserved-request-id = BFA0C167-9848-4053-9340-CF3EC206536D
+	5 : x-roku-reserved-rida = <CFString 0x1fb63f230 [0x1fb4036c8]>{contents = ""}
+	6 : profile-id-is-uuid = true
+	8 : x-roku-reserved-amoeba-ids = <CFString 0x1fb63f230 [0x1fb4036c8]>{contents = ""}
+	9 : x-roku-reserved-dev-id = 1a2f5fd09622fd2b68be13fff92f09aebb6837fd
+	11 : x-roku-reserved-profile-id = <CFString 0x283a44fc0 [0x1fb4036c8]>{contents = "43E88A66-385E-4FB2-BFF8-4A026A880624"}
+	12 : appversion = 12.6.0
+	13 : x-roku-reserved-mobile-experiment-ids = <CFString 0x1fb63f230 [0x1fb4036c8]>{contents = ""}
+	14 : x-roku-reserved-channel-store-code = SOME(us, gb ...)
+	15 : x-roku-reserved-client-id = 6E14E7A3-E277-48E1-9C05-7E59D96DA9F8
+	17 : x-roku-reserved-culture-code = en_MX
+	18 : version = 2.0
+	19 : os = ios
+	23 : x-roku-reserved-correlation = mob_727852BC-0299-49E9-B397-A120650A5938
+	27 : x-roku-reserved-locale = en_MX
+	28 : x-roku-reserved-client-version = app=turing, appversion=12.6.0, os=ios, platform=mobile, version=2.0
+	29 : x-roku-reserved-session-id = 6F434D28-057E-4D52-B5FC-6900D9917DBC
+	31 : osVersion = 15.8.2
+	36 : Content-Type = application/json
+	37 : x-roku-reserved-time-zone-offset = SOME(+01:00, +02:00...)
+	39 : app = remote
+}
+
+Body: 
+========================================
+
+==== Intercepted URLSession Request ====
+URL: https://auth.prod.mobile.roku.com/client/6E14E7A3-E277-48E1-9C05-7E59D96DA9F8/challenge
+Method: GET
+Headers: <CFBasicHash 0x283a21480 [0x1fb4036c8]>{type = mutable dict, count = 1,
+entries =>
+	1 : Accept = application/json
+}
+
+========================================
+
+==== Intercepted URLSession Request ====
+URL: https://auth.prod.mobile.roku.com/client/6E14E7A3-E277-48E1-9C05-7E59D96DA9F8/register
+Method: POST
+Headers: <CFBasicHash 0x283a0ce80 [0x1fb4036c8]>{type = mutable dict, count = 5,
+entries =>
+	0 : app = remote
+	2 : Accept = application/json
+        3 : Content-Type = application/json
+	4 : os = ios
+	6 : appversion = 12.6.0
+}
+
+Body: {"challenge":"b149bae5dd0741bfb45f6eac2b7fc3bb","clientKey":"eCV+JVRGEywPyB9O0JlG+fr1Vk\/sPjQTSpwE0dphoAU=","attestationResult":"<longB64String...>"}
+========================================
+
+==== Intercepted URLSession Request ====
+URL: https://auth.prod.mobile.roku.com/client/6E14E7A3-E277-48E1-9C05-7E59D96DA9F8/challenge
+Method: GET
+Headers: <CFBasicHash 0x283a26a00 [0x1fb4036c8]>{type = mutable dict, count = 1,
+entries =>
+	1 : Accept = application/json
+}
+
+
+==== Intercepted URLSession Request ====
+[iPhone::com.roku.ios.roku ]-> URL: https://account.prod.mobile.roku.com/v1/token?assert=true
+Method: POST
+Headers: <CFBasicHash 0x283a0dac0 [0x1fb4036c8]>{type = mutable dict, count = 26,
+entries =>
+	1 : x-roku-reserved-lat = true
+	2 : x-roku-reserved-request-id = 1CBE0B73-EBA9-43AA-BF4D-0A7FA3849032
+	5 : assertion-signature = signed_headers=app;appversion;assertion-challenge;assertion-request-ts;content-type;host;os;osversion;profile-id-is-uuid;version;x-roku-reserved-amoeba-ids;x-roku-reserved-channel-store-code;x-roku-reserved-client-id;x-roku-reserved-client-version;x-roku-reserved-correlation;x-roku-reserved-culture-code;x-roku-reserved-dev-id;x-roku-reserved-lat;x-roku-reserved-locale;x-roku-reserved-mobile-experiment-ids;x-roku-reserved-profile-id;x-roku-reserved-request-id;x-roku-reserved-rida;x-roku-reserved-session-id;x-roku-reserved-time-zone-offset, hash_alg=HMAC_SHA256, client_id=6E14E7A3-E277-48E1-9C05-7E59D96DA9F8, salt=omlzaWduYXR1cmVYRzBFAiEAq8NIm+FCWpJr/AvsSc77YN3zCqk5k1nQnr4mjQ5g9c4CIFmnzUvZFlTlVsauztEVLBupHDdoDC6JFZI8hAtRmaCZcWF1dGhlbnRpY2F0b3JEYXRhWCXzW0GIcWvGxWxVGT3IPhgp1tU1kB/pgE6WylqQpkbF6EAAAAAC, signature=omlzaWduYXR1cmVYRzBFAiEA4d8OS/D3BIqyvDFe/abqFl5hJbFQWeHYtHFXae7a8asCIBoDYlwDd2SKGIJJto4DUxNd2wwsjVzE1/qt0HB7b3zGcWF1dGhlbnRpY2F0b3JEYXRhWCXzW0GIcWvGxWxVGT3IPhgp1tU1kB/pgE6WylqQpkbF6EAAAAAB
+	6 : Host = <CFString 0x2820b9b60 [0x1fb4036c8]>{contents = "account.prod.mobile.roku.com"}
+	7 : profile-id-is-uuid = true
+	8 : x-roku-reserved-dev-id = 1a2f5fd09622fd2b68be13fff92f09aebb6837fd
+	9 : x-roku-reserved-rida = <CFString 0x1fb63f230 [0x1fb4036c8]>{contents = ""}
+	10 : x-roku-reserved-amoeba-ids = <CFString 0x1fb63f230 [0x1fb4036c8]>{contents = ""}
+	11 : x-roku-reserved-client-id = 6E14E7A3-E277-48E1-9C05-7E59D96DA9F8
+	12 : appversion = 12.6.0
+	13 : x-roku-reserved-mobile-experiment-ids = <CFString 0x1fb63f230 [0x1fb4036c8]>{contents = ""}
+	14 : x-roku-reserved-channel-store-code = SOME
+	15 : x-roku-reserved-profile-id = <CFString 0x283a45580 [0x1fb4036c8]>{contents = "43E88A66-385E-4FB2-BFF8-4A026A880624"}
+	16 : assertion-request-ts = 1748873408.977489
+	17 : x-roku-reserved-culture-code = en_MX
+	18 : version = 2.0
+	19 : os = ios
+	23 : x-roku-reserved-correlation = mob_38A83FA8-ED0D-42F5-8101-F8B3570A95B1
+	27 : x-roku-reserved-locale = en_MX
+	28 : x-roku-reserved-client-version = app=turing, appversion=12.6.0, os=ios, platform=mobile, version=2.0
+	29 : x-roku-reserved-session-id = 6F434D28-057E-4D52-B5FC-6900D9917DBC
+	31 : assertion-challenge = <CFString 0x283a0ee00 [0x1fb4036c8]>{contents = "aedbbe27f76f4eed98e07821b81fe7b5"}
+	32 : osVersion = 15.8.2
+	36 : Content-Type = application/json
+	37 : x-roku-reserved-time-zone-offset = SOME
+	39 : app = remote
+}
+
+Body: {"tokenType": ["JWT"]}
+========================================

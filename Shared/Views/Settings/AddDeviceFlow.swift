@@ -18,6 +18,7 @@ struct AddDeviceFlow: View {
         case idle
         case connecting
         case success
+        case permissionFailed
         case failure(AddDeviceError)
 
         var isSuccess: Bool {
@@ -45,6 +46,21 @@ struct AddDeviceFlow: View {
         }
     }
 
+    var deviceTypeName: String {
+        #if os(macOS)
+        String(localized: "Mac")
+        #elseif os(visionOS)
+        String(localized: "Vision Pro")
+        #elseif os(watchOS)
+        String(localized: "Apple Watch")
+        #else
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            String(localized: "iPad")
+        } else {
+            String(localized: "iPhone")
+        }
+        #endif
+    }
     var ipHint: String {
         selfIpGuess.split(separator: ".").dropLast(1).joined(separator: ".") + ".*"
     }
@@ -71,7 +87,7 @@ struct AddDeviceFlow: View {
     var bodyContent: some View {
         VStack(spacing: 0) {
             #if !os(watchOS)
-            VStack(spacing: 0) {
+            HStack(spacing: 0) {
                 ZStack {
                     Circle()
                         .fill(Color.secondary.opacity(0.4))
@@ -86,7 +102,9 @@ struct AddDeviceFlow: View {
                             .offset(x: 4, y: 0)
                     }
                 }
-                .padding(.vertical, 10)
+                .padding(.horizontal, 20)
+
+                Spacer()
 
                 Text("Add Device")
 #if os(macOS)
@@ -94,6 +112,10 @@ struct AddDeviceFlow: View {
 #else
                     .font(.title.bold())
 #endif
+                Spacer()
+
+                Spacer()
+                    .frame(maxWidth: 95)
             }
             .padding(.top, 30)
             #if os(visionOS)
@@ -116,18 +138,6 @@ struct AddDeviceFlow: View {
                         }
                         .autocorrectionDisabled()
                 }
-#if os(watchOS)
-                Section {
-                    if connectionStatus.isIdle || connectionStatus.isInvalidIp {
-                        Text(
-                            // swiftlint:disable:next line_length
-                            "Before you add your TV, go to **Settings > System > Advanced system settings > Control by mobile apps > Network access** and make sure it's set to 'Permissive' or 'Enabled'"
-                        )
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                }
-#endif
                 Section {
                     if !connectionStatus.isIdle {
                         connectionStatusView(status: connectionStatus)
@@ -136,7 +146,7 @@ struct AddDeviceFlow: View {
                             }
                     }
                     if connectionStatus.isIdle || connectionStatus.isInvalidIp {
-                        Text("Find the IP address of your Roku by going to **Settings > Network > About**. Your IP address will look something like **\(ipHint)**")
+                        Text("Find the IP address of your Roku by going to **Settings > Network > About** in your Roku device's Settings. Your Roku's IP address will look something like **\(ipHint)**")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -147,7 +157,7 @@ struct AddDeviceFlow: View {
             }
             .scrollContentBackground(.hidden)
             .formStyle(.grouped)
-            .presentationBackground(.thinMaterial)
+            .presentationBackground(.thickMaterial)
             .presentationDetents([.medium, .large])
 #if os(watchOS)
             .navigationTitle("Add Device")
@@ -174,7 +184,7 @@ struct AddDeviceFlow: View {
                     case .success:
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.green)
-                    case .failure:
+                    case .failure, .permissionFailed:
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.red)
                     }
@@ -196,6 +206,10 @@ struct AddDeviceFlow: View {
                     Text("Connection failed")
                         .foregroundColor(.red)
                         .fontWeight(.medium)
+                case .permissionFailed:
+                    Text("TV permission disabled")
+                        .foregroundColor(.red)
+                        .fontWeight(.medium)
                 }
 
                 Spacer()
@@ -205,6 +219,11 @@ struct AddDeviceFlow: View {
                         .foregroundStyle(.primary)
                 }
                 #endif
+            }
+
+            if case .permissionFailed = status {
+                // swiftlint:disable:next line_length
+                Text("Your need to enable \"Control by mobile apps\" in your TV's settings. You can update this setting by going to **Settings > System > Advanced system settings > Control by mobile apps > Network access** and make sure it's set to 'Permissive' or 'Enabled'")
             }
 
             if case .failure(let error) = status {
@@ -218,6 +237,17 @@ struct AddDeviceFlow: View {
                         .foregroundColor(.red.opacity(0.8))
                 }
             }
+        }
+
+        if case .permissionFailed = status {
+            Button("Try again", action: {
+                Task {
+                    await tryConnect()
+                }
+            }).foregroundStyle(.primary)
+            #if !os(watchOS)
+                .buttonStyle(.bordered)
+            #endif
         }
 
 #if os(watchOS)
@@ -273,11 +303,16 @@ struct AddDeviceFlow: View {
 
                 do {
                     let preConnectInfo = try await fetchPreconnectionInfo(location: location)
-                    await completeConnection(preConnectInfo: preConnectInfo, location: location)
-                    await MainActor.run {
-                        withAnimation {
-                            connectionStatus = .success
+                    do {
+                        try await addDevice(preConnectInfo: preConnectInfo, location: location)
+                        await MainActor.run {
+                            withAnimation {
+                                connectionStatus = .success
+                            }
                         }
+                    } catch let error as LocalizedError {
+                        Log.data.warning("Error adding the device: \(error, privacy: .public)")
+                        throw AddDeviceError.saveDeviceError(error)
                     }
                 } catch {
                     Log.connection.warning("Error connecting to \(location, privacy: .public), \(error, privacy: .public)")
@@ -306,10 +341,10 @@ struct AddDeviceFlow: View {
         }
     }
 
-    private func completeConnection(preConnectInfo: PreconnectionDeviceInfo, location: String) async {
+    private func addDevice(preConnectInfo: PreconnectionDeviceInfo, location: String) async throws {
         let dataHandler = RoamDataHandler()
 
-        let device = await dataHandler.addDeviceIndistriminantly(
+        let device = try await dataHandler.addDeviceIndistriminantly(
             location: location,
             friendlyDeviceName: preConnectInfo.friendlyName,
             udn: preConnectInfo.udn,
@@ -317,9 +352,7 @@ struct AddDeviceFlow: View {
             hidden: false
         )
 
-        if let deviceId = device {
-            await dataHandler.setSelectedDevice(deviceId)
-        }
+        try await dataHandler.setSelectedDevice(device)
     }
 
     func submit() {
@@ -346,6 +379,7 @@ enum AddDeviceError: Error {
     case invalidIPAddress
     case deviceNotFound
     case networkError
+    case saveDeviceError(LocalizedError)
     case unknown(String)
 }
 
@@ -358,6 +392,8 @@ extension AddDeviceError: LocalizedError {
             return String(localized: "Device not found at the specified IP address", comment: "Error when device not found")
         case .networkError:
             return String(localized: "No WiFi network connection", comment: "Network error with message")
+        case .saveDeviceError(let error):
+            return error.errorDescription ?? String(localized: "Failed to save device", comment: "Error when saving device fails")
         case .unknown(let message):
             return String(localized: "An unknown error occurred: \(message)", comment: "Unknown error with message")
         }
@@ -369,17 +405,18 @@ extension AddDeviceError: LocalizedError {
             return String(localized: "Check the IP address you entered and try again", comment: "Recovery suggestion for invalid IP address")
         case .deviceNotFound:
             return String(
-                localized: "Check the IP address you entered is correct, and ensure that you and the device are connected to the same WiFi network",
+                localized: "Check the IP address you entered is correct, and ensure that your Apple device and the Roku device are connected to the same WiFi network",
                 comment: "Recovery suggestion for device not found"
             )
         case .networkError:
-            return String(localized: "Make sure you are connected to a WiFi network and try agai", comment: "Recovery suggestion for network error")
+            return String(localized: "Make sure you are connected to a WiFi network and try again", comment: "Recovery suggestion for network error")
+        case .saveDeviceError(let error):
+            return error.recoverySuggestion ?? String(localized: "Please try saving the device again", comment: "Recovery suggestion for save device error")
         case .unknown:
             return String(localized: "Try again later or contact support", comment: "Recovery suggestion for unknown error")
         }
     }
 }
-
 #Preview("Add Device") {
     Text("Hello world!")
         .sheet(isPresented: Binding(

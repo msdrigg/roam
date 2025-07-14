@@ -472,7 +472,7 @@ func compressPNGOffthread(image: UnifiedImage, maxFileSize: Int = 9 * 1024 * 102
         return nil
     }
     return await withCheckedContinuation { continuation in
-        DispatchQueue.global(qos: .userInitiated).async {
+        DispatchQueue.computation.async {
             let compressedData = compressPNG(image: data, maxFileSize: maxFileSize)
             continuation.resume(returning: compressedData)
         }
@@ -570,9 +570,47 @@ extension KeyboardReadable {
 #endif
 
 func isHiddenMessage(_ message: String) -> Bool {
-    let hiddenPatterns = [":ninja:", ":command-share-diagnostics:"]
+    let hiddenPatterns = [":ninja:", ":command-share-diagnostics:", ":command_share_diagnostics:"]
 
     return hiddenPatterns.contains(where: message.hasPrefix)
+}
+
+func expandMessagingText(_ message: String) -> String {
+    let replacements: [(Regex, String)] = [
+        // swiftlint:disable:next force_try
+        (try! Regex(":manually[-_]add[-_]tv:"), String(
+            localized: ":manually-add-tv:",
+            defaultValue: "You can find the instructions for how to manually add a TV here: https://roam.msd3.io/manually-add-tv/",
+            comment: "Help text. Note that the URL can be localized with https://roam.msd3.io/<lang>/manually-add-tv/"
+        )),
+        // swiftlint:disable:next force_try
+        (try! Regex(":manually[-_]add[-_]tv[-_]full:"), String(
+            localized: ":manually-add-tv-full:",
+            // swiftlint:disable:next line_length
+            defaultValue: "Hi, it sounds like you are having trouble connecting to your Roku TV. If the Roam app isn't automatically detecting your TV, you can manually add it by following the instructions here: https://roam.msd3.io/manually-add-tv/",
+            comment: "Help text. Note that the URL can be localized with https://roam.msd3.io/<lang>/manually-add-tv/"
+        )),
+        // swiftlint:disable:next force_try
+        (try! Regex(":help[-_]share[-_]diagnostics:"), String(
+            localized: ":help-share-diagnostics:",
+            defaultValue: "To share diagnostics, click the plus button at the bottom of the chat window and then click \"Attach diagnostics\"",
+            comment: "Help text. Note that the URL can be localized with https://roam.msd3.io/<lang>/manually-add-tv/"
+        )),
+        // swiftlint:disable:next force_try
+        (try! Regex(":message[-_]from[-_]roam[-_]title:"), String(
+            localized: ":message-from-roam-title:",
+            defaultValue: "Message from Roam",
+            comment: "Localize as 'Message from Roam'"
+        ))
+    ]
+
+    var expandedMessage = message
+
+    for (key, value) in replacements {
+        expandedMessage = expandedMessage.replacing(key, with: value)
+    }
+
+    return expandedMessage
 }
 
 func parseDiscordSnowflake(_ id: String) -> Date? {
@@ -662,24 +700,32 @@ public func loggedFatalError(_ message: @autoclosure () -> String = String(), fi
     let message = message()
 
 #if !TEST && !CLI
-    let group = DispatchGroup()
-    group.enter()
+    if !runningInPreview {
+        let group = DispatchGroup()
+        group.enter()
 
-    var didComplete = false
+        let didCompleteLock = OSAllocatedUnfairLock(initialState: false)
 
-    Task {
-        await sendBackendError(message, file: file, line: line)
+        Task {
+            await sendBackendError(message, file: file, line: line)
 
-        didComplete = true
-        group.leave()
-    }
+            didCompleteLock.withLock { lock in
+                lock = true
+            }
+            group.leave()
+        }
 
-    _ = group.wait(timeout: .now() + 15.0)
+        _ = group.wait(timeout: .now() + 15.0)
 
-    if didComplete {
-        Log.lifecycle.warning("Error logged to backend before fatal error: \(message, privacy: .public)")
-    } else {
-        Log.lifecycle.warning("Backend logging timed out after 5 seconds")
+        let didComplete = didCompleteLock.withLock { lock in
+            return lock
+        }
+
+        if didComplete {
+            Log.lifecycle.warning("Error logged to backend before fatal error: \(message, privacy: .public)")
+        } else {
+            Log.lifecycle.warning("Backend logging timed out after 5 seconds")
+        }
     }
 #endif
 
