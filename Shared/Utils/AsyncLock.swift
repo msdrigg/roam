@@ -137,7 +137,7 @@ func processConcurrently<T: Sendable, U: Sendable>(
 
 typealias Waiter = CheckedContinuation<Void, Error>
 
-final class Node<T: Sendable>: @unchecked Sendable {
+public final class Node<T: Sendable>: @unchecked Sendable {
     fileprivate let value: T
     fileprivate var next: Node?
     fileprivate weak var previous: Node?
@@ -149,12 +149,23 @@ final class Node<T: Sendable>: @unchecked Sendable {
     }
 }
 
-final class LinkedList<T: Sendable> {
+public final class LinkedList<T: Sendable> {
     var head: Node<T>?
     var tail: Node<T>?
 
+    public init(_ from: [T]) {
+        for element in from {
+            append(element)
+        }
+    }
+
+    public init(head: Node<T>? = nil, tail: Node<T>? = nil) {
+        self.head = head
+        self.tail = tail
+    }
+
     @discardableResult
-    func append(_ value: T) -> Node<T> {
+    public func append(_ value: T) -> Node<T> {
         let newNode = Node(value: value)
         if let tailNode = tail {
             newNode.previous = tailNode
@@ -166,7 +177,7 @@ final class LinkedList<T: Sendable> {
         return newNode
     }
 
-    func removeFirst() -> T? {
+    public func removeFirst() -> T? {
         if let head {
             return self.remove(node: head)
         } else {
@@ -195,11 +206,25 @@ final class LinkedList<T: Sendable> {
         return node.value
     }
 
-    var isEmpty: Bool {
+    public var isEmpty: Bool {
         return head == nil
     }
 
-    private func lastNode() -> Node<T>? {
-        return tail
+    public var size: Int {
+        var count = 0
+        var current = head
+        while let node = current {
+            count += 1
+            current = node.next
+        }
+        return count
+    }
+
+    public var first: T? {
+        return head?.value
+    }
+
+    public var last: T? {
+        return tail?.value
     }
 }

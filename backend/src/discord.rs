@@ -567,6 +567,7 @@ mod types {
     use crate::utils::{
         base64_data_de, base64_data_ser, i64_to_string, string_to_i64, string_to_i64_optional,
     };
+    use regex::Regex;
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -625,8 +626,16 @@ mod types {
         pub fn suppress_notification(&self) -> bool {
             self.content.starts_with(":cold:")
         }
+
         pub fn normalize(mut self) -> DiscordMessage {
-            self.content = self.content.trim_start_matches(":cold:").to_string();
+            let re = Regex::new(r":[a-zA-Z_]+:").unwrap();
+            self.content = re
+                .replace_all(&self.content, |caps: &regex::Captures| {
+                    caps[0].replace('_', "-")
+                })
+                .trim_start_matches(":cold:")
+                .trim()
+                .to_string();
 
             self
         }
@@ -704,5 +713,47 @@ mod types {
     #[derive(Deserialize)]
     pub struct ThreadResponse {
         pub threads: Vec<Thread>,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_discord_message_normalization() {
+        let message = DiscordMessage {
+            id: 1,
+            content: ":cold: Hello :ninja: World! :smile:".to_string(),
+            nonce: None,
+            author: DiscordAuthor { id: 2 },
+            message_type: 0,
+            attachments: vec![],
+        };
+        let normalized = message.normalize();
+        assert_eq!(normalized.content, "Hello :ninja: World! :smile:");
+        assert!(!normalized.suppress_notification());
+        assert!(!normalized.is_hidden());
+        assert_eq!(normalized.author_id(), 2);
+        assert_eq!(normalized.message_type, 0);
+
+        // Now test command underscore to hyphen transformation
+        let message_with_command = DiscordMessage {
+            id: 2,
+            content: ":cold: This is a test :word_with_underscores: message".to_string(),
+            nonce: None,
+            author: DiscordAuthor { id: 3 },
+            message_type: 0,
+            attachments: vec![],
+        };
+        let normalized = message_with_command.normalize();
+        assert_eq!(
+            normalized.content,
+            "This is a test :word-with-underscores: message",
+        );
+        assert!(!normalized.suppress_notification());
+        assert!(!normalized.is_hidden());
+        assert_eq!(normalized.author_id(), 3);
+        assert_eq!(normalized.message_type, 0);
     }
 }

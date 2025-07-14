@@ -1,4 +1,5 @@
-**/xcuserdata
-**/.DS_STORE
+.DS_Store
+Roam.xcodeproj/project.xcworkspace/xcuserdata
+Roam.xcodeproj/xcuserdata
 Archives/
 Secrets.xcconfig

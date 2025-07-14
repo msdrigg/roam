@@ -1,5 +1,4 @@
 fly.toml
 .git/
-ratarget/
 target/
 .env

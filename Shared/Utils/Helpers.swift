@@ -766,3 +766,29 @@ func initialInstallationAfter(_ version: String) -> Bool {
     }
 }
 #endif
+
+enum RoboMessage {
+    case cantConnect
+    case thirdPartyApps
+}
+
+@MainActor
+// swiftlint:disable:next line_length force_try
+let connectRegex = try! Regex("\\bconne|\\badd|\\bpair|\\bfind|\\blook|\\bscan|\\bencuentra|\\bip\\b|\\bpick up|\\btrouver ma télé\\b|\\bconex|\\bconecta|\\bsuche|\\bauftauch|\\bno puedo\\b|\\b无法连接\\b|\\b连接\\b|\\bconexão\\b|\\bconectar\\b|\\bnão consigo\\b|\\bkết nối\\b|\\bلا أستطيع\\b|\\bالاتصال\\b|\\b(اتصل|توصيل|ربط|شبك|اشبك)|\\bਕਨੈਕਟ\\b|\\bਹੋ ਨਹੀਂ ਸਕਦਾ\\b|\\bmaghanap ng tv\\b|\\bmagkonekta\\b|\\bverbinden\\b|\\btrovare la tv\\b|اشغل").ignoresCase()
+
+@MainActor
+// swiftlint:disable:next force_try
+let thirdPartyAppsRegex = try! Regex("\\bwork|\\bvolume|\\bsound|\\bhome|\\bup and").ignoresCase()
+
+@MainActor
+func checkRoboMessage(_ message: String) -> RoboMessage? {
+    if message.firstMatch(of: connectRegex) != nil {
+        return RoboMessage.cantConnect
+    }
+
+    if message.firstMatch(of: thirdPartyAppsRegex) != nil {
+        return RoboMessage.thirdPartyApps
+    }
+
+    return nil
+}

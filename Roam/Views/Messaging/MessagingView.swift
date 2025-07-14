@@ -41,17 +41,31 @@ struct MessageView: View {
     #endif
 
     var roboMessage: Message? {
-        // swiftlint:disable:next line_length force_try
-        let connectRegex = try! Regex("\\bconne|\\badd|\\bpair|\\bfind my tv\\b|\\bscan|\\bencuentra|\\bpick up|\\btrouver ma télé\\b|\\bconexión\\b|\\bconecta\\b|\\bsuche|\\bauftauch|\\bno puedo\\b|\\b无法连接\\b|\\b连接\\b|\\bconexão\\b|\\bconectar\\b|\\bnão consigo\\b|\\bkết nối\\b|\\bلا أستطيع\\b|\\bالاتصال\\b|\\bਕਨੈਕਟ\\b|\\bਹੋ ਨਹੀਂ ਸਕਦਾ\\b|\\bmaghanap ng tv\\b|\\bmagkonekta\\b|\\bverbinden\\b|\\btrovare la tv\\b|اشغل").ignoresCase()
-        if messageFieldText.firstMatch(of: connectRegex) != nil {
-            return Message(
-                id: "connect-help",
-                message: String(localized: "If Roam isn't auto-discovering your tv, check this guide to manually add your TV: https://roam.msd3.io/manually-add-tv/"),
-                author: .support,
-                fetchedBackend: false,
-                messageTitle: String(localized: "Are you having trouble connecting your TV?"),
-                robotMessage: true
-            )
+        if let roboMessage = checkRoboMessage(messageFieldText) {
+            switch roboMessage {
+            case .cantConnect:
+                return Message(
+                    id: "connect-help",
+                    message: String(localized: "If Roam isn't auto-discovering your tv, check this guide to manually add your TV: https://roam.msd3.io/manually-add-tv/"),
+                    author: .support,
+                    fetchedBackend: false,
+                    messageTitle: String(localized: "Are you having trouble connecting your TV?"),
+                    robotMessage: true
+                )
+            case .thirdPartyApps:
+                #if os(watchOS)
+                return Message(
+                    id: "third-party-apps-help",
+                    message: String(localized: "If Roam isn't auto-discovering your tv, check this guide to manually add your TV: https://roam.msd3.io/manually-add-tv/"),
+                    author: .support,
+                    fetchedBackend: false,
+                    messageTitle: String(localized: "Are you having trouble control your TV?"),
+                    robotMessage: true
+                )
+                #else
+                return nil
+                #endif
+            }
         } else {
             return nil
         }

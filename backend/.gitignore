@@ -1,5 +1,4 @@
 target/
-ratarget/
 data/
-
 .env
+.DS_Store

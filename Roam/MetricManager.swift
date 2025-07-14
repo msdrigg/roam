@@ -62,7 +62,7 @@ final class RoamMetricManager: NSObject, MXMetricManagerSubscriber, Sendable {
             encoder.dateEncodingStrategy = .iso8601
             let codedReport = try encoder.encode(diagnosticsRequest)
 
-            guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.msdrigg.roam") else {
+            guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
                 Log.backend.error("Failed to get app group container URL")
                 return
             }
@@ -80,10 +80,11 @@ final class RoamMetricManager: NSObject, MXMetricManagerSubscriber, Sendable {
         } catch {
             Log.backend.error("Failed to save diagnostics: \(error, privacy: .public)")
         }
+        await uploadCachedDiagnostics()
     }
 
     private func uploadCachedDiagnostics() async {
-        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.msdrigg.roam") else {
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
             Log.backend.error("Failed to get app group container URL for cached diagnostics")
             return
         }
