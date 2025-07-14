@@ -265,22 +265,11 @@ struct DeviceDetailView: View {
             }
 
             Log.userInteraction.notice("Saving device settings due to submit--\(deviceIP)-\(hidden)-\(deviceName)")
-            Task {
-                do {
-                    try await save()
-#if !os(watchOS)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        dismiss()
-                    }
-#endif
-                } catch { }
-            }
+            save()
         }
         .onChange(of: "\(deviceIP)-\(hidden)-\(deviceName)", initial: false) {
             Log.userInteraction.notice("Autosaving device settings")
-            Task {
-                try? await save()
-            }
+            save()
         }
         .formStyle(.grouped)
         .alertingError(message: errorMessage, error: $deviceError)
@@ -301,6 +290,11 @@ struct DeviceDetailView: View {
                     DispatchQueue.main.async {
                         updater?.update()
                     }
+#if !os(watchOS)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        dismiss()
+                    }
+#endif
                 } catch {
                     Log.data.info("Error updating device \(error, privacy: .public)")
                     errorMessage = "Failed to Save Device Settings"

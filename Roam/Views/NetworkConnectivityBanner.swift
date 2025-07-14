@@ -1,12 +1,17 @@
 import SwiftUI
 
 struct NetworkConnectivityBanner: View {
+#if os(watchOS)
+    @EnvironmentObject private var appDelegate: RoamWatchAppDelegate
+#else
     @EnvironmentObject private var appDelegate: RoamAppDelegate
+#endif
 
     private var networkMonitor: NetworkMonitor {
         self.appDelegate.networkMonitor
     }
 
+#if !os(watchOS)
     private var ecpSessionState: ECPMonitor {
         appDelegate.ecpMonitor
     }
@@ -14,10 +19,10 @@ struct NetworkConnectivityBanner: View {
     private var ecpSession: ECPWebsocketClient? {
         appDelegate.ecpMonitor.ecpClient
     }
+#endif
 
     @AppStorage(UserDefaultKeys.networkPermissionBannerDismissed) private var networkPermissionBannerDismissed: Bool = false
     @AppStorage(UserDefaultKeys.networkExpensiveBannerDismissed) private var networkExpensiveBannerDismissed: Bool = false
-
     @AppStorage(UserDefaultKeys.localNetworkPermissionGranted) private var localNetworkPermissionGranted: Bool = false
 
     var body: some View {
@@ -27,9 +32,17 @@ struct NetworkConnectivityBanner: View {
             }
     }
 
+    var connectedForSure: Bool {
+        #if !os(watchOS)
+        self.ecpSessionState.status == .connected
+        #else
+        false
+        #endif
+    }
+
     @ViewBuilder
     var mainBody: some View {
-        if self.ecpSessionState.status != .connected {
+        if !connectedForSure {
             if networkMonitor.networkConnection == .none {
                 NotificationBanner(message: String(
                     localized: "No network connection",
@@ -50,7 +63,7 @@ struct NetworkConnectivityBanner: View {
                     self.networkExpensiveBannerDismissed = true
                 }, level: .warning)
                 .padding(.bottom, 8)
-            } else if self.localNetworkPermissionGranted == false && !self.networkPermissionBannerDismissed && self.ecpSessionState.status != .connected  {
+            } else if self.localNetworkPermissionGranted == false && !self.networkPermissionBannerDismissed {
 #if os(macOS)
                 NotificationBanner(message: String(
                     localized: "Local network permission may not be granted. Please open System Settings and navigate to Privacy and Security -> Local Network and enable access for Roam",
@@ -59,7 +72,7 @@ struct NetworkConnectivityBanner: View {
                     self.networkPermissionBannerDismissed = true
                 })
                 .padding(.bottom, 8)
-#else
+#elseif !os(watchOS)
                 NotificationBanner(message: String(
                     localized:
                         "Local network permission may not be granted. Please navigate to System Settings -> Apps -> Roam and enable Local Network",

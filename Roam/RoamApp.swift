@@ -37,7 +37,6 @@ struct RoamApp: App {
         installAborter()
         #endif
         installSIGPIPEHandler()
-        _ = getSharedModelContainer()
 
 #if !os(macOS)
         let dontKillAssertion = QActivityRunInBackgroundAssertion(name: "Tips.configure")

@@ -543,7 +543,7 @@ extension RoamDataHandler {
             await assertion.release()
         } catch {
             await assertion.release()
-            throw DataHandlerError.from(rootError: error)
+            throw DataHandlerError.from(error: error)
         }
         throw DataHandlerError.suspending
     }
@@ -568,7 +568,7 @@ extension RoamDataHandler {
             }
         } catch {
             await assertion.release()
-            throw DataHandlerError.from(rootError: error)
+            throw DataHandlerError.from(error: error)
         }
         await assertion.release()
     }

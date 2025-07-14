@@ -7,11 +7,14 @@ final class NetworkMonitor {
     var networkConnection: NetworkType = .local
     private let monitor: NWPathMonitor
     private let queue = DispatchQueue.networkQueue
+#if !os(watchOS)
     weak var appDelegate: RoamAppDelegate?
+#endif
 
     init() {
         monitor = NWPathMonitor()
         monitor.pathUpdateHandler = { [weak self] path in
+            Log.network.notice("Getting new network path \(String(describing: path))")
             DispatchQueue.main.async { [weak self] in
                 let previouslySatisfied = self?.networkConnection == .local
                 if path.status == .satisfied {
@@ -37,13 +40,15 @@ final class NetworkMonitor {
                     .notice(
                         "Getting new network \(String(describing: path), privacy: .public). Updating self type to \(String(describing: self?.networkConnection), privacy: .public)"
                     )
-                let nowSatisfied = self?.networkConnection == .local
 
+#if !os(watchOS)
+                let nowSatisfied = self?.networkConnection == .local
                 if !previouslySatisfied && nowSatisfied {
                     Task {
                         try? await self?.appDelegate?.ecpMonitor.ecpClient?.getDeviceInfo()
                     }
                 }
+#endif
             }
         }
     }
@@ -51,10 +56,6 @@ final class NetworkMonitor {
     func startMonitoring() {
         Log.network.notice("Starting to monitor network path updates for display")
         monitor.start(queue: queue)
-    }
-
-    func stopMonitoring() {
-        monitor.cancel()
     }
 
     enum NetworkType {

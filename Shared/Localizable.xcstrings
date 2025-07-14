@@ -1927,9 +1927,6 @@
         }
       }
     },
-    "An unknown error ocurred" : {
-
-    },
     "App" : {
       "comment" : "Description on a configuration field\nPlaceholder label for an app",
       "localizations" : {
@@ -2597,6 +2594,9 @@
           }
         }
       }
+    },
+    "Are you having trouble control your TV?" : {
+
     },
     "Attach Diagnostics" : {
       "comment" : "Label on a button",

@@ -9,8 +9,6 @@ struct RoamWatch: App {
     @WKApplicationDelegateAdaptor var appDelegate: RoamWatchAppDelegate
 
     init() {
-        _ = getSharedModelContainer()
-
         Log.lifecycle.notice("Getting WatchConnectivity \(String(describing: WatchConnectivity.shared), privacy: .public)")
 
         let dontKillAssertion = QActivityRunInBackgroundAssertion(name: "Tips.configure")
@@ -33,10 +31,6 @@ struct RoamWatch: App {
                 appDelegate.navigationPath.navigationPath = $0
             }
         )
-    }
-
-    var alertTitle: String {
-        appDelegate.navigationPath.displayedErrorMessage ?? String(localized: "An unknown error ocurred")
     }
 
     var body: some Scene {
@@ -93,10 +87,6 @@ struct WatchAppView: View {
         }
     }
 
-    var alertTitle: String {
-        appDelegate.navigationPath.displayedErrorMessage ?? String(localized: "An unknown error ocurred")
-    }
-
     @MainActor
     var mainBody: some View {
         SettingsNavigationWrapper(path: $navigationPath) {
@@ -109,12 +99,14 @@ struct WatchAppView: View {
                             Label(String(localized: "Add a device manually", comment: "Label on a button to open the device setup page"), systemImage: "plus")
                                 .frame(maxWidth: .infinity)
                         })
-
+                        NetworkConnectivityBanner()
                         Spacer()
                     }
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.roundedRectangle)
                     .labelStyle(.titleAndIcon)
+                } else {
+                    NetworkConnectivityBanner()
                 }
 
                 ButtonGridView(device: selectedDevice?.toAppEntity(), controls: DPAD)
@@ -127,15 +119,6 @@ struct WatchAppView: View {
                     AppListViewWrapper(device: device.toAppEntity())
                 }
             }
-            .alert(
-                alertTitle,
-                isPresented: appDelegate.navigationPath.alertPresented,
-                presenting: (),
-                actions: { },
-                message: {
-                    Text(appDelegate.navigationPath.alertMessage)
-                }
-            )
             .sheet(isPresented: $showingAddDeviceSheet) {
                 NavigationStack {
                     AddDeviceFlow()

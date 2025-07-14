@@ -1,6 +1,83 @@
 import SwiftUI
 import Foundation
 
+#if os(watchOS)
+struct NotificationBanner: View {
+    let message: String
+    let level: Level
+    let onDismiss: (() -> Void)?
+    let onClick: (() -> Void)?
+
+    @Environment(\.colorScheme) private var colorScheme
+    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
+
+    init(message: String, onClick: (() -> Void)? = nil, onDismiss: (() -> Void)? = nil, level: Level = .error) {
+        self.message = message
+        self.onDismiss = onDismiss
+        self.level = level
+        self.onClick = onClick
+    }
+
+    var body: some View {
+        VStack {
+            if let onClick {
+                Button(action: onClick, label: {
+                    Text(message)
+                        .lineLimit(2)
+                        .truncationMode(.tail)
+                        .font(.subheadline)
+                        .foregroundStyle(
+                            colorScheme == .dark ? Color.white.opacity(0.8) : Color.black.opacity(0.8)
+                        )
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(backgroundColor)
+                        .cornerRadius(8)
+                })
+                .buttonStyle(.plain)
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text(message)
+                            .font(.subheadline)
+                        Spacer()
+                    }
+
+                    if let onDismiss {
+                        Button("Dismiss", systemImage: "x.circle.fill", action: onDismiss)
+                            .controlSize(.small)
+                            .labelStyle(.titleAndIcon)
+                            .buttonStyle(.plain)
+                    }
+                }
+                .foregroundStyle(
+                    Color.white.opacity(0.8)
+                )
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(backgroundColor)
+                .cornerRadius(8)
+            }
+            Spacer()
+        }
+    }
+
+    private var backgroundColor: Color {
+        switch level {
+        case .info:
+            customAccentColor.opacity(0.3)
+        case .warning:
+            Color.orange.opacity(0.3)
+        case .error:
+            Color.red.opacity(0.3)
+        }
+    }
+
+    enum Level {
+        case warning, error, info
+    }
+}
+#else
 struct NotificationBanner: View {
     let message: String
     let level: Level
@@ -78,6 +155,7 @@ struct NotificationBanner: View {
         case warning, error, info
     }
 }
+#endif
 
 #if DEBUG
 #Preview("Clickable") {

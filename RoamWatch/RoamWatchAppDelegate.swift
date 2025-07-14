@@ -5,9 +5,11 @@ import Combine
 @MainActor
 final class RoamWatchAppDelegate: NSObject, ObservableObject, Sendable {
     @Published var navigationPath: NavigationManager
+    @Published var networkMonitor: NetworkMonitor
 
     override init() {
         self.navigationPath = NavigationManager()
+        self.networkMonitor = NetworkMonitor()
         super.init()
     }
 
@@ -65,6 +67,7 @@ extension RoamWatchAppDelegate: WKApplicationDelegate {
 
     func applicationDidFinishLaunching() {
         Log.lifecycle.notice("Did finish launching")
+        self.networkMonitor.startMonitoring()
 
         UNUserNotificationCenter.current().delegate = self
 

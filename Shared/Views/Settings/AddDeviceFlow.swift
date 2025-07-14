@@ -127,9 +127,7 @@ struct AddDeviceFlow: View {
                 Section {
                     TextField("IP Address", text: $ipAddress)
                         .disabled(connectionStatus.isSuccess)
-#if os(watchOS)
-                        .textContentType(.URL)
-#elseif !os(macOS)
+#if !os(macOS) && !os(watchOS)
                         .keyboardType(.numbersAndPunctuation)
 #endif
                         .focused($isIpAddressFocused)
@@ -310,7 +308,6 @@ struct AddDeviceFlow: View {
                     } else {
                         throw AddDeviceError.invalidIPAddress
                     }
-                    throw error
                 }
                 do {
                     try await addDevice(preConnectInfo: preConnectInfo, location: location)

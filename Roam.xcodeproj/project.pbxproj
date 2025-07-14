@@ -295,6 +295,10 @@
 		AFED45F12D52BF3000FD53E2 /* MessagingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED45EC2D52BF3000FD53E2 /* MessagingView.swift */; };
 		AFED45F22D52BF3000FD53E2 /* AttachButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFED45ED2D52BF3000FD53E2 /* AttachButton.swift */; };
 		AFEDCDFD2CD134130001D959 /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */; };
+		AFEEF2942E256DB700C0A445 /* NetworkConnectivityBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C372E2D53D23700D7B79F /* NetworkConnectivityBanner.swift */; };
+		AFEEF2952E25701100C0A445 /* AsyncLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E67E2ADCE5D80036EC90 /* AsyncLock.swift */; };
+		AFEEF2962E25707500C0A445 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCF22DF2B2A6A720048FFD9 /* NetworkMonitor.swift */; };
+		AFEEF2972E2570F900C0A445 /* NotificationBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCF22DD2B2A52190048FFD9 /* NotificationBanner.swift */; };
 		AFF2B68F2D4FEBBE00A6F3B0 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
 		AFF2B6902D4FEBBE00A6F3B0 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
 		AFF2B6912D4FEBBE00A6F3B0 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
@@ -1325,6 +1329,8 @@
 				"",
 				"",
 				"",
+				"",
+				"",
 			);
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -1361,7 +1367,6 @@
 				AFD9C4F32AE982E400C4079C /* DiscoveryActor.swift in Sources */,
 				AFD9C4FB2AE983BF00C4079C /* DeviceApi.swift in Sources */,
 				AF3BDD152DCF8F9200DABFA6 /* XMLStreamingDecoder.swift in Sources */,
-				AF5A494E2DE8D5A200385A51 /* ModelContainerExtension.swift in Sources */,
 				AF2F54F02BCE58EF00BAE156 /* RoamBackend.swift in Sources */,
 				AFD9C4EC2AE980BF00C4079C /* NetworkHelpers.swift in Sources */,
 				AFD9C4F82AE983A800C4079C /* NetworkUtils.swift in Sources */,
@@ -1370,6 +1375,7 @@
 				AF736A812DCD57DD0028A2B4 /* Attachment.swift in Sources */,
 				AFCD235F2DCBC6270000E80E /* QBackgroundExecution.swift in Sources */,
 				AFD9C4E42AE9809900C4079C /* AppLinkAppEntity.swift in Sources */,
+				AFEEF2972E2570F900C0A445 /* NotificationBanner.swift in Sources */,
 				AF736A912DCDD9250028A2B4 /* CachedAsyncImage.swift in Sources */,
 				AFBDEA2F2D7D122000C15B18 /* AddDeviceFlow.swift in Sources */,
 				AFD9C4F92AE983AE00C4079C /* SSDPService.swift in Sources */,
@@ -1383,11 +1389,13 @@
 				AFD9C4ED2AE980C300C4079C /* DataHelpers.swift in Sources */,
 				AF0532822D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift in Sources */,
 				AFF6DE0E2BCF0326002C13FC /* Message.swift in Sources */,
+				AFEEF2942E256DB700C0A445 /* NetworkConnectivityBanner.swift in Sources */,
 				AFF2B6912D4FEBBE00A6F3B0 /* Loggers.swift in Sources */,
 				AF70BB0A2BA7CBD0009A06EC /* HoveredView.swift in Sources */,
 				AFBDE4542DD5341700DD1741 /* FileLock.swift in Sources */,
 				AFBDEA362D7D181F00C15B18 /* HiddenDeviceListItem.swift in Sources */,
 				AFDB4FFD2D53C0A8004E27A4 /* DeviceListItem.swift in Sources */,
+				AFEEF2962E25707500C0A445 /* NetworkMonitor.swift in Sources */,
 				AF0C82982AEBFBD500CBE7F8 /* StatelessDeviceAPI.swift in Sources */,
 				AF6E294B2C1A2ACE0062DFB3 /* ViewHelpers.swift in Sources */,
 				AF1899FA2C1CDFC2001EDA78 /* SettingsNavigationWrapper.swift in Sources */,
@@ -1636,6 +1644,7 @@
 				AFDB50002D53C7B7004E27A4 /* Loggers.swift in Sources */,
 				AF3F350D2D3E99A2009AF2F8 /* ECPMessages.swift in Sources */,
 				AF3F350C2D3E98C9009AF2F8 /* ECPProtocol.swift in Sources */,
+				AFEEF2952E25701100C0A445 /* AsyncLock.swift in Sources */,
 				AFEDCDFD2CD134130001D959 /* NetworkUtils.swift in Sources */,
 				AF2130102DFF35F300B3F2D6 /* DispatchQueueExtension.swift in Sources */,
 			);
