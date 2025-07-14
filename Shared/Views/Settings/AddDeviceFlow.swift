@@ -301,30 +301,27 @@ struct AddDeviceFlow: View {
                 let location = "http://\(await ipAddress):8060/"
                 Log.connection.info("Connecting to \(location, privacy: .public)")
 
+                let preConnectInfo: PreconnectionDeviceInfo
                 do {
-                    let preConnectInfo = try await fetchPreconnectionInfo(location: location)
-                    do {
-                        try await addDevice(preConnectInfo: preConnectInfo, location: location)
-                        await MainActor.run {
-                            withAnimation {
-                                connectionStatus = .success
-                            }
-                        }
-                    } catch let error as LocalizedError {
-                        Log.data.warning("Error adding the device: \(error, privacy: .public)")
-                        throw AddDeviceError.saveDeviceError(error)
-                    }
-                } catch let error as DataHandlerError {
-                    Log.connection.warning("Error connecting to \(location, privacy: .public), \(error, privacy: .public)")
-                    if case .failedToConnectWhileAdding = error {
-                        if isValidIp {
-                            throw AddDeviceError.deviceNotFound
-                        } else {
-                            throw AddDeviceError.invalidIPAddress
-                        }
+                    preConnectInfo = try await fetchPreconnectionInfo(location: location)
+                } catch {
+                    if isValidIp {
+                        throw AddDeviceError.deviceNotFound
                     } else {
-                        throw error
+                        throw AddDeviceError.invalidIPAddress
                     }
+                    throw error
+                }
+                do {
+                    try await addDevice(preConnectInfo: preConnectInfo, location: location)
+                    await MainActor.run {
+                        withAnimation {
+                            connectionStatus = .success
+                        }
+                    }
+                } catch let error as LocalizedError {
+                    Log.data.warning("Error adding the device: \(error, privacy: .public)")
+                    throw AddDeviceError.saveDeviceError(error)
                 }
             } catch let error as AddDeviceError {
                 await MainActor.run {
@@ -337,7 +334,7 @@ struct AddDeviceFlow: View {
                 await MainActor.run {
                     withAnimation {
                         globalError = error.errorDescription
-                        connectionStatus = .failure(.dataError(error))
+                        connectionStatus = .failure(.saveDeviceError(error))
                     }
                 }
             } catch {

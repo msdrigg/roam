@@ -1844,9 +1844,6 @@
         }
       }
     },
-    "An unknown error occurred" : {
-
-    },
     "An unknown error occurred: %@" : {
       "comment" : "Unknown error with message",
       "localizations" : {
@@ -2430,7 +2427,7 @@
         }
       }
     },
-    "App currently shutting down" : {
+    "App currently shutting down." : {
 
     },
     "App Version" : {
@@ -3512,6 +3509,9 @@
           }
         }
       }
+    },
+    "Cannot update device that is deleted." : {
+
     },
     "Capabilities" : {
       "comment" : "Settings section label for device ",
@@ -5584,9 +5584,6 @@
         }
       }
     },
-    "Contact Support" : {
-
-    },
     "Copy" : {
       "comment" : "Keyboard shortcut to copy\nLabel on a button to copy the text",
       "localizations" : {
@@ -6830,9 +6827,6 @@
         }
       }
     },
-    "Error saving data" : {
-
-    },
     "Error saving data, no valid container found" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6998,9 +6992,6 @@
           }
         }
       }
-    },
-    "Error saving data. Cannot update device that is deleted." : {
-
     },
     "Error saving data. No disk storage left." : {
       "extractionState" : "stale",
@@ -11662,9 +11653,6 @@
         }
       }
     },
-    "Make sure the device is powered on and connected to the same Wi-Fi network as the Roam app" : {
-
-    },
     "Make sure you are connected to a WiFi network and try agai" : {
       "comment" : "Recovery suggestion for network error",
       "extractionState" : "stale",
@@ -14076,6 +14064,9 @@
         }
       }
     },
+    "Operation failed." : {
+
+    },
     "Options" : {
       "comment" : "Keyboard shortcut to open the options menu\nRemote button for options menu",
       "localizations" : {
@@ -14903,6 +14894,9 @@
         }
       }
     },
+    "Please close and re-open the app and then try again." : {
+
+    },
     "Please delete some files to clear up some space and try again" : {
 
     },
@@ -14989,14 +14983,10 @@
         }
       }
     },
-    "Please re-open the app and try again" : {
-
-    },
     "Please make sure the device you are updating has been added." : {
 
     },
     "Please re-open the app and try again." : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -15077,6 +15067,9 @@
           }
         }
       }
+    },
+    "Please try saving the device again" : {
+      "comment" : "Recovery suggestion for save device error"
     },
     "Power" : {
       "comment" : "Keyboard shortcut to power on/off the TV\nSiri shortcut to power on/off the device",
@@ -17237,9 +17230,6 @@
           }
         }
       }
-    },
-    "Roam failed to open" : {
-
     },
     "Roam Help" : {
       "localizations" : {

@@ -113,24 +113,11 @@ struct SettingsView: View {
         allDevices.filter { $0.hiddenAt != nil}
     }
 
-    var alertTitle: String {
-        appDelegate.navigationPath.displayedErrorMessage ?? String(localized: "An unknown error ocurred")
-    }
-
     var body: some View {
         if runningInPreview {
             bodyContent
         } else {
             bodyContent
-                .alert(
-                    alertTitle,
-                    isPresented: appDelegate.navigationPath.alertPresented,
-                    presenting: (),
-                    actions: { },
-                    message: {
-                        Text(appDelegate.navigationPath.alertMessage)
-                    }
-                )
                 .onChange(of: self.updater?.uuid.uuidString) { _, _ in
                     self._allDevices.update()
                 }

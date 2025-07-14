@@ -5,6 +5,7 @@ public enum FileLockError<E: Sendable>: Error, LocalizedError {
     case suspending
     case groupContainerFailed
     case fileLockFailed
+    case fileError(error: Error)
     case inner(E)
 }
 
@@ -52,7 +53,7 @@ final class FileLock {
         do {
             fd = try FileDescriptor.open(path, .readWrite)
         } catch {
-            throw FileLock.LockError.error(error)
+            throw FileLockError.fileError(error: error)
         }
 
         let op: Int32 = {

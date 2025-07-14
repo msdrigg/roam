@@ -32,7 +32,6 @@ public struct AsyncLock: Sendable {
             }
             let node: OSAllocatedUnfairLock<Node<Waiter>?> = OSAllocatedUnfairLock(initialState: nil)
             try await withTaskCancellationHandler(operation: {
-                try Task.checkCancellation()
                 try await withCheckedThrowingContinuation { continuation in
                     let waitedNode = lock.withLock { ls in
                         return ls.waiters.append(continuation)
@@ -43,22 +42,11 @@ public struct AsyncLock: Sendable {
                 }
             }, onCancel: {
                 let cancelling = node.withLock { receivedNode in
-                    let toCancel = receivedNode.take()
-                    receivedNode = .failure(CancellationError())
-
-                    if case let .success(node) = toCancel {
-                        return node
-                    } else {
-                        return nil
-                    }
+                    return receivedNode.take()
                 }
 
                 if let cancelling {
-                    lock.lock()
-                    let waiter = waiters.remove(node: cancelling)
-                    lock.unlock()
-                    waiter.resume(throwing: CancellationError())
-
+                    self.cancelWaiter(cancelling)
                 }
             })
         }
@@ -137,7 +125,7 @@ func processConcurrently<T: Sendable, U: Sendable>(
 
 typealias Waiter = CheckedContinuation<Void, Error>
 
-public final class Node<T: Sendable>: @unchecked Sendable {
+final class Node<T: Sendable>: @unchecked Sendable {
     fileprivate let value: T
     fileprivate var next: Node?
     fileprivate weak var previous: Node?
@@ -149,23 +137,12 @@ public final class Node<T: Sendable>: @unchecked Sendable {
     }
 }
 
-public final class LinkedList<T: Sendable> {
+final class LinkedList<T: Sendable> {
     var head: Node<T>?
     var tail: Node<T>?
 
-    public init(_ from: [T]) {
-        for element in from {
-            append(element)
-        }
-    }
-
-    public init(head: Node<T>? = nil, tail: Node<T>? = nil) {
-        self.head = head
-        self.tail = tail
-    }
-
     @discardableResult
-    public func append(_ value: T) -> Node<T> {
+    func append(_ value: T) -> Node<T> {
         let newNode = Node(value: value)
         if let tailNode = tail {
             newNode.previous = tailNode
@@ -177,7 +154,7 @@ public final class LinkedList<T: Sendable> {
         return newNode
     }
 
-    public func removeFirst() -> T? {
+    func removeFirst() -> T? {
         if let head {
             return self.remove(node: head)
         } else {
@@ -206,25 +183,11 @@ public final class LinkedList<T: Sendable> {
         return node.value
     }
 
-    public var isEmpty: Bool {
+    var isEmpty: Bool {
         return head == nil
     }
 
-    public var size: Int {
-        var count = 0
-        var current = head
-        while let node = current {
-            count += 1
-            current = node.next
-        }
-        return count
-    }
-
-    public var first: T? {
-        return head?.value
-    }
-
-    public var last: T? {
-        return tail?.value
+    private func lastNode() -> Node<T>? {
+        return tail
     }
 }

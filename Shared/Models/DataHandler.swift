@@ -481,6 +481,8 @@ enum DataHandlerError: Error, LocalizedError {
     case noSpaceOnDisk
     case noContainerURL
     case deviceNotFound
+    case rootError(LocalizedError)
+    case unknown
 
     var errorDescription: String {
         switch self {
@@ -489,9 +491,13 @@ enum DataHandlerError: Error, LocalizedError {
         case .noSpaceOnDisk:
             return String(localized: "No disk storage left")
         case .suspending:
-            return String(localized: "Error saving data. App currently shutting down.")
+            return String(localized: "App currently shutting down.")
         case .deviceNotFound:
-            return String(localized: "Error saving data. Cannot update device that is deleted.")
+            return String(localized: "Cannot update device that is deleted.")
+        case .unknown:
+            return String(localized: "Operation failed.")
+        case .rootError(let error):
+            return error.errorDescription ?? String(localized: "Operation failed.")
         }
     }
 
@@ -505,11 +511,26 @@ enum DataHandlerError: Error, LocalizedError {
             return String(localized: "Please re-open the app and try again.")
         case .deviceNotFound:
             return String(localized: "Please make sure the device you are updating has been added.")
+        case .unknown:
+            return String(localized: "Please close and re-open the app and then try again.")
+        case .rootError(let error):
+            return error.recoverySuggestion ?? String(localized: "Please close and re-open the app and then try again.")
         }
+    }
+
+    static func from(error: Error) -> Self {
+        let nsError = error as NSError
+        if nsError.domain == NSCocoaErrorDomain && nsError.code == NSFileWriteOutOfSpaceError {
+            return .noSpaceOnDisk
+        }
+        if let error = error as? LocalizedError {
+            return .rootError(error)
+        }
+        return .unknown
     }
 }
 
-public extension RoamDataHandler {
+extension RoamDataHandler {
     #if !os(macOS)
     func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
         let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
@@ -531,7 +552,7 @@ public extension RoamDataHandler {
         do {
             return try self.modelContext.fetch(descriptor)
         } catch {
-            throw DataHandlerError.from(rootError: error)
+            throw DataHandlerError.from(error: error)
         }
     }
     #endif
@@ -556,7 +577,7 @@ public extension RoamDataHandler {
         do {
             try self.modelContext.save()
         } catch {
-            throw DataHandlerError.from(rootError: error)
+            throw DataHandlerError.from(error: error)
         }
     }
     #endif
