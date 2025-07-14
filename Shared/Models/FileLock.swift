@@ -1,6 +1,13 @@
 import Foundation
 import System
 
+public enum FileLockError<E: Sendable>: Error, LocalizedError {
+    case suspending
+    case groupContainerFailed
+    case fileLockFailed
+    case inner(E)
+}
+
 @MainActor
 final class FileLock {
     enum Mode {
@@ -22,10 +29,10 @@ final class FileLock {
         self.appGroupIdentifier = appGroupIdentifier
     }
 
-    func withLock<T>(mode: Mode, _ body: () throws -> T) throws -> T {
+    func withLock<T, E>(mode: Mode, _ body: () throws (E) -> T) throws (FileLockError<E>) -> T {
         Log.data.notice("Beginning file lock")
         guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) else {
-            loggedFatalError("App group container not found: \(self.appGroupIdentifier)")
+            throw FileLockError.groupContainerFailed
         }
 
         let lockFileURL = containerURL.appendingPathComponent(fileName)
@@ -33,7 +40,12 @@ final class FileLock {
 
         if !FileManager.default.fileExists(atPath: path) {
             Log.data.notice("Creating file lock file")
-            FileManager.default.createFile(atPath: path, contents: nil, attributes: nil)
+            let created = FileManager.default.createFile(atPath: path, contents: nil, attributes: nil)
+            if !created {
+                Log.data.notice("File lock NOT created")
+            }
+        } else {
+            Log.data.notice("File lock already exists")
         }
 
         let fd: FileDescriptor
@@ -53,13 +65,25 @@ final class FileLock {
 #if !os(macOS)
         let dontKillAssertion = QActivityRunInBackgroundAssertion(name: "OSFileLock")
         if dontKillAssertion.isReleased() {
-            throw DataHandlerError.suspending
+            throw FileLockError.suspending
         }
 #endif
-        _ = flock(fd.rawValue, op)
+        let lockResult = flock(fd.rawValue, op)
+
+        if lockResult == -1 {
+            let error = errno
+            logErrorMessage(error)
+            throw FileLockError.fileLockFailed
+        }
+
         defer {
             Log.data.notice("Closing file lock")
-            flock(fd.rawValue, LOCK_UN)
+            let unlockResult = flock(fd.rawValue, LOCK_UN)
+            if unlockResult == -1 {
+                let error = errno
+                logErrorMessage(error, isUnlock: true)
+            }
+
             try? fd.close()
             #if !os(macOS)
             dontKillAssertion.release()
@@ -67,8 +91,33 @@ final class FileLock {
         }
 
         Log.data.notice("Executing body")
-        let res = try body()
-        Log.data.notice("Done executing body")
-        return res
+        do {
+            let res = try body()
+            Log.data.notice("Done executing body")
+            return res
+        } catch {
+            throw .inner(error)
+        }
+    }
+}
+
+func logErrorMessage(_ error: Int32, isUnlock: Bool = false) {
+    let errorMessage = String(cString: strerror(error))
+    switch error {
+    case EBADF:
+        Log.data.error("Invalid file descriptor for lock operation unlock=\(isUnlock, privacy: .public)")
+    case EINVAL:
+        Log.data.error("Invalid lock operation specified")
+    case EWOULDBLOCK, EAGAIN:
+        // Lock would block and LOCK_NB was specified
+        Log.data.error("Lock is held by another process (non-blocking mode) unlock=\(isUnlock, privacy: .public)")
+    case ENOLCK:
+        Log.data.error("System lock table is full - no locks available unlock=\(isUnlock, privacy: .public)")
+    case ENOTSUP, EOPNOTSUPP:
+        Log.data.error("File system doesn't support locking unlock=\(isUnlock, privacy: .public)")
+    case EACCES, EPERM:
+        Log.data.error("Permission denied for lock operation unlock=\(isUnlock, privacy: .public)")
+    default:
+        Log.data.error("Lock operation failed: \(errorMessage) (errno: \(error)) unlock=\(isUnlock, privacy: .public)")
     }
 }

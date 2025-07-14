@@ -4,7 +4,7 @@ import OSLog
 
 #if os(macOS)
 func requestLocalNetworkAuthorization() async throws -> Bool {
-    let queue = DispatchQueue(label: "com.nonstrict.localNetworkAuthCheck")
+    let queue = DispatchQueue.networkQueue
 
     let connection = NWConnection(host: NWEndpoint.Host("255.255.255.255"), port: 4567, using: .udp)
 
@@ -87,7 +87,7 @@ func requestLocalNetworkAuthorization() async throws -> Bool {
 private let type = "_preflight_check._tcp"
 
 func requestLocalNetworkAuthorization() async throws -> Bool {
-    let queue = DispatchQueue(label: "com.nonstrict.localNetworkAuthCheck")
+    let queue = DispatchQueue.networkQueue
 
     Log.network.notice("Setup listener.")
     let listener = try NWListener(using: NWParameters(tls: .none, tcp: NWProtocolTCP.Options()))

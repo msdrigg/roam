@@ -155,20 +155,3 @@ public func interval(
 public func nanoseconds(_ timeInterval: TimeInterval) -> UInt64 {
     UInt64(timeInterval) * 1_000_000_000
 }
-
-final class Signaler {
-    private var hasFiredFlag: Bool = false
-    private let flagQueue = DispatchQueue(label: "Signaler.FlagQueue")
-
-    func fire() {
-        flagQueue.sync {
-            hasFiredFlag = true
-        }
-    }
-
-    func hasFired() -> Bool {
-        flagQueue.sync {
-            hasFiredFlag
-        }
-    }
-}

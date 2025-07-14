@@ -17,6 +17,7 @@ import UIKit
 
     /// The name used when creating the assertion.
     let name: String
+    let uuid: UUID = UUID()
 
     /// Called when the system releases the assertion itself.
     ///
@@ -47,7 +48,7 @@ import UIKit
         // running on the main thread — courtesy of the Dispatch precondition
         // above — and the expiration handler also runs on the main thread.
         self.taskID = .invalid
-        let t = UIApplication.shared.beginBackgroundTask(withName: name) {
+        let t = UIApplication.shared.beginBackgroundTask(withName: "\(name)-\(uuid.uuidString)") {
             self.taskDidExpire()
         }
         self.taskID = t
@@ -133,6 +134,7 @@ final class QActivityRunInBackgroundAssertion {
     /// The name used when creating the assertion.
 
     let name: String
+    let uuid: UUID = UUID()
 
     /// Called when the system releases the assertion itself.
     ///
@@ -164,7 +166,7 @@ final class QActivityRunInBackgroundAssertion {
         self.state = OSAllocatedUnfairLock(initialState: .starting)
 
         // See “Concurrency Notes” below.
-        ProcessInfo.processInfo.performExpiringActivity(withReason: name) { didExpire in
+        ProcessInfo.processInfo.performExpiringActivity(withReason: "\(name)-\(uuid.uuidString)") { didExpire in
             let semaphore: DispatchSemaphore? = self.state.withLock { state -> DispatchSemaphore? in
                 switch (state, didExpire) {
                 case (.starting, true):

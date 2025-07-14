@@ -175,13 +175,26 @@ struct RemoteViewContained: View {
         buttonPresses[key] ?? 0
     }
 
+    var alertTitle: String {
+        appDelegate.navigationPath.displayedErrorMessage ?? String(localized: "An unknown error ocurred")
+    }
+
     var body: some View {
         if runningInPreview {
             remotePage
         } else {
             remotePage
+                .alert(
+                    alertTitle,
+                    isPresented: appDelegate.navigationPath.alertPresented,
+                    presenting: (),
+                    actions: { },
+                    message: {
+                        Text(appDelegate.navigationPath.alertMessage)
+                    }
+                )
                 .task {
-                    // Hack to make sure we don't get ina badk focus state :/
+                    // Hack to make sure we don't get in a bad focus state :/
                     focusKeyboardMonitor = .monitor
                     while !Task.isCancelled {
                         try? await Task.sleep(duration: 1)

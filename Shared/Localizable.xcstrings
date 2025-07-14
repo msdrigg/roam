@@ -1844,6 +1844,9 @@
         }
       }
     },
+    "An unknown error occurred" : {
+
+    },
     "An unknown error occurred: %@" : {
       "comment" : "Unknown error with message",
       "localizations" : {
@@ -1926,6 +1929,9 @@
           }
         }
       }
+    },
+    "An unknown error ocurred" : {
+
     },
     "App" : {
       "comment" : "Description on a configuration field\nPlaceholder label for an app",
@@ -2423,6 +2429,9 @@
           }
         }
       }
+    },
+    "App currently shutting down" : {
+
     },
     "App Version" : {
       "comment" : "Version label in about page for the app",
@@ -5575,6 +5584,9 @@
         }
       }
     },
+    "Contact Support" : {
+
+    },
     "Copy" : {
       "comment" : "Keyboard shortcut to copy\nLabel on a button to copy the text",
       "localizations" : {
@@ -6818,7 +6830,11 @@
         }
       }
     },
+    "Error saving data" : {
+
+    },
     "Error saving data, no valid container found" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6901,6 +6917,7 @@
       }
     },
     "Error saving data. App currently shutting down." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6986,6 +7003,7 @@
 
     },
     "Error saving data. No disk storage left." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -11641,6 +11659,9 @@
         }
       }
     },
+    "Make sure the device is powered on and connected to the same Wi-Fi network as the Roam app" : {
+
+    },
     "Make sure you are connected to a WiFi network and try agai" : {
       "comment" : "Recovery suggestion for network error",
       "extractionState" : "stale",
@@ -13050,6 +13071,9 @@
         }
       }
     },
+    "No disk storage left" : {
+
+    },
     "No network connection" : {
       "comment" : "Warning indicator message that there is no network connection",
       "localizations" : {
@@ -13297,6 +13321,9 @@
           }
         }
       }
+    },
+    "No valid container found" : {
+
     },
     "No valid WiFi connection detected. You may be connected to a hotspot instead of your home WiFi network" : {
       "comment" : "Warning indicator message that there is no WiFi network connection",
@@ -14873,7 +14900,11 @@
         }
       }
     },
+    "Please delete some files to clear up some space and try again" : {
+
+    },
     "Please delete some files to clear up some space and try again." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -14955,10 +14986,14 @@
         }
       }
     },
+    "Please re-open the app and try again" : {
+
+    },
     "Please make sure the device you are updating has been added." : {
 
     },
     "Please re-open the app and try again." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -15039,9 +15074,6 @@
           }
         }
       }
-    },
-    "Please try saving the device again" : {
-      "comment" : "Recovery suggestion for save device error"
     },
     "Power" : {
       "comment" : "Keyboard shortcut to power on/off the TV\nSiri shortcut to power on/off the device",
@@ -17202,6 +17234,9 @@
           }
         }
       }
+    },
+    "Roam failed to open" : {
+
     },
     "Roam Help" : {
       "localizations" : {
@@ -19522,7 +19557,11 @@
         }
       }
     },
+    "This is a bug. Please reach out to roam-support@msd3.io for help" : {
+
+    },
     "This is a bug. Please reach out to roam-support@msd3.io for help." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

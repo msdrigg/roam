@@ -314,12 +314,16 @@ struct AddDeviceFlow: View {
                         Log.data.warning("Error adding the device: \(error, privacy: .public)")
                         throw AddDeviceError.saveDeviceError(error)
                     }
-                } catch {
+                } catch let error as DataHandlerError {
                     Log.connection.warning("Error connecting to \(location, privacy: .public), \(error, privacy: .public)")
-                    if isValidIp {
-                        throw AddDeviceError.deviceNotFound
+                    if case .failedToConnectWhileAdding = error {
+                        if isValidIp {
+                            throw AddDeviceError.deviceNotFound
+                        } else {
+                            throw AddDeviceError.invalidIPAddress
+                        }
                     } else {
-                        throw AddDeviceError.invalidIPAddress
+                        throw error
                     }
                 }
             } catch let error as AddDeviceError {
@@ -327,6 +331,13 @@ struct AddDeviceFlow: View {
                     withAnimation {
                         globalError = error.errorDescription
                         connectionStatus = .failure(error)
+                    }
+                }
+            } catch let error as DataHandlerError {
+                await MainActor.run {
+                    withAnimation {
+                        globalError = error.errorDescription
+                        connectionStatus = .failure(.dataError(error))
                     }
                 }
             } catch {

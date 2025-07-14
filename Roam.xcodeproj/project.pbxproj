@@ -95,8 +95,8 @@
 		AF2C85A42D370DAF00A167B2 /* ECPWebsocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A22D370DA700A167B2 /* ECPWebsocket.swift */; };
 		AF2C85A62D37183E00A167B2 /* ECPProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A52D37183600A167B2 /* ECPProtocol.swift */; };
 		AF2C85A72D37183E00A167B2 /* ECPProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A52D37183600A167B2 /* ECPProtocol.swift */; };
-		AF2F54EF2BCE58EF00BAE156 /* WorkersBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2F54EE2BCE58EF00BAE156 /* WorkersBackend.swift */; };
-		AF2F54F02BCE58EF00BAE156 /* WorkersBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2F54EE2BCE58EF00BAE156 /* WorkersBackend.swift */; };
+		AF2F54EF2BCE58EF00BAE156 /* RoamBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2F54EE2BCE58EF00BAE156 /* RoamBackend.swift */; };
+		AF2F54F02BCE58EF00BAE156 /* RoamBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2F54EE2BCE58EF00BAE156 /* RoamBackend.swift */; };
 		AF30DD2A2D39B1FF00FD8B9A /* ECPMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */; };
 		AF30DD2B2D39B1FF00FD8B9A /* ECPMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */; };
 		AF3446A62D5FE5D90037EFC8 /* AttachmentError.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3446A52D5FE5D50037EFC8 /* AttachmentError.swift */; };
@@ -232,7 +232,7 @@
 		AFC4A65D2AE8AF16005DAC6C /* AppLinksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF11D36A2AD2D0B800527AF6 /* AppLinksView.swift */; };
 		AFC4A65F2AE8AF3F005DAC6C /* FallibleImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC4A65E2AE8AF3F005DAC6C /* FallibleImage.swift */; };
 		AFC4A6602AE8AF3F005DAC6C /* FallibleImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC4A65E2AE8AF3F005DAC6C /* FallibleImage.swift */; };
-		AFCD235B2DCAA6530000E80E /* WorkersBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2F54EE2BCE58EF00BAE156 /* WorkersBackend.swift */; };
+		AFCD235B2DCAA6530000E80E /* RoamBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2F54EE2BCE58EF00BAE156 /* RoamBackend.swift */; };
 		AFCD235C2DCAA7040000E80E /* Debugger.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE89A2C2B9E793E0078387C /* Debugger.swift */; };
 		AFCD235E2DCBC6270000E80E /* QBackgroundExecution.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCD235D2DCBC6210000E80E /* QBackgroundExecution.swift */; };
 		AFCD235F2DCBC6270000E80E /* QBackgroundExecution.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCD235D2DCBC6210000E80E /* QBackgroundExecution.swift */; };
@@ -455,7 +455,7 @@
 		AF2C372E2D53D23700D7B79F /* NetworkConnectivityBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkConnectivityBanner.swift; sourceTree = "<group>"; };
 		AF2C85A22D370DA700A167B2 /* ECPWebsocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECPWebsocket.swift; sourceTree = "<group>"; };
 		AF2C85A52D37183600A167B2 /* ECPProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECPProtocol.swift; sourceTree = "<group>"; };
-		AF2F54EE2BCE58EF00BAE156 /* WorkersBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkersBackend.swift; sourceTree = "<group>"; };
+		AF2F54EE2BCE58EF00BAE156 /* RoamBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamBackend.swift; sourceTree = "<group>"; };
 		AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECPMessages.swift; sourceTree = "<group>"; };
 		AF3446A52D5FE5D50037EFC8 /* AttachmentError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentError.swift; sourceTree = "<group>"; };
 		AF3446A82D5FE6280037EFC8 /* Importers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Importers.swift; sourceTree = "<group>"; };
@@ -663,9 +663,9 @@
 		AF0C82862AEB3AA500CBE7F8 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				AF2C372E2D53D23700D7B79F /* NetworkConnectivityBanner.swift */,
 				AFED45EE2D52BF3000FD53E2 /* Messaging */,
 				AF3AD5582AE2940A00E2D780 /* KeyboardMonitorAppKit.swift */,
+				AF2C372E2D53D23700D7B79F /* NetworkConnectivityBanner.swift */,
 				AF35ACEA2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift */,
 				AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */,
 				AF3AD55A2AE2947E00E2D780 /* KeyboardEntry.swift */,
@@ -1004,7 +1004,7 @@
 				AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */,
 				AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */,
 				AFE89A2C2B9E793E0078387C /* Debugger.swift */,
-				AF2F54EE2BCE58EF00BAE156 /* WorkersBackend.swift */,
+				AF2F54EE2BCE58EF00BAE156 /* RoamBackend.swift */,
 			);
 			path = Backend;
 			sourceTree = "<group>";
@@ -1361,7 +1361,8 @@
 				AFD9C4F32AE982E400C4079C /* DiscoveryActor.swift in Sources */,
 				AFD9C4FB2AE983BF00C4079C /* DeviceApi.swift in Sources */,
 				AF3BDD152DCF8F9200DABFA6 /* XMLStreamingDecoder.swift in Sources */,
-				AF2F54F02BCE58EF00BAE156 /* WorkersBackend.swift in Sources */,
+				AF5A494E2DE8D5A200385A51 /* ModelContainerExtension.swift in Sources */,
+				AF2F54F02BCE58EF00BAE156 /* RoamBackend.swift in Sources */,
 				AFD9C4EC2AE980BF00C4079C /* NetworkHelpers.swift in Sources */,
 				AFD9C4F82AE983A800C4079C /* NetworkUtils.swift in Sources */,
 				AF0042762AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */,
@@ -1451,7 +1452,7 @@
 				AF736A832DCD57DD0028A2B4 /* Attachment.swift in Sources */,
 				AF6A8F942D060834004AB1D2 /* NetworkUtils.swift in Sources */,
 				AF0042872AEABA9F0051BB1E /* CollectionHelpers.swift in Sources */,
-				AFCD235B2DCAA6530000E80E /* WorkersBackend.swift in Sources */,
+				AFCD235B2DCAA6530000E80E /* RoamBackend.swift in Sources */,
 				AFBDE4562DD5341700DD1741 /* FileLock.swift in Sources */,
 				AFF6DE142BCF0A14002C13FC /* Message.swift in Sources */,
 				AF1899F22C1CB204001EDA78 /* NavigationManager.swift in Sources */,
@@ -1524,7 +1525,7 @@
 				AF19CA2B2AE54AD100A42DFF /* SSDPDiscovery.swift in Sources */,
 				AF20AD0C2AE01E9100D371C7 /* AppLink.swift in Sources */,
 				AF3446AD2D5FE8CF0037EFC8 /* WrongAttempts.swift in Sources */,
-				AF2F54EF2BCE58EF00BAE156 /* WorkersBackend.swift in Sources */,
+				AF2F54EF2BCE58EF00BAE156 /* RoamBackend.swift in Sources */,
 				AF3AD5572AE2928600E2D780 /* TopBar.swift in Sources */,
 				AFF6077F2ADFACBA00A7D657 /* AsyncLock.swift in Sources */,
 				AF3D62D72AE6F703006AB8E9 /* OpusDecoder.swift in Sources */,

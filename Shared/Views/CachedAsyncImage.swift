@@ -59,7 +59,7 @@ enum ThumbnailSize: CustomStringConvertible {
 final actor ThumbnailGenerator: Sendable {
     nonisolated static let shared = ThumbnailGenerator()
 
-    private let thumbnailQueue = DispatchQueue(label: "com.cachedAsyncImage.thumbnailQueue", qos: .userInitiated, attributes: .concurrent)
+    private let thumbnailQueue = DispatchQueue.imagesWorkQueue
 
     private init() {}
 
@@ -73,13 +73,11 @@ final actor ThumbnailGenerator: Sendable {
         let filename = url.deletingPathExtension().lastPathComponent
         let ext = getFileExtension()
         let path = "\(directory)/\(filename).\(size.suffix).\(ext)"
-        Log.interface.notice("Thumbnail path computed: \(path, privacy: .public)")
         return path
     }
 
     func thumbnailExists(for path: URL, size: ThumbnailSize) -> Bool {
         let thumbnailPath = self.thumbnailPath(for: path, size: size)
-        Log.interface.notice("Checking existence of thumbnail at path: \(thumbnailPath, privacy: .public)")
         return FileManager.default.fileExists(atPath: thumbnailPath)
     }
 
@@ -88,11 +86,9 @@ final actor ThumbnailGenerator: Sendable {
         if FileManager.default.fileExists(atPath: thumbnailPath) {
             #if os(iOS) || os(visionOS) || os(watchOS)
             let image = PlatformImage(contentsOfFile: thumbnailPath)
-            Log.interface.notice("Loaded thumbnail from path: \(thumbnailPath, privacy: .public)")
             return image
             #elseif os(macOS)
             let image = PlatformImage(contentsOfFile: thumbnailPath)
-            Log.interface.notice("Loaded thumbnail from path: \(thumbnailPath, privacy: .public)")
             return image
             // Precache bitmap data due to https://wadetregaskis.com/nsimage-is-dangerous/
             #endif
@@ -435,8 +431,6 @@ enum ImageLoadingPhase {
                         phase = .success(cachedImage)
                     }
                 }
-            } else {
-                Log.interface.notice("Cache miss for path: \(self.path, privacy: .public)")
             }
         } catch {
             Log.data.notice("Error reading from cache for \(self.path, privacy: .public): \(error, privacy: .public)")
@@ -570,8 +564,6 @@ func loadThumbnailForUrl(_ path: URL, maxSize: CGFloat = 400) async throws -> Im
                     Log.interface.notice("Cached small image found, but large is preferred for maxSize > 150. Will attempt to load large.")
                 }
             }
-        } else {
-            Log.interface.notice("Cache miss for path: \(path, privacy: .public)")
         }
     } catch {
         Log.data.notice("Error reading from cache for \(path, privacy: .public): \(error, privacy: .public). Proceeding to load/generate.")

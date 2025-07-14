@@ -32,6 +32,7 @@ public struct AsyncLock: Sendable {
             }
             let node: OSAllocatedUnfairLock<Node<Waiter>?> = OSAllocatedUnfairLock(initialState: nil)
             try await withTaskCancellationHandler(operation: {
+                try Task.checkCancellation()
                 try await withCheckedThrowingContinuation { continuation in
                     let waitedNode = lock.withLock { ls in
                         return ls.waiters.append(continuation)
@@ -42,11 +43,22 @@ public struct AsyncLock: Sendable {
                 }
             }, onCancel: {
                 let cancelling = node.withLock { receivedNode in
-                    return receivedNode.take()
+                    let toCancel = receivedNode.take()
+                    receivedNode = .failure(CancellationError())
+
+                    if case let .success(node) = toCancel {
+                        return node
+                    } else {
+                        return nil
+                    }
                 }
 
                 if let cancelling {
-                    self.cancelWaiter(cancelling)
+                    lock.lock()
+                    let waiter = waiters.remove(node: cancelling)
+                    lock.unlock()
+                    waiter.resume(throwing: CancellationError())
+
                 }
             })
         }

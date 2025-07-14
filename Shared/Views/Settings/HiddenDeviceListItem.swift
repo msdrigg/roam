@@ -3,6 +3,12 @@ import SwiftUI
 struct HiddenDeviceListItem: View {
     @Bindable var device: Device
 
+#if os(watchOS)
+    @EnvironmentObject private var appDelegate: RoamWatchAppDelegate
+#else
+    @EnvironmentObject private var appDelegate: RoamAppDelegate
+#endif
+
     @Environment(\.uuidUpdater) private var updater
     @State private var deviceError: Error?
     @State private var errorMessage: String = ""
@@ -29,7 +35,7 @@ struct HiddenDeviceListItem: View {
                         DispatchQueue.main.async {
                             self.updater?.update()
                         }
-                    } catch {
+                    } catch let error as DataHandlerError {
                         Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
                         errorMessage = "Failed to Delete Device"
                         deviceError = error

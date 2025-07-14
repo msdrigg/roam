@@ -138,7 +138,7 @@ actor DeviceDiscoveryActor {
     }
 
     func scanSSDPContinually() async {
-        let queue = DispatchQueue(label: "NetworkMonitor")
+        let queue = DispatchQueue.networkQueue
 
         let pathStream: AsyncStream<[NWInterface]> = AsyncStream<[NWInterface]> { continuation in
             let monitor = NWPathMonitor()

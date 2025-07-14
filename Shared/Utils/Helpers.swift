@@ -667,7 +667,7 @@ func getNotificationSettings() {
 #endif
 
 #if !TEST && !CLI
-public func sendBackendError(_ message: String, file: StaticString = #file, line: UInt = #line) async {
+func sendBackendError(_ message: String, logEntries: [LogEntry]? = nil, file: StaticString = #file, line: UInt = #line) async {
     let sendingMessage = ":ninja:\nFatal error logged: \(message)\n\nFile: \(file)\nLine: \(line)\n\nThis is likely a bug in the app."
 
     do {
@@ -676,7 +676,7 @@ public func sendBackendError(_ message: String, file: StaticString = #file, line
         #if !CLI && !TEST && !WIDGET
         do {
             Log.backend.notice("Getting diagnostics to export")
-            let entries = try getLogEntries()
+            let entries = try logEntries ?? getLogEntries()
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -735,6 +735,24 @@ public func loggedFatalError(_ message: @autoclosure () -> String = String(), fi
 func fastHashData(data: Data) -> String {
     let hash = SHA256.hash(data: data)
     return hash.compactMap { String(format: "%02x", $0) }.joined()
+}
+
+extension DispatchQueue {
+    static var imagesWorkQueue: DispatchQueue {
+        return DispatchQueue(
+            label: "com.msdrigg.roam.images-work",
+            qos: .userInitiated,
+            attributes: .concurrent
+        )
+    }
+
+    static var networkQueue: DispatchQueue {
+        return DispatchQueue(
+            label: "com.msdrigg.roam.network",
+            qos: .userInitiated,
+            attributes: .concurrent
+        )
+    }
 }
 
 #if !CLI && !TEST

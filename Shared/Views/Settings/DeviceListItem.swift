@@ -4,6 +4,12 @@ struct DeviceListItem: View {
     @Bindable var device: Device
     var idx: Int
 
+#if os(watchOS)
+    @EnvironmentObject private var appDelegate: RoamWatchAppDelegate
+#else
+    @EnvironmentObject private var appDelegate: RoamAppDelegate
+#endif
+
     @Environment(\.uuidUpdater) private var updater
     @State private var deviceError: Error?
 
@@ -59,7 +65,7 @@ struct DeviceListItem: View {
                         DispatchQueue.main.async {
                             self.updater?.update()
                         }
-                    } catch {
+                    } catch let error as DataHandlerError {
                         Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
                         deviceError = error
                     }

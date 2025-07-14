@@ -107,7 +107,7 @@ public struct DebugLanguage: Codable, Sendable {
 public struct DebugInfo: Codable, Sendable {
     let installationInfo: InstallationInfo
     let userDefaults: [String: String]
-    let spaceOnDevice: SpaceAvailability?
+    let spaceOnDevice: Int64?
     let devices: [DeviceDebugInfo]
     let appLinks: [AppLinkAppEntity]
     let interfaces: [Addressed4NetworkInterface]
@@ -235,7 +235,7 @@ func getDebugInfo(userInitiated: Bool = false) async -> DebugInfo {
         }
     }
 
-    let spaceOnDevice: SpaceAvailability? = if userInitiated {
+    let spaceOnDevice: Int64? = if userInitiated {
         getAvailableSpaceOnDevice()
     } else {
         nil
@@ -257,43 +257,42 @@ func getDebugInfo(userInitiated: Bool = false) async -> DebugInfo {
     )
 }
 
-enum SpaceAvailability: Codable, Sendable {
-    case failed
-    case ok
-    case constrained
-    case critical
-}
+func getAvailableSpaceOnDevice() -> Int64? {
+    // Use app's documents directory instead of root for sandbox compatibility
+    guard let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+        Log.backend.notice("Could not get documents directory")
+        return nil
+    }
 
-func getAvailableSpaceOnDevice() -> SpaceAvailability {
-    let fileURL = URL(fileURLWithPath: "/")
     do {
-        #if !os(watchOS)
-        let values = try fileURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
-        let capacity = values.volumeAvailableCapacityForImportantUsage
+        #if os(watchOS)
+        let values = try documentsPath.resourceValues(forKeys: [
+            .volumeAvailableCapacityKey,
+        ])
         #else
-        let values = try fileURL.resourceValues(forKeys: [.volumeAvailableCapacityKey])
-        let capacity = values.volumeAvailableCapacity
+        let values = try documentsPath.resourceValues(forKeys: [
+            .volumeAvailableCapacityForImportantUsageKey,
+        ])
         #endif
-        if let capacity {
-            Log.backend.notice("Available capacity for important usage: \(capacity, privacy: .public)")
-            // If we have more than 100 MB available, we are OK
-            if capacity > 100_000_000 {
-                return .ok
-            }
-            // If we have more than 10 MB available, we are OK for most tasks, but some file and image creation tasks could fail
-            if capacity > 10_000_000 {
-                return .constrained
-            }
 
-            // If we have less than 10MB available, errors are possible at any time (my wal file is 2MB with only 1 device)
-            return .critical
-        } else {
-            Log.backend.notice("Available capacity for important usage is unavailable")
-            return .failed
+        // Try the preferred key first (iOS 11+, more accurate)
+        #if os(watchOS)
+        if let capacity = values.volumeAvailableCapacity {
+            Log.backend.notice("Available disk capacity: \(capacity, privacy: .public)")
+            return Int64(capacity)
         }
+        #else
+        if let capacity = values.volumeAvailableCapacityForImportantUsage {
+            Log.backend.notice("Available capacity for important usage: \(capacity, privacy: .public)")
+            return Int64(capacity)
+        }
+        #endif
+
+        Log.backend.notice("No available capacity information found")
+        return nil
     } catch {
-        Log.backend.notice("Available capacity for important usage errored: \(error, privacy: .public)")
-        return .failed
+        Log.backend.notice("Available capacity check errored: \(error, privacy: .public)")
+        return nil
     }
 }
 

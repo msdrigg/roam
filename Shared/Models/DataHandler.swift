@@ -8,7 +8,7 @@ func getGlobalNewDeviceName() -> String {
 }
 
 @ModelActor
-public actor RoamDataHandler {
+actor RoamDataHandler {
     static let hardDeleteTimeout: TimeInterval = 3600
 
     private let minRescanInterval: TimeInterval = 30
@@ -75,6 +75,7 @@ public actor RoamDataHandler {
                 try await self.saveSafer()
             } catch {
                 Log.data.warning("Error updating device at location \(device.location, privacy: .public)")
+                throw error
             }
         } else {
             throw DataHandlerError.deviceNotFound
@@ -124,22 +125,22 @@ public actor RoamDataHandler {
             device.location = location
             do {
                 try await self.saveSafer()
+                return device.persistentModelID
             } catch {
                 Log.data.warning("Error updating device fields \(error, privacy: .public)")
                 throw error
             }
-            return device.persistentModelID
         }
 
         if let serial, let device = await deviceForSerial(serial: serial) {
             device.location = location
             do {
                 try await self.saveSafer()
+                return device.persistentModelID
             } catch {
                 Log.data.warning("Error updating device fields \(error, privacy: .public)")
                 throw error
             }
-            return device.persistentModelID
         }
 
         let info: PreconnectionDeviceInfo
@@ -272,6 +273,7 @@ public actor RoamDataHandler {
         }
     }
 
+//    func hide(_ id: PersistentIdentifier) async throws (DataHandlerError) {
     func hide(_ id: PersistentIdentifier) async throws {
         Log.data.notice("Hiding device \(String(describing: id), privacy: .public)")
         if let device = await self.existingDevice(for: id) {
@@ -280,11 +282,12 @@ public actor RoamDataHandler {
                 try await self.saveSafer()
             } catch {
                 Log.data.error("Error hiding device with id \(id.described(), privacy: .public)")
-                return
+                throw error
             }
         }
     }
 
+//    func delete(_ id: PersistentIdentifier) async throws (DataHandlerError) {
     func delete(_ id: PersistentIdentifier) async throws {
         Log.data.notice("Soft deleting device \(String(describing: id), privacy: .public)")
         if let device = await self.existingDevice(for: id) {
@@ -293,7 +296,7 @@ public actor RoamDataHandler {
                 try await self.saveSafer()
             } catch {
                 Log.data.error("Error deleting device with id \(id.described(), privacy: .public)")
-                return
+                throw error
             }
         }
 
@@ -482,9 +485,9 @@ enum DataHandlerError: Error, LocalizedError {
     var errorDescription: String {
         switch self {
         case .noContainerURL:
-            return String(localized: "Error saving data, no valid container found")
+            return String(localized: "No valid container found")
         case .noSpaceOnDisk:
-            return String(localized: "Error saving data. No disk storage left.")
+            return String(localized: "No disk storage left")
         case .suspending:
             return String(localized: "Error saving data. App currently shutting down.")
         case .deviceNotFound:
@@ -495,9 +498,9 @@ enum DataHandlerError: Error, LocalizedError {
     var recoverySuggestion: String? {
         switch self {
         case .noContainerURL:
-            return String(localized: "This is a bug. Please reach out to roam-support@msd3.io for help.")
+            return String(localized: "This is a bug. Please reach out to roam-support@msd3.io for help")
         case .noSpaceOnDisk:
-            return String(localized: "Please delete some files to clear up some space and try again.")
+            return String(localized: "Please delete some files to clear up some space and try again")
         case .suspending:
             return String(localized: "Please re-open the app and try again.")
         case .deviceNotFound:
@@ -519,13 +522,17 @@ public extension RoamDataHandler {
             await assertion.release()
         } catch {
             await assertion.release()
-            throw error
+            throw DataHandlerError.from(rootError: error)
         }
         throw DataHandlerError.suspending
     }
     #else
     func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
-        return try self.modelContext.fetch(descriptor)
+        do {
+            return try self.modelContext.fetch(descriptor)
+        } catch {
+            throw DataHandlerError.from(rootError: error)
+        }
     }
     #endif
 
@@ -538,15 +545,19 @@ public extension RoamDataHandler {
             } else {
                 throw DataHandlerError.suspending
             }
-            await assertion.release()
         } catch {
             await assertion.release()
-            throw error
+            throw DataHandlerError.from(rootError: error)
         }
+        await assertion.release()
     }
     #else
-    func saveSafer() async throws {
-        try self.modelContext.save()
+    func saveSafer() async throws (DataHandlerError) {
+        do {
+            try self.modelContext.save()
+        } catch {
+            throw DataHandlerError.from(rootError: error)
+        }
     }
     #endif
 }
@@ -634,7 +645,6 @@ extension RoamDataHandler {
     }
 
     public func appEntities(for identifiers: [AppLinkAppEntity.ID], deviceUid: String?) async throws -> [AppLinkAppEntity] {
-
         let descriptor = FetchDescriptor<AppLink>(predicate: #Predicate { appLink in
             identifiers.contains(appLink.id)
                 && (deviceUid == nil || appLink.deviceUid == deviceUid)
@@ -809,7 +819,7 @@ extension RoamDataHandler {
 
             let deviceApps = (try? await self.fetchSafer(descriptor)) ?? []
 
-            if (device.lastScannedAt?.timeIntervalSinceNow) ?? -10000 > -minRescanInterval,
+            if (device.lastScannedAt?.timeIntervalSinceNow) ?? -10000.0 > -minRescanInterval,
                deviceApps.allSatisfy({ $0.iconHash != nil }), deviceApps.count > 0
             {
                 try? await self.saveSafer()
@@ -917,7 +927,7 @@ extension RoamDataHandler {
         var appIcons: [String: Data] = [:]
         for appId in appsNeedingIcons {
             do {
-                Log.data.error("Getting device app icon for id \(appId, privacy: .public)")
+                Log.data.notice("Getting device app icon for id \(appId, privacy: .public)")
                 let iconData = try await client.getDeviceAppIcon(appId)
                 Log.data.notice("Successfully refreshed device app icon")
                 appIcons[appId] = iconData
@@ -1205,11 +1215,11 @@ extension MessageDataHandler {
             } else {
                 throw DataHandlerError.suspending
             }
-            await assertion.release()
         } catch {
             await assertion.release()
             throw error
         }
+        await assertion.release()
     }
     #else
     func saveSafer() async throws {

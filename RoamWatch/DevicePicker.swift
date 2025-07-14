@@ -4,6 +4,7 @@ import SwiftUI
 
 struct DevicePicker: View {
     @Environment(\.layoutDirection) var layoutDirection
+    @EnvironmentObject private var appDelegate: RoamWatchAppDelegate
 
     var offset: CGFloat {
         layoutDirection == .rightToLeft ? 10 : 0
@@ -75,7 +76,7 @@ struct DevicePicker: View {
                                     Task {
                                         do {
                                             try await RoamDataHandler().delete(pid)
-                                        } catch {
+                                        } catch let error as DataHandlerError {
                                             Log.connection.error("Error deleting device \(error, privacy: .public)")
                                             deviceError = error
                                         }
@@ -96,7 +97,7 @@ struct DevicePicker: View {
                                     Task {
                                         do {
                                             try await RoamDataHandler().delete(pid)
-                                        } catch {
+                                        } catch let error as DataHandlerError {
                                             Log.connection.error("Error deleting device \(error, privacy: .public)")
                                             deviceError = error
                                         }

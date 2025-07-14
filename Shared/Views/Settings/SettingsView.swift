@@ -58,7 +58,9 @@ struct SettingsView: View {
     @State private var showWatchOSNote = false
     @Environment(\.uuidUpdater) private var updater: UUIDUpdater?
 
-#if !os(watchOS)
+#if os(watchOS)
+    @EnvironmentObject private var appDelegate: RoamWatchAppDelegate
+#else
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 #endif
     @Environment(\.layoutDirection) var layoutDirection
@@ -111,11 +113,24 @@ struct SettingsView: View {
         allDevices.filter { $0.hiddenAt != nil}
     }
 
+    var alertTitle: String {
+        appDelegate.navigationPath.displayedErrorMessage ?? String(localized: "An unknown error ocurred")
+    }
+
     var body: some View {
         if runningInPreview {
             bodyContent
         } else {
             bodyContent
+                .alert(
+                    alertTitle,
+                    isPresented: appDelegate.navigationPath.alertPresented,
+                    presenting: (),
+                    actions: { },
+                    message: {
+                        Text(appDelegate.navigationPath.alertMessage)
+                    }
+                )
                 .onChange(of: self.updater?.uuid.uuidString) { _, _ in
                     self._allDevices.update()
                 }
@@ -179,7 +194,7 @@ struct SettingsView: View {
                                         DispatchQueue.main.async {
                                             self.updater?.update()
                                         }
-                                    } catch {
+                                    } catch let error as DataHandlerError {
                                         Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
                                         deviceError = error
                                     }
@@ -377,7 +392,7 @@ struct SettingsView: View {
                                                 DispatchQueue.main.async {
                                                     self.updater?.update()
                                                 }
-                                            } catch {
+                                            } catch let error as DataHandlerError {
                                                 Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
                                                 deviceError = error
                                             }

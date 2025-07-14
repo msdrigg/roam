@@ -35,6 +35,10 @@ struct RoamWatch: App {
         )
     }
 
+    var alertTitle: String {
+        appDelegate.navigationPath.displayedErrorMessage ?? String(localized: "An unknown error ocurred")
+    }
+
     var body: some Scene {
         WindowGroup {
             WatchAppView(navigationPath: navigationPath)
@@ -69,6 +73,7 @@ let CONTROLS: [[RemoteButton?]] = [
 struct WatchAppView: View {
     @State private var scanningActor: DeviceDiscoveryActor!
 
+    @EnvironmentObject private var appDelegate: RoamWatchAppDelegate
     @Query(deviceFetchDescriptor()) private var devices: [Device]
     @State private var manuallySelectedDevice: Device?
     @State private var showDeviceList: Bool = false
@@ -86,6 +91,10 @@ struct WatchAppView: View {
         manuallySelectedDevice ?? devices.min { d1, d2 in
             (d1.lastSelectedAt?.timeIntervalSince1970 ?? 0) > (d2.lastSelectedAt?.timeIntervalSince1970 ?? 0)
         }
+    }
+
+    var alertTitle: String {
+        appDelegate.navigationPath.displayedErrorMessage ?? String(localized: "An unknown error ocurred")
     }
 
     @MainActor
@@ -118,6 +127,15 @@ struct WatchAppView: View {
                     AppListViewWrapper(device: device.toAppEntity())
                 }
             }
+            .alert(
+                alertTitle,
+                isPresented: appDelegate.navigationPath.alertPresented,
+                presenting: (),
+                actions: { },
+                message: {
+                    Text(appDelegate.navigationPath.alertMessage)
+                }
+            )
             .sheet(isPresented: $showingAddDeviceSheet) {
                 NavigationStack {
                     AddDeviceFlow()

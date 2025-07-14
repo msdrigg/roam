@@ -240,7 +240,10 @@ struct DeviceDetailView: View {
                         try await RoamDataHandler().delete(deviceId)
 
                         Log.userInteraction.notice("Deleted device with id \(String(describing: deviceId), privacy: .public)")
-                    } catch {
+                        DispatchQueue.main.async {
+                            self.updater?.update()
+                        }
+                    } catch let error as DataHandlerError {
                         Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
                         errorMessage = "Failed to Delete Device"
                         deviceError = error
@@ -262,16 +265,22 @@ struct DeviceDetailView: View {
             }
 
             Log.userInteraction.notice("Saving device settings due to submit--\(deviceIP)-\(hidden)-\(deviceName)")
-            save()
-            #if !os(watchOS)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                dismiss()
+            Task {
+                do {
+                    try await save()
+#if !os(watchOS)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        dismiss()
+                    }
+#endif
+                } catch { }
             }
-            #endif
         }
         .onChange(of: "\(deviceIP)-\(hidden)-\(deviceName)", initial: false) {
             Log.userInteraction.notice("Autosaving device settings")
-            save()
+            Task {
+                try? await save()
+            }
         }
         .formStyle(.grouped)
         .alertingError(message: errorMessage, error: $deviceError)
@@ -279,8 +288,6 @@ struct DeviceDetailView: View {
 
     func save() {
         if let device = device {
-            // Try to get device id
-            // Watchos can't check tcp connection, so just do the request
             let cleanedString = deviceIP.trimmingCharacters(in: .whitespacesAndNewlines)
                 .replacingOccurrences(of: "\"", with: "").replacingOccurrences(of: "'", with: "")
             let deviceUrl = addSchemeAndPort(to: cleanedString)

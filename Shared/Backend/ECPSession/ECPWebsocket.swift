@@ -60,7 +60,7 @@ actor ECPWebsocketClient: Sendable {
     static let baseRequestId = 2
     var requestId = 2
 
-    let connectionQueue: DispatchQueue = DispatchQueue(label: "ECP Websocket Session Queue", qos: .userInitiated)
+    let connectionQueue: DispatchQueue = DispatchQueue.networkQueue
 
     init (location: URL, macs: [String] = [], websocketStateUpdated: @escaping ECPStateCallback = {_ in }, notificationHandler: @escaping ECPNotificationCallback = {_ in }) {
         self.websocketStateUpdated = websocketStateUpdated

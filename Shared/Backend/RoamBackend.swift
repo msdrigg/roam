@@ -4,7 +4,7 @@ import OSLog
 import SwiftData
 import UniformTypeIdentifiers
 
- private let globalBackendURL = "https://backend.roam.msd3.io"
+private let globalBackendURL = "https://backend.roam.msd3.io"
 // private let globalBackendURL = "http://localhost:8080"
 
 private func getAPIKey() -> String? {
@@ -275,6 +275,173 @@ public func uploadApnsToken(_ token: String) async throws {
         }
     } catch {
         throw UploadError.retryable(error)
+    }
+}
+
+struct DiagnosticsRequest: Encodable {
+    let userId: String
+    let installationInfo: InstallationInfo
+    let diagnostics: DebugInfo
+    let metricsPayloads: [RoamMetricDiagnosticPayload]
+}
+
+struct RoamMetricDiagnosticPayload: Encodable {
+    let cpuExceptionDiagnostics: [CPUExceptionDiagnostic]
+    let diskWriteExceptionDiagnostics: [DiskWriteExceptionDiagnostic]
+    let hangDiagnostics: [HangDiagnostic]
+    let appLaunchDiagnostics: [AppLaunchDiagnostic]
+    let crashDiagnostics: [CrashDiagnostic]
+    let timeStampBegin: Date
+    let timeStampEnd: Date
+
+    struct MetaData: Encodable {
+        let applicationBuildVersion: String
+        let deviceType: String
+        let isTestFlightApp: Bool
+        let lowPowerModeEnabled: Bool
+        let osVersion: String
+        let platformArchitecture: String
+        let regionFormat: String
+        let pid: pid_t
+    }
+
+    struct SignpostRecord: Encodable {
+        let beginTimeStamp: Date
+        let category: String
+        let duration: Measurement<UnitDuration>?
+        let endTimeStamp: Date?
+        let isInterval: Bool
+        let name: String
+        let subsystem: String
+    }
+
+    struct HangDiagnostic: Encodable {
+        let hangDuration: Double
+        let stackTrace: StackTrace?
+        let metaData: MetaData
+        let applicationVersion: String
+        let signpostData: [SignpostRecord]
+    }
+
+    struct CrashDiagnostic: Encodable {
+        var exceptionType: Int?
+        var exceptionCode: Int?
+        var signal: Int?
+        var exceptionReason: CrashDiagnosticObjectiveCExceptionReason?
+        var terminationReason: String?
+        var virtualMemoryRegionInfo: String?
+        let stackTrace: StackTrace?
+        let metaData: MetaData
+        let applicationVersion: String
+        let signpostData: [SignpostRecord]
+
+        struct CrashDiagnosticObjectiveCExceptionReason: Encodable {
+            var arguments: [String]
+            var className: String
+            var composedMessage: String
+            var exceptionName: String
+            var exceptionType: String
+            var formatString: String
+        }
+    }
+
+    struct DiskWriteExceptionDiagnostic: Encodable {
+        let totalWrites: Double
+        let stackTrace: StackTrace?
+        let metaData: MetaData
+        let applicationVersion: String
+        let signpostData: [SignpostRecord]
+    }
+
+    struct AppLaunchDiagnostic: Encodable {
+        let launchDuration: Double
+        let stackTrace: StackTrace?
+        let metaData: MetaData
+        let applicationVersion: String
+        let signpostData: [SignpostRecord]
+    }
+
+    struct CPUExceptionDiagnostic: Encodable {
+        let totalCPUTime: Double
+        let totalSampledTime: Double
+        let stackTrace: StackTrace?
+        let metaData: MetaData
+        let applicationVersion: String
+        let signpostData: [SignpostRecord]
+    }
+
+    struct StackTrace: Codable {
+        let callStackPerThread: Bool
+        let callStacks: [CallStack]
+
+        struct CallStack: Codable {
+            let threadAttributed: Bool
+            let callStackRootFrames: [Frame]
+
+            struct Frame: Codable {
+                let binaryUUID: String
+                let offsetIntoBinaryTextSegment: Int
+                let sampleCount: Int
+                let binaryName: String
+                let address: Int
+                let subframes: [Frame]?
+            }
+        }
+    }
+}
+
+func uploadDiagnosticsMessageV2(logs: DebugInfo, diagnostics: [RoamMetricDiagnosticPayload]) async throws {
+    guard let url = URL(string: "\(globalBackendURL)/v2/upload-diagnostics") else {
+        throw MessageFailedError.invalidURL
+    }
+
+    let userId = getSystemInstallID()
+    Log.backend.notice("Sending diagnostics to backend \(userId, privacy: .public)")
+
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.addValue(getAPIKey() ?? "", forHTTPHeaderField: "x-api-key")
+    request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+    let requestBody = DiagnosticsRequest(
+        userId: userId,
+        installationInfo: InstallationInfo(),
+        diagnostics: logs,
+        metricsPayloads: diagnostics
+    )
+    let encoder = JSONEncoder()
+    encoder.dataEncodingStrategy = .base64
+    encoder.dateEncodingStrategy = .iso8601
+    do {
+        let jsonData = try encoder.encode(requestBody)
+        request.httpBody = jsonData
+    } catch {
+        throw MessageFailedError.invalidJSON
+    }
+
+    do {
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            Log.backend.error("Received non-http response \(String(describing: response), privacy: .public)")
+            throw MessageFailedError.badResponse(nil)
+        }
+        guard httpResponse.statusCode == 200 else {
+            if let responseData = String(data: data, encoding: .utf8) {
+                Log.backend.error("Received failed \(httpResponse.statusCode, privacy: .public) send-messages response with data: \(responseData, privacy: .public)")
+            } else {
+                Log.backend.error("Received failed \(httpResponse.statusCode, privacy: .public) send-messages response and data could not be converted to a String")
+            }
+            throw MessageFailedError.badResponse(httpResponse.statusCode)
+        }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        decoder.dataDecodingStrategy = .base64
+        let message = try decoder.decode(MessageModelResponse.self, from: data)
+        Log.backend.notice("Sent message \(message.id, privacy: .public) to backend")
+    } catch {
+        Log.backend.error("Error uploading diagnostics \(error, privacy: .public)")
+        throw error
     }
 }
 
