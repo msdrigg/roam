@@ -1,6 +1,5 @@
 #if os(iOS)
     import os.log
-    import SwiftData
     @preconcurrency import WatchConnectivity
 
     final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
@@ -23,7 +22,7 @@
             if session.isReachable {
                 Task {
                     do {
-                        let devices = try await RoamDataHandler.checkedCreate().allDeviceEntities()
+                        let devices = try await RoamDataHandler.shared.allDeviceEntities()
                         DispatchQueue.main.async {
                             self.transferDevices(session, devices: devices)
                         }
@@ -39,7 +38,7 @@
             DispatchQueue.main.async {
                 Task {
                     do {
-                        let devices = try await RoamDataHandler.checkedCreate().allDeviceEntities()
+                        let devices = try await RoamDataHandler.shared.allDeviceEntities()
                         DispatchQueue.main.async {
                             self.transferDevices(session, devices: devices)
                         }
@@ -51,7 +50,7 @@
         }
 
         @MainActor
-        func transferDevices(_ session: WCSession, devices: [DeviceAppEntity]) {
+        func transferDevices(_ session: WCSession, devices: [Device]) {
             let tuple = "\(session.activationState == .activated)-\(session.isPaired)-\(session.isWatchAppInstalled)-\(session.isReachable)"
             Log.watch
                 .notice("WCSession with activated-paired-installed-reachable \(tuple, privacy: .public) trying to send devices \(devices.map(\.name), privacy: .public)")
@@ -61,7 +60,7 @@
                     return
                 }
                 var deviceMap: [String: [String: String]] = [:]
-                var transferingDevicesBuilder: [PersistentIdentifier] = []
+                var transferingDevicesBuilder: [String] = []
                 let sendTimeout = Date(timeIntervalSinceNow: 60 * 60 * 24 * 7)
                 for device in devices.filter({ $0.lastSentToWatch ?? Date.distantPast < sendTimeout }) {
                     var map = ["location": device.location, "name": device.name]
@@ -70,8 +69,8 @@
                     }
                     deviceMap[device.id] = map
 
-                    if let modelId = device.modelId {
-                        transferingDevicesBuilder.append(modelId)
+                    if let id = device.id {
+                        transferingDevicesBuilder.append(id)
                     }
                 }
                 let transferingDevices = transferingDevicesBuilder
@@ -93,7 +92,7 @@
 
                 session.sendMessage(completeDeviceMap, replyHandler: { @Sendable reply in
                     Task {
-                        guard let dataHandler = try? await RoamDataHandler.checkedCreate() else {
+                        guard let dataHandler = try? await RoamDataHandler.sharedChecked() else {
                             return
                         }
                         for device in transferingDevices {
@@ -116,13 +115,13 @@
             if let error {
                 Log.watch.error("WCSession activated with error: \(error, privacy: .public)")
                 Task {
-                    try? await RoamDataHandler.checkedCreate().watchPossiblyDead()
+                    try? await RoamDataHandler.shared.resetWatchData()
                 }
             } else {
                 Log.watch.notice("WCSession activated no error")
                 Task {
                     do {
-                        let devices = try await RoamDataHandler.checkedCreate().allDeviceEntities()
+                        let devices = try await RoamDataHandler.shared.allDeviceEntities()
 
                         DispatchQueue.main.async {
                             self.transferDevices(session, devices: devices)
@@ -138,7 +137,7 @@
             Log.watch.notice("WatchConnectivity session became inactive")
 
             Task {
-                try? await RoamDataHandler.checkedCreate().watchPossiblyDead()
+                try? await RoamDataHandler.shared.resetWatchData()
             }
         }
 
@@ -146,7 +145,7 @@
             Log.watch.notice("WatchConnectivity session deactivated")
 
             Task {
-                try? await RoamDataHandler.checkedCreate().watchPossiblyDead()
+                try? await RoamDataHandler.shared.resetWatchData()
             }
         }
     }

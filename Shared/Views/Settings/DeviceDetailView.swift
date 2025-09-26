@@ -1,10 +1,9 @@
 import SwiftUI
-import SwiftData
 
 struct DeviceDetailView: View {
     @State private var scanningActor: DeviceDiscoveryActor!
 
-    var deviceId: PersistentIdentifier
+    let deviceId: String
     @State var deviceName: String = getGlobalNewDeviceName()
     @State var deviceIP: String = "192.168.0.1"
     @State var hidden: Bool = false
@@ -13,31 +12,21 @@ struct DeviceDetailView: View {
     @State private var deviceError: Error?
     @State private var errorMessage: String = ""
 
-    @Query private var selectedDevices: [Device]
-    @Environment(\.uuidUpdater) private var updater
+    @State private var deviceLoader: DeviceLoader
 
     private var runningInPreview: Bool {
         ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
     }
 
     @MainActor
-    init(deviceId: PersistentIdentifier, dismiss: @escaping () -> Void) {
+    init(deviceId: String, dismiss: @escaping () -> Void) {
         self.dismiss = dismiss
         self.deviceId = deviceId
-        var descriptor = FetchDescriptor<Device>(predicate: #Predicate<Device> { device in
-            device.deletedAt == nil && device.persistentModelID == deviceId
-        }, sortBy: [
-            SortDescriptor(\Device.lastSelectedAt, order: .reverse)
-        ])
-        descriptor.fetchLimit = 1
-
-        _selectedDevices = Query(
-            descriptor
-        )
+        self.deviceLoader = DeviceLoader(deviceId: deviceId, dataHandler: .shared)
     }
 
     var device: Device? {
-        selectedDevices.first
+        deviceLoader.device
     }
 
     var dismiss: () -> Void
@@ -78,9 +67,7 @@ struct DeviceDetailView: View {
                     hidden = newHiddenAt != nil
                 }
                 .onAppear {
-                    scanningActor = DeviceDiscoveryActor(updater: {
-                        updater?.update()
-                    })
+                    scanningActor = DeviceDiscoveryActor()
 
                     deviceName = device?.name ?? getGlobalNewDeviceName()
                     let deviceUrl = device?.location ?? "192.168.0.1"
@@ -237,19 +224,13 @@ struct DeviceDetailView: View {
                         dismiss()
                     }
                     do {
-                        try await RoamDataHandler().delete(deviceId)
+                        try await RoamDataHandler.shared.deleteDevice(id: deviceId)
 
                         Log.userInteraction.notice("Deleted device with id \(String(describing: deviceId), privacy: .public)")
-                        DispatchQueue.main.async {
-                            self.updater?.update()
-                        }
                     } catch let error as DataHandlerError {
                         Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
                         errorMessage = "Failed to Delete Device"
                         deviceError = error
-                    }
-                    DispatchQueue.main.async {
-                        updater?.update()
                     }
                 }
             }, label: {
@@ -282,14 +263,11 @@ struct DeviceDetailView: View {
             let deviceUrl = addSchemeAndPort(to: cleanedString)
             Log.data.notice("Getting device url \(deviceUrl, privacy: .public)")
 
-            let dh = RoamDataHandler()
+            let dh = RoamDataHandler.shared
             Task {
                 do {
-                    try await dh.updateDevice(device.persistentModelID, name: deviceName, location: deviceUrl, hidden: hidden)
+                    try await dh.setDeviceDetails(device: device)
 
-                    DispatchQueue.main.async {
-                        updater?.update()
-                    }
 #if !os(watchOS)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                         dismiss()

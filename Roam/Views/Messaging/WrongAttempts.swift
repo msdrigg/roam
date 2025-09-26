@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct WrongAttemptsKey: EnvironmentKey {
-    // We can do this because UUIDUpdater is nil
     static let defaultValue: WrongAttemptsTracker? = nil
 }
 

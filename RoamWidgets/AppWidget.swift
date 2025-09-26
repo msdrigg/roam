@@ -1,6 +1,5 @@
 import AppIntents
 import Foundation
-import SwiftData
 import SwiftUI
 import WidgetKit
 
@@ -25,8 +24,8 @@ import WidgetKit
     } timeline: {
         DeviceChoiceTimelineEntity(
             date: Date.now,
-            device: getTestingDevices()[0].toAppEntity(),
-            apps: getTestingAppLinks().map { $0.toAppEntity() }
+            device: getTestingDevices()[0],
+            apps: getTestingAppLinks()
         )
         DeviceChoiceTimelineEntity(
             date: Date.now,
@@ -63,8 +62,8 @@ import WidgetKit
     } timeline: {
         DeviceChoiceTimelineEntity(
             date: Date.now,
-            device: getTestingDevices()[0].toAppEntity(),
-            apps: Array(getTestingAppLinks().map { $0.toAppEntity() }.prefix(2))
+            device: getTestingDevices()[0],
+            apps: Array(getTestingAppLinks().prefix(2))
         )
         DeviceChoiceTimelineEntity(
             date: Date.now,

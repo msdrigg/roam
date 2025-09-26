@@ -1,6 +1,5 @@
 import AppIntents
 import Foundation
-import SwiftData
 import SwiftUI
 import WidgetKit
 
@@ -64,8 +63,8 @@ struct SmallMediaWidget: Widget {
     } timeline: {
         DeviceChoiceTimelineEntity(
             date: Date.now,
-            device: getTestingDevices()[0].toAppEntity(),
-            apps: getTestingAppLinks().map { $0.toAppEntity() }
+            device: getTestingDevices()[0],
+            apps: getTestingAppLinks()
         )
         DeviceChoiceTimelineEntity(
             date: Date.now,
@@ -79,8 +78,8 @@ struct SmallMediaWidget: Widget {
     } timeline: {
         DeviceChoiceTimelineEntity(
             date: Date.now,
-            device: getTestingDevices()[0].toAppEntity(),
-            apps: getTestingAppLinks().map { $0.toAppEntity() }
+            device: getTestingDevices()[0],
+            apps: getTestingAppLinks()
         )
         DeviceChoiceTimelineEntity(
             date: Date.now,
@@ -204,8 +203,8 @@ struct SmallMediaWidget: Widget {
     } timeline: {
         DeviceChoiceTimelineEntity(
             date: Date.now,
-            device: getTestingDevices()[0].toAppEntity(),
-            apps: getTestingAppLinks().map { $0.toAppEntity() }
+            device: getTestingDevices()[0],
+            apps: getTestingAppLinks()
         )
         DeviceChoiceTimelineEntity(
             date: Date.now,

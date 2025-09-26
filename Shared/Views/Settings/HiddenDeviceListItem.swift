@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HiddenDeviceListItem: View {
-    @Bindable var device: Device
+    let device: Device
 
 #if os(watchOS)
     @EnvironmentObject private var appDelegate: RoamWatchAppDelegate
@@ -9,12 +9,11 @@ struct HiddenDeviceListItem: View {
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 #endif
 
-    @Environment(\.uuidUpdater) private var updater
     @State private var deviceError: Error?
     @State private var errorMessage: String = ""
 
     var body: some View {
-        NavigationLink(value: NavigationDestination.deviceSettingsDestination(device.persistentModelID)) {
+        NavigationLink(value: NavigationDestination.deviceSettingsDestination(device.id)) {
             Group {
                 Text(device.name) + Text(" · ") +
                 Text(getHostPortDisplay(from: device.location)).foregroundStyle(Color.secondary)
@@ -24,17 +23,14 @@ struct HiddenDeviceListItem: View {
 #if !os(watchOS)
         .contextMenu {
             Button(role: .destructive) {
-                let pid = device.persistentModelID
+                let pid = device.id
                 Task {
                     do {
-                        try await RoamDataHandler().delete(pid)
+                        try await RoamDataHandler.shared.deleteDevice(id: pid)
                         Log.userInteraction
                             .notice(
                                 "Deleted device with id \(String(describing: pid), privacy: .public)"
                             )
-                        DispatchQueue.main.async {
-                            self.updater?.update()
-                        }
                     } catch let error as DataHandlerError {
                         Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
                         errorMessage = "Failed to Delete Device"
@@ -45,16 +41,13 @@ struct HiddenDeviceListItem: View {
                 Label(String(localized: "Delete", comment: "Label on a button to delete a device"), systemImage: "trash")
             }
             Button {
-                let pid = device.persistentModelID
+                let pid = device.id
                 Task {
                     do {
-                        try await RoamDataHandler().updateDevice(
-                            pid,
+                        try await RoamDataHandler.shared.setDeviceHidden(
+                            id: pid,
                             hidden: false
                         )
-                        DispatchQueue.main.async {
-                            self.updater?.update()
-                        }
                     } catch {
                         Log.data.warning("Error updating device \(error, privacy: .public)")
                         errorMessage = "Failed to Unhide Device"
@@ -64,23 +57,20 @@ struct HiddenDeviceListItem: View {
             } label: {
                 Label("Unhide", systemImage: "eye")
             }
-            NavigationLink(value: NavigationDestination.deviceSettingsDestination(device.persistentModelID)) {
+            NavigationLink(value: NavigationDestination.deviceSettingsDestination(device.id)) {
                 Label(String(localized: "Edit", comment: "Label on a button to edit a device"), systemImage: "pencil")
             }
         }
 #endif
         .swipeActions(edge: .leading) {
             Button {
-                let pid = device.persistentModelID
+                let pid = device.id
                 Task {
                     do {
-                        try await RoamDataHandler().updateDevice(
-                            pid,
+                        try await RoamDataHandler.shared.setDeviceHidden(
+                            id: pid,
                             hidden: false
                         )
-                        DispatchQueue.main.async {
-                            self.updater?.update()
-                        }
                     } catch {
                         Log.data.warning("Error updating device \(error, privacy: .public)")
                         errorMessage = "Failed to Unhide Device"

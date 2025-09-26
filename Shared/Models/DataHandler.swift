@@ -1,162 +1,766 @@
 import Foundation
 import OSLog
-import SwiftData
 import SwiftUI
 
-func getGlobalNewDeviceName() -> String {
-    return String(localized: "New device")
+// MARK: - File-Based Data Structures
+struct DeviceListData: Codable {
+    var devices: [String] // Array of device UDNs in order
+
+    init(devices: [String] = []) {
+        self.devices = devices
+    }
 }
 
-@ModelActor
+// MARK: - Registration System
+typealias RegistrationToken = UUID
+
+enum ChangeOperation: Hashable {
+    case updateAppIcon(deviceId: String, appId: String)
+    case updateDeviceList
+    case updateHiddenDeviceList
+    case updatePrimaryDevice
+    case updatePrimaryApps
+    case updateDevice(deviceId: String)
+    case updateDeviceApps(deviceId: String)
+}
+
+struct RegistrationListenerRef {
+    weak var listener: (any RegistrationListener)?
+}
+
+@MainActor
+protocol RegistrationListener: AnyObject, Sendable {
+    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String)
+    func deviceDetailUpdated(for deviceId: String, device: Device?)
+    func deviceListUpdated(devices: [String])
+    func hiddenDeviceListUpdated(devices: [String])
+    func primaryDeviceUpdated(device: Device?)
+    func primaryAppsUpdated(apps: [AppLink]?)
+    func deviceAppsUpdated(for deviceId: String, apps: [AppLink])
+}
+
+// MARK: - Main Data Handler
 actor RoamDataHandler {
-    static let hardDeleteTimeout: TimeInterval = 3600
+    private let fileHandler: FileDataHandler
+    private var updateListeners: [RegistrationToken: RegistrationListenerRef] = [:]
+    private var updateRegistrations: [ChangeOperation: Set<RegistrationToken>] = [:]
 
-    private let minRescanInterval: TimeInterval = 30
+    // Cache storage
+    private var cachedDeviceData: [String: Device] = [:]
+    private var cachedDeviceApps: [String: [AppLink]] = [:]
+    private var cachedDeviceList: [String]?
+    private var cachedHiddenDeviceList: [String]?
+    private var cachedPrimaryDevice: Device?
+    private var cachedPrimaryApps: [AppLink]?
 
     @MainActor
-    init() {
-        self.init(modelContainer: getSharedModelContainer())
+    private static let _shared: RoamDataHandler? = getForShared()
+
+    @MainActor
+    static func sharedChecked() throws -> RoamDataHandler {
+        guard let shared = _shared else {
+            throw DataHandlerError.noContainerURL
+        }
+        return shared
     }
 
     @MainActor
-    static func checkedCreate() throws (ModelContainerFailureReason) -> Self {
-        return try self.init(modelContainer: getSharedModelContainerChecked())
+    static var shared: RoamDataHandler {
+        guard let shared = _shared else {
+            loggedFatalError("No container url for main app group \(mainAppGroup)")
+        }
+        return shared
     }
 
-    private func allDevices() async throws -> [Device] {
-        let descriptor = FetchDescriptor<Device>(
-            predicate: #Predicate {
-                $0.deletedAt == nil
-            },
-            sortBy: [
-                SortDescriptor(\Device.lastSelectedAt, order: .reverse),
-                SortDescriptor(\Device.lastOnlineAt, order: .reverse),
-            ]
-        )
-        let links = try await self.fetchSafer(
-            descriptor
-        )
-        return links
-    }
-
-    func setSelectedDevice(_ id: PersistentIdentifier) async throws {
-        Log.data.notice("Updating selectedAt for device with id \(String(describing: id), privacy: .public)")
-        if let device = await self.existingDevice(for: id) {
-            Log.data.notice("Found device to update with location \(device.location, privacy: .public)")
-            device.lastSelectedAt = Date.now
-            do {
-                try await self.saveSafer()
-            } catch {
-                Log.data.error("Error marking device as selected \(device.location, privacy: .public)")
-                throw error
-            }
+    private init(rootPath: String) {
+        self.fileHandler = FileDataHandler(rootPath: rootPath)
+        Task {
+            await self.preloadDeviceList()
+            await self.preloadPrimaryDevice()
+            await self.preloadPrimaryApps()
         }
     }
 
-    func updateDevice(_ id: PersistentIdentifier, name: String? = nil, location: String? = nil, hidden: Bool? = nil) async throws {
-        Log.data.notice("Updating device at \(id.described(), privacy: .public)")
-        if let device = await self.existingDevice(for: id) {
-            Log.data.notice("Found device to update with id \(id.described(), privacy: .public))")
-            if let location {
-                device.location = location
+    private static func getForShared() -> Self? {
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
+            Log.backend.error("Failed to get app group container URL")
+            return nil
+        }
+        print("Getting container url \(containerURL)")
+        return self.init(rootPath: containerURL.appendingPathComponent("rootData").path(percentEncoded: false))
+    }
+
+    // MARK: - Request Functions
+    func requestDeviceList() -> [String] {
+        if let cachedDeviceList { return cachedDeviceList }
+
+        do {
+            let devices = try loadDeviceListFromDisk()
+            cachedDeviceList = devices
+            notifyDeviceListUpdated(devices: devices)
+            return devices
+        } catch {
+            Log.data.error("Error loading device list: \(error, privacy: .public)")
+            cachedDeviceList = []
+            notifyDeviceListUpdated(devices: [])
+            return []
+        }
+    }
+
+    func requestHiddenDeviceList() -> [String] {
+        if let cachedHiddenDeviceList { return cachedHiddenDeviceList }
+
+        do {
+            let devices = try loadHiddenDeviceListFromDisk()
+            cachedHiddenDeviceList = devices
+            notifyHiddenDeviceListUpdated(devices: devices)
+            return devices
+        } catch {
+            Log.data.error("Error loading hidden device list: \(error, privacy: .public)")
+            cachedHiddenDeviceList = []
+            notifyHiddenDeviceListUpdated(devices: [])
+            return []
+        }
+    }
+
+    func requestDevice(id: String) -> Device? {
+        if let d = cachedDeviceData[id] { return d }
+
+        do {
+            let device = try loadDeviceFromDisk(id: id)
+            cachedDeviceData[id] = device
+            notifyDeviceUpdated(deviceId: id, device: device)
+            return device
+        } catch {
+            Log.data.error("Error loading device \(id, privacy: .public): \(error, privacy: .public)")
+            notifyDeviceUpdated(deviceId: id, device: nil)
+            return nil
+        }
+    }
+
+    func requestDeviceApps(deviceId: String) -> [AppLink] {
+        if let a = cachedDeviceApps[deviceId] { return a }
+
+        do {
+            let apps = try loadDeviceAppsFromDisk(deviceId: deviceId)
+            cachedDeviceApps[deviceId] = apps
+            notifyDeviceAppsUpdated(deviceId: deviceId, apps: apps)
+            return apps
+        } catch {
+            Log.data.error("Error loading device apps \(deviceId, privacy: .public): \(error, privacy: .public)")
+            cachedDeviceApps[deviceId] = []
+            notifyDeviceAppsUpdated(deviceId: deviceId, apps: [])
+            return []
+        }
+    }
+
+    private func requestDeviceAppIcon(deviceId: String, appId: String)  {
+        // TODO:
+        // Icon loading implementation would go here
+        // This would check for cached icon hash and notify if available
+    }
+
+    func requestPrimaryDevice() -> Device? {
+        if let cachedPrimaryDevice { return cachedPrimaryDevice }
+
+        do {
+            let device = try loadPrimaryDeviceFromDisk()
+            cachedPrimaryDevice = device
+            if let device = device {
+                cachedDeviceData[device.id] = device
             }
-            if let name {
-                device.name = name
+            notifyPrimaryDeviceUpdated(device: device)
+            return device
+        } catch {
+            Log.data.error("Error loading primary device: \(error, privacy: .public)")
+            notifyPrimaryDeviceUpdated(device: nil)
+            return nil
+        }
+    }
+
+    private func requestPrimaryApps() -> [AppLink] {
+        if let cachedPrimaryApps { return cachedPrimaryApps }
+
+        do {
+            let apps = try loadPrimaryAppsFromDisk()
+            cachedPrimaryApps = apps
+            notifyPrimaryAppsUpdated(apps: apps)
+            return apps ?? []
+        } catch {
+            Log.data.error("Error loading primary apps: \(error, privacy: .public)")
+            cachedPrimaryApps = []
+            notifyPrimaryAppsUpdated(apps: [])
+            return []
+        }
+    }
+
+    func requestAllDevices(_ deviceIds: [String]) async -> [Device] {
+        var devices: [Device] = []
+
+        for deviceId in deviceIds {
+            // Check cache first
+            if let cachedDevice = cachedDeviceData[deviceId] {
+                devices.append(cachedDevice)
+                continue
             }
-            device.lastSentToWatch = nil
-            if let hidden {
-                if hidden {
-                    device.hiddenAt = device.hiddenAt ?? Date.now
-                } else {
-                    device.hiddenAt = nil
-                }
-            }
+
             do {
-                try await self.saveSafer()
+                if let device = try loadDeviceFromDisk(id: deviceId) {
+                    cachedDeviceData[deviceId] = device
+
+                    self.notifyDeviceUpdated(deviceId: deviceId, device: device)
+
+                    devices.append(device)
+                }
             } catch {
-                Log.data.warning("Error updating device at location \(device.location, privacy: .public)")
-                throw error
+                Log.data.error("Failed to load device \(deviceId, privacy: .public): \(error, privacy: .public)")
             }
-        } else {
+        }
+
+        return devices
+    }
+
+    // MARK: - Public Data Loader Factory Functions
+    @MainActor
+    func deviceListLoader() -> DeviceListLoader {
+        let loader = DeviceListLoader(dataHandler: self)
+        Task {
+            await self.requestDeviceList()
+        }
+        return loader
+    }
+
+    @MainActor
+    func hiddenDeviceListLoader() -> HiddenDeviceListLoader {
+        let loader = HiddenDeviceListLoader(dataHandler: self)
+        Task {
+            await self.requestHiddenDeviceList()
+        }
+        return loader
+    }
+
+    @MainActor
+    func deviceLoader(id: String) -> DeviceLoader {
+        let loader = DeviceLoader(deviceId: id, dataHandler: self)
+        Task {
+            await self.requestDevice(id: id)
+        }
+        return loader
+    }
+
+    @MainActor
+    func deviceAppsLoader(deviceId: String) -> DeviceAppsLoader {
+        let loader = DeviceAppsLoader(deviceId: deviceId, dataHandler: self)
+        Task {
+            await self.requestDeviceApps(deviceId: deviceId)
+        }
+        return loader
+    }
+
+    @MainActor
+    func deviceAppIconLoader(deviceId: String, appId: String) -> DeviceAppIconLoader {
+        let loader = DeviceAppIconLoader(deviceId: deviceId, appId: appId, dataHandler: self)
+        Task {
+            await self.requestDeviceAppIcon(deviceId: deviceId, appId: appId)
+        }
+        return loader
+    }
+
+    @MainActor
+    func primaryDeviceLoader() -> PrimaryDeviceLoader {
+        let loader = PrimaryDeviceLoader(dataHandler: self)
+        Task {
+            await self.requestPrimaryDevice()
+        }
+        return loader
+    }
+
+    // MARK: - Public Update Functions
+    func addDevice(location: String, friendlyDeviceName: String, udn: String, serial: String, hidden: Bool = false) throws -> String {
+        let device = Device(
+            name: friendlyDeviceName,
+            location: location,
+            udn: udn,
+            serial: serial,
+            hiddenAt: hidden ? Date.now : nil,
+        )
+
+        try saveDeviceToDisk(device)
+        cachedDeviceData[device.id] = device
+
+        // Update lists
+        try updateDeviceListsAfterSave(device)
+
+        self.notifyDeviceUpdated(deviceId: device.id, device: device)
+
+        return device.id
+    }
+
+    func setDeviceHidden(id: String, hidden: Bool) throws {
+        guard var device = try cachedDeviceData[id] ?? loadDeviceFromDisk(id: id) else {
             throw DataHandlerError.deviceNotFound
         }
-        Log.data.notice("Updated device at \(id.described(), privacy: .public)")
+
+        device.hiddenAt = hidden ? Date.now : nil
+
+        try saveDeviceToDisk(device)
+        cachedDeviceData[id] = device
+
+        try updateDeviceListsAfterSave(device)
+
+        self.notifyDeviceUpdated(deviceId: id, device: device)
     }
 
-    @discardableResult
-    func addDeviceIndistriminantly(location: String, friendlyDeviceName: String, udn: String, serial: String, hidden: Bool) async throws -> PersistentIdentifier {
-        if let device = await deviceForUdn(udn: udn) {
-            device.location = location
-            device.name = friendlyDeviceName
-            device.hiddenAt = hidden ? Date.now : nil
-            do {
-                try await self.saveSafer()
-            } catch {
-                Log.data.warning("Error updating device fields \(error, privacy: .public)")
-                throw error
+    func updateDeviceLocation(id: String, location: String) throws {
+        guard var device = try cachedDeviceData[id] ?? loadDeviceFromDisk(id: id) else {
+            throw DataHandlerError.deviceNotFound
+        }
+
+        device.location = location
+
+        try saveDeviceToDisk(device)
+        cachedDeviceData[id] = device
+
+        self.notifyDeviceUpdated(deviceId: id, device: device)
+    }
+
+    func updateDeviceName(id: String, name: String) throws {
+        guard var device = try cachedDeviceData[id] ?? loadDeviceFromDisk(id: id) else {
+            throw DataHandlerError.deviceNotFound
+        }
+
+        device.name = name
+
+        try saveDeviceToDisk(device)
+        cachedDeviceData[id] = device
+
+        self.notifyDeviceUpdated(deviceId: id, device: device)
+    }
+
+    func setSelectedApp(deviceId: String, appId: String) throws {
+        Log.data.info("App selected \(appId, privacy: .public) for device \(deviceId, privacy: .public)")
+    }
+
+    func deleteDevice(id: String) throws {
+        guard let device = try cachedDeviceData[id] ?? loadDeviceFromDisk(id: id) else {
+            throw DataHandlerError.deviceNotFound
+        }
+
+        if device.id == self.requestPrimaryDevice()?.id {
+            if let newDeviceId = self.requestDeviceList().first {
+                try self.makePrimaryDevice(id: newDeviceId)
             }
-            return device.persistentModelID
+        }
+
+        try deleteDeviceOnDisk(id)
+        cachedDeviceData[id] = nil // Remove from cache since it's deleted
+
+        try updateDeviceListsAfterDelete(udn: id)
+
+        self.notifyDeviceUpdated(deviceId: id, device: nil)
+    }
+
+    func setDeviceApps(deviceId: String, apps: [AppLink]) throws {
+        try saveDeviceAppsToDisk(deviceId: deviceId, apps: apps)
+        cachedDeviceApps[deviceId] = apps
+
+        // Update primary apps cache if this is primary device
+        if cachedPrimaryDevice?.id == deviceId {
+            cachedPrimaryApps = apps
+            self.notifyPrimaryAppsUpdated(apps: apps)
+        }
+
+        self.notifyDeviceAppsUpdated(deviceId: deviceId, apps: apps)
+    }
+
+    func setDeviceDetails(device: Device) throws {
+        try saveDeviceToDisk(device)
+        cachedDeviceData[device.id] = device
+
+        try updateDeviceListsAfterSave(device)
+
+        // Update primary device cache if this is primary device
+        if cachedPrimaryDevice?.id == device.id {
+            cachedPrimaryDevice = device
+            self.notifyPrimaryDeviceUpdated(device: device)
+        }
+
+        self.notifyDeviceUpdated(deviceId: device.id, device: device)
+    }
+
+    func makePrimaryDevice(id: String) throws {
+        guard let device = try cachedDeviceData[id] ?? loadDeviceFromDisk(id: id) else {
+            throw DataHandlerError.deviceNotFound
+        }
+
+        // Update device's lastSelectedAt
+        var updatedDevice = device
+        updatedDevice.lastSelectedAt = Date.now
+        try saveDeviceToDisk(updatedDevice)
+        cachedDeviceData[id] = updatedDevice
+
+        // Create symlinks
+        try fileHandler.createSymlink(from: "primaryDevice.bin", to: "\(id).bin")
+        try? fileHandler.createSymlink(from: "primaryDevice.apps.bin", to: "\(id).apps.bin")
+
+        // Update device order in lists
+        try updateDeviceOrderAfterSelection(selectedUdn: id)
+
+        // Update caches
+        cachedPrimaryDevice = updatedDevice
+        cachedPrimaryApps = cachedDeviceApps[id] ?? (try? loadDeviceAppsFromDisk(deviceId: id))
+
+        self.notifyPrimaryDeviceUpdated(device: updatedDevice)
+        if let apps = self.cachedPrimaryApps {
+            self.notifyPrimaryAppsUpdated(apps: apps)
+        }
+    }
+
+    // MARK: - Preload Functions
+    func preloadDeviceList() {
+        _ = requestDeviceList()
+    }
+
+    func preloadHiddenDeviceList() {
+        _ = requestHiddenDeviceList()
+    }
+
+    func preloadDevice(id: String) {
+        _ = requestDevice(id: id)
+    }
+
+    func preloadDeviceApps(deviceId: String) {
+        _ = requestDeviceApps(deviceId: deviceId)
+    }
+
+    func preloadDeviceAppIcon(deviceId: String, appId: String) {
+        requestDeviceAppIcon(deviceId: deviceId, appId: appId)
+    }
+
+    func preloadPrimaryDevice() {
+        _ = requestPrimaryDevice()
+    }
+
+    func preloadPrimaryApps() {
+        _ = requestPrimaryApps()
+    }
+
+    // MARK: - Private Disk Operations
+    private func loadDeviceListFromDisk() throws -> [String] {
+        guard fileHandler.fileExists("devices.bin") else { return [] }
+        let deviceList = try fileHandler.loadJSON("devices.bin", as: DeviceListData.self)
+        return deviceList.devices
+    }
+
+    private func loadHiddenDeviceListFromDisk() throws -> [String] {
+        guard fileHandler.fileExists("hiddenDevices.bin") else { return [] }
+        let deviceList = try fileHandler.loadJSON("hiddenDevices.bin", as: DeviceListData.self)
+        return deviceList.devices
+    }
+
+    private func loadDeviceFromDisk(id: String) throws -> Device? {
+        let filename = "\(id).bin"
+        guard fileHandler.fileExists(filename) else { return nil }
+        return try fileHandler.loadJSON(filename, as: Device.self)
+    }
+
+    private func loadDeviceAppsFromDisk(deviceId: String) throws -> [AppLink] {
+        let filename = "\(deviceId).apps.bin"
+        guard fileHandler.fileExists(filename) else { return [] }
+        return try fileHandler.loadJSON(filename, as: [AppLink].self)
+    }
+
+    private func loadPrimaryDeviceFromDisk() throws -> Device? {
+        guard fileHandler.fileExists("primaryDevice.bin") else { return nil }
+        return try fileHandler.loadJSON("primaryDevice.bin", as: Device.self)
+    }
+
+    private func loadPrimaryAppsFromDisk() throws -> [AppLink]? {
+        guard fileHandler.fileExists("primaryDevice.apps.bin") else { return [] }
+        return try fileHandler.loadJSON("primaryDevice.apps.bin", as: [AppLink].self)
+    }
+
+    private func saveDeviceToDisk(_ device: Device) throws {
+        try fileHandler.saveJSON(device, to: "\(device.id).bin")
+        if let serial = device.serial {
+            try fileHandler.createSymlink(from: "serial.\(serial).bin", to: "\(device.id).bin")
+        }
+    }
+
+    private func deleteDeviceOnDisk(_ deviceId: String) throws {
+        try fileHandler.deleteFile("\(deviceId).bin")
+        try fileHandler.deleteFile("\(deviceId).apps.bin")
+    }
+
+    private func saveDeviceAppsToDisk(deviceId: String, apps: [AppLink]) throws {
+        try fileHandler.saveJSON(apps, to: "\(deviceId).apps.bin")
+        if deviceId == requestPrimaryDevice()?.id {
+            try? fileHandler.createSymlink(from: "primaryDevice.apps.bin", to: "\(deviceId).apps.bin")
+        }
+    }
+
+    private func saveDeviceListToDisk(_ devices: [String]) throws {
+        try fileHandler.saveJSON(DeviceListData(devices: devices), to: "devices.bin")
+    }
+
+    private func saveHiddenDeviceListToDisk(_ devices: [String]) throws {
+        try fileHandler.saveJSON(DeviceListData(devices: devices), to: "hiddenDevices.bin")
+    }
+
+    // MARK: - Private Helper Methods
+    private func updateDeviceListsAfterSave(_ device: Device) throws {
+        let isHidden = device.hiddenAt != nil
+
+        var devices = try cachedDeviceList ?? loadDeviceListFromDisk()
+        var hiddenDevices = try cachedHiddenDeviceList ?? loadHiddenDeviceListFromDisk()
+
+        let hasNewPrimary = devices.isEmpty
+
+        // Remove from both lists first
+        devices.removeAll { $0 == device.id }
+        hiddenDevices.removeAll { $0 == device.id }
+
+        // Add to appropriate list
+        if isHidden {
+            hiddenDevices.append(device.id)
         } else {
-            Log.data.notice("Adding device at \(location, privacy: .public)")
-            let device = Device(
-                name: friendlyDeviceName,
-                location: location,
-                udn: udn,
-                serial: serial,
-            )
-            device.hiddenAt = hidden ? Date.now : nil
-            modelContext.insert(device)
+            devices.append(device.id)
+        }
 
-            do {
-                try await self.saveSafer()
-                Log.data.notice("Added device \(String(describing: device.persistentModelID), privacy: .public)")
-                return device.persistentModelID
-            } catch {
-                Log.data.warning("Error adding device at \(location, privacy: .public), \(error, privacy: .public)")
-                throw error
+        // Save and update cache
+        try saveDeviceListToDisk(devices)
+        try saveHiddenDeviceListToDisk(hiddenDevices)
+
+        cachedDeviceList = devices
+        cachedHiddenDeviceList = hiddenDevices
+
+        if hasNewPrimary {
+            try self.makePrimaryDevice(id: device.id)
+        }
+
+        self.notifyDeviceListUpdated(devices: devices)
+        self.notifyHiddenDeviceListUpdated(devices: hiddenDevices)
+    }
+
+    private func updateDeviceListsAfterDelete(udn: String) throws {
+        var devices = try cachedDeviceList ?? loadDeviceListFromDisk()
+        var hiddenDevices = try cachedHiddenDeviceList ?? loadHiddenDeviceListFromDisk()
+
+        devices.removeAll { $0 == udn }
+        hiddenDevices.removeAll { $0 == udn }
+
+        try saveDeviceListToDisk(devices)
+        try saveHiddenDeviceListToDisk(hiddenDevices)
+
+        cachedDeviceList = devices
+        cachedHiddenDeviceList = hiddenDevices
+
+        self.notifyDeviceListUpdated(devices: devices)
+        self.notifyHiddenDeviceListUpdated(devices: hiddenDevices)
+    }
+
+    private func updateDeviceOrderAfterSelection(selectedUdn: String) throws {
+        var devices = try cachedDeviceList ?? loadDeviceListFromDisk()
+
+        // Move selected device to front
+        devices.removeAll { $0 == selectedUdn }
+        devices.insert(selectedUdn, at: 0)
+
+        try saveDeviceListToDisk(devices)
+        cachedDeviceList = devices
+
+        self.notifyDeviceListUpdated(devices: devices)
+    }
+}
+
+// MARK: - Registration System Implementation
+extension RoamDataHandler {
+    nonisolated func token() -> RegistrationToken {
+        return UUID()
+    }
+
+    func register(_ token: RegistrationToken, _ listener: RegistrationListener) {
+        self.updateListeners[token] = RegistrationListenerRef(listener: listener)
+    }
+
+    func unregister(_ token: RegistrationToken) {
+        self.updateListeners.removeValue(forKey: token)
+
+        for change in self.updateRegistrations.keys {
+            if var listeners = self.updateRegistrations[change] {
+                if listeners.remove(token) != nil {
+                    self.updateRegistrations[change] = listeners
+                }
+            }
+            if self.updateRegistrations[change]?.isEmpty ?? true {
+                self.updateRegistrations.removeValue(forKey: change)
             }
         }
     }
 
+    func registerForChange(_ token: RegistrationToken, change: ChangeOperation) {
+        var listeners = self.updateRegistrations[change] ?? []
+        listeners.insert(token)
+        self.updateRegistrations[change] = listeners
+    }
+
+    // MARK: - Notification Methods
+    private func notifyDeviceListUpdated(devices: [String]) {
+        let change = ChangeOperation.updateDeviceList
+        self.updateRegistrations[change]?.forEach { token in
+            guard let listener = self.updateListeners[token]?.listener else {
+                self.unregister(token)
+                return
+            }
+
+            DispatchQueue.main.async {
+                listener.deviceListUpdated(devices: devices)
+            }
+        }
+    }
+
+    private func notifyHiddenDeviceListUpdated(devices: [String]) {
+        let change = ChangeOperation.updateHiddenDeviceList
+        self.updateRegistrations[change]?.forEach { token in
+            guard let listener = self.updateListeners[token]?.listener else {
+                self.unregister(token)
+                return
+            }
+
+            DispatchQueue.main.async {
+                listener.hiddenDeviceListUpdated(devices: devices)
+            }
+        }
+    }
+
+    private func notifyDeviceUpdated(deviceId: String, device: Device?) {
+        let change = ChangeOperation.updateDevice(deviceId: deviceId)
+        self.updateRegistrations[change]?.forEach { token in
+            guard let listener = self.updateListeners[token]?.listener else {
+                self.unregister(token)
+                return
+            }
+
+            DispatchQueue.main.async {
+                listener.deviceDetailUpdated(for: deviceId, device: device)
+            }
+        }
+    }
+
+    private func notifyDeviceAppsUpdated(deviceId: String, apps: [AppLink]) {
+        let change = ChangeOperation.updateDeviceApps(deviceId: deviceId)
+        self.updateRegistrations[change]?.forEach { token in
+            guard let listener = self.updateListeners[token]?.listener else {
+                self.unregister(token)
+                return
+            }
+
+            DispatchQueue.main.async {
+                listener.deviceAppsUpdated(for: deviceId, apps: apps)
+            }
+        }
+    }
+
+    private func notifyPrimaryDeviceUpdated(device: Device?) {
+        let change = ChangeOperation.updatePrimaryDevice
+        self.updateRegistrations[change]?.forEach { token in
+            guard let listener = self.updateListeners[token]?.listener else {
+                self.unregister(token)
+                return
+            }
+
+            DispatchQueue.main.async {
+                listener.primaryDeviceUpdated(device: device)
+            }
+        }
+    }
+
+    private func notifyPrimaryAppsUpdated(apps: [AppLink]?) {
+        let change = ChangeOperation.updatePrimaryApps
+        self.updateRegistrations[change]?.forEach { token in
+            guard let listener = self.updateListeners[token]?.listener else {
+                self.unregister(token)
+                return
+            }
+
+            DispatchQueue.main.async {
+                listener.primaryAppsUpdated(apps: apps)
+            }
+        }
+    }
+
+    // MARK: - Device Management Extension
 #if !WIDGET
+    func requestDeviceForSerial(serial: String) async -> Device? {
+        // First check all cached devices for matching serial
+        for cachedDevice in cachedDeviceData.values where cachedDevice.serial == serial {
+            return cachedDevice
+        }
+
+        // If not found in cache, try to load from serial.{serial}.bin file
+        let serialFilename = "serial.\(serial).bin"
+        guard fileHandler.fileExists(serialFilename) else {
+            return nil
+        }
+
+        do {
+            let device = try fileHandler.loadJSON(serialFilename, as: Device.self)
+            // Cache the device
+            cachedDeviceData[device.id] = device
+            return device
+        } catch {
+            Log.data.error("Failed to load device for serial \(serial, privacy: .public): \(error, privacy: .public)")
+            return nil
+        }
+    }
+
     @discardableResult
-    func addOrReplaceDevice(location: String, udn: String? = nil, serial: String? = nil) async throws -> PersistentIdentifier {
-        if let udn, let device = await deviceForUdn(udn: udn) {
-            device.location = location
+    func addOrReplaceDevice(location: String, id: String? = nil, serial: String? = nil) async throws -> String {
+        // Check if device exists by UDN
+        if let id, let device = self.requestDevice(id: id) {
+            var updatedDevice = device
+            updatedDevice.location = location
             do {
-                try await self.saveSafer()
-                return device.persistentModelID
+                try self.setDeviceDetails(device: updatedDevice)
+                return updatedDevice.id
             } catch {
-                Log.data.warning("Error updating device fields \(error, privacy: .public)")
+                Log.data.warning("Error updating device fields: \(error, privacy: .public)")
                 throw error
             }
         }
 
-        if let serial, let device = await deviceForSerial(serial: serial) {
-            device.location = location
+        // Check if device exists by serial
+        if let serial, let device = await self.requestDeviceForSerial(serial: serial) {
+            var updatedDevice = device
+            updatedDevice.location = location
             do {
-                try await self.saveSafer()
-                return device.persistentModelID
+                try self.setDeviceDetails(device: updatedDevice)
+                return updatedDevice.id
             } catch {
-                Log.data.warning("Error updating device fields \(error, privacy: .public)")
+                Log.data.warning("Error updating device fields: \(error, privacy: .public)")
                 throw error
             }
         }
 
+        // Fetch preconnection info to get device details
         let info: PreconnectionDeviceInfo
         var foundDevice: Device?
         do {
             info = try await fetchPreconnectionInfo(location: location)
-            if let device = await deviceForUdn(udn: info.udn) {
+
+            // Check again with the UDN from preconnection info
+            if let device = requestDevice(id: info.udn) {
                 Log.data.info("Found device for udn \(info.udn, privacy: .public), updating")
-                device.serial = info.serial
-                device.location = location
-                foundDevice = device
-            } else if let device = await deviceForSerial(serial: info.serial) {
+                var updatedDevice = device
+                updatedDevice.serial = info.serial
+                updatedDevice.location = location
+                foundDevice = updatedDevice
+            } else if let device = await requestDeviceForSerial(serial: info.serial) {
                 Log.data.info("Found device for serial \(info.serial, privacy: .public), updating")
-                device.udn = info.udn
-                device.location = location
-                foundDevice = device
+                var updatedDevice = device
+                updatedDevice.udn = info.udn
+                updatedDevice.location = location
+                foundDevice = updatedDevice
             }
         } catch {
             Log.data.warning("Trying to add device but no preconnection info available \(location, privacy: .public). Error: \(error, privacy: .public)")
@@ -165,33 +769,33 @@ actor RoamDataHandler {
 
         let device: Device
 
-        if let foundDevice {
+        if let foundDevice = foundDevice {
             device = foundDevice
         } else {
             Log.data.notice("Adding device at \(location, privacy: .public)")
-            let addedDevice = Device(
+            device = Device(
                 name: info.friendlyName,
                 location: location,
                 udn: info.udn,
                 serial: info.serial
             )
-            modelContext.insert(addedDevice)
-            device = addedDevice
         }
 
         do {
-            try await self.saveSafer()
-            Log.data.notice("Added device \(String(describing: device.persistentModelID), privacy: .public)")
+            try self.setDeviceDetails(device: device)
+            Log.data.notice("Added device \(device.id, privacy: .public)")
+
+            // Trigger device refresh in background
             Task {
                 #if os(watchOS)
-                let refreshClient = WatchOSRefreshClient(id: device.persistentModelID, location: location)
+                let refreshClient = WatchOSRefreshClient(id: device.id, location: location)
                 #else
                 let ecpClient: ECPWebsocketClient
                 do {
-                    guard let location = URL(string: location) else {
+                    guard let locationURL = URL(string: location) else {
                         throw APIError.badURLError(location)
                     }
-                    ecpClient = ECPWebsocketClient(location: location)
+                    ecpClient = ECPWebsocketClient(location: locationURL)
                     await ecpClient.start()
                 } catch {
                     Log.data.warning("Error refreshing device b/c no ECP Session: \(error, privacy: .public)")
@@ -202,534 +806,306 @@ actor RoamDataHandler {
                         await ecpClient.cancel()
                     }
                 }
-                let refreshClient = ECPWebsocketRefreshClient(id: device.persistentModelID, client: ecpClient, location: device.location)
+                let refreshClient = ECPWebsocketRefreshClient(id: device.id, client: ecpClient, location: device.location)
                 #endif
                 await self.refreshDevice(client: refreshClient)
             }
 
-            return device.persistentModelID
+            return device.id
         } catch {
             Log.data.warning("Error adding device at \(location, privacy: .public), \(error, privacy: .public)")
             throw error
         }
     }
 
-    func sentToWatch(deviceId: PersistentIdentifier) async {
+    func sentToWatch(deviceId: String) async {
         do {
-            if let device = await self.existingDevice(for: deviceId) {
+            if var device = self.requestDevice(id: deviceId) {
                 device.lastSentToWatch = Date.now
-                try await self.saveSafer()
+                try self.setDeviceDetails(device: device)
             }
         } catch {
-            Log.data.warning("Error marking device \(deviceId.described(), privacy: .public) as sent to watch \(error, privacy: .public)")
+            Log.data.warning("Error marking device \(deviceId, privacy: .public) as sent to watch: \(error, privacy: .public)")
         }
     }
 
-    func watchPossiblyDead() async {
-        let devices = (try? await allDevices()) ?? []
-        for device in devices {
-            device.lastSentToWatch = nil
-        }
+    func resetWatchData() async {
         do {
-            try await self.saveSafer()
-        } catch {
-            Log.data.warning("Error marking devices as not sent to watch \(error, privacy: .public)")
-        }
-    }
+            let allDeviceIds = self.requestDeviceList()
 
-    func deleteInPast() async {
-        Log.data.notice("Hard deleting devices")
-        let deleteBefore = Date.now - Self.hardDeleteTimeout
-        let distantFuture = Date.distantFuture
-        do {
-            let descriptor = FetchDescriptor<Device>(predicate: #Predicate {
-                $0.deletedAt ?? distantFuture < deleteBefore
-            })
-            let models = try await self.fetchSafer(descriptor)
-
-            for model in models {
-                Log.data.notice("Deleteing device and apps \(model.location, privacy: .public) with name \(model.name, privacy: .public)")
-                do {
-                    try deleteAppsForDeviceUdn(udn: model.udn)
-                } catch {
-                    Log.data.warning("Error deleting past apps for device \(model.udn, privacy: .public) \(error, privacy: .public)")
+            for deviceId in allDeviceIds {
+                if var device = self.requestDevice(id: deviceId) {
+                    device.lastSentToWatch = nil
+                    try self.setDeviceDetails(device: device)
                 }
-                modelContext.delete(model)
             }
-
-            let appFetchDescriptor = FetchDescriptor<AppLink>(predicate: #Predicate {
-                $0.deletedAt ?? distantFuture < deleteBefore
-            })
-            let appModels = try await self.fetchSafer(appFetchDescriptor)
-
-            for model in appModels {
-                Log.data.notice("Deleteing app \(model.id, privacy: .public) for device \(model.deviceUid ?? "--", privacy: .public) with name \(model.name, privacy: .public)")
-                modelContext.delete(model)
-            }
-
-            try await self.saveSafer()
         } catch {
-            Log.data.warning("Error deleting past devices \(error, privacy: .public)")
+            Log.data.warning("Error marking devices as not sent to watch: \(error, privacy: .public)")
         }
-    }
-
-//    func hide(_ id: PersistentIdentifier) async throws (DataHandlerError) {
-    func hide(_ id: PersistentIdentifier) async throws {
-        Log.data.notice("Hiding device \(String(describing: id), privacy: .public)")
-        if let device = await self.existingDevice(for: id) {
-            device.hiddenAt = .now
-            do {
-                try await self.saveSafer()
-            } catch {
-                Log.data.error("Error hiding device with id \(id.described(), privacy: .public)")
-                throw error
-            }
-        }
-    }
-
-//    func delete(_ id: PersistentIdentifier) async throws (DataHandlerError) {
-    func delete(_ id: PersistentIdentifier) async throws {
-        Log.data.notice("Soft deleting device \(String(describing: id), privacy: .public)")
-        if let device = await self.existingDevice(for: id) {
-            device.deletedAt = .now
-            do {
-                try await self.saveSafer()
-            } catch {
-                Log.data.error("Error deleting device with id \(id.described(), privacy: .public)")
-                throw error
-            }
-        }
-
-        await deleteInPast()
     }
 #endif
-
-    private func deviceForUdn(udn: String) async -> Device? {
-        var matchingIds = FetchDescriptor<Device>(
-            predicate: #Predicate {
-                $0.deletedAt == nil && $0.udn == udn
-            }
-        )
-        matchingIds.fetchLimit = 1
-        do {
-            let matchingIds = try modelContext.fetchIdentifiers(matchingIds)
-
-            if let matchingPid = matchingIds.first {
-                if let device = await self.existingDevice(for: matchingPid) {
-                    return device
-                }
-            }
-        } catch {
-            Log.data.error("Error checking if device exists \(udn, privacy: .public): \(error, privacy: .public)")
-        }
-        return nil
-    }
-
-    private func deviceForSerial(serial: String) async -> Device? {
-        var matchingIds = FetchDescriptor<Device>(
-            predicate: #Predicate {
-                $0.deletedAt == nil && $0.serial == serial
-            }
-        )
-        matchingIds.fetchLimit = 1
-        do {
-            let matchingIds = try modelContext.fetchIdentifiers(matchingIds)
-
-            if let matchingPid = matchingIds.first {
-                if let device = await self.existingDevice(for: matchingPid) {
-                    return device
-                }
-            }
-        } catch {
-            Log.data.error("Error checking if device exists \(serial, privacy: .public): \(error, privacy: .public)")
-        }
-        return nil
-    }
-
-    func deviceEntityForUdn(udn: String) async -> DeviceAppEntity? {
-        return await deviceForUdn(udn: udn)?.toAppEntity()
-    }
-
-    func deviceExists(id: String) async -> Bool {
-        await deviceForUdn(udn: id) != nil
-    }
-
-    func fetchSelectedDeviceAppEntity() async -> DeviceAppEntity? {
-        var descriptor = FetchDescriptor<Device>(
-            predicate: #Predicate {
-                $0.deletedAt == nil
-            }
-        )
-        descriptor.sortBy = [
-            SortDescriptor(\Device.lastSelectedAt, order: .reverse),
-            SortDescriptor(\Device.lastOnlineAt, order: .reverse),
-        ]
-        descriptor.fetchLimit = 1
-
-        let selectedDevice: Device? = try? await self.fetchSafer(descriptor).first
-
-        return selectedDevice?.toAppEntity()
-    }
 }
 
-extension RoamDataHandler {
-    public func deviceEntities(for identifiers: [DeviceAppEntity.ID]) async throws -> [DeviceAppEntity] {
-        let descriptor = FetchDescriptor<Device>(predicate: #Predicate {
-            identifiers.contains($0.udn) && $0.deletedAt == nil
-        })
-
-        let links = try await self.fetchSafer(descriptor)
-
-        return links.map { $0.toAppEntity() }
-    }
-
-    public func deviceEntities(matching string: String) async throws -> [DeviceAppEntity] {
-        let descriptor = FetchDescriptor<Device>(predicate: #Predicate {
-            $0.name.contains(string) && $0.deletedAt == nil
-        })
-
-        let links = try await self.fetchSafer(descriptor)
-        return links.map { $0.toAppEntity() }
-    }
-
-    public func allDeviceEntitiesIncludingDeleted() async throws -> [DeviceAppEntity] {
-        var descriptor = FetchDescriptor<Device>(
-            predicate: #Predicate { _ in
-                true
-            }
-        )
-        descriptor.sortBy = [
-            SortDescriptor(\Device.lastSelectedAt, order: .reverse),
-            SortDescriptor(\Device.lastOnlineAt, order: .reverse),
-        ]
-
-        let links = try await self.fetchSafer(
-            descriptor
-        )
-        return links.map { $0.toAppEntity() }
-    }
-
-    public func allDeviceEntities() async throws -> [DeviceAppEntity] {
-        var descriptor = FetchDescriptor<Device>(
-            predicate: #Predicate {
-                $0.deletedAt == nil
-            }
-        )
-        descriptor.sortBy = [
-            SortDescriptor(\Device.lastSelectedAt, order: .reverse),
-            SortDescriptor(\Device.lastOnlineAt, order: .reverse),
-        ]
-
-        let links = try await self.fetchSafer(
-            descriptor
-        )
-        return links.map { $0.toAppEntity() }
-    }
-
-    public func loadLoadTestData() async throws {
-        #if DEBUG
-        try self.clearData()
-
-        let (devices, apps) = getLoadTestingData()
-        for device in devices {
-            modelContext.insert(device)
-        }
-        for app in apps {
-            modelContext.insert(app)
-        }
-
-        for message in getTestingMessages() {
-            message.viewed = true
-
-            modelContext.insert(message)
-        }
-
-        try await self.saveSafer()
-        #endif
-    }
-
-    public func loadTestData() async throws {
-        #if DEBUG
-        try self.clearData()
-
-        for device in getTestingDevices() {
-            modelContext.insert(device)
-            for app in getTestingAppLinks(deviceUid: device.udn) {
-                modelContext.insert(app)
-            }
-        }
-
-        for message in getTestingMessages() {
-            message.viewed = true
-
-            modelContext.insert(message)
-        }
-
-        try await self.saveSafer()
-        #endif
-    }
-
-    public func clearData() throws {
-        try modelContext.delete(model: Device.self)
-        try modelContext.delete(model: AppLink.self)
-        try modelContext.delete(model: Message.self)
-    }
-}
-
-enum DataHandlerError: Error, LocalizedError {
-    case suspending
-    case noSpaceOnDisk
-    case noContainerURL
-    case deviceNotFound
-    case rootError(LocalizedError)
-    case unknown
-
-    var errorDescription: String {
-        switch self {
-        case .noContainerURL:
-            return String(localized: "No valid container found")
-        case .noSpaceOnDisk:
-            return String(localized: "No disk storage left")
-        case .suspending:
-            return String(localized: "App currently shutting down.")
-        case .deviceNotFound:
-            return String(localized: "Cannot update device that is deleted.")
-        case .unknown:
-            return String(localized: "Operation failed.")
-        case .rootError(let error):
-            return error.errorDescription ?? String(localized: "Operation failed.")
-        }
-    }
-
-    var recoverySuggestion: String? {
-        switch self {
-        case .noContainerURL:
-            return String(localized: "This is a bug. Please reach out to roam-support@msd3.io for help")
-        case .noSpaceOnDisk:
-            return String(localized: "Please delete some files to clear up some space and try again")
-        case .suspending:
-            return String(localized: "Please re-open the app and try again.")
-        case .deviceNotFound:
-            return String(localized: "Please make sure the device you are updating has been added.")
-        case .unknown:
-            return String(localized: "Please close and re-open the app and then try again.")
-        case .rootError(let error):
-            return error.recoverySuggestion ?? String(localized: "Please close and re-open the app and then try again.")
-        }
-    }
-
-    static func from(error: Error) -> Self {
-        let nsError = error as NSError
-        if nsError.domain == NSCocoaErrorDomain && nsError.code == NSFileWriteOutOfSpaceError {
-            return .noSpaceOnDisk
-        }
-        if let error = error as? LocalizedError {
-            return .rootError(error)
-        }
-        return .unknown
-    }
-}
-
-extension RoamDataHandler {
-    #if !os(macOS)
-    func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
-        let assertion = await QRunInBackgroundAssertion(name: "FetchSafer")
-        do {
-            if await !assertion.isReleased() {
-                let res = try self.modelContext.fetch(descriptor)
-                await assertion.release()
-                return res
-            }
-            await assertion.release()
-        } catch {
-            await assertion.release()
-            throw DataHandlerError.from(error: error)
-        }
-        throw DataHandlerError.suspending
-    }
-    #else
-    func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
-        do {
-            return try self.modelContext.fetch(descriptor)
-        } catch {
-            throw DataHandlerError.from(error: error)
-        }
-    }
-    #endif
-
-    #if !os(macOS)
-    func saveSafer() async throws {
-        let assertion = await QRunInBackgroundAssertion(name: "SaveSafer")
-        do {
-            if await !assertion.isReleased() {
-                try self.modelContext.save()
-            } else {
-                throw DataHandlerError.suspending
-            }
-        } catch {
-            await assertion.release()
-            throw DataHandlerError.from(error: error)
-        }
-        await assertion.release()
-    }
-    #else
-    func saveSafer() async throws (DataHandlerError) {
-        do {
-            try self.modelContext.save()
-        } catch {
-            throw DataHandlerError.from(error: error)
-        }
-    }
-    #endif
-}
-
-extension RoamDataHandler {
-    internal func existingDevice(for id: PersistentIdentifier) async -> Device? {
-        if let registered: Device = modelContext.registeredModel(for: id) {
-            if registered.isDeleted || registered.deletedAt != nil {
-                return nil
-            }
-            return registered
-        }
-
-        let fetchDescriptor = FetchDescriptor<Device>(
-            predicate: #Predicate {
-                $0.persistentModelID == id && $0.deletedAt == nil
-            }
-        )
-
-        do {
-            let model = try await fetchSafer(fetchDescriptor).first
-
-            if model?.isDeleted == true {
-                return nil
-            }
-
-            return model
-        } catch {
-            Log.data.notice("Error getting device for id \(id.described(), privacy: .public): \(error, privacy: .public)")
-            return nil
-        }
-    }
-
-    func existingApp(for id: PersistentIdentifier) async -> AppLink? {
-        if let registered: AppLink = modelContext.registeredModel(for: id) {
-            if registered.isDeleted || registered.deletedAt != nil {
-                return nil
-            }
-            return registered
-        }
-
-        let fetchDescriptor = FetchDescriptor<AppLink>(
-            predicate: #Predicate {
-                $0.persistentModelID == id && $0.deletedAt == nil
-            }
-        )
-        do {
-            let data = try await fetchSafer(fetchDescriptor).first
-
-            if data?.isDeleted == true {
-                return nil
-            }
-
-            return data
-        } catch {
-            Log.data.notice("Error getting app for id \(id.described(), privacy: .public): \(error, privacy: .public)")
-            return nil
-        }
-    }
-}
-
-extension PersistentIdentifier {
-    func described() -> String {
-        return String(describing: self)
-    }
-}
-
-extension RoamDataHandler {
-    public func allAppEntities() async throws -> [AppLinkAppEntity] {
-        let descriptor = FetchDescriptor<AppLink>(predicate: #Predicate {
-             $0.deletedAt == nil
-        })
-
-        let links = try await self.fetchSafer(descriptor)
-        return links.map { $0.toAppEntity() }
-    }
-
-    public func allAppEntitiesIncludingDeleted() async throws -> [AppLinkAppEntity] {
-        let descriptor = FetchDescriptor<AppLink>(predicate: #Predicate { _ in
-            true
-        })
-
-        let links = try await self.fetchSafer(descriptor)
-        return links.map { $0.toAppEntity() }
-    }
-
-    public func appEntities(for identifiers: [AppLinkAppEntity.ID], deviceUid: String?) async throws -> [AppLinkAppEntity] {
-        let descriptor = FetchDescriptor<AppLink>(predicate: #Predicate { appLink in
-            identifiers.contains(appLink.id)
-                && (deviceUid == nil || appLink.deviceUid == deviceUid)
-                && appLink.deletedAt == nil
-        })
-
-        let links = try await self.fetchSafer(descriptor)
-        return links.map { $0.toAppEntity() }
-    }
-
-    public func appEntities(matching string: String, deviceUid: String?) async throws -> [AppLinkAppEntity] {
-        let descriptor = FetchDescriptor<AppLink>(predicate: #Predicate<AppLink> { appLink in
-            appLink.name.contains(string) &&
-                (deviceUid == nil || appLink.deviceUid == deviceUid) &&
-                appLink.deletedAt == nil
-        })
-
-        let links = try await self.fetchSafer(descriptor)
-        return links.map { $0.toAppEntity() }
-    }
-
-    public func appEntities(deviceUid: String?) async throws -> [AppLinkAppEntity] {
-        let descriptor = FetchDescriptor<AppLink>(
-            predicate: #Predicate {
-                (deviceUid == nil || $0.deviceUid == deviceUid)
-                    && $0.deletedAt == nil
-            },
-            sortBy: [SortDescriptor(\AppLink.lastSelected, order: .reverse)]
-        )
-
-        let links = try await self.fetchSafer(descriptor)
-        return links.map { $0.toAppEntity() }
-    }
-
-    public func deleteAppsForDeviceUdn(udn: String) throws {
-        try modelContext.delete(
-            model: AppLink.self,
-            where: #Predicate {
-                $0.deviceUid == udn
-            }
-        )
-    }
-}
-
+// MARK: - Refreshing
 protocol RefreshClient: Sendable {
-    func getId() async throws -> PersistentIdentifier
+    func getId() async throws -> String
     func getDeviceInfo() async throws -> DeviceInfo
     func getDeviceCapabilities() async throws -> DeviceCapabilities
-    func getDeviceApps() async throws -> [AppLinkAppEntity]
+    func getDeviceApps() async throws -> [ AppLink]
     func getDeviceAppIcon(_ appId: String) async throws -> Data
     func getDeviceIcon() async throws -> Data
 }
 
+#if !WIDGET
+extension RoamDataHandler {
+    private static let minRescanInterval: TimeInterval = 30
+
+    func refreshDevice(client: any RefreshClient) async {
+        let deviceId: String
+        do {
+            deviceId = try await client.getId()
+            Log.data.notice("Refreshing device with id \(deviceId, privacy: .public)")
+        } catch {
+            Log.data.error("Failed to refresh device because couldn't get id: \(error, privacy: .public)")
+            return
+        }
+
+        // Check if device was recently refreshed
+        let existingDevice = self.requestDevice(id: deviceId)
+        let lastRefreshed = existingDevice?.lastSyncAt ?? .distantPast
+
+        if lastRefreshed.advanced(by: RoamDataHandler.minRescanInterval) > .now {
+            Log.data.notice("Device refresh skipped for id \(deviceId, privacy: .public) b/c last refreshed \(lastRefreshed, privacy: .public)")
+            return
+        } else {
+            Log.data.notice("Refreshing device with id \(deviceId, privacy: .public) lastRefreshed \(lastRefreshed, privacy: .public)")
+        }
+
+        // Get device info from client
+        let deviceInfo: DeviceInfo
+        do {
+            deviceInfo = try await client.getDeviceInfo()
+            Log.data.notice("Successfully refreshed device info")
+        } catch {
+            Log.data.error("Failed to get device info \(deviceId, privacy: .public), \(error, privacy: .public)")
+            return
+        }
+
+        // Update or create device with basic info
+        var device: Device
+        if let existingDevice = existingDevice {
+            if deviceInfo.udn != existingDevice.udn {
+                Log.data.warning("Error: trying to refresh device with udn \(deviceInfo.udn, privacy: .public), but device already has udn \(existingDevice.udn, privacy: .public)")
+                return
+            }
+            device = existingDevice
+        } else {
+            // Create new device
+            device = Device(
+                name: deviceInfo.friendlyDeviceName ?? getGlobalNewDeviceName(),
+                location: "", // Will be set by caller
+                udn: deviceInfo.udn,
+                serial: nil
+            )
+        }
+
+        // Update device timestamps and basic info
+        device.lastOnlineAt = Date.now
+        device.lastSyncAt = Date.now
+        device.ethernetMAC = deviceInfo.ethernetMac
+        device.wifiMAC = deviceInfo.wifiMac
+        device.networkType = deviceInfo.networkType
+        device.powerMode = deviceInfo.powerMode
+
+        // Update device name if it's still the default
+        if device.name == getGlobalNewDeviceName(), let newName = deviceInfo.friendlyDeviceName {
+            device.name = newName
+        }
+
+        // Check if we need to do full scan
+        let existingApps = self.requestDeviceApps(deviceId: deviceId)
+        let shouldSkipFullScan = (device.lastScannedAt?.timeIntervalSinceNow ?? -10000.0) > -RoamDataHandler.minRescanInterval &&
+        existingApps.allSatisfy({ $0.iconHash != nil }) &&
+        existingApps.count > 0
+
+        do {
+            try self.setDeviceDetails(device: device)
+        } catch {
+            Log.data.error("Failed to save device details: \(error, privacy: .public)")
+        }
+
+        if shouldSkipFullScan {
+            Log.data.notice("Returning early from refresh - recent scan with all icons")
+            return
+        }
+
+        device.lastScannedAt = Date.now
+
+        Log.data.notice("Refreshing capabilities and apps")
+
+        // Get device capabilities
+        var capabilities: DeviceCapabilities?
+        do {
+            capabilities = try await client.getDeviceCapabilities()
+            Log.data.notice("Successfully refreshed capabilities")
+        } catch {
+            Log.data.error("Error getting capabilities: \(error, privacy: .public)")
+        }
+
+        // Get device apps
+        var fetchedApps: [AppLink]?
+        do {
+            fetchedApps = try await client.getDeviceApps()
+            Log.data.notice("Successfully refreshed device apps")
+        } catch {
+            Log.data.error("Error getting device apps: \(error, privacy: .public)")
+        }
+
+        // Update device with capabilities
+        if let capabilities = capabilities {
+            device.rtcpPort = capabilities.rtcpPort
+            device.supportsDatagram = capabilities.supportsDatagram
+        }
+
+        // Process apps if we got them
+        var appsNeedingIcons: [String] = []
+        var earlyUpdatedApps: [AppLink]?
+        var afterUpdateApps = existingApps
+
+        if var fetchedApps = fetchedApps {
+            var shouldUpdate: Bool = false
+
+            if fetchedApps.count != existingApps.count {
+                shouldUpdate = true
+            } else {
+                for i in 0..<fetchedApps.count {
+                    let fa = fetchedApps[i]
+                    let ca = existingApps[i]
+
+                    if fa.id != ca.id || fa.name != ca.name || fa.type != ca.type {
+                        shouldUpdate = true
+                        break
+                    }
+                }
+            }
+
+            if shouldUpdate {
+                earlyUpdatedApps = fetchedApps.map{ fa in
+                    var fa = fa
+                    fa.iconHash = existingApps.first(where: { $0.id == fa.id })?.iconHash
+                    return fa
+                }
+                afterUpdateApps = earlyUpdatedApps ?? []
+            }
+
+            // Find apps that need icons
+            for app in afterUpdateApps where (app.iconHash == nil || (app.lastSyncAt ?? .distantPast).advanced(by: 3600 * 24) < .now) {
+                appsNeedingIcons.append(app.id)
+            }
+        }
+
+        // Save updated device and apps
+        do {
+            try self.setDeviceDetails(device: device)
+            if let earlyUpdatedApps {
+                try self.setDeviceApps(deviceId: deviceId, apps: earlyUpdatedApps)
+            }
+        } catch {
+            Log.data.error("Failed to save device and apps: \(error, privacy: .public)")
+        }
+
+        // Get device icon if needed
+        var deviceIcon: Data?
+        let deviceNeedsIcon = device.iconHash == nil
+        if deviceNeedsIcon {
+            Log.data.notice("Getting icon for device")
+            do {
+                deviceIcon = try await client.getDeviceIcon()
+            } catch {
+                Log.data.warning("Error getting device icon: \(error, privacy: .public)")
+            }
+        }
+
+        // Get app icons
+        var appIcons: [String: Data] = [:]
+        for appId in appsNeedingIcons {
+            do {
+                Log.data.notice("Getting device app icon for id \(appId, privacy: .public)")
+                let iconData = try await client.getDeviceAppIcon(appId)
+                Log.data.notice("Successfully refreshed device app icon")
+                appIcons[appId] = iconData
+            } catch {
+                Log.data.error("Error getting device app icon: \(error, privacy: .public)")
+            }
+        }
+
+        // Store icons and update hashes
+        if let deviceIconData = deviceIcon {
+            let iconHash = fastHashData(data: deviceIconData)
+            do {
+                try storeIconToDisk(iconData: deviceIconData, hash: iconHash)
+                device.iconHash = iconHash
+                try self.setDeviceDetails(device: device)
+                Log.data.notice("Stored device icon")
+            } catch {
+                Log.data.error("Error storing device icon: \(error, privacy: .public)")
+            }
+        }
+
+        // Store app icons and update app records
+        if !appIcons.isEmpty {
+            var appsToUpdate: [AppLink] = []
+
+            for (appId, iconData) in appIcons {
+                let iconHash = fastHashData(data: iconData)
+                do {
+                    try storeIconToDisk(iconData: iconData, hash: iconHash)
+
+                    // Find and update the app with the new icon hash
+                    if let appIndex = afterUpdateApps.firstIndex(where: { $0.id == appId }) {
+                        afterUpdateApps[appIndex].iconHash = iconHash
+                        afterUpdateApps[appIndex].lastSyncAt = .now
+                        appsToUpdate.append(afterUpdateApps[appIndex])
+                    }
+
+                    // Notify that app icon was updated
+                    Task {
+                        // TODO: How to notify for app icon updated
+//                        await self.appIconUpdated(for: deviceId, appId: appId, iconDataHash: iconHash)
+                    }
+
+                    Log.data.notice("Stored app icon for \(appId)")
+                } catch {
+                    Log.data.error("Error storing app icon for \(appId): \(error, privacy: .public)")
+                }
+            }
+
+            // Save updated apps with icon hashes
+            if !appsToUpdate.isEmpty {
+                do {
+                    try self.setDeviceApps(deviceId: deviceId, apps: afterUpdateApps)
+                } catch {
+                    Log.data.error("Failed to save apps with updated icons: \(error, privacy: .public)")
+                }
+            }
+        }
+
+        Log.data.notice("Device refresh completed for \(deviceId)")
+    }
+}
+#endif
+
 #if os(watchOS) && !WIDGET
 actor WatchOSRefreshClient: RefreshClient {
-    let id: PersistentIdentifier
+    let id: String
     let location: String
 
-    init(id: PersistentIdentifier, location: String) {
+    init(id: String, location: String) {
         self.id = id
         self.location = location
     }
 
-    func getId() throws -> PersistentIdentifier {
+    func getId() throws -> String {
         return self.id
     }
 
@@ -741,7 +1117,7 @@ actor WatchOSRefreshClient: RefreshClient {
         return try await fetchDeviceCapabilities(location: location)
     }
 
-    func getDeviceApps() async throws -> [AppLinkAppEntity] {
+    func getDeviceApps() async throws -> [ AppLink] {
         return try await fetchDeviceApps(location: location)
     }
 
@@ -756,17 +1132,17 @@ actor WatchOSRefreshClient: RefreshClient {
 }
 #elseif !WIDGET
 actor ECPWebsocketRefreshClient: RefreshClient {
-    let id: PersistentIdentifier
+    let id: String
     let client: ECPWebsocketClient
     let location: String
 
-    init(id: PersistentIdentifier, client: ECPWebsocketClient, location: String) {
+    init(id: String, client: ECPWebsocketClient, location: String) {
         self.id = id
         self.client = client
         self.location = location
     }
 
-    func getId() throws -> PersistentIdentifier {
+    func getId() throws -> String {
         return self.id
     }
 
@@ -778,7 +1154,7 @@ actor ECPWebsocketRefreshClient: RefreshClient {
         return try await client.getDeviceCapabilities()
     }
 
-    func getDeviceApps() async throws -> [AppLinkAppEntity] {
+    func getDeviceApps() async throws -> [ AppLink] {
         return try await client.getDeviceApps()
     }
 
@@ -793,518 +1169,100 @@ actor ECPWebsocketRefreshClient: RefreshClient {
 }
 #endif
 
-#if !WIDGET
+// MARK: - Constants
+public let legacyContainerAppGroup = "group.com.msdrigg.roam.models"
+public let mainAppGroup = "group.com.msdrigg.roam"
+
+// MARK: - Testing Support
 extension RoamDataHandler {
-    func refreshDevice(client: any RefreshClient) async {
-        let id: PersistentIdentifier
-        do {
-            id = try await client.getId()
-            Log.data.notice("Refreshing device with id \(String(describing: id), privacy: .public)")
-        } catch {
-             Log.data.error("Failed to refresh device because couldn't get id")
-            return
+    func initialize() {
+        if loadTestingData() {
+            // swiftlint:disable:next force_try
+            try! self.loadTestData()
+        } else if usingTestingData() {
+            // swiftlint:disable:next force_try
+            try! self.clearData()
         }
-        let lastRefreshed = await self.existingDevice(for: id)?.lastSyncAt ?? .distantPast
-        if lastRefreshed.advanced(by: 30) > .now {
-            Log.data.notice("Device refresh skipped for id \(String(describing: id), privacy: .public) b/c last refreshed \(lastRefreshed, privacy: .public)")
-            return
-        } else {
-            Log.data.notice("Refreshing device with id \(String(describing: id), privacy: .public) lastRefreshed \(lastRefreshed, privacy: .public)")
-        }
+    }
 
-        let deviceInfo: DeviceInfo
-        do {
-            deviceInfo = try await client.getDeviceInfo()
-            Log.data.notice("Successfully refreshed device info")
-        } catch {
-            Log.data.notice("Failed to get device info \(id.described(), privacy: .public), \(error, privacy: .public)")
-            return
-        }
+    private func loadTestData() throws {
+        // Clear existing data first
+        try clearData()
 
-        if let device = await self.existingDevice(for: id) {
-            if deviceInfo.udn != device.udn {
-                Log.data.warning("Error: trying to refresh device with udn \(deviceInfo.udn, privacy: .public), but device already has udn \(device.udn, privacy: .public)")
-                return
-            }
+        #if DEBUG
+        // Load test devices
+        let testDevices = getTestingDevices()
+        var deviceIds: [String] = []
 
-            device.lastOnlineAt = Date.now
-            device.lastSyncAt = Date.now
+        for device in testDevices {
+            try saveDeviceToDisk(device)
+            cachedDeviceData[device.id] = device
+            deviceIds.append(device.id)
 
-            let udn: String = device.udn
-
-            let descriptor = FetchDescriptor<AppLink>(
-                predicate: #Predicate {
-                    $0.deviceUid == udn && $0.deletedAt == nil
-                }
-            )
-
-            let deviceApps = (try? await self.fetchSafer(descriptor)) ?? []
-
-            if (device.lastScannedAt?.timeIntervalSinceNow) ?? -10000.0 > -minRescanInterval,
-               deviceApps.allSatisfy({ $0.iconHash != nil }), deviceApps.count > 0
-            {
-                try? await self.saveSafer()
-                Log.data.notice("Returning early from refresh")
-                return
-            }
-            device.lastScannedAt = Date.now
-
-            device.ethernetMAC = deviceInfo.ethernetMac
-            device.wifiMAC = deviceInfo.wifiMac
-            device.networkType = deviceInfo.networkType
-            device.powerMode = deviceInfo.powerMode
-            if device.name == getGlobalNewDeviceName() {
-                if let newName = deviceInfo.friendlyDeviceName {
-                    device.name = newName
-                }
-            }
-
-            try? await self.saveSafer()
+            // Load apps for this device
+            let testApps = getTestingAppLinks(deviceId: device.udn)
+            try saveDeviceAppsToDisk(deviceId: device.id, apps: testApps)
+            cachedDeviceApps[device.id] = testApps
         }
 
-        Log.data.notice("Refreshing capabilities and apps")
+        // Save device lists
+        try saveDeviceListToDisk(deviceIds)
+        cachedDeviceList = deviceIds
 
-        var capabilities: DeviceCapabilities?
-        do {
-            capabilities = try await client.getDeviceCapabilities()
-            Log.data.notice("Successful refreshed capabilities")
-        } catch {
-            Log.data.error("Error getting capabilities \(error, privacy: .public)")
+        // Initialize empty hidden device list
+        cachedHiddenDeviceList = []
+        try saveHiddenDeviceListToDisk([])
+
+        // Set first device as primary if available
+        if let firstDevice = testDevices.first {
+            try self.makePrimaryDevice(id: firstDevice.id)
         }
 
-        var sortedApps: [AppLinkAppEntity]?
-        do {
-            sortedApps = try await client.getDeviceApps()
-            Log.data.notice("Successfully refreshed device apps")
-        } catch {
-            Log.data.error("Error getting device apps \(error, privacy: .public)")
-        }
+        // Load test messages
+        let testMessages = getTestingMessages()
+        // TODO: Implement message saving when message system is complete
+        // For now, messages will be handled separately
 
-        var deviceNeedsIcon = false
-        var appsNeedingIcons: [String] = []
-        if let device = await self.existingDevice(for: id) {
-            deviceNeedsIcon = device.deviceIconHash == nil
-            if let capabilities {
-                device.rtcpPort = capabilities.rtcpPort
-                device.supportsDatagram = capabilities.supportsDatagram
-            }
+        Log.data.info("Loaded test data: \(testDevices.count) devices, \(testDevices.map { cachedDeviceApps[$0.id]?.count ?? 0 }.reduce(0, +)) total apps, \(testMessages.count) messages")
+        #endif
+    }
 
-            let udn: String = device.udn
-            let descriptor = FetchDescriptor<AppLink>(
-                predicate: #Predicate {
-                    $0.deviceUid == udn && $0.deletedAt == nil
-                }
-            )
+    private func clearData() throws {
+        // Clear all caches
+        cachedDeviceData.removeAll()
+        cachedDeviceApps.removeAll()
+        cachedDeviceList = nil
+        cachedHiddenDeviceList = nil
+        cachedPrimaryDevice = nil
+        cachedPrimaryApps = nil
 
-            let deviceApps = (try? await self.fetchSafer(descriptor)) ?? []
+        // Delete all files in the root directory
+        try fileHandler.clearAllFiles()
 
-            if let sortedApps {
-                // Remove apps from device that aren't in fetchedApps
-                let deletedApps = deviceApps.filter { existingApp in
-                    return !sortedApps.contains { $0.id == existingApp.id }
-                }
-                for app in deletedApps {
-                    app.deletedAt = .now
-                }
-                var deviceApps = deviceApps.filter { existingApp in
-                    return sortedApps.contains { $0.id == existingApp.id }
-                }
-                deviceApps.forEach { existingApp in
-                    existingApp.deviceSortOrder = sortedApps.firstIndex(where: { $0.id == existingApp.id }) ?? nil
-                }
-
-                // Sync App Names
-                for app in deviceApps where (app.lastSyncAt ?? .distantPast).advanced(by: 3600 * 24) < .now {
-                    app.name = (sortedApps.first { $0.id == app.id })?.name ?? app.name
-                }
-
-                // Add new apps to device
-                for (index, app) in sortedApps.enumerated() where !deviceApps.contains(where: { $0.id == app.id }) {
-                    let al = AppLink(id: app.id, type: app.type, name: app.name, deviceUid: device.udn, deviceSortOrder: index)
-                    modelContext.insert(al)
-                    deviceApps.append(al)
-                }
-
-                // Fetch icons for apps in deviceApps
-                for app in deviceApps where app.iconHash == nil || (app.lastSyncAt ?? .distantPast).advanced(by: 3600 * 24) < .now {
-                    appsNeedingIcons.append(app.id)
-                }
-            }
-
-            try? await self.saveSafer()
-        }
-
-        var deviceIcon: Data?
-        if deviceNeedsIcon {
-            Log.data.notice("Getting icon for device")
-            do {
-                let newIcon = try await client.getDeviceIcon()
-                deviceIcon = newIcon
-            } catch {
-                Log.data.warning("Error getting device icon \(error, privacy: .public)")
-            }
-        }
-
-        var appIcons: [String: Data] = [:]
-        for appId in appsNeedingIcons {
-            do {
-                Log.data.notice("Getting device app icon for id \(appId, privacy: .public)")
-                let iconData = try await client.getDeviceAppIcon(appId)
-                Log.data.notice("Successfully refreshed device app icon")
-                appIcons[appId] = iconData
-            } catch {
-                Log.data.error("Error getting device app icon \(error, privacy: .public)")
-            }
-        }
-
-        if let device = await self.existingDevice(for: id) {
-            let udn: String? = device.udn
-
-            let descriptor = FetchDescriptor<AppLink>(
-                predicate: #Predicate {
-                    $0.deviceUid == udn && $0.deletedAt == nil
-                }
-            )
-
-            let deviceApps = (try? await self.fetchSafer(descriptor)) ?? []
-
-            if let icon = deviceIcon {
-                let iconHash = fastHashData(data: icon)
-                do {
-                    try storeIconToDisk(iconData: icon, hash: iconHash)
-                    device.deviceIconHash = iconHash
-                } catch {
-                    Log.data.warning("Error storing device icon \(error, privacy: .public)")
-                }
-            }
-            for app in appIcons {
-                if let deviceApp = deviceApps.first(where: { $0.id == app.key }) {
-                    let iconHash = fastHashData(data: app.value)
-                    do {
-                        try storeIconToDisk(iconData: app.value, hash: iconHash)
-                        deviceApp.iconHash = iconHash
-                        deviceApp.lastSyncAt = .now
-                    } catch {
-                        Log.data.warning("Error storing app icon \(error, privacy: .public)")
-                    }
-                }
-            }
-            try? await self.saveSafer()
-        }
-
-        await deleteInPast()
+        Log.data.info("Cleared all data and caches")
     }
 }
 
-@ModelActor
-actor MessageDataHandler {
-    @MainActor
-    static let shared: MessageDataHandler = .init(modelContainer: getSharedModelContainer())
-
-    let semaphore: AsyncLock = AsyncLock()
-
-    @discardableResult
-    public func refreshMessagesIfExpectingNewMessages() async -> Int {
-        Log.data.notice("Refreshing messages")
-        var descriptor = FetchDescriptor<Message>(
-            predicate: #Predicate {
-                $0.fetchedBackend == true
-            },
-            sortBy: [SortDescriptor(\.id, order: .reverse)]
-        )
-        descriptor.fetchLimit = 1
-
-        var lastMessage: Message?
-        do {
-            lastMessage = try await self.fetchSafer(descriptor).last
-        } catch {
-            Log.data.notice("Error loading messages \(error, privacy: .public)")
-        }
-
-        if lastMessage == nil {
-            Log.data.notice("Not refreshing messages with last message nil")
-            return 0
-        }
-        return await self.refreshMessages(
-            viewed: false
-        )
-    }
-
-    @discardableResult
-    public func refreshMessages(viewed: Bool) async -> Int {
-        Log.data.notice("Querying for message to fetch new")
-        var descriptor = FetchDescriptor<Message>(
-            predicate: #Predicate { model in
-                model.fetchedBackend == true
-            }
-        )
-        descriptor.sortBy = [SortDescriptor(\Message.id, order: .reverse)]
-        descriptor.fetchLimit = 1
-        let latestMessageId = (try? await self.fetchSafer(descriptor))?.first?.id
-
-        Log.data.notice("Refreshing messages with last message \(String(describing: latestMessageId), privacy: .public)")
-
-        return await withTaskGroup(of: Int.self) { taskGroup in
-            taskGroup.addTask {
-                await self.trySendMessages()
-                return 0
-            }
-            await Task.yield()
-            taskGroup.addTask {
-                return await self.refreshExternalMessages(latestMessageId: latestMessageId, viewed: viewed)
-            }
-            var total = 0
-            while !taskGroup.isEmpty {
-                total += await taskGroup.next() ?? 0
-            }
-            return total
-        }
-    }
-
-    public func getSendableMessages() async throws -> [Message] {
-        Log.data.notice("Getting sendable messages")
-        let tenPast = Date.now - 10
-        let distantPast = Date.distantPast
-        let descriptor = FetchDescriptor<Message>(
-            predicate: #Predicate { model in
-                model.fetchedBackend == false && (
-                    (model.lastSendAttempt ?? distantPast) < tenPast
-                )
-            }
-        )
-        let foundModels = try await self.fetchSafer(descriptor)
-        for model in foundModels {
-            model.lastSendAttempt = Date.now
-        }
-        Log.data.notice("Got \(foundModels.count, privacy: .public) sendable messages")
-        try await self.saveSafer()
-        return foundModels
-    }
-
-    public func trySendMessages() async {
-        do {
-            try await semaphore.lock()
-        } catch {
-            return
-        }
-        defer {
-            semaphore.unlock()
-        }
-        let messages: [Message]
-        do {
-            messages = try await self.getSendableMessages()
-        } catch {
-            Log.backend.notice("Error getting messages to send \(error, privacy: .public)")
-            return
-        }
-        for message in messages {
-            do {
-                let messageResult = try await sendMessageDirect(message: message.message, attachment: message.unsentAttachment).get()
-                message.id = messageResult.id
-                message.lastSendAttempt = Date.distantFuture
-                message.cycleAttachments(messageResult.attachments?.compactMap({ a in
-                    let hash = fastHashData(data: a.data)
-                    do {
-                        try storeAttachmentToDisk(attachmentData: a.data, hash: hash, filename: a.filename)
-                    } catch {
-                        Log.backend.error("Error saving attachment to disk \(error, privacy: .public)")
-                        return nil
-                    }
-                    return Message.SentAttachment(id: a.id, dataHash: hash, dataSize: Int64(a.data.count), filename: a.filename, mimetype: a.contentType)
-                }) ?? [])
-                try await self.saveSafer()
-            } catch {
-                Log.backend.notice("Error sending message \(message.id, privacy: .public), \(error, privacy: .public)")
-                message.lastSendAttempt = nil
-                try? await self.saveSafer()
-            }
-        }
-    }
-
-    public func sendChatMessage(message: String, attachment: AttachmentUpload?) async throws {
-        let nonce = String(Int64.random(in: 0..<Int64.max))
-        let id = generateDiscordSnowflake(Date.now.addingTimeInterval(1))
-        Log.backend.info("Inserting pending message to send queue: \(message, privacy: .public)")
-        self.modelContext.insert(Message(
-            id: id,
-            message: message,
-            author: .me,
-            fetchedBackend: false,
-            viewed: true,
-            unsentAttachment: attachment,
-            nonce: nonce
-        ))
-        try await self.saveSafer()
-        Log.backend.info("Saved message to send queue: \(message, privacy: .public), id: \(id, privacy: .public)")
-        await self.trySendMessages()
-    }
-
-    public func refreshExternalMessages(latestMessageId: String?, viewed: Bool) async -> Int {
-        do {
-            try await self.semaphore.lock()
-        } catch {
-            return 0
-        }
-        defer {
-            self.semaphore.unlock()
-        }
-        do {
-            var count = 0
-            do {
-                let updates = try await getMessagingUpdates(after: latestMessageId)
-                Log.backend.notice("Got \(updates.messages.count) new messages")
-                let newMessages = updates.messages.map { Message($0) }
-                UserDefaults.standard.set(updates.presence.lastSupportTyping?.timeIntervalSince1970, forKey: UserDefaultKeys.lastSupportTypingTime)
-                UserDefaults.standard.set(updates.presence.lastSelfTyping?.timeIntervalSince1970, forKey: UserDefaultKeys.lastTypingTime)
-
-                for message in newMessages {
-                    message.viewed = viewed
-
-                    let id = message.id
-                    let existingMessageDescriptor = FetchDescriptor<Message>(
-                        predicate: #Predicate { $0.id == id }
-                    )
-
-                    let existingMessages = try await self.fetchSafer(existingMessageDescriptor)
-                    for message in existingMessages {
-                        modelContext.delete(message)
-                    }
-                    modelContext.insert(message)
-
-                    message.triggerAction()
-                }
-                count = newMessages.count
-
-                let savingMessages = try await self.fetchSafer(FetchDescriptor<Message>(
-                    predicate: #Predicate { $0.fetchedBackend == false || $0.lastSendAttempt != nil }
-                ))
-                for message in savingMessages {
-                    modelContext.delete(message)
-                }
-            } catch {
-                Log.data.error("Error getting latest messages \(error, privacy: .public)")
-            }
-            if viewed == true {
-                let unviewedMessagesDescriptor = FetchDescriptor<Message>(predicate: #Predicate {
-                    !$0.viewed
-                })
-                let unviewedMessages = try modelContext.fetch(unviewedMessagesDescriptor)
-                for message in unviewedMessages {
-                    message.viewed = true
-                }
-            }
-
-            try await self.saveSafer()
-
-            return count
-        } catch {
-            Log.data.error("Error refreshing messages \(error, privacy: .public)")
-            return 0
-        }
-    }
-}
-
-extension MessageDataHandler {
-    #if !os(macOS)
-    func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
-        let assertion = await QRunInBackgroundAssertion(name: "MessagingFetchSafer")
-        do {
-            if await !assertion.isReleased() {
-                let res = try self.modelContext.fetch(descriptor)
-                await assertion.release()
-                return res
-            }
-            await assertion.release()
-        } catch {
-            await assertion.release()
-            throw error
-        }
-        throw DataHandlerError.suspending
-    }
+public func inScreenshotTestingContext() -> Bool {
+    #if DEBUG
+    return CommandLine.arguments.contains("-ScreenshotTesting")
     #else
-    func fetchSafer<T>(_ descriptor: FetchDescriptor<T>) async throws -> [T] {
-        return try self.modelContext.fetch(descriptor)
-    }
-    #endif
-
-    #if !os(macOS)
-    func saveSafer() async throws {
-        let assertion = await QRunInBackgroundAssertion(name: "MessagingSaveSafer")
-        do {
-            if await !assertion.isReleased() {
-                try self.modelContext.save()
-            } else {
-                throw DataHandlerError.suspending
-            }
-        } catch {
-            await assertion.release()
-            throw error
-        }
-        await assertion.release()
-    }
-    #else
-    func saveSafer() async throws {
-        try self.modelContext.save()
-    }
+    return false
     #endif
 }
-#endif
 
-@discardableResult
-func storeUserFileToDisk(data: Data, filename: String, path: [String]) throws -> URL {
-    guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
-        throw DataHandlerError.noContainerURL
-    }
-
-    var iconDirectoryURL = containerURL
-    for path in path {
-        iconDirectoryURL = iconDirectoryURL.appendingPathComponent(path, isDirectory: true)
-    }
-
-    if !FileManager.default.fileExists(atPath: iconDirectoryURL.path) {
-        try FileManager.default.createDirectory(at: iconDirectoryURL, withIntermediateDirectories: true)
-    }
-
-    let iconFileURL = iconDirectoryURL.appendingPathComponent(filename)
-
-    // Write data atomically to prevent corruption
-    do {
-        try data.write(to: iconFileURL, options: .atomic)
-    } catch let error as NSError {
-        if error.domain == NSCocoaErrorDomain && error.code == NSFileWriteOutOfSpaceError {
-            throw DataHandlerError.noSpaceOnDisk
-        }
-        throw error
-    } catch {
-        throw error
-    }
-    return iconFileURL
+private func usingTestingData() -> Bool {
+    #if DEBUG
+    return CommandLine.arguments.contains("-DataTesting")
+    #else
+    return false
+    #endif
 }
 
-@discardableResult
-func storeIconToDisk(iconData: Data, hash: String) throws -> URL {
-    return try storeUserFileToDisk(data: iconData, filename: hash, path: ["roku-icons"])
-}
-
-@discardableResult
-func storeAttachmentToDisk(attachmentData: Data, hash: String, filename: String) throws -> URL {
-    return try storeUserFileToDisk(data: attachmentData, filename: filename, path: ["message-attachments", hash])
-}
-
-func loadAttachmentFromDisk(hash: String, filename: String) throws -> Data {
-    guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
-        throw DataHandlerError.noContainerURL
-    }
-
-    let iconDirectoryURL = containerURL
-        .appendingPathComponent("message-attachments", isDirectory: true)
-        .appendingPathComponent(hash, isDirectory: true)
-
-    if !FileManager.default.fileExists(atPath: iconDirectoryURL.path) {
-        try FileManager.default.createDirectory(at: iconDirectoryURL, withIntermediateDirectories: true)
-    }
-
-    let iconFileURL = iconDirectoryURL.appendingPathComponent(filename)
-
-    return try Data(contentsOf: iconFileURL)
+private func loadTestingData() -> Bool {
+    #if DEBUG
+    return CommandLine.arguments.contains("-DataLoadTestingData")
+    #else
+    return false
+    #endif
 }

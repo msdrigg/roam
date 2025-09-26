@@ -7076,6 +7076,9 @@
         }
       }
     },
+    "Failed to add device" : {
+
+    },
     "Failed to connect" : {
       "localizations" : {
         "ar" : {
@@ -17977,6 +17980,7 @@
       }
     },
     "Scanning for devices" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

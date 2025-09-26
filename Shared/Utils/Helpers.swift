@@ -792,3 +792,45 @@ func checkRoboMessage(_ message: String) -> RoboMessage? {
 
     return nil
 }
+
+func getHostPortDisplay(from urlString: String) -> String {
+    let host = getHost(from: urlString)
+    let port = getPort(from: urlString)
+    if let port, port != 8060 {
+        return "\(host):\(port)"
+    } else {
+        return host
+    }
+}
+
+private func getHost(from urlString: String) -> String {
+    guard let url = URL(string: addSchemeAndPort(to: urlString)), let host = url.host else {
+        return urlString
+    }
+    return host
+}
+
+private func getPort(from urlString: String) -> Int? {
+    guard let url = URL(string: addSchemeAndPort(to: urlString)) else {
+        return nil
+    }
+    return url.port
+}
+
+func addSchemeAndPort(to urlString: String, scheme: String = "http", port: Int = 8060) -> String {
+    let urlString = "http://" + urlString.replacing(/^.*:\/\//, with: { _ in "" })
+
+    guard let url = URL(string: urlString),
+          var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+    else {
+        return urlString
+    }
+    components.scheme = scheme
+    components.port = url.port ?? port // Replace the port only if it's not already specified
+
+    return (components.string ?? urlString).replacing(/\/*$/, with: { _ in "" }) + "/"
+}
+
+func getGlobalNewDeviceName() -> String {
+    return String(localized: "New device")
+}

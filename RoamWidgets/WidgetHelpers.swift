@@ -1,14 +1,13 @@
 import AppIntents
 import Foundation
 import OSLog
-import SwiftData
 import SwiftUI
 import WidgetKit
 
 struct DeviceChoiceTimelineEntity: TimelineEntry {
     var date: Date
-    var device: DeviceAppEntity?
-    var apps: [AppLinkAppEntity]
+    var device: Device?
+    var apps: [ AppLink]
     var appIcons: [String: Image] = [:]
 }
 
@@ -23,15 +22,15 @@ struct SimpleRemoteControlProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: DeviceChoiceIntent, in _: Context) async -> DeviceChoiceTimelineEntity {
-        let dataHandler = try? await RoamDataHandler.checkedCreate()
+        let dataHandler = try? await RoamDataHandler.sharedChecked()
 
         var targetDevice = configuration.selectedDevice
         if targetDevice == nil {
-            targetDevice = await dataHandler?.fetchSelectedDeviceAppEntity()
+            targetDevice = await dataHandler?.requestPrimaryDevice()
         }
 
-        let apps: [AppLinkAppEntity] = if let udn = targetDevice?.udn {
-            (try? await dataHandler?.appEntities(deviceUid: udn)) ?? []
+        let apps: [ AppLink] = if let udn = targetDevice?.udn {
+            await dataHandler?.requestDeviceApps(deviceId: udn) ?? []
         } else {
             []
         }
@@ -41,18 +40,19 @@ struct SimpleRemoteControlProvider: AppIntentTimelineProvider {
     }
 
     func timeline(for configuration: DeviceChoiceIntent, in ctx: Context) async -> Timeline<DeviceChoiceTimelineEntity> {
-        let dataHandler = try? await RoamDataHandler.checkedCreate()
+        let dataHandler = try? await RoamDataHandler.sharedChecked()
 
         var targetDevice = configuration.selectedDevice
         if targetDevice == nil {
-            targetDevice = await dataHandler?.fetchSelectedDeviceAppEntity()
+            targetDevice = await dataHandler?.requestPrimaryDevice()
         }
 
-        let apps: [AppLinkAppEntity] = if let udn = targetDevice?.udn {
-            (try? await dataHandler?.appEntities(deviceUid: udn)) ?? []
+        let apps: [ AppLink] = if let udn = targetDevice?.udn {
+            await dataHandler?.requestDeviceApps(deviceId: udn) ?? []
         } else {
             []
         }
+
         let entryNow = DeviceChoiceTimelineEntity(date: Date.now, device: targetDevice, apps: apps)
         let timeline = Timeline(entries: [entryNow], policy: .after(Date.now.advanced(by: 3600 * 24)))
         return timeline
@@ -74,16 +74,16 @@ struct AppChoiceRemoteControlProvider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: DeviceAndAppChoiceIntent, in _: Context) async -> DeviceChoiceTimelineEntity {
-        let dataHandler = try? await RoamDataHandler.checkedCreate()
+        let dataHandler = try? await RoamDataHandler.sharedChecked()
 
         var targetDevice = configuration.selectedDevice
         if targetDevice == nil {
-            targetDevice = await dataHandler?.fetchSelectedDeviceAppEntity()
+            targetDevice = await dataHandler?.requestPrimaryDevice()
         }
 
-        var apps: [AppLinkAppEntity] = []
+        var apps: [ AppLink] = []
         if let udn = targetDevice?.udn {
-            var loadedApps = (try? await dataHandler?.appEntities(deviceUid: udn)) ?? []
+            var loadedApps: [AppLink] = await dataHandler?.requestDeviceApps(deviceId: udn) ?? []
             if configuration.manuallySelectApps {
                 if let app1 = configuration.app1 {
                     loadedApps.insert(app1, at: 0)
@@ -131,16 +131,16 @@ struct AppChoiceRemoteControlProvider: AppIntentTimelineProvider {
     func timeline(for configuration: DeviceAndAppChoiceIntent,
                   in _: Context) async -> Timeline<DeviceChoiceTimelineEntity>
     {
-        let dataHandler = try? await RoamDataHandler.checkedCreate()
+        let dataHandler = try? await RoamDataHandler.sharedChecked()
 
         var targetDevice = configuration.selectedDevice
         if targetDevice == nil {
-            targetDevice = await dataHandler?.fetchSelectedDeviceAppEntity()
+            targetDevice = await dataHandler?.requestPrimaryDevice()
         }
 
-        var apps: [AppLinkAppEntity] = []
+        var apps: [ AppLink] = []
         if let udn = targetDevice?.udn {
-            var loadedApps = (try? await dataHandler?.appEntities(deviceUid: udn)) ?? []
+            var loadedApps: [AppLink] = await dataHandler?.requestDeviceApps(deviceId: udn) ?? []
             if configuration.manuallySelectApps {
                 if let app1 = configuration.app1 {
                     loadedApps.insert(app1, at: 0)

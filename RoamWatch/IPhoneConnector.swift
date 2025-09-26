@@ -52,12 +52,9 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
         if let deviceMap = devices as? [String: [String: String]] {
             Log.watch.notice("Trying to add devices \(deviceMap, privacy: .public)")
             Task {
-                guard let dataHandler = try? await RoamDataHandler.checkedCreate() else {
-                    Log.watch.notice("Error getting data handler in watch connector")
-                    return
-                }
+                let dataHandler = await RoamDataHandler.shared
                 for device in deviceMap {
-                    if let existingDevice = await dataHandler.deviceEntityForUdn(udn: device.key) {
+                    if var existingDevice = await dataHandler.requestDevice(id: device.key) {
                         Log.watch
                             .notice("Device aleady exists, only updating name, location \(device.key, privacy: .public)")
                         if let location = device.value["location"] {
@@ -67,14 +64,13 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
                                 let formatter = ISO8601DateFormatter()
                                 return formatter.date(from: $0)
                             }
-                            if let modelId = existingDevice.modelId {
-                                try? await dataHandler.updateDevice(
-                                    modelId,
-                                    name: name,
-                                    location: location,
-                                    hidden: hiddenAt != nil
-                                )
-                            }
+                            let id = existingDevice.id
+                            existingDevice.name = name
+                            existingDevice.location = location
+                            existingDevice.hiddenAt = hiddenAt
+                            try? await dataHandler.setDeviceDetails(
+                                device: existingDevice
+                            )
                         }
                         continue
                     }
@@ -85,7 +81,7 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
                             return formatter.date(from: $0)
                         }
                         let name = device.value["name"] ?? getGlobalNewDeviceName()
-                        _ = try? await dataHandler.addDeviceIndistriminantly(
+                        _ = try? await dataHandler.addDevice(
                             location: location,
                             friendlyDeviceName: name,
                             udn: udn,

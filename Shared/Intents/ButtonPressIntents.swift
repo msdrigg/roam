@@ -3,7 +3,6 @@ import AppIntents
 import WidgetKit
 #endif
 import Foundation
-import SwiftData
 import SwiftUI
 
 @available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
@@ -15,12 +14,12 @@ public struct PlayIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigr
 
     public init() {}
 
-    public init(device: DeviceAppEntity?) {
+    public init(device: Device?) {
         self.device = device
     }
 
     @Parameter(title: "Device")
-    public var device: DeviceAppEntity?
+    public var device: Device?
 
     public static var parameterSummary: some ParameterSummary {
         Summary("Press play on \(\.$device)")
@@ -48,12 +47,12 @@ public struct OkIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigrat
     public static let description = IntentDescription(LocalizedStringResource("Click Ok on the device", comment: "Description for Ok intent"))
 
     public init() {}
-    public init(device: DeviceAppEntity?) {
+    public init(device: Device?) {
         self.device = device
     }
 
     @Parameter(title: "Device")
-    public var device: DeviceAppEntity?
+    public var device: Device?
 
     public static var parameterSummary: some ParameterSummary {
         Summary("Click Ok on \(\.$device)")
@@ -82,12 +81,12 @@ public struct MuteIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigr
     public static let title: LocalizedStringResource = LocalizedStringResource("Toggle Mute", comment: "Title for mute intent")
     public static let description = IntentDescription(LocalizedStringResource("Mute or unmute the device", comment: "Description for mute intent"))
     public init() {}
-    public init(device: DeviceAppEntity?) {
+    public init(device: Device?) {
         self.device = device
     }
 
     @Parameter(title: "Device")
-    public var device: DeviceAppEntity?
+    public var device: Device?
 
     public static var parameterSummary: some ParameterSummary {
         Summary("Toggle volume mute on \(\.$device)")
@@ -117,12 +116,12 @@ public struct VolumeUpIntent: AppIntent, WidgetConfigurationIntent, CustomIntent
     public static let description = IntentDescription(LocalizedStringResource("Increase the volume on the device", comment: "Description for volume up intent"))
 
     public init() {}
-    public init(device: DeviceAppEntity?) {
+    public init(device: Device?) {
         self.device = device
     }
 
     @Parameter(title: "Device")
-    public var device: DeviceAppEntity?
+    public var device: Device?
 
     public static var parameterSummary: some ParameterSummary {
         Summary("Increase the volume on \(\.$device)")
@@ -151,12 +150,12 @@ public struct VolumeDownIntent: AppIntent, WidgetConfigurationIntent, CustomInte
     public static let title: LocalizedStringResource = LocalizedStringResource("Lower volume", comment: "Title for volume down intent")
     public static let description = IntentDescription(LocalizedStringResource("Lower the volume on the device", comment: "Description for volume down intent"))
     public init() {}
-    public init(device: DeviceAppEntity?) {
+    public init(device: Device?) {
         self.device = device
     }
 
     @Parameter(title: "Device")
-    public var device: DeviceAppEntity?
+    public var device: Device?
 
     public static var parameterSummary: some ParameterSummary {
         Summary("Lower the volume on \(\.$device)")
@@ -184,12 +183,12 @@ public struct PowerIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMig
     public static let description = IntentDescription(LocalizedStringResource("Power on or off the device", comment: "Description for power intent"))
 
     public init() {}
-    public init(device: DeviceAppEntity?) {
+    public init(device: Device?) {
         self.device = device
     }
 
     @Parameter(title: "Device")
-    public var device: DeviceAppEntity?
+    public var device: Device?
 
     public static var parameterSummary: some ParameterSummary {
         Summary("Power on or off \(\.$device)")
@@ -326,11 +325,11 @@ extension PowerIntent: ControlWidget {
 
 @available(iOS 18.0, *)
 struct DeviceChoiceConfigurationProvider: AppIntentControlValueProvider {
-    func previewValue(configuration: DeviceChoiceIntent) -> DeviceAppEntity? {
+    func previewValue(configuration: DeviceChoiceIntent) -> Device? {
         return configuration.selectedDevice
     }
 
-    func currentValue(configuration: DeviceChoiceIntent) async throws -> DeviceAppEntity? {
+    func currentValue(configuration: DeviceChoiceIntent) async throws -> Device? {
         return configuration.selectedDevice
     }
 }

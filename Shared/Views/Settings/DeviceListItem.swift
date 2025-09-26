@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct DeviceListItem: View {
-    @Bindable var device: Device
+    let device: Device
     var idx: Int
 
 #if os(watchOS)
@@ -10,11 +10,10 @@ struct DeviceListItem: View {
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 #endif
 
-    @Environment(\.uuidUpdater) private var updater
     @State private var deviceError: Error?
 
     var body: some View {
-        NavigationLink(value: NavigationDestination.deviceSettingsDestination(device.persistentModelID)) {
+        NavigationLink(value: NavigationDestination.deviceSettingsDestination(device.id)) {
             HStack(alignment: .center) {
                 VStack(alignment: .center) {
                     FallibleImage(from: device.iconURL, fallback: "tv", maxSize: 120)
@@ -54,17 +53,14 @@ struct DeviceListItem: View {
 #if !os(watchOS)
         .contextMenu {
             Button(role: .destructive) {
-                let pid = device.persistentModelID
+                let pid = device.id
                 Task {
                     do {
-                        try await RoamDataHandler().delete(pid)
+                        try await RoamDataHandler.shared.deleteDevice(id: pid)
                         Log.userInteraction
                             .notice(
                                 "Deleted device with id \(String(describing: pid), privacy: .public)"
                             )
-                        DispatchQueue.main.async {
-                            self.updater?.update()
-                        }
                     } catch let error as DataHandlerError {
                         Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
                         deviceError = error
@@ -73,7 +69,7 @@ struct DeviceListItem: View {
             } label: {
                 Label(String(localized: "Delete", comment: "Label on a button to delete a device"), systemImage: "trash")
             }
-            NavigationLink(value: NavigationDestination.deviceSettingsDestination(device.persistentModelID)) {
+            NavigationLink(value: NavigationDestination.deviceSettingsDestination(device.id)) {
                 Label(String(localized: "Edit", comment: "Label on a button to edit a device"), systemImage: "pencil")
             }
         }

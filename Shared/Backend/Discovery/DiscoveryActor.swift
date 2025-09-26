@@ -1,18 +1,11 @@
 import Foundation
 import Network
 import os
-import SwiftData
 import SwiftUI
 
 actor DeviceDiscoveryActor {
-    let dataHandler: RoamDataHandler
-    let updater: @Sendable @MainActor () -> Void
-
     @MainActor
-    init(updater: @Sendable @MainActor @escaping () -> Void) {
-        dataHandler = RoamDataHandler()
-        self.updater = updater
-    }
+    init() {}
 
     #if !os(watchOS)
     func addDevice(location: String, serial: String?) async throws {
@@ -23,7 +16,7 @@ actor DeviceDiscoveryActor {
         Log.scanning.notice("Trying to add device with location \(location, privacy: .public)")
 
         do {
-            try await dataHandler.addOrReplaceDevice(location: location, serial: serial)
+            try await RoamDataHandler.shared.addOrReplaceDevice(location: location, serial: serial)
         } catch {
             Log.scanning.notice("Failed to add scanned device \(error, privacy: .public)")
         }

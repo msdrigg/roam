@@ -1,10 +1,9 @@
 import SwiftUI
-import SwiftData
 
 enum NavigationDestination: Hashable {
     case settingsDestination(SettingsDestination)
     case aboutDestination
-    case deviceSettingsDestination(PersistentIdentifier)
+    case deviceSettingsDestination(String)
     case keyboardShortcutDestinaion
     case messageDestination
 }

@@ -1,7 +1,6 @@
 import Foundation
 import os
 import OSLog
-import SwiftData
 
 struct DebugError: Error {
     let message: String
@@ -60,7 +59,7 @@ struct ResponseData: Codable {
 }
 
 struct DeviceDebugInfo: Codable {
-    let device: DeviceAppEntity
+    let device: Device
     let successResponse: ResponseData?
     let errorResponse: String?
 }
@@ -109,7 +108,7 @@ public struct DebugInfo: Codable, Sendable {
     let userDefaults: [String: String]
     let spaceOnDevice: Int64?
     let devices: [DeviceDebugInfo]
-    let appLinks: [AppLinkAppEntity]
+    let appLinks: [ AppLink]
     let interfaces: [Addressed4NetworkInterface]
     var logs: [LogEntry]
     let debugErrors: [String]
@@ -160,9 +159,9 @@ func getDebugInfo(userInitiated: Bool = false) async -> DebugInfo {
     }
     Log.backend.info("Got \(entries.count) log entries")
 
-    var devices: [DeviceAppEntity] = []
+    var devices: [Device] = []
     do {
-        devices = try await RoamDataHandler.checkedCreate().allDeviceEntitiesIncludingDeleted()
+        devices = try await RoamDataHandler.sharedChecked().requestAllDevices(RoamDataHandler.sharedChecked().requestDeviceList())
     } catch {
         debugErrors.append("Error Getting Devices: \n\(error)")
     }
@@ -211,11 +210,15 @@ func getDebugInfo(userInitiated: Bool = false) async -> DebugInfo {
 
     let localInterfaces = await allAddressedInterfaces()
 
-    var appLinks: [AppLinkAppEntity] = []
+    var appLinks: [AppLink] = []
     do {
-        appLinks = try await RoamDataHandler.checkedCreate().allAppEntitiesIncludingDeleted()
+        for device in devices {
+            for app in try await RoamDataHandler.sharedChecked().requestDeviceApps(deviceId: device.id) {
+                appLinks.append(app)
+            }
+        }
     } catch {
-        debugErrors.append("Error Getting AppLinks: \n\(error)")
+        debugErrors.append("Error getting device apps: \n\(error)")
     }
 
     let userDefaults = UserDefaults.standard.dictionaryRepresentation().mapValues { anyValue in

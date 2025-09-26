@@ -56,36 +56,6 @@ struct RemoteView: View {
         }
         Log.lifecycle.notice("Getting action \(action, privacy: .public)")
 
-        if action == "add-device" || action == "scan" {
-            let queryParams = URLComponents(string: url.absoluteString)?.queryItems
-            // Get location param as location=IP or p=IPV4Hex
-            guard let location = queryParams?.first(where: { $0.name == "location" })?.value ??
-                queryParams?.first(where: { $0.name == "p" })?.value.flatMap({ hex in
-                    let ipComponents = stride(from: 0, to: hex.count, by: 2).compactMap { index -> UInt8? in
-                        let start = hex.index(hex.startIndex, offsetBy: index)
-                        let end = hex.index(start, offsetBy: 2, limitedBy: hex.endIndex) ?? hex.endIndex
-                        return UInt8(hex[start ..< end], radix: 16)
-                    }
-                    guard ipComponents.count == 4 else { return nil }
-                    return ipComponents.map(String.init).joined(separator: ".")
-                })
-            else {
-                Log.lifecycle.error("Trying to add device with no location")
-                return
-            }
-
-            Task {
-                let dh = RoamDataHandler()
-                do {
-                    let pid = try await dh.addOrReplaceDevice(location: location)
-                    Log.lifecycle.notice("Added device with PID \(pid.described(), privacy: .public)")
-                    try await dh.setSelectedDevice(pid)
-                } catch {
-                    Log.data.error("Error adding device")
-                    deviceError = error
-                }
-            }
-        }
         if action == "settings" {
             Log.lifecycle.notice("Attempting to open app settings")
             appDelegate.navigationPath.append(NavigationDestination.settingsDestination(.global))

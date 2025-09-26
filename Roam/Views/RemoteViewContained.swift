@@ -3,7 +3,6 @@ import AVFoundation
 import Intents
 import os
 import StoreKit
-import SwiftData
 import SwiftUI
 import Foundation
 
@@ -15,11 +14,6 @@ let globalToolbarShrinkWidth: CGFloat = 300
 
 let globalMajorActions: [RemoteButton] = [.power, .playPause, .mute, .headphonesMode]
 
-@MainActor
-private func unreadMessageFetchDescriptor() -> FetchDescriptor<Message> {
-    return FetchDescriptor(predicate: globalUnviewedMessagePredicate)
-}
-
 enum KeyboardFocus {
     case entry
     case monitor
@@ -30,13 +24,14 @@ struct RemoteViewContained: View {
 
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 
-    @Query(deviceFetchDescriptor()) private var devices: [Device]
-    @Query(unreadMessageFetchDescriptor()) private var unreadMessages: [Message]
+    @State private var devicesLoader = DeviceListLoader(dataHandler: .shared)
+    @State private var primaryDeviceLoader = PrimaryDeviceLoader(dataHandler: .shared)
+    // TODO: Get unread message count from message data handler
+    @State private var unreadMessages: Int = 0
     @Environment(\.dismiss) var dismiss
 
     @State private var scanningActor: DeviceDiscoveryActor?
     @State private var ssdpActor: DeviceDiscoveryActor?
-    @State private var manuallySelectedDevice: Device?
     @State private var showKeyboardEntryManual: Bool = false
     @State private var keyboardLeaving: Bool = false
     @State var buttonPresses: [RemoteButton: Int] = [:]
@@ -125,15 +120,7 @@ struct RemoteViewContained: View {
     #endif
 
     private var selectedDevice: Device? {
-        if let manuallySelectedDevice, manuallySelectedDevice.visible {
-            manuallySelectedDevice
-        } else {
-            devices.filter{
-                $0.visible
-            }.min { d1, d2 in
-                (d1.lastSelectedAt?.timeIntervalSince1970 ?? 0) > (d2.lastSelectedAt?.timeIntervalSince1970 ?? 0)
-            }
-        }
+        primaryDeviceLoader.device
     }
 
     private var runningInPreview: Bool {
@@ -168,7 +155,6 @@ struct RemoteViewContained: View {
 
     @Namespace var animation
 
-    @Environment(\.uuidUpdater) private var updater
     @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
 
     func buttonPressCount(_ key: RemoteButton) -> Int {
@@ -226,28 +212,23 @@ struct RemoteViewContained: View {
                 }
                 .task {
                     while !Task.isCancelled {
-                        await MessageDataHandler.shared.refreshMessagesIfExpectingNewMessages()
+                        // TODO: Figure out messages data handler
+//                        await MessageDataHandler.shared.refreshMessagesIfExpectingNewMessages()
                         try? await Task.sleep(nanoseconds: 1000 * 1000 * 1000 * 3600)
                     }
                 }
                 .task {
-                    if loadTestingData() {
-                        // swiftlint:disable:next force_try
-                        try! await RoamDataHandler().loadTestData()
-                        // try! await RoamDataHandler().loadLoadTestData()
-                        updater?.update()
-                    } else if usingTestingDataContainer() {
-                        // swiftlint:disable:next force_try
-                        try! await RoamDataHandler().clearData()
-                    }
+                    await RoamDataHandler.shared.initialize()
                 }
 #if os(iOS)
-                .task(id: devices.count, priority: .background) {
+                .task(id: devices?.count, priority: .background) {
                     // Send devices to connected watch
-                    WatchConnectivity.shared.transferDevices(WCSession.default, devices: devices.map { $0.toAppEntity() })
+                    if let devices {
+                        WatchConnectivity.shared.transferDevices(WCSession.default, devices: devices)
 
-                    for await _ in AsyncTimerSequence.repeating(every: .seconds(60 * 10)) {
-                        WatchConnectivity.shared.transferDevices(WCSession.default, devices: devices.map { $0.toAppEntity() })
+                        for await _ in AsyncTimerSequence.repeating(every: .seconds(60 * 10)) {
+                            WatchConnectivity.shared.transferDevices(WCSession.default, devices: devices)
+                        }
                     }
                 }
 #endif
@@ -282,7 +263,7 @@ struct RemoteViewContained: View {
                         await scanningActor?.scanIPV4Once()
                     }
                 }
-                .task(id: selectedDevice?.persistentModelID, priority: .medium) {
+                .task(id: selectedDevice?.id, priority: .medium) {
                     for await _ in exponentialBackoff(min: 30, max: 3600) {
                         if let selectedDevice, let ecpSession {
                             Log.connection
@@ -290,10 +271,10 @@ struct RemoteViewContained: View {
                             if Task.isCancelled {
                                 return
                             }
-                            let handler = RoamDataHandler()
+                            let handler = RoamDataHandler.shared
                             await handler.refreshDevice(
                                 client: ECPWebsocketRefreshClient(
-                                    id: selectedDevice.persistentModelID,
+                                    id: selectedDevice.id,
                                     client: ecpSession,
                                     location: selectedDevice.location
                                 )
@@ -307,7 +288,7 @@ struct RemoteViewContained: View {
                 }
                 .task(id: selectedDevice?.location, priority: .medium) {
                     Log.connection.notice("Creating ecp session with location \(String(describing: selectedDevice?.location), privacy: .public)")
-                    if let device = selectedDevice?.toAppEntity() {
+                    if let device = selectedDevice {
                         self.ecpSessionState.setDevice(device)
                     } else {
                         self.ecpSessionState.setDevice(nil)
@@ -352,12 +333,8 @@ struct RemoteViewContained: View {
                     }
                 }
                 .onAppear {
-                    scanningActor = DeviceDiscoveryActor(updater: {
-                        updater?.update()
-                    })
-                    ssdpActor = DeviceDiscoveryActor(updater: {
-                        updater?.update()
-                    })
+                    scanningActor = DeviceDiscoveryActor()
+                    ssdpActor = DeviceDiscoveryActor()
                 }
                 #if os(macOS)
                 .onKeyDown({ key in pressKey(key.key, modifiers: key.modifiers) }, enabled: true)
@@ -419,12 +396,7 @@ struct RemoteViewContained: View {
                         Spacer()
 
                         DevicePicker(
-                            devices: devices,
-                            device: Binding(get: {
-                                selectedDevice
-                            }, set: {
-                                manuallySelectedDevice = $0
-                            }),
+                            device: selectedDevice,
                             ecpSessionState: ecpSessionState,
                             showScanning: true
                         )
@@ -501,12 +473,7 @@ struct RemoteViewContained: View {
                         Spacer()
 
                         DevicePicker(
-                            devices: devices,
-                            device: Binding(get: {
-                                selectedDevice
-                            }, set: {
-                                manuallySelectedDevice = $0
-                            }),
+                            device: selectedDevice,
                             ecpSessionState: ecpSessionState,
                             showScanning: true
                         )
@@ -523,12 +490,7 @@ struct RemoteViewContained: View {
                             Spacer()
 
                             DevicePicker(
-                                devices: devices,
-                                device: Binding(get: {
-                                    selectedDevice
-                                }, set: {
-                                    manuallySelectedDevice = $0
-                                }),
+                                device: selectedDevice,
                                 ecpSessionState: ecpSessionState,
                                 showScanning: true
                             )
@@ -579,7 +541,7 @@ struct RemoteViewContained: View {
                     }
 
                     if !hideUIForKeyboardEntry {
-                        if unreadMessages.count > 0 {
+                        if unreadMessages > 0 {
                             // swiftlint:disable:next line_length
                             NotificationBanner(message: String(localized: "The developer chatted you back", comment: "Notification indicator that there was is message response waiting to be read"), onClick: {
 #if os(macOS)
@@ -770,12 +732,7 @@ struct RemoteViewContained: View {
                 }
             ToolbarItem(id: "device-picker", placement: .topBarTrailing) {
                     DevicePicker(
-                        devices: devices,
-                        device: Binding(get: {
-                            selectedDevice
-                        }, set: {
-                            manuallySelectedDevice = $0
-                        }),
+                        device: selectedDevice,
                         ecpSessionState: ecpSessionState
                     )
                     .buttonStyle(.plain)
@@ -958,41 +915,41 @@ struct RemoteViewContained: View {
         switch key {
         case .power:
             let intent = PowerIntent()
-            intent.device = selectedDevice?.toAppEntity()
+            intent.device = selectedDevice
             intent.donate()
         case .select:
             let intent = OkIntent()
-            intent.device = selectedDevice?.toAppEntity()
+            intent.device = selectedDevice
             intent.donate()
         case .mute:
             let intent = MuteIntent()
-            intent.device = selectedDevice?.toAppEntity()
+            intent.device = selectedDevice
             intent.donate()
         case .volumeUp:
             let intent = VolumeUpIntent()
-            intent.device = selectedDevice?.toAppEntity()
+            intent.device = selectedDevice
             intent.donate()
         case .volumeDown:
             let intent = VolumeDownIntent()
-            intent.device = selectedDevice?.toAppEntity()
+            intent.device = selectedDevice
             intent.donate()
         case .playPause:
             let intent = PlayIntent()
-            intent.device = selectedDevice?.toAppEntity()
+            intent.device = selectedDevice
             intent.donate()
         default:
             return
         }
     }
 
-    func donateAppLaunchIntent(_ link: AppLinkAppEntity) {
+    func donateAppLaunchIntent(_ link: AppLink) {
         let intent = LaunchAppIntent()
         intent.app = link
-        intent.device = selectedDevice?.toAppEntity()
+        intent.device = selectedDevice
         intent.donate()
     }
 
-    func launchApp(_ app: AppLinkAppEntity) {
+    func launchApp(_ app: AppLink) {
         donateAppLaunchIntent(app)
         incrementButtonPressCount(.inputAV1)
         Task {

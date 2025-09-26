@@ -1,4 +1,3 @@
-import SwiftData
 import SwiftUI
 
 #if os(visionOS)
@@ -16,62 +15,54 @@ import SwiftUI
 #endif
 
 struct AppLinksView: View {
-    var handleOpenApp: (AppLinkAppEntity) -> Void
-    @Query private var appLinks: [AppLink]
+    var handleOpenApp: (AppLink) -> Void
     let rows: Int
-    @State var cachedAppLinks: [AppLink]
+    let deviceId: String?
+
+    init(handleOpenApp: @escaping (AppLink) -> Void, rows: Int, deviceId: String?) {
+        self.handleOpenApp = handleOpenApp
+        self.rows = rows
+        self.deviceId = deviceId
+        if let deviceId {
+            self.appLoader = DeviceAppsLoader(deviceId: deviceId, dataHandler: RoamDataHandler.shared)
+        }
+    }
+
+    @State private var appLoader: DeviceAppsLoader?
 
     @ScaledMetric var gridWidth: CGFloat = globalGridWidth
     @ScaledMetric var gridSpacing: CGFloat = globalGridSpacing
     @ScaledMetric var gridHeightScaled: CGFloat = globalGridHeight
 
+    var appLinks: [AppLink] {
+        appLoader?.apps ?? []
+    }
     var gridHeight: CGFloat {
-        if cachedAppLinks.isEmpty {
+        if appLinks.isEmpty {
             return 1
         } else {
             return gridHeightScaled
         }
     }
 
-    var appIdsIconsHashed: Int {
-        var appLinkPairs: Set<String> = Set()
-        for appLink in appLinks {
-            appLinkPairs.insert("\(appLink.id);\(appLink.iconHash ?? "--")")
-        }
-
-        var hasher = Hasher()
-        hasher.combine(appLinkPairs)
-        return hasher.finalize()
-    }
-
     @Namespace var linkAnimation
 
     @MainActor
-    init(deviceId: String?, rows: Int, handleOpenApp: @escaping (AppLinkAppEntity) -> Void) {
+    init(deviceId: String?, rows: Int, handleOpenApp: @escaping ( AppLink) -> Void) {
         self.handleOpenApp = handleOpenApp
         self.rows = rows
-
-        _appLinks = Query(
-            filter: #Predicate {
-                $0.deviceUid == deviceId && $0.deletedAt == nil
-            },
-            sort: [
-                SortDescriptor<AppLink>(\.deviceSortOrder, order: .forward),
-                SortDescriptor<AppLink>(\.id)
-            ],
-        )
-        cachedAppLinks = []
+        self.deviceId = deviceId
     }
 
     var body: some View {
         GeometryReader { geometry in
-            if !cachedAppLinks.isEmpty {
+            if !appLinks.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     Spacer()
                     LazyHGrid(rows: Array(repeating:
                                             GridItem(.fixed(CGFloat(gridWidth))), count: rows), spacing: gridSpacing)
                     {
-                        ForEach(Array(cachedAppLinks.enumerated()), id: \.element.id) { _, app in
+                        ForEach(Array(appLinks.enumerated()), id: \.element.id) { _, app in
                             AppLinkButton(app: app, action: handleOpenApp)
                                 .scrollTransition(.interactive) { content, phase in
                                     content
@@ -97,25 +88,8 @@ struct AppLinksView: View {
             .frame(height: gridHeight * CGFloat(rows))
             .fixedSize(horizontal: false, vertical: true)
             .onAppear {
-                var appLinksUnique: [String: AppLink] = [:]
-
-                for appLink in appLinks {
-                    appLinksUnique[appLink.id] = appLink
-                }
-
-                cachedAppLinks = Array(appLinksUnique.values).sorted {
-                    $0.deviceSortOrder ?? Int.max < $1.deviceSortOrder ?? Int.max
-                }
-            }
-            .onChange(of: appIdsIconsHashed) {
                 withAnimation(.interpolatingSpring) {
-                    var appLinksUnique: [String: AppLink] = [:]
-
-                    for appLink in appLinks {
-                        appLinksUnique[appLink.id] = appLink
-                    }
-
-                    cachedAppLinks = Array(appLinksUnique.values)
+                    // TODO: Update app icons
                 }
             }
     }
@@ -123,13 +97,13 @@ struct AppLinksView: View {
 
 struct AppLinkButton: View {
     let app: AppLink
-    let action: (AppLinkAppEntity) -> Void
+    let action: ( AppLink) -> Void
 
     @ScaledMetric var gridWidth: CGFloat = globalGridWidth
 
     var body: some View {
         Button(action: {
-            action(app.toAppEntity())
+            action(app)
         }, label: {
             VStack {
                 FallibleImage(from: app.iconURL, fallback: "questionmark.app.fill", maxSize: gridWidth)

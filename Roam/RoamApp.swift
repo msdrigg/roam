@@ -1,5 +1,4 @@
 import OSLog
-import SwiftData
 import SwiftUI
 import TipKit
 import UniformTypeIdentifiers
@@ -26,10 +25,6 @@ struct RoamApp: App {
     @KeyboardShortcutStorage(.chatWithDeveloper) var messagesShortcut: CustomKeyboardShortcut?
     @State var hotkeyRef: Any?
 
-    var uuidUpdater: UUIDUpdater {
-        appDelegate.uuidUpdater
-    }
-
     var metricManager = RoamMetricManager()
     init() {
         Log.lifecycle.notice("Starting Roam")
@@ -51,6 +46,7 @@ struct RoamApp: App {
             .displayFrequency(.immediate),
             .datastoreLocation(.groupContainer(identifier: mainAppGroup))
         ])
+        migrateOffSwiftData()
     }
 
     var windowResizability: WindowResizability {
@@ -72,7 +68,6 @@ struct RoamApp: App {
                     .translucentBackground()
                     .removeToolbarTitle()
                     .removeToolbarBackground()
-                    .environment(\.uuidUpdater, uuidUpdater)
                     .onAppear {
                         NSApp.setActivationPolicy(.regular)
                         NSApp.forceFront("main")
@@ -234,7 +229,6 @@ struct RoamApp: App {
 
             MenuBarExtra("Roam Menu Bar", systemImage: "appletvremote.gen3", isInserted: self.$showMenuBar) {
                 RemoteViewContained(isInMenuBar: true)
-                    .environment(\.uuidUpdater, uuidUpdater)
                     .environmentObject(appDelegate)
                     .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                         Log.lifecycle.notice("Shutting meuBar down from willTerminate")
@@ -249,7 +243,6 @@ struct RoamApp: App {
                         .frame(width: inScreenshotTestingContext() ? macOSWidth : nil, height: inScreenshotTestingContext() ? macOSHeigth : nil)
                         .frame(minWidth: 400, minHeight: 950)
 #endif
-                        .environment(\.uuidUpdater, uuidUpdater)
                         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
                             Log.lifecycle.notice("Shutting down from willTerminate")
                         }
@@ -266,7 +259,6 @@ struct RoamApp: App {
                 MessageView()
                     .frame(width: 400)
                     .translucentBackground()
-                    .environment(\.uuidUpdater, uuidUpdater)
                     .onAppear {
                         NSApp.setActivationPolicy(.regular)
                         NSApp.forceFront("messages")
@@ -305,7 +297,6 @@ struct RoamApp: App {
                 MacSettings()
                     .translucentBackground()
                     .enableResize()
-                    .environment(\.uuidUpdater, uuidUpdater)
                     .onAppear {
                         NSApp.setActivationPolicy(.regular)
                     }

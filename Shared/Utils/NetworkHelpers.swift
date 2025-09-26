@@ -113,7 +113,21 @@ public func canConnectHTTP(location: String, timeout: TimeInterval) async -> Boo
 }
 #endif
 
-enum APIError: Swift.Error, LocalizedError {
+enum APIError: Swift.Error, LocalizedError, CustomLocalizedStringResourceConvertible {
+    var localizedStringResource: LocalizedStringResource {
+        switch self {
+        case .badURLError(let url):
+            return "Invalid Device URL: \(url)"
+        case .missingHeader(let header):
+            return "Missing required header: \(header)"
+        case .wrongContext(let message):
+            return "Bad context: \(message)"
+        case .badData(let message):
+            return "Data error: \(message)"
+        }
+    }
+
+    
     case badURLError(_ url: String)
     case missingHeader(_ header: String)
     case wrongContext(_ message: String)

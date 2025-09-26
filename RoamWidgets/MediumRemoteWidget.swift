@@ -1,7 +1,6 @@
 #if !os(watchOS)
     import AppIntents
     import Foundation
-    import SwiftData
     import SwiftUI
     import WidgetKit
 
@@ -19,7 +18,7 @@
     }
 
     struct MediumRemoteView: View {
-        var device: DeviceAppEntity?
+        var device: Device?
 
         let dPad: [[RemoteButton?]] = [
             [.back, .up, .home],
@@ -48,8 +47,8 @@
     } timeline: {
         DeviceChoiceTimelineEntity(
             date: Date.now,
-            device: getTestingDevices()[0].toAppEntity(),
-            apps: getTestingAppLinks().map { $0.toAppEntity() }
+            device: getTestingDevices()[0],
+            apps: getTestingAppLinks()
         )
     }
 #endif

@@ -201,7 +201,7 @@ struct AddDeviceFlow: View {
                         .foregroundColor(.green)
                         .fontWeight(.medium)
                 case .failure:
-                    Text("Connection failed")
+                    Text("Failed to add device")
                         .foregroundColor(.red)
                         .fontWeight(.medium)
                 case .permissionFailed:
@@ -347,9 +347,9 @@ struct AddDeviceFlow: View {
     }
 
     private func addDevice(preConnectInfo: PreconnectionDeviceInfo, location: String) async throws {
-        let dataHandler = RoamDataHandler()
+        let dataHandler = RoamDataHandler.shared
 
-        let device = try await dataHandler.addDeviceIndistriminantly(
+        let device = try await dataHandler.addDevice(
             location: location,
             friendlyDeviceName: preConnectInfo.friendlyName,
             udn: preConnectInfo.udn,
@@ -357,7 +357,7 @@ struct AddDeviceFlow: View {
             hidden: false
         )
 
-        try await dataHandler.setSelectedDevice(device)
+        try await dataHandler.makePrimaryDevice(id: device)
     }
 
     func submit() {

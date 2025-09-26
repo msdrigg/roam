@@ -3,11 +3,11 @@ import os.log
 import SwiftUI
 
 struct AppListView: View {
-    let device: DeviceAppEntity?
+    let device: Device?
     let apps: [AppLink]
     let onClick: ((AppLink) -> Void)?
 
-    init(device: DeviceAppEntity, apps: [AppLink], onClick: ((AppLink) -> Void)? = nil) {
+    init(device: Device, apps: [AppLink], onClick: ((AppLink) -> Void)? = nil) {
         self.device = device
         self.apps = apps
         self.onClick = onClick
@@ -30,7 +30,7 @@ struct AppListView: View {
                     Task {
                         onClick?(app)
                         do {
-                            try await launchApp(app: app.toAppEntity(), device: device)
+                            try await launchApp(app: app, device: device)
                         } catch {
                             Log.connection.error("Error opening app \(app.id, privacy: .public): \(error, privacy: .public)")
                         }

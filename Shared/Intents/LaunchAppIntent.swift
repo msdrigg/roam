@@ -12,10 +12,10 @@ public struct LaunchAppIntent: AppIntent, WidgetConfigurationIntent, CustomInten
     static let description = IntentDescription(LocalizedStringResource("Launch app on the device", comment: "Description on a siri shortcut"))
 
     @Parameter(title: LocalizedStringResource("Device", comment: "Description on a configuration field"))
-    public var device: DeviceAppEntity?
+    public var device: Device?
 
     @Parameter(title: LocalizedStringResource("App", comment: "Description on a configuration field"))
-    public var app: AppLinkAppEntity?
+    public var app: AppLink?
 
     public static var parameterSummary: some ParameterSummary {
         Summary("App \(\.$app) on \(\.$device)")
@@ -44,7 +44,7 @@ public struct LaunchAppIntent: AppIntent, WidgetConfigurationIntent, CustomInten
 
     public init() {}
 
-    public init(_ app: AppLinkAppEntity, device: DeviceAppEntity?) {
+    public init(_ app: AppLink, device: Device?) {
         self.app = app
         self.device = device
     }

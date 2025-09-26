@@ -4,7 +4,7 @@ import WidgetKit
 
 #if os(watchOS)
 struct AccessoryGroupRemoteView: View {
-    let device: DeviceAppEntity?
+    let device: Device?
     let controls: [RemoteButton?]
     @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
 

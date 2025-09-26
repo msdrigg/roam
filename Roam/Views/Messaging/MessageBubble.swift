@@ -90,7 +90,7 @@ struct MessageBubble: View {
                 }
             }
 
-            ForEach(message.attachments, id: \.id) { attachment in
+            ForEach(message.sentAttachments, id: \.id) { attachment in
                 MessageFraming(message: message) {
                     AttachmentView(attachment: attachment, message: message)
                         .background(color)
@@ -336,7 +336,7 @@ extension Message {
 }
 
 func getAttachmentMessage() -> Message {
-    let m = Message(
+    var m = Message(
         id: "123",
         message: "Hi Scott, this is a test message",
         author: .me,

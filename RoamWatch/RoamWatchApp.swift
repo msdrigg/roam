@@ -1,5 +1,4 @@
 import os.log
-import SwiftData
 import SwiftUI
 import TipKit
 import ImageIO
@@ -22,6 +21,10 @@ struct RoamWatch: App {
             .displayFrequency(.immediate),
             .datastoreLocation(.groupContainer(identifier: mainAppGroup))
         ])
+        migrateOffSwiftData()
+        Task {
+            await RoamDataHandler.shared.initialize()
+        }
     }
 
     private var navigationPath: Binding<[NavigationDestination]> {
@@ -68,8 +71,7 @@ struct WatchAppView: View {
     @State private var scanningActor: DeviceDiscoveryActor!
 
     @EnvironmentObject private var appDelegate: RoamWatchAppDelegate
-    @Query(deviceFetchDescriptor()) private var devices: [Device]
-    @State private var manuallySelectedDevice: Device?
+    @State private var primaryDeviceLoader = PrimaryDeviceLoader(dataHandler: RoamDataHandler.shared)
     @State private var showDeviceList: Bool = false
     @State private var showingAddDeviceSheet: Bool = false
 
@@ -82,9 +84,7 @@ struct WatchAppView: View {
     }
 
     private var selectedDevice: Device? {
-        manuallySelectedDevice ?? devices.min { d1, d2 in
-            (d1.lastSelectedAt?.timeIntervalSince1970 ?? 0) > (d2.lastSelectedAt?.timeIntervalSince1970 ?? 0)
-        }
+        primaryDeviceLoader.device
     }
 
     @MainActor
@@ -109,14 +109,14 @@ struct WatchAppView: View {
                     NetworkConnectivityBanner()
                 }
 
-                ButtonGridView(device: selectedDevice?.toAppEntity(), controls: DPAD)
+                ButtonGridView(device: selectedDevice, controls: DPAD)
                     .disabled(selectedDevice == nil)
 
-                ButtonGridView(device: selectedDevice?.toAppEntity(), controls: CONTROLS)
+                ButtonGridView(device: selectedDevice, controls: CONTROLS)
                     .disabled(selectedDevice == nil)
 
                 if let device = selectedDevice {
-                    AppListViewWrapper(device: device.toAppEntity())
+                    AppListViewWrapper(device: device)
                 }
             }
             .sheet(isPresented: $showingAddDeviceSheet) {
@@ -129,12 +129,7 @@ struct WatchAppView: View {
             .toolbar(id: "watch") {
                 ToolbarItem(id: "device-picker", placement: .topBarLeading) {
                     DevicePicker(
-                        devices: devices.filter({$0.visible}),
-                        device: Binding(get: {
-                            manuallySelectedDevice ?? selectedDevice
-                        }, set: { device in
-                            manuallySelectedDevice = device
-                        }),
+                        device: selectedDevice,
                         showingPicker: $showDeviceList
                     )
                     .font(.body)
@@ -142,7 +137,7 @@ struct WatchAppView: View {
             }
             .tabViewStyle(.verticalPage)
             .onAppear {
-                scanningActor = DeviceDiscoveryActor(updater: { })
+                scanningActor = DeviceDiscoveryActor()
             }
             .customAccentColorTint()
         }
@@ -153,16 +148,7 @@ struct WatchAppView: View {
             mainBody
         } else {
             mainBody
-                .task {
-                    if loadTestingData() {
-                        // swiftlint:disable:next force_try
-                        try! await RoamDataHandler.checkedCreate().loadTestData()
-                    } else if usingTestingDataContainer() {
-                        // swiftlint:disable:next force_try
-                        try! await RoamDataHandler.checkedCreate().clearData()
-                    }
-                }
-                .task(id: selectedDevice?.persistentModelID, priority: .medium) {
+                .task(id: selectedDevice?.id, priority: .medium) {
                     for await _ in exponentialBackoff(min: 30, max: 3600) {
                         if let selectedDevice {
                             Log.connection
@@ -170,8 +156,8 @@ struct WatchAppView: View {
                             if Task.isCancelled {
                                 return
                             }
-                            let handler = try? RoamDataHandler.checkedCreate()
-                            await handler?.refreshDevice(client: WatchOSRefreshClient(id: selectedDevice.persistentModelID, location: selectedDevice.location))
+                            let handler = try? RoamDataHandler.sharedChecked()
+                            await handler?.refreshDevice(client: WatchOSRefreshClient(id: selectedDevice.id, location: selectedDevice.location))
                         } else {
                             Log.connection.info("No selected device to refresh")
                             return
@@ -183,45 +169,20 @@ struct WatchAppView: View {
 }
 
 struct AppListViewWrapper: View {
-    private let device: DeviceAppEntity
-    @Query private var apps: [AppLink]
-    @State var cachedAppLinks: [AppLink]
+    private let device: Device
+    @State private var appLoader: DeviceAppsLoader
 
-    var appIdsIconsHashed: Int {
-        var appLinkPairs: Set<String> = Set()
-        for app in apps {
-            appLinkPairs.insert("\(app.id);\(app.iconHash ?? "--")")
-        }
-
-        var hasher = Hasher()
-        hasher.combine(appLinkPairs)
-        return hasher.finalize()
-    }
-
-    init(device: DeviceAppEntity) {
-        let pid = device.udn
-
-        _apps = Query(
-            filter: #Predicate<AppLink> {
-                $0.deviceUid == pid && $0.deletedAt == nil
-            },
-            sort: \AppLink.lastSelected,
-            order: .reverse
-        )
+    init(device: Device) {
         self.device = device
-        cachedAppLinks = []
+        appLoader = DeviceAppsLoader(deviceId: device.id, dataHandler: RoamDataHandler.shared)
     }
 
     var body: some View {
-        AppListView(device: device, apps: cachedAppLinks, onClick: {
-            $0.lastSelected = Date.now
+        AppListView(device: device, apps: appLoader.apps ?? [], onClick: { app in
+            Task {
+                try? await appLoader.setSelectedApp(app.id)
+            }
         })
-        .onAppear {
-            cachedAppLinks = apps
-        }
-        .onChange(of: appIdsIconsHashed) {
-            cachedAppLinks = apps
-        }
     }
 }
 

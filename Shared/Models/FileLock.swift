@@ -9,7 +9,6 @@ public enum FileLockError<E: Sendable>: Error, LocalizedError {
     case inner(E)
 }
 
-@MainActor
 final class FileLock {
     enum Mode {
         case shared
@@ -20,6 +19,7 @@ final class FileLock {
         case error(Error)
     }
 
+    @MainActor
     static let shared = FileLock(fileName: ".roamData.lock", appGroupIdentifier: mainAppGroup)
 
     private let fileName: String

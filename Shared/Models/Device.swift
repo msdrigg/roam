@@ -1,28 +1,63 @@
+import AppIntents
 import Foundation
-import os
-import SwiftData
 
-typealias Device = SchemaV5.Device
+@available(iOS 16.0, macOS 13.0, watchOS 9.0, *)
+public struct Device: AppEntity, Equatable, Identifiable, Hashable, Codable {
+    public var name: String
+    public var location: String
+    public var udn: String
+    public var serial: String?
+    public var lastSentToWatch: Date?
 
-let globalMainDevicePredicate = #Predicate<Device> {
-    $0.deletedAt == nil && $0.hiddenAt == nil
-}
+    public var lastSelectedAt: Date?
+    public var lastSyncAt: Date?
+    public var lastOnlineAt: Date?
+    public var lastScannedAt: Date?
+    public var hiddenAt: Date?
 
-@MainActor
-func deviceFetchDescriptor() -> FetchDescriptor<Device> {
-    return FetchDescriptor<Device>(
-        predicate: globalMainDevicePredicate,
-        sortBy: [SortDescriptor(\Device.name)]
-    )
-}
+    // DisplayOff or PowerOn or Suspend
+    public var powerMode: String?
+    public var networkType: String?
+    public var wifiMAC: String?
+    public var ethernetMAC: String?
 
-extension Device: Identifiable {
-    public var id: PersistentIdentifier {
-        persistentModelID
+    public var rtcpPort: UInt16?
+    public var supportsDatagram: Bool?
+    public var iconHash: String?
+
+    public var id: String {
+        udn
+    }
+    init(
+        name: String, location: String, udn: String,
+        serial: String? = nil, lastSentToWatch: Date? = nil,
+        lastSelectedAt: Date? = nil, lastOnlineAt: Date? = nil,
+        lastScannedAt: Date? = nil, hiddenAt: Date? = nil,
+        powerMode: String? = nil, networkType: String? = nil,
+        wifiMAC: String? = nil, ethernetMAC: String? = nil,
+        rtcpPort: UInt16? = nil, supportsDatagram: Bool? = nil,
+        iconHash: String? = nil
+    ) {
+        self.serial = serial
+        self.name = name
+        self.location = location
+        self.udn = udn
+        self.lastSentToWatch = lastSentToWatch
+        self.lastSelectedAt = lastSelectedAt
+        self.lastOnlineAt = lastOnlineAt
+        self.lastScannedAt = lastScannedAt
+        self.hiddenAt = hiddenAt
+        self.powerMode = powerMode
+        self.networkType = networkType
+        self.wifiMAC = wifiMAC
+        self.ethernetMAC = ethernetMAC
+        self.rtcpPort = rtcpPort
+        self.supportsDatagram = supportsDatagram
+        self.iconHash = iconHash
     }
 
     public var iconURL: URL? {
-        guard let iconHash = deviceIconHash else { return nil }
+        guard let iconHash else { return nil }
 
         // Get the group container directory
         guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
@@ -34,19 +69,63 @@ extension Device: Identifiable {
             .appendingPathComponent("roku-icons", isDirectory: true)
             .appendingPathComponent(iconHash)
     }
-}
 
-public extension Device {
     func powerModeOn() -> Bool {
         powerMode == "PowerOn"
     }
 
     var visible: Bool {
-        return self.deletedAt == nil && self.hiddenAt == nil
+        return self.hiddenAt == nil
+    }
+
+    public static let typeDisplayRepresentation = TypeDisplayRepresentation(name: LocalizedStringResource("Device", comment: "TV Device Selection Option"))
+
+    public struct DeviceQuery: EntityQuery {
+        public init() {}
+
+        public func entities(for identifiers: [Device.ID]) async throws -> [Device] {
+            let dataHandler = try await RoamDataHandler.sharedChecked()
+            let deviceIds = await dataHandler.requestDeviceList().filter { id in
+                identifiers.contains(id)
+            }
+            return await dataHandler.requestAllDevices(deviceIds)
+        }
+
+        public func entities(matching string: String) async throws -> [Device] {
+            let dataHandler = try await RoamDataHandler.sharedChecked()
+            let deviceIds = await dataHandler.requestDeviceList()
+            let devices = await dataHandler.requestAllDevices(deviceIds)
+            return devices.filter { d in
+                d.name ~= string
+            }
+        }
+
+        public func suggestedEntities() async throws -> [Device] {
+            let dataHandler = try await RoamDataHandler.sharedChecked()
+            let deviceIds = await dataHandler.requestDeviceList()
+            let devices = await dataHandler.requestAllDevices(deviceIds)
+            return devices.sorted { a, b in
+                a.lastSelectedAt ?? Date.distantPast < b.lastSelectedAt ?? Date.distantPast
+            }
+        }
+    }
+
+    public static let defaultQuery = DeviceQuery()
+
+    public var displayRepresentation: DisplayRepresentation {
+        if let iconURL {
+            DisplayRepresentation(title: "\(name)", image: DisplayRepresentation.Image(url: iconURL))
+        } else {
+            DisplayRepresentation(title: "\(name)", image: DisplayRepresentation.Image(systemName: "app.dashed"))
+        }
+    }
+
+    func macs() -> [String] {
+        return [self.ethernetMAC, self.wifiMAC].compactMap({$0})
     }
 
     var displayHash: String {
-        "\(name)-\(udn)-\(isOnline())-\(location)-\(String(describing: supportsDatagram))-\(id.described())"
+        "\(name)-\(udn)-\(isOnline())-\(location)-\(String(describing: supportsDatagram))-\(id)"
     }
 
     func isOnline() -> Bool {
@@ -57,44 +136,8 @@ public extension Device {
     }
 }
 
-func getHostPortDisplay(from urlString: String) -> String {
-    let host = getHost(from: urlString)
-    let port = getPort(from: urlString)
-    if let port, port != 8060 {
-        return "\(host):\(port)"
-    } else {
-        return host
-    }
-}
+#if !os(watchOS)
+import CoreSpotlight
 
-private func getHost(from urlString: String) -> String {
-    guard let url = URL(string: addSchemeAndPort(to: urlString)), let host = url.host else {
-        return urlString
-    }
-    return host
-}
-
-private func getPort(from urlString: String) -> Int? {
-    guard let url = URL(string: addSchemeAndPort(to: urlString)) else {
-        return nil
-    }
-    return url.port
-}
-
-func addSchemeAndPort(to urlString: String, scheme: String = "http", port: Int = 8060) -> String {
-    let urlString = "http://" + urlString.replacing(/^.*:\/\//, with: { _ in "" })
-
-    guard let url = URL(string: urlString),
-          var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-    else {
-        return urlString
-    }
-    components.scheme = scheme
-    components.port = url.port ?? port // Replace the port only if it's not already specified
-
-    return (components.string ?? urlString).replacing(/\/*$/, with: { _ in "" }) + "/"
-}
-
-// Models shouldn't be sendable
-@available(*, unavailable)
-extension Device: Sendable {}
+extension Device: IndexedEntity {}
+#endif

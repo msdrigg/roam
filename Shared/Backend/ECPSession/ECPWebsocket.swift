@@ -211,7 +211,7 @@ actor ECPWebsocketClient: Sendable {
         }
     }
 
-    public nonisolated func getDeviceApps() async throws -> [AppLinkAppEntity] {
+    public nonisolated func getDeviceApps() async throws -> [ AppLink] {
         let result = try await self.sendCommand(.queryDeviceApps(QueryApps(requestId: "")))
         switch result {
         case .base(let resp):
@@ -521,7 +521,6 @@ actor ECPWebsocketClient: Sendable {
     }
 }
 
-#if WIDGET
 extension ECPWebsocketClient {
     public func oneOff<T: Sendable>(timeout: TimeInterval = 5, _ block: @escaping @Sendable (isolated ECPWebsocketClient) async throws -> T) async throws -> T {
         Log.connection.notice("Running quick oneoff with id \(self.uuid, privacy: .public) for endpoint \(self.endpoint.debugDescription, privacy: .public)")
@@ -535,5 +534,4 @@ extension ECPWebsocketClient {
         }
     }
 }
-#endif
 #endif

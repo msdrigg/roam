@@ -20,7 +20,7 @@ final class RoamWatchUITestsScreenshotTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments += ["-AppleLanguages", "(\(locale.language.languageCode!.identifier))"]
         app.launchArguments += ["-AppleLocale", "\(locale.identifier)"]
-        app.launchArguments += ["-SwiftDataTesting"]
+        app.launchArguments += ["-DataTesting"]
 
         app.launch()
 
@@ -31,7 +31,7 @@ final class RoamWatchUITestsScreenshotTests: XCTestCase {
 
         app.terminate()
 
-        app.launchArguments += ["-SwiftDataLoadTestingData"]
+        app.launchArguments += ["-DataLoadTestingData"]
         app.launchArguments += ["-ScreenshotTesting"]
         app.launch()
         try await Task.sleep(nanoseconds: 2_000_000_000)

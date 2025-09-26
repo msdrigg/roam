@@ -4,7 +4,7 @@ import os
 
 @available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public struct OpenDeviceIntent: OpenIntent {
-    public typealias Value = DeviceAppEntity
+    public typealias Value = Device
 
     public init() {}
     public static let title: LocalizedStringResource = LocalizedStringResource("Open a device", comment: "Configuration title for a settings page")
@@ -12,13 +12,11 @@ public struct OpenDeviceIntent: OpenIntent {
     public static let openAppWhenRun: Bool = true
 
     @Parameter(title: LocalizedStringResource("Device", comment: "Configuration field title for a device selection field"))
-    public var target: DeviceAppEntity
+    public var target: Device
 
     @MainActor
     public func perform() async throws -> some IntentResult {
-        if let modelId = target.modelId {
-            try await RoamDataHandler.checkedCreate().setSelectedDevice(modelId)
-        }
+        try await RoamDataHandler.shared.makePrimaryDevice(id: target.id)
         return .result()
     }
 }
@@ -37,7 +35,7 @@ public struct DeviceChoiceIntent: AppIntent, WidgetConfigurationIntent {
     public var manuallySelectDevice: Bool
 
     @Parameter(title: LocalizedStringResource("Device", comment: "Configuration field title for a device selection field"))
-    public var device: DeviceAppEntity?
+    public var device: Device?
 
     public static var parameterSummary: some ParameterSummary {
         When(\.$manuallySelectDevice, .equalTo, true) {
@@ -52,7 +50,7 @@ public struct DeviceChoiceIntent: AppIntent, WidgetConfigurationIntent {
         }
     }
 
-    public var selectedDevice: DeviceAppEntity? {
+    public var selectedDevice: Device? {
         if !manuallySelectDevice {
             return nil
         }
@@ -83,22 +81,22 @@ public struct DeviceAndAppChoiceIntent: AppIntent, WidgetConfigurationIntent {
     public var manuallySelectDevice: Bool
 
     @Parameter(title: LocalizedStringResource("Device", comment: "Configuration field title for a device selection field"))
-    public var device: DeviceAppEntity?
+    public var device: Device?
 
     @Parameter(title: LocalizedStringResource("Manually select which apps to show", comment: "Configuration field title controlling whether or not apps are manually selected"), default: false)
     public var manuallySelectApps: Bool
 
     @Parameter(title: LocalizedStringResource("App 1", comment: "Configuration field title for selecting the first app"))
-    public var app1: AppLinkAppEntity?
+    public var app1: AppLink?
 
     @Parameter(title: LocalizedStringResource("App 2", comment: "Configuration field title for selecting the second app"))
-    public var app2: AppLinkAppEntity?
+    public var app2: AppLink?
 
     @Parameter(title: LocalizedStringResource("App 3", comment: "Configuration field title for selecting the third app"))
-    public var app3: AppLinkAppEntity?
+    public var app3: AppLink?
 
     @Parameter(title: LocalizedStringResource("App 4", comment: "Configuration field title for selecting the fourth app"))
-    public var app4: AppLinkAppEntity?
+    public var app4: AppLink?
 
     public static var parameterSummary: some ParameterSummary {
         When(\.$manuallySelectDevice, .equalTo, true) {
@@ -138,7 +136,7 @@ public struct DeviceAndAppChoiceIntent: AppIntent, WidgetConfigurationIntent {
         }
     }
 
-    public var selectedDevice: DeviceAppEntity? {
+    public var selectedDevice: Device? {
         if !manuallySelectDevice {
             return nil
         }
@@ -157,7 +155,7 @@ public struct ButtonPressIntent: AppIntent, CustomIntentMigratedAppIntent, Predi
     public init() {}
 
     @Parameter(title: LocalizedStringResource("Device", comment: "Configuration field title for a device selection field"))
-    var device: DeviceAppEntity?
+    var device: Device?
 
     @Parameter(title: LocalizedStringResource("Button", comment: "Configuration field title for a button selection field"))
     var button: RemoteButtonAppEnum
@@ -174,7 +172,7 @@ public struct ButtonPressIntent: AppIntent, CustomIntentMigratedAppIntent, Predi
         }
     }
 
-    public init(_ button: RemoteButton, device: DeviceAppEntity?) {
+    public init(_ button: RemoteButton, device: Device?) {
         self.button = button.buttonAppEnum
         self.device = device
     }
@@ -190,15 +188,14 @@ public struct ButtonPressIntent: AppIntent, CustomIntentMigratedAppIntent, Predi
     }
 }
 
-#if WIDGET || os(watchOS)
-public func clickButton(button: RemoteButton, device: DeviceAppEntity?) async throws {
+public func clickButton(button: RemoteButton, device: Device?) async throws {
     Log.userInteraction.notice("Pressing widget button \(button.apiValue ?? "nil", privacy: .public) on device \(device?.name ?? "nil", privacy: .public)")
 
-    let dataHandler = try await RoamDataHandler.checkedCreate()
+    let dataHandler = try await RoamDataHandler.sharedChecked()
 
     var targetDevice = device
     if targetDevice == nil {
-        targetDevice = await dataHandler.fetchSelectedDeviceAppEntity()
+        targetDevice = await dataHandler.requestPrimaryDevice()
     }
 
     guard let targetDevice else {
@@ -240,12 +237,12 @@ public func clickButton(button: RemoteButton, device: DeviceAppEntity?) async th
     #endif
 }
 
-public func launchApp(app: AppLinkAppEntity, device: DeviceAppEntity?) async throws {
-    let dataHandler = try await RoamDataHandler.checkedCreate()
+public func launchApp(app: AppLink, device: Device?) async throws {
+    let dataHandler = try await RoamDataHandler.sharedChecked()
 
     var targetDevice = device
     if targetDevice == nil {
-        targetDevice = await dataHandler.fetchSelectedDeviceAppEntity()
+        targetDevice = await dataHandler.requestPrimaryDevice()
     }
 
     if let targetDevice {
@@ -273,14 +270,6 @@ public func launchApp(app: AppLinkAppEntity, device: DeviceAppEntity?) async thr
         throw IntentError.noSavedDevices
     }
 }
-#else
-public func clickButton(button: RemoteButton, device: DeviceAppEntity?) async throws {
-    throw APIError.wrongContext("Shouldn't be called outside of widget context")
-}
-public func launchApp(app: AppLinkAppEntity, device: DeviceAppEntity?) async throws {
-    throw APIError.wrongContext("Shouldn't be called outside of widget context")
-}
-#endif
 
 private enum IntentError: Swift.Error, CustomLocalizedStringResourceConvertible {
     case noSavedDevices
@@ -294,28 +283,59 @@ private enum IntentError: Swift.Error, CustomLocalizedStringResourceConvertible 
     }
 }
 
-extension AppLinkAppEntity: AppEntity {
+extension  AppLink: AppEntity {
     public static let typeDisplayRepresentation = TypeDisplayRepresentation(name: LocalizedStringResource("TV App", comment: "TV App Selection option"))
-    public static let defaultQuery = AppLinkAppEntityQuery()
+    public static let defaultQuery =  AppLinkQuery()
 
-    public struct AppLinkAppEntityQuery: EntityQuery {
+    public struct  AppLinkQuery: EntityQuery {
         @IntentParameterDependency<LaunchAppIntent>(\.$device) var launchAppIntent
 
         public init() {}
 
-        public func entities(for identifiers: [AppLinkAppEntity.ID]) async throws -> [AppLinkAppEntity] {
-            let appLinkActor = try await RoamDataHandler.checkedCreate()
-            return try await appLinkActor.appEntities(for: identifiers, deviceUid: launchAppIntent?.device.udn)
+        public func entities(for identifiers: [AppLink.ID]) async throws -> [ AppLink] {
+            let appLinkActor = try await RoamDataHandler.sharedChecked()
+            var deviceId = launchAppIntent?.device.udn
+            if deviceId == nil {
+                 deviceId = await appLinkActor.requestPrimaryDevice()?.id
+            }
+
+            guard let deviceId else {
+                throw IntentError.noSavedDevices
+            }
+
+            return await appLinkActor.requestDeviceApps(deviceId: deviceId).filter { app in
+                identifiers.contains(app.id)
+            }
         }
 
-        func entities(matching string: String) async throws -> [AppLinkAppEntity] {
-            let appLinkActor = try await RoamDataHandler.checkedCreate()
-            return try await appLinkActor.appEntities(matching: string, deviceUid: launchAppIntent?.device.udn)
+        func entities(matching string: String) async throws -> [ AppLink] {
+            let appLinkActor = try await RoamDataHandler.sharedChecked()
+            var deviceId = launchAppIntent?.device.udn
+            if deviceId == nil {
+                 deviceId = await appLinkActor.requestPrimaryDevice()?.id
+            }
+
+            guard let deviceId else {
+                throw IntentError.noSavedDevices
+            }
+
+            return await appLinkActor.requestDeviceApps(deviceId: deviceId).filter { app in
+                app.name ~= string
+            }
         }
 
-        public func suggestedEntities() async throws -> [AppLinkAppEntity] {
-            let appLinkActor = try await RoamDataHandler.checkedCreate()
-            return try await appLinkActor.appEntities(deviceUid: launchAppIntent?.device.udn)
+        public func suggestedEntities() async throws -> [ AppLink] {
+            let appLinkActor = try await RoamDataHandler.sharedChecked()
+            var deviceId = launchAppIntent?.device.udn
+            if deviceId == nil {
+                 deviceId = await appLinkActor.requestPrimaryDevice()?.id
+            }
+
+            guard let deviceId else {
+                throw IntentError.noSavedDevices
+            }
+
+            return await appLinkActor.requestDeviceApps(deviceId: deviceId)
         }
     }
 
@@ -331,5 +351,5 @@ extension AppLinkAppEntity: AppEntity {
 #if !os(watchOS)
 import CoreSpotlight
 
-extension AppLinkAppEntity: IndexedEntity {}
+extension  AppLink: IndexedEntity {}
 #endif

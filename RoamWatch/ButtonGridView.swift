@@ -3,7 +3,7 @@ import os.log
 import SwiftUI
 
 struct ButtonGridView: View {
-    let device: DeviceAppEntity?
+    let device: Device?
     let controls: [[RemoteButton?]]
 
     @Environment(\.layoutDirection) var layoutDirection

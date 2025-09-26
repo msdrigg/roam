@@ -1,5 +1,4 @@
 import os
-import SwiftData
 import SwiftUI
 #if os(iOS)
 import UIKit
@@ -18,28 +17,15 @@ let deviceIconSize: CGFloat = 24.0
 let circleSize: CGFloat = 10
 #endif
 
-private let unreadMessageFetchDescriptor: FetchDescriptor<Message> = {
-    return FetchDescriptor<Message>(
-        predicate: globalUnviewedMessagePredicate
-    )
-}()
-
-private let settingsDeviceFetchDescriptor: FetchDescriptor<Device> = {
-    return FetchDescriptor<Device>(
-        predicate: #Predicate<Device> {
-            $0.deletedAt == nil
-        },
-        sortBy: [SortDescriptor(\Device.name)]
-    )
-}()
-
 struct SettingsView: View {
 #if os(macOS)
     @Environment(\.openWindow) private var openWindow
 #endif
 
-    @Query(settingsDeviceFetchDescriptor) private var allDevices: [Device]
-    @Query(unreadMessageFetchDescriptor) private var unreadMessages: [Message]
+    // TODO: Get all devices including hidden ones
+    @State private var allDevices: [Device]?
+    // TODO: Get unread message count from message data handler
+    @State private var unreadMessages: Int = 0
     @Binding var path: [NavigationDestination]
     let destination: SettingsDestination
 
@@ -56,7 +42,6 @@ struct SettingsView: View {
     }
 
     @State private var showWatchOSNote = false
-    @Environment(\.uuidUpdater) private var updater: UUIDUpdater?
 
 #if os(watchOS)
     @EnvironmentObject private var appDelegate: RoamWatchAppDelegate
@@ -106,11 +91,11 @@ struct SettingsView: View {
     }
 
     var devices: [Device] {
-        allDevices.filter { $0.visible }
+        allDevices?.filter { $0.visible } ?? []
     }
 
     var hiddenDevices: [Device] {
-        allDevices.filter { $0.hiddenAt != nil}
+        allDevices?.filter { $0.hiddenAt != nil} ?? []
     }
 
     var body: some View {
@@ -118,9 +103,6 @@ struct SettingsView: View {
             bodyContent
         } else {
             bodyContent
-                .onChange(of: self.updater?.uuid.uuidString) { _, _ in
-                    self._allDevices.update()
-                }
                 .onAppear {
                     Log.lifecycle.notice("Showing \(#fileID, privacy: .public) view")
                     loadCustomAccentColor()
@@ -129,12 +111,8 @@ struct SettingsView: View {
                     Log.lifecycle.notice("Closing \(#fileID, privacy: .public) view")
                 }
                 .onAppear {
-                    scanningActor = DeviceDiscoveryActor(updater: {
-                        updater?.update()
-                    })
-                    ssdpActor = DeviceDiscoveryActor(updater: {
-                        updater?.update()
-                    })
+                    scanningActor = DeviceDiscoveryActor()
+                    ssdpActor = DeviceDiscoveryActor()
 
                 }
 #if !os(watchOS)
@@ -174,13 +152,10 @@ struct SettingsView: View {
                         // TODO: Move this into some async-compatible iterator so cancel if one fails
                         for index in indexSet {
                             if let model = devices[safe: index] {
-                                let pid = model.persistentModelID
+                                let pid = model.id
                                 Task {
                                     do {
-                                        try await RoamDataHandler().delete(pid)
-                                        DispatchQueue.main.async {
-                                            self.updater?.update()
-                                        }
+                                        try await RoamDataHandler.shared.deleteDevice(id: pid)
                                     } catch let error as DataHandlerError {
                                         Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
                                         deviceError = error
@@ -245,7 +220,6 @@ struct SettingsView: View {
                 EmptyView()
 #endif
             }
-            .id(updater?.uuid.uuidString ?? "--")
 
 #if os(watchOS)
             Button(String(localized: "WatchOS Note", comment: "Description on a button to see info about watchOS limitations"), systemImage: "info.circle.fill", action: { showWatchOSNote = true })
@@ -342,10 +316,10 @@ struct SettingsView: View {
 #endif
                 }, label: {
                     HStack {
-                        if unreadMessages.count > 0 {
+                        if unreadMessages > 0 {
                             Label(String(localized: "Chat with the Developer", comment: "Label on a button to open the chat window"), systemImage: "message")
 #if !os(watchOS)
-                                .badge(unreadMessages.count)
+                                .badge(unreadMessages)
 #endif
                         } else {
                             Label(String(localized: "Chat with the Developer", comment: "Label on a button to open the chat window"), systemImage: "message")
@@ -372,13 +346,10 @@ struct SettingsView: View {
                                 // TODO: Move this into some async-compatible iterator so cancel if one fails
                                 for index in indexSet {
                                     if let model = devices[safe: index] {
-                                        let pid = model.persistentModelID
+                                        let pid = model.id
                                         Task {
                                             do {
-                                                try await RoamDataHandler().delete(pid)
-                                                DispatchQueue.main.async {
-                                                    self.updater?.update()
-                                                }
+                                                try await RoamDataHandler.shared.deleteDevice(id: pid)
                                             } catch let error as DataHandlerError {
                                                 Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
                                                 deviceError = error
@@ -388,7 +359,6 @@ struct SettingsView: View {
                                 }
                             }
                         }
-                        .id(updater?.uuid.uuidString ?? "--")
                     } label: {
                         Label("Hidden Devices", systemImage: "eye.slash")
                     }

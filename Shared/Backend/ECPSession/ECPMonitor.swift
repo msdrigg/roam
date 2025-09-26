@@ -39,7 +39,7 @@ final class ECPMonitor {
     var textEditStatus: TextEditStatus = .off
     var ecpClient: ECPWebsocketClient?
 
-    func setDevice(_ device: DeviceAppEntity?) {
+    func setDevice(_ device: Device?) {
         let oldEcpClient = self.ecpClient
         self.ecpClient = nil
         Task {

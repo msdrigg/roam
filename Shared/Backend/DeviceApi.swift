@@ -137,7 +137,7 @@ struct DeviceCapabilities {
     let rtcpPort: UInt16?
 }
 
-typealias Apps = [AppLinkAppEntity]
+typealias Apps = [ AppLink]
 
 #if !WIDGET
 func fetchPreconnectionInfo(location: String) async throws -> PreconnectionDeviceInfo {
@@ -207,7 +207,7 @@ func fetchDeviceInfo(location: String) async throws -> DeviceInfo {
     }
 }
 
-func fetchDeviceApps(location: String) async throws -> [AppLinkAppEntity] {
+func fetchDeviceApps(location: String) async throws -> [ AppLink] {
     guard let url = URL(string: "\(location)query/apps") else {
         throw APIError.badURLError("\(location)query/apps")
     }

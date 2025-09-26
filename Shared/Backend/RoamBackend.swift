@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import OSLog
-import SwiftData
 import UniformTypeIdentifiers
 
 private let globalBackendURL = "https://backend.roam.msd3.io"

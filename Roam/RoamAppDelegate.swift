@@ -1,6 +1,5 @@
 import Foundation
 import OSLog
-import SwiftData
 import SwiftUI
 import UserNotifications
 
@@ -11,7 +10,6 @@ final class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
     @Published var navigationPath: NavigationManager
     @Published var ecpMonitor: ECPMonitor
     @Published var networkMonitor: NetworkMonitor
-    @Published var uuidUpdater: UUIDUpdater
 
     var delegates: [String: AnyObject] = [:]
 
@@ -19,7 +17,6 @@ final class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
     override init() {
         self.navigationPath = NavigationManager()
         self.ecpMonitor = ECPMonitor()
-        self.uuidUpdater = UUIDUpdater()
         self.networkMonitor = NetworkMonitor()
         super.init()
         networkMonitor.appDelegate = self
@@ -54,7 +51,7 @@ final class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
 
         Task {
             do {
-                let selectedDevice = try? await RoamDataHandler.checkedCreate().fetchSelectedDeviceAppEntity()
+                let selectedDevice = await RoamDataHandler.shared.requestPrimaryDevice()
 
                 if let selectedDevice, ecpMonitor.ecpClient == nil {
                     ecpMonitor.setDevice(selectedDevice)
@@ -111,8 +108,9 @@ final class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
 
     func refreshMessages() {
         Task {
-            let dataHandler = await MessageDataHandler.shared
-            await dataHandler.refreshMessagesIfExpectingNewMessages()
+            // TODO: Implement this for messages
+//            let dataHandler = await MessageDataHandler.shared
+//            await dataHandler.refreshMessagesIfExpectingNewMessages()
         }
     }
 
@@ -237,13 +235,11 @@ extension NSApplication {
         @Published var navigationPath: NavigationManager
         @Published var ecpMonitor: ECPMonitor
         @Published var networkMonitor: NetworkMonitor
-        @Published var uuidUpdater: UUIDUpdater
 
         override init() {
             self.navigationPath = NavigationManager()
             self.ecpMonitor = ECPMonitor()
             self.networkMonitor = NetworkMonitor()
-            self.uuidUpdater = UUIDUpdater()
             super.init()
             UNUserNotificationCenter.current().delegate = self
         }
@@ -349,7 +345,7 @@ extension NSApplication {
 
             Task {
                 do {
-                    let selectedDevice = try? await RoamDataHandler.checkedCreate().fetchSelectedDeviceAppEntity()
+                    let selectedDevice = try? await RoamDataHandler.shared.fetchSelectedDevice()
 
                     if let selectedDevice, ecpMonitor.ecpClient == nil {
                         ecpMonitor.setDevice(selectedDevice)

@@ -3,12 +3,12 @@ import SwiftUI
 
 #if !os(watchOS)
 struct SmallAppView: View {
-    let device: DeviceAppEntity?
-    let apps: [AppLinkAppEntity]
+    let device: Device?
+    let apps: [ AppLink]
     let appIcons: [String: Image]
     let rows: Int
 
-    var appRows: [[AppLinkAppEntity?]] {
+    var appRows: [[ AppLink?]] {
         if device == nil, apps.isEmpty {
             if rows == 1 {
                 return [[nil, nil]]
@@ -22,7 +22,7 @@ struct SmallAppView: View {
         if rowSize == 0 {
             rowSize = 1
         }
-        var rows: [[AppLinkAppEntity?]] = []
+        var rows: [[ AppLink?]] = []
 
         for i in stride(from: 0, to: cappedApps.count, by: rowSize) {
             let endIndex = min(i + rowCount, cappedApps.count)
@@ -102,12 +102,12 @@ struct SmallAppView: View {
 import WidgetKit
 
 struct SmallAppView: View {
-    let device: DeviceAppEntity?
-    let apps: [AppLinkAppEntity]
+    let device: Device?
+    let apps: [ AppLink]
     let appIcons: [String: Image]
     let rows: Int
 
-    var appRow: [AppLinkAppEntity?] {
+    var appRow: [ AppLink?] {
         var paddedArray = apps.prefix(3).map { Optional($0) }
         while paddedArray.count < 3 {
             paddedArray.append(nil)

@@ -10,14 +10,12 @@ struct DevicePicker: View {
     @ScaledMetric var circleIconSize = globalCircleIconSize
 
     @Environment(\.openURL) private var openURL
-    @Environment(\.uuidUpdater) private var updater
 #if os(macOS)
     @Environment(\.openSettings) private var openSettings
     @Environment(\.openWindow) private var openWindow
 #endif
 
-    let devices: [Device]
-    var device: Binding<Device?>
+    var device: Device?
 
     let showScanning: Bool
     let ecpSessionState: ECPMonitor?
@@ -25,6 +23,7 @@ struct DevicePicker: View {
     let timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
     @State private var currentDate: Date = .now
     @State private var deviceError: Error?
+    @State private var deviceListLoader = DeviceListLoader(dataHandler: .shared)
 
     var deviceStatusColor: Color {
         if inScreenshotTestingContext() {
@@ -44,7 +43,7 @@ struct DevicePicker: View {
                 .secondary
             }
         } else {
-            device.wrappedValue?.isOnline() ?? false ? .green : .secondary
+            device?.isOnline() ?? false ? .green : .secondary
         }
     }
 
@@ -67,26 +66,24 @@ struct DevicePicker: View {
         }
     }
 
-    init(devices: [Device], device: Binding<Device?>, ecpSessionState: ECPMonitor? = nil, showScanning: Bool = false) {
-        self.devices = devices
+    init(device: Device?, ecpSessionState: ECPMonitor? = nil, showScanning: Bool = false) {
         self.device = device
         self.showScanning = showScanning
         self.ecpSessionState = ecpSessionState
     }
 
     var body: some View {
-        Menu {
-            if !devices.isEmpty {
-                Picker("Device", selection: Binding<Device?>(
+//        Menu {
+            if !(deviceListLoader.devices ?? []).isEmpty {
+                Picker("Device", selection: Binding<String?>(
                     get: {
-                        device.wrappedValue
+                        device?.id
                     },
                     set: {
-                        device.wrappedValue = $0
-                        if let pid = $0?.persistentModelID {
+                        if let pid = $0 {
                             Task {
                                 do {
-                                    try await RoamDataHandler().setSelectedDevice(pid)
+                                    try await RoamDataHandler.shared.makePrimaryDevice(id: pid)
                                 } catch {
                                     Log.userInteraction.error("Error setting selected device \(error, privacy: .public)")
                                     deviceError = error
@@ -95,12 +92,11 @@ struct DevicePicker: View {
                         }
                     }
                 )) {
-                    ForEach(devices) { device in
-                        Text(device.name)
-                            .lineLimit(1)
-                            .tag(device as Device?)
+                    ForEach(deviceListLoader.devices ?? [], id: \.self) { device in
+                        DevicePickerItem(id: device)
                     }
-                }.pickerStyle(.inline)
+                }
+                .pickerStyle(.segmented)
             } else {
                 Text("No devices")
             }
@@ -124,59 +120,58 @@ struct DevicePicker: View {
                 .labelStyle(.titleAndIcon)
                 .accessibilityIdentifier("SettingsButton")
             #endif
-        } label: {
-            Group {
-                if let device = device.wrappedValue {
-                    if showSpinning {
-                        Label(device.name, systemImage: "rays")
-                            .labelStyle(DevicePickerLabelStyle(circleIconSize: circleIconSize))
-                            .foregroundColor(deviceStatusColor)
-                            .symbolEffect(.variableColor)
-                    } else {
-                        Label(device.name, systemImage: "circle.fill")
-                            .labelStyle(DevicePickerLabelStyle(circleIconSize: circleIconSize))
-                            .foregroundColor(deviceStatusColor)
-                    }
-                } else {
-                    if showScanning {
-                        Label("Scanning for devices", systemImage: "rays")
-                            .labelStyle(.titleAndIcon)
-                            .symbolEffect(.variableColor)
-                    } else {
-                        Text("No devices")
-                    }
-                }
-            }
-            #if os(macOS)
-                .multilineTextAlignment(.center)
-            #else
-                .multilineTextAlignment(.trailing)
-            #endif
-                .lineLimit(1)
-                .truncationMode(.tail)
-            #if os(iOS)
-                .frame(maxWidth: 300)
-                .fixedSize()
-            #elseif os(visionOS)
-                .frame(maxWidth: 250)
-                .fixedSize()
-            #endif
-            #if os(visionOS)
-                .font(.headline)
-            #else
-                .font(.body)
-            #endif
-        }
-        #if os(iOS)
-        .menuStyle(.button)
-        #endif
-        .accessibilityIdentifier("DevicePicker")
-        .animation(nil, value: UUID())
-        .onReceive(timer) { _ in
-            currentDate = .now
-        }
-        .id(updater?.uuid.uuidString ?? "--")
-        .alertingError(message: "Failed to Select Device", error: $deviceError)
+//        } label: {
+//            Group {
+//                if let device = device {
+//                    if showSpinning {
+//                        Label(device.name, systemImage: "rays")
+//                            .labelStyle(DevicePickerLabelStyle(circleIconSize: circleIconSize))
+//                            .foregroundColor(deviceStatusColor)
+//                            .symbolEffect(.variableColor)
+//                    } else {
+//                        Label(device.name, systemImage: "circle.fill")
+//                            .labelStyle(DevicePickerLabelStyle(circleIconSize: circleIconSize))
+//                            .foregroundColor(deviceStatusColor)
+//                    }
+//                } else {
+//                    if showScanning {
+//                        Label("Scanning for devices", systemImage: "rays")
+//                            .labelStyle(.titleAndIcon)
+//                            .symbolEffect(.variableColor)
+//                    } else {
+//                        Text("No devices")
+//                    }
+//                }
+//            }
+//            #if os(macOS)
+//                .multilineTextAlignment(.center)
+//            #else
+//                .multilineTextAlignment(.trailing)
+//            #endif
+//                .lineLimit(1)
+//                .truncationMode(.tail)
+//            #if os(iOS)
+//                .frame(maxWidth: 300)
+//                .fixedSize()
+//            #elseif os(visionOS)
+//                .frame(maxWidth: 250)
+//                .fixedSize()
+//            #endif
+//            #if os(visionOS)
+//                .font(.headline)
+//            #else
+//                .font(.body)
+//            #endif
+//        }
+//        #if os(iOS)
+//        .menuStyle(.button)
+//        #endif
+//        .accessibilityIdentifier("DevicePicker")
+//        .animation(nil, value: UUID())
+//        .onReceive(timer) { _ in
+//            currentDate = .now
+//        }
+//        .alertingError(message: "Failed to Select Device", error: $deviceError)
     }
 }
 
@@ -197,5 +192,26 @@ struct DevicePickerLabelStyle: LabelStyle {
                 .foregroundColor(.primary)
             #endif
         }
+    }
+}
+
+private struct DevicePickerItem: View {
+    @State private var deviceLoader: DeviceLoader
+
+    let id: String
+
+    init(id: String) {
+        self.id = id
+        self.deviceLoader = DeviceLoader(deviceId: self.id, dataHandler: .shared)
+    }
+
+    var name: String {
+        deviceLoader.device?.name ?? "Loading..."
+    }
+
+    var body: some View {
+        Text(name)
+            .lineLimit(1)
+            .tag(id)
     }
 }
