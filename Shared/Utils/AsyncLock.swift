@@ -141,6 +141,32 @@ final class LinkedList<T: Sendable> {
     var head: Node<T>?
     var tail: Node<T>?
 
+    init() { }
+
+    init<S: Sequence>(_ values: S) where S.Element == T {
+        for value in values {
+            append(value)
+        }
+    }
+
+    var size: Int {
+        var count = 0
+        var node = head
+        while let current = node {
+            count += 1
+            node = current.next
+        }
+        return count
+    }
+
+    var first: T? {
+        return head?.value
+    }
+
+    var last: T? {
+        return tail?.value
+    }
+
     @discardableResult
     func append(_ value: T) -> Node<T> {
         let newNode = Node(value: value)

@@ -22,6 +22,7 @@ enum ChangeOperation: Hashable {
     case updatePrimaryApps
     case updateDevice(deviceId: String)
     case updateDeviceApps(deviceId: String)
+    case updateMessages
 }
 
 struct RegistrationListenerRef {
@@ -37,11 +38,17 @@ protocol RegistrationListener: AnyObject, Sendable {
     func primaryDeviceUpdated(device: Device?)
     func primaryAppsUpdated(apps: [AppLink]?)
     func deviceAppsUpdated(for deviceId: String, apps: [AppLink])
+    func messagesUpdated(messages: [Message], unreadCount: Int)
+}
+
+@MainActor
+extension RegistrationListener {
+    func messagesUpdated(messages: [Message], unreadCount: Int) { }
 }
 
 // MARK: - Main Data Handler
 actor RoamDataHandler {
-    private let fileHandler: FileDataHandler
+    private let database: RoamDatabase
     private var updateListeners: [RegistrationToken: RegistrationListenerRef] = [:]
     private var updateRegistrations: [ChangeOperation: Set<RegistrationToken>] = [:]
 
@@ -52,6 +59,8 @@ actor RoamDataHandler {
     private var cachedHiddenDeviceList: [String]?
     private var cachedPrimaryDevice: Device?
     private var cachedPrimaryApps: [AppLink]?
+    private var cachedMessages: [Message]?
+    private var cachedUnreadMessageCount: Int?
 
     @MainActor
     private static let _shared: RoamDataHandler? = getForShared()
@@ -72,12 +81,18 @@ actor RoamDataHandler {
         return shared
     }
 
-    private init(rootPath: String) {
-        self.fileHandler = FileDataHandler(rootPath: rootPath)
+    private init(database: RoamDatabase) {
+        self.database = database
+        self.database.onExternalChange = { [weak self] in
+            Task {
+                await self?.handleExternalDatabaseChange()
+            }
+        }
         Task {
             await self.preloadDeviceList()
             await self.preloadPrimaryDevice()
             await self.preloadPrimaryApps()
+            await self.preloadMessages()
         }
     }
 
@@ -87,7 +102,14 @@ actor RoamDataHandler {
             return nil
         }
         print("Getting container url \(containerURL)")
-        return self.init(rootPath: containerURL.appendingPathComponent("rootData").path(percentEncoded: false))
+        let rootPath = containerURL.appendingPathComponent("rootData").path(percentEncoded: false)
+        do {
+            let database = try RoamDatabase.openShared(containerURL: containerURL, legacyRootPath: rootPath)
+            return self.init(database: database)
+        } catch {
+            Log.backend.error("Failed to open Roam database: \(error, privacy: .public)")
+            return nil
+        }
     }
 
     // MARK: - Request Functions
@@ -155,9 +177,11 @@ actor RoamDataHandler {
     }
 
     private func requestDeviceAppIcon(deviceId: String, appId: String)  {
-        // TODO:
-        // Icon loading implementation would go here
-        // This would check for cached icon hash and notify if available
+        let apps = requestDeviceApps(deviceId: deviceId)
+        guard let iconHash = apps.first(where: { $0.id == appId })?.iconHash else {
+            return
+        }
+        notifyAppIconUpdated(deviceId: deviceId, appId: appId, iconDataHash: iconHash)
     }
 
     func requestPrimaryDevice() -> Device? {
@@ -192,6 +216,24 @@ actor RoamDataHandler {
             notifyPrimaryAppsUpdated(apps: [])
             return []
         }
+    }
+
+    func requestMessages() -> [Message] {
+        if let cachedMessages { return cachedMessages }
+
+        let messages = database.messages()
+        cachedMessages = messages
+        cachedUnreadMessageCount = database.unreadMessageCount()
+        notifyMessagesUpdated(messages: messages, unreadCount: cachedUnreadMessageCount ?? 0)
+        return messages
+    }
+
+    func requestUnreadMessageCount() -> Int {
+        if let cachedUnreadMessageCount { return cachedUnreadMessageCount }
+
+        let unreadCount = database.unreadMessageCount()
+        cachedUnreadMessageCount = unreadCount
+        return unreadCount
     }
 
     func requestAllDevices(_ deviceIds: [String]) async -> [Device] {
@@ -388,6 +430,98 @@ actor RoamDataHandler {
         self.notifyDeviceUpdated(deviceId: device.id, device: device)
     }
 
+    func saveMessageFromMigration(_ message: Message) throws {
+        try database.saveMessage(message)
+        refreshMessageCache()
+    }
+
+    func markMessagesViewed() throws {
+        try database.markMessagesViewed()
+        refreshMessageCache()
+    }
+
+#if !WIDGET
+    @discardableResult
+    func refreshMessages(viewed: Bool) async -> Int {
+        let latestMessageId = requestMessages().last { $0.fetchedBackend }?.id
+
+        do {
+            let updates = try await getMessagingUpdates(after: latestMessageId)
+            if let lastSupportTyping = updates.presence.lastSupportTyping {
+                UserDefaults.standard.set(lastSupportTyping.timeIntervalSince1970, forKey: UserDefaultKeys.lastSupportTypingTime)
+            }
+
+            var messagesToSave: [Message] = []
+            var pendingMessagesToDelete: [String] = []
+            for response in updates.messages {
+                var message = Message(response)
+                if viewed {
+                    message.viewed = true
+                }
+                messagesToSave.append(message)
+
+                if let nonce = message.nonce,
+                   let pendingMessage = database.pendingMessage(nonce: nonce) {
+                    pendingMessagesToDelete.append(pendingMessage.id)
+                }
+            }
+
+            if !messagesToSave.isEmpty {
+                try database.saveMessages(messagesToSave)
+            }
+            for messageId in pendingMessagesToDelete {
+                try database.deleteMessage(id: messageId)
+            }
+            if !messagesToSave.isEmpty || !pendingMessagesToDelete.isEmpty {
+                refreshMessageCache()
+            }
+            return messagesToSave.count
+        } catch {
+            Log.backend.warning("Error refreshing messages: \(error, privacy: .public)")
+            return 0
+        }
+    }
+
+    @discardableResult
+    func refreshMessagesIfExpectingNewMessages() async -> Int {
+        guard UserDefaults.standard.bool(forKey: UserDefaultKeys.hasSentFirstMessage) else {
+            return 0
+        }
+        return await refreshMessages(viewed: false)
+    }
+
+    func sendChatMessage(message: String, attachment: AttachmentUpload?) async throws {
+        let nonce = UUID().uuidString
+        var pendingMessage = Message(
+            id: "pending-\(nonce)",
+            message: message,
+            author: .me,
+            fetchedBackend: false,
+            viewed: true,
+            unsentAttachment: attachment,
+            nonce: nonce
+        )
+        pendingMessage.lastSendAttempt = Date.now
+
+        try database.saveMessage(pendingMessage)
+        refreshMessageCache()
+
+        let result = await sendMessageDirect(message: message, attachment: attachment, nonce: nonce)
+        switch result {
+        case .success(let response):
+            var savedMessage = Message(response)
+            savedMessage.viewed = true
+            try database.saveMessage(savedMessage)
+            try database.deleteMessage(id: pendingMessage.id)
+            refreshMessageCache()
+            UserDefaults.standard.set(true, forKey: UserDefaultKeys.hasSentFirstMessage)
+        case .failure(let error):
+            Log.backend.error("Error sending message: \(error, privacy: .public)")
+            throw error
+        }
+    }
+#endif
+
     func makePrimaryDevice(id: String) throws {
         guard let device = try cachedDeviceData[id] ?? loadDeviceFromDisk(id: id) else {
             throw DataHandlerError.deviceNotFound
@@ -399,9 +533,7 @@ actor RoamDataHandler {
         try saveDeviceToDisk(updatedDevice)
         cachedDeviceData[id] = updatedDevice
 
-        // Create symlinks
-        try fileHandler.createSymlink(from: "primaryDevice.bin", to: "\(id).bin")
-        try? fileHandler.createSymlink(from: "primaryDevice.apps.bin", to: "\(id).apps.bin")
+        try database.setPrimaryDevice(id: id)
 
         // Update device order in lists
         try updateDeviceOrderAfterSelection(selectedUdn: id)
@@ -445,66 +577,53 @@ actor RoamDataHandler {
         _ = requestPrimaryApps()
     }
 
+    func preloadMessages() {
+        _ = requestMessages()
+    }
+
     // MARK: - Private Disk Operations
     private func loadDeviceListFromDisk() throws -> [String] {
-        guard fileHandler.fileExists("devices.bin") else { return [] }
-        let deviceList = try fileHandler.loadJSON("devices.bin", as: DeviceListData.self)
-        return deviceList.devices
+        database.deviceList()
     }
 
     private func loadHiddenDeviceListFromDisk() throws -> [String] {
-        guard fileHandler.fileExists("hiddenDevices.bin") else { return [] }
-        let deviceList = try fileHandler.loadJSON("hiddenDevices.bin", as: DeviceListData.self)
-        return deviceList.devices
+        database.hiddenDeviceList()
     }
 
     private func loadDeviceFromDisk(id: String) throws -> Device? {
-        let filename = "\(id).bin"
-        guard fileHandler.fileExists(filename) else { return nil }
-        return try fileHandler.loadJSON(filename, as: Device.self)
+        database.device(id: id)
     }
 
     private func loadDeviceAppsFromDisk(deviceId: String) throws -> [AppLink] {
-        let filename = "\(deviceId).apps.bin"
-        guard fileHandler.fileExists(filename) else { return [] }
-        return try fileHandler.loadJSON(filename, as: [AppLink].self)
+        database.deviceApps(deviceId: deviceId)
     }
 
     private func loadPrimaryDeviceFromDisk() throws -> Device? {
-        guard fileHandler.fileExists("primaryDevice.bin") else { return nil }
-        return try fileHandler.loadJSON("primaryDevice.bin", as: Device.self)
+        database.primaryDevice()
     }
 
     private func loadPrimaryAppsFromDisk() throws -> [AppLink]? {
-        guard fileHandler.fileExists("primaryDevice.apps.bin") else { return [] }
-        return try fileHandler.loadJSON("primaryDevice.apps.bin", as: [AppLink].self)
+        database.primaryApps()
     }
 
     private func saveDeviceToDisk(_ device: Device) throws {
-        try fileHandler.saveJSON(device, to: "\(device.id).bin")
-        if let serial = device.serial {
-            try fileHandler.createSymlink(from: "serial.\(serial).bin", to: "\(device.id).bin")
-        }
+        try database.saveDevice(device)
     }
 
     private func deleteDeviceOnDisk(_ deviceId: String) throws {
-        try fileHandler.deleteFile("\(deviceId).bin")
-        try fileHandler.deleteFile("\(deviceId).apps.bin")
+        try database.deleteDevice(id: deviceId)
     }
 
     private func saveDeviceAppsToDisk(deviceId: String, apps: [AppLink]) throws {
-        try fileHandler.saveJSON(apps, to: "\(deviceId).apps.bin")
-        if deviceId == requestPrimaryDevice()?.id {
-            try? fileHandler.createSymlink(from: "primaryDevice.apps.bin", to: "\(deviceId).apps.bin")
-        }
+        try database.saveDeviceApps(deviceId: deviceId, apps: apps)
     }
 
     private func saveDeviceListToDisk(_ devices: [String]) throws {
-        try fileHandler.saveJSON(DeviceListData(devices: devices), to: "devices.bin")
+        try database.saveDeviceList(devices, kind: .visible)
     }
 
     private func saveHiddenDeviceListToDisk(_ devices: [String]) throws {
-        try fileHandler.saveJSON(DeviceListData(devices: devices), to: "hiddenDevices.bin")
+        try database.saveDeviceList(devices, kind: .hidden)
     }
 
     // MARK: - Private Helper Methods
@@ -570,6 +689,58 @@ actor RoamDataHandler {
         cachedDeviceList = devices
 
         self.notifyDeviceListUpdated(devices: devices)
+    }
+
+    private func refreshMessageCache() {
+        let messages = database.messages()
+        let unreadCount = database.unreadMessageCount()
+        cachedMessages = messages
+        cachedUnreadMessageCount = unreadCount
+        notifyMessagesUpdated(messages: messages, unreadCount: unreadCount)
+    }
+
+    private func handleExternalDatabaseChange() {
+        Log.data.notice("Reloading in-memory data after external database change")
+
+        let oldDeviceIDs = Set(cachedDeviceData.keys)
+        let oldAppDeviceIDs = Set(cachedDeviceApps.keys)
+
+        let visibleIDs = database.deviceList()
+        let hiddenIDs = database.hiddenDeviceList()
+        let allDeviceIDs = Set(visibleIDs + hiddenIDs)
+
+        cachedDeviceList = visibleIDs
+        cachedHiddenDeviceList = hiddenIDs
+        cachedDeviceData = [:]
+        cachedDeviceApps = [:]
+
+        for deviceID in allDeviceIDs {
+            if let device = database.device(id: deviceID) {
+                cachedDeviceData[deviceID] = device
+            }
+            cachedDeviceApps[deviceID] = database.deviceApps(deviceId: deviceID)
+        }
+
+        cachedPrimaryDevice = database.primaryDevice()
+        cachedPrimaryApps = database.primaryApps()
+        let messages = database.messages()
+        let unreadCount = database.unreadMessageCount()
+        cachedMessages = messages
+        cachedUnreadMessageCount = unreadCount
+
+        notifyDeviceListUpdated(devices: visibleIDs)
+        notifyHiddenDeviceListUpdated(devices: hiddenIDs)
+        notifyPrimaryDeviceUpdated(device: cachedPrimaryDevice)
+        notifyPrimaryAppsUpdated(apps: cachedPrimaryApps)
+        notifyMessagesUpdated(messages: messages, unreadCount: unreadCount)
+
+        for deviceID in oldDeviceIDs.union(allDeviceIDs) {
+            notifyDeviceUpdated(deviceId: deviceID, device: cachedDeviceData[deviceID])
+        }
+
+        for deviceID in oldAppDeviceIDs.union(allDeviceIDs) {
+            notifyDeviceAppsUpdated(deviceId: deviceID, apps: cachedDeviceApps[deviceID] ?? [])
+        }
     }
 }
 
@@ -661,6 +832,20 @@ extension RoamDataHandler {
         }
     }
 
+    private func notifyAppIconUpdated(deviceId: String, appId: String, iconDataHash: String) {
+        let change = ChangeOperation.updateAppIcon(deviceId: deviceId, appId: appId)
+        self.updateRegistrations[change]?.forEach { token in
+            guard let listener = self.updateListeners[token]?.listener else {
+                self.unregister(token)
+                return
+            }
+
+            DispatchQueue.main.async {
+                listener.appIconUpdated(for: deviceId, appId: appId, iconDataHash: iconDataHash)
+            }
+        }
+    }
+
     private func notifyPrimaryDeviceUpdated(device: Device?) {
         let change = ChangeOperation.updatePrimaryDevice
         self.updateRegistrations[change]?.forEach { token in
@@ -689,6 +874,20 @@ extension RoamDataHandler {
         }
     }
 
+    private func notifyMessagesUpdated(messages: [Message], unreadCount: Int) {
+        let change = ChangeOperation.updateMessages
+        self.updateRegistrations[change]?.forEach { token in
+            guard let listener = self.updateListeners[token]?.listener else {
+                self.unregister(token)
+                return
+            }
+
+            DispatchQueue.main.async {
+                listener.messagesUpdated(messages: messages, unreadCount: unreadCount)
+            }
+        }
+    }
+
     // MARK: - Device Management Extension
 #if !WIDGET
     func requestDeviceForSerial(serial: String) async -> Device? {
@@ -697,21 +896,12 @@ extension RoamDataHandler {
             return cachedDevice
         }
 
-        // If not found in cache, try to load from serial.{serial}.bin file
-        let serialFilename = "serial.\(serial).bin"
-        guard fileHandler.fileExists(serialFilename) else {
-            return nil
-        }
-
-        do {
-            let device = try fileHandler.loadJSON(serialFilename, as: Device.self)
-            // Cache the device
+        if let device = database.device(serial: serial) {
             cachedDeviceData[device.id] = device
             return device
-        } catch {
-            Log.data.error("Failed to load device for serial \(serial, privacy: .public): \(error, privacy: .public)")
-            return nil
         }
+
+        return nil
     }
 
     @discardableResult
@@ -956,6 +1146,11 @@ extension RoamDataHandler {
         var fetchedApps: [AppLink]?
         do {
             fetchedApps = try await client.getDeviceApps()
+            fetchedApps = fetchedApps?.map { app in
+                var app = app
+                app.deviceId = deviceId
+                return app
+            }
             Log.data.notice("Successfully refreshed device apps")
         } catch {
             Log.data.error("Error getting device apps: \(error, privacy: .public)")
@@ -1068,11 +1263,7 @@ extension RoamDataHandler {
                         appsToUpdate.append(afterUpdateApps[appIndex])
                     }
 
-                    // Notify that app icon was updated
-                    Task {
-                        // TODO: How to notify for app icon updated
-//                        await self.appIconUpdated(for: deviceId, appId: appId, iconDataHash: iconHash)
-                    }
+                    notifyAppIconUpdated(deviceId: deviceId, appId: appId, iconDataHash: iconHash)
 
                     Log.data.notice("Stored app icon for \(appId)")
                 } catch {
@@ -1220,8 +1411,9 @@ extension RoamDataHandler {
 
         // Load test messages
         let testMessages = getTestingMessages()
-        // TODO: Implement message saving when message system is complete
-        // For now, messages will be handled separately
+        for message in testMessages {
+            try database.saveMessage(message)
+        }
 
         Log.data.info("Loaded test data: \(testDevices.count) devices, \(testDevices.map { cachedDeviceApps[$0.id]?.count ?? 0 }.reduce(0, +)) total apps, \(testMessages.count) messages")
         #endif
@@ -1236,8 +1428,7 @@ extension RoamDataHandler {
         cachedPrimaryDevice = nil
         cachedPrimaryApps = nil
 
-        // Delete all files in the root directory
-        try fileHandler.clearAllFiles()
+        try database.clearAll()
 
         Log.data.info("Cleared all data and caches")
     }

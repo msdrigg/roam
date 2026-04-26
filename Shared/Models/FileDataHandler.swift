@@ -83,6 +83,10 @@ enum DataHandlerError: Error, LocalizedError {
     case noSpaceOnDisk
     case noContainerURL
     case deviceNotFound
+    case databaseLocked
+    case databaseReadOnly
+    case databasePermissionDenied
+    case databaseCorrupt
     case rootError(LocalizedError)
     case unknown
 
@@ -96,6 +100,14 @@ enum DataHandlerError: Error, LocalizedError {
             return String(localized: "App currently shutting down.")
         case .deviceNotFound:
             return String(localized: "Cannot update device that is deleted.")
+        case .databaseLocked:
+            return String(localized: "The database is busy.")
+        case .databaseReadOnly:
+            return String(localized: "The database cannot be written right now.")
+        case .databasePermissionDenied:
+            return String(localized: "The database file cannot be accessed.")
+        case .databaseCorrupt:
+            return String(localized: "The database appears to be damaged.")
         case .unknown:
             return String(localized: "Operation failed.")
         case .rootError(let error):
@@ -113,6 +125,14 @@ enum DataHandlerError: Error, LocalizedError {
             return String(localized: "Please re-open the app and try again.")
         case .deviceNotFound:
             return String(localized: "Please make sure the device you are updating has been added.")
+        case .databaseLocked:
+            return String(localized: "Please try again in a moment.")
+        case .databaseReadOnly:
+            return String(localized: "Please close and re-open the app, then try again.")
+        case .databasePermissionDenied:
+            return String(localized: "Please check that Roam has access to its app group storage, then try again.")
+        case .databaseCorrupt:
+            return String(localized: "Please contact roam-support@msd3.io so we can help recover your saved devices.")
         case .unknown:
             return String(localized: "Please close and re-open the app and then try again.")
         case .rootError(let error):
@@ -121,14 +141,48 @@ enum DataHandlerError: Error, LocalizedError {
     }
 
     static func from(error: Error) -> Self {
+        if let error = error as? DataHandlerError {
+            return error
+        }
         let nsError = error as NSError
         if nsError.domain == NSCocoaErrorDomain && nsError.code == NSFileWriteOutOfSpaceError {
             return .noSpaceOnDisk
+        }
+        if nsError.domain == "GRDB.DatabaseError" || String(describing: type(of: error)).contains("DatabaseError") {
+            let description = error.localizedDescription.lowercased()
+            if description.contains("database or disk is full") || description.contains("sqlite_full") {
+                return .noSpaceOnDisk
+            }
+            if description.contains("readonly") || description.contains("read-only") || description.contains("sqlite_readonly") {
+                return .databaseReadOnly
+            }
+            if description.contains("busy") || description.contains("locked") || description.contains("sqlite_busy") || description.contains("sqlite_locked") {
+                return .databaseLocked
+            }
+            if description.contains("permission") || description.contains("not authorized") || description.contains("sqlite_perm") {
+                return .databasePermissionDenied
+            }
+            if description.contains("corrupt") || description.contains("not a database") || description.contains("sqlite_corrupt") || description.contains("sqlite_notadb") {
+                return .databaseCorrupt
+            }
         }
         if let error = error as? LocalizedError {
             return .rootError(error)
         }
         return .unknown
+    }
+
+    static func fromPOSIX(errno: Int32, fallback: Self) -> Self {
+        switch errno {
+        case ENOSPC:
+            return .noSpaceOnDisk
+        case EACCES, EPERM:
+            return .databasePermissionDenied
+        case EBUSY, EWOULDBLOCK, EAGAIN:
+            return .databaseLocked
+        default:
+            return fallback
+        }
     }
 }
 

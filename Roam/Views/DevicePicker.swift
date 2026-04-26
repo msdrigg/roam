@@ -73,7 +73,7 @@ struct DevicePicker: View {
     }
 
     var body: some View {
-//        Menu {
+        HStack(spacing: 8) {
             if !(deviceListLoader.devices ?? []).isEmpty {
                 Picker("Device", selection: Binding<String?>(
                     get: {
@@ -97,11 +97,14 @@ struct DevicePicker: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .frame(maxWidth: devicePickerMaxWidth)
             } else {
                 Text("No devices")
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .frame(maxWidth: devicePickerMaxWidth)
             }
 
-            Divider()
             #if os(macOS)
                 Button(action: {
                     openSettings()
@@ -110,16 +113,21 @@ struct DevicePicker: View {
                     }
                 }, label: {
                     Label("Settings", systemImage: "gear")
-                        .labelStyle(.titleAndIcon)
+                        .labelStyle(.iconOnly)
                 })
+                .buttonStyle(PaddedBorderlessButtonStyle())
                 .accessibilityIdentifier("SettingsButton")
             #else
                 NavigationLink(value: NavigationDestination.settingsDestination(.global)) {
                     Label("Settings", systemImage: "gear")
                 }
-                .labelStyle(.titleAndIcon)
+                .labelStyle(.iconOnly)
+                .buttonStyle(PaddedBorderlessButtonStyle())
                 .accessibilityIdentifier("SettingsButton")
             #endif
+        }
+        .fixedSize(horizontal: false, vertical: true)
+//        Menu {
 //        } label: {
 //            Group {
 //                if let device = device {
@@ -173,6 +181,14 @@ struct DevicePicker: View {
 //        }
 //        .alertingError(message: "Failed to Select Device", error: $deviceError)
     }
+
+    private var devicePickerMaxWidth: CGFloat {
+        #if os(macOS)
+        return 185
+        #else
+        return .infinity
+        #endif
+    }
 }
 
 struct DevicePickerLabelStyle: LabelStyle {
@@ -212,6 +228,7 @@ private struct DevicePickerItem: View {
     var body: some View {
         Text(name)
             .lineLimit(1)
+            .truncationMode(.tail)
             .tag(id)
     }
 }

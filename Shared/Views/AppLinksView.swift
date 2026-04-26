@@ -3,15 +3,18 @@ import SwiftUI
 #if os(visionOS)
     let globalGridWidth: CGFloat = 100
     let globalGridSpacing: CGFloat = 20
-    let globalGridHeight: CGFloat = 130
+    let globalGridRowSpacing: CGFloat = 20
+    let globalGridHeightWithApps: CGFloat = 145
 #elseif os(iOS)
     let globalGridWidth: CGFloat = 70
     let globalGridSpacing: CGFloat = 10
-    let globalGridHeight: CGFloat = 80
+    let globalGridRowSpacing: CGFloat = 10
+    let globalGridHeightWithApps: CGFloat = 92
 #else
-    let globalGridWidth: CGFloat = 60
+    let globalGridWidth: CGFloat = 52
     let globalGridSpacing: CGFloat = 10
-    let globalGridHeight: CGFloat = 70
+    let globalGridRowSpacing: CGFloat = 2
+    let globalGridHeightWithApps: CGFloat = 72
 #endif
 
 struct AppLinksView: View {
@@ -23,16 +26,15 @@ struct AppLinksView: View {
         self.handleOpenApp = handleOpenApp
         self.rows = rows
         self.deviceId = deviceId
-        if let deviceId {
-            self.appLoader = DeviceAppsLoader(deviceId: deviceId, dataHandler: RoamDataHandler.shared)
-        }
+        self._appLoader = State(initialValue: Self.makeAppLoader(deviceId: deviceId))
     }
 
     @State private var appLoader: DeviceAppsLoader?
 
     @ScaledMetric var gridWidth: CGFloat = globalGridWidth
     @ScaledMetric var gridSpacing: CGFloat = globalGridSpacing
-    @ScaledMetric var gridHeightScaled: CGFloat = globalGridHeight
+    @ScaledMetric var gridRowSpacing: CGFloat = globalGridRowSpacing
+    @ScaledMetric var populatedGridHeightScaled: CGFloat = globalGridHeightWithApps
 
     var appLinks: [AppLink] {
         appLoader?.apps ?? []
@@ -41,7 +43,15 @@ struct AppLinksView: View {
         if appLinks.isEmpty {
             return 1
         } else {
-            return gridHeightScaled
+            return populatedGridHeightScaled
+        }
+    }
+
+    var totalGridHeight: CGFloat {
+        if appLinks.isEmpty {
+            return gridHeight
+        } else {
+            return gridHeight * CGFloat(rows) + gridRowSpacing * CGFloat(max(rows - 1, 0))
         }
     }
 
@@ -52,6 +62,13 @@ struct AppLinksView: View {
         self.handleOpenApp = handleOpenApp
         self.rows = rows
         self.deviceId = deviceId
+        self._appLoader = State(initialValue: Self.makeAppLoader(deviceId: deviceId))
+    }
+
+    @MainActor
+    private static func makeAppLoader(deviceId: String?) -> DeviceAppsLoader? {
+        guard let deviceId else { return nil }
+        return DeviceAppsLoader(deviceId: deviceId, dataHandler: RoamDataHandler.shared)
     }
 
     var body: some View {
@@ -59,9 +76,13 @@ struct AppLinksView: View {
             if !appLinks.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     Spacer()
-                    LazyHGrid(rows: Array(repeating:
-                                            GridItem(.fixed(CGFloat(gridWidth))), count: rows), spacing: gridSpacing)
-                    {
+                    LazyHGrid(
+                        rows: Array(
+                            repeating: GridItem(.fixed(CGFloat(gridHeight)), spacing: gridRowSpacing),
+                            count: rows
+                        ),
+                        spacing: gridSpacing
+                    ) {
                         ForEach(Array(appLinks.enumerated()), id: \.element.id) { _, app in
                             AppLinkButton(app: app, action: handleOpenApp)
                                 .scrollTransition(.interactive) { content, phase in
@@ -85,13 +106,8 @@ struct AppLinksView: View {
                 .safeAreaPadding(.horizontal, 4)
             }
         }
-            .frame(height: gridHeight * CGFloat(rows))
+            .frame(height: totalGridHeight)
             .fixedSize(horizontal: false, vertical: true)
-            .onAppear {
-                withAnimation(.interpolatingSpring) {
-                    // TODO: Update app icons
-                }
-            }
     }
 }
 
@@ -101,18 +117,28 @@ struct AppLinkButton: View {
 
     @ScaledMetric var gridWidth: CGFloat = globalGridWidth
 
+    private var appButtonSpacing: CGFloat {
+        #if os(macOS)
+        return 3
+        #else
+        return 8
+        #endif
+    }
+
     var body: some View {
         Button(action: {
             action(app)
         }, label: {
-            VStack {
+            VStack(spacing: appButtonSpacing) {
                 FallibleImage(from: app.iconURL, fallback: "questionmark.app.fill", maxSize: gridWidth)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .frame(width: gridWidth)
                     .shadow(radius: 4)
 
                 Text(app.name)
-                #if os(visionOS)
+                #if os(macOS)
+                    .font(.caption2)
+                #elseif os(visionOS)
                     .font(.body)
                 #else
                     .font(.caption)

@@ -10,6 +10,24 @@ import Roam
 import Foundation
 
 struct RoamSwiftTests {
+    @Test func testRokuAppsDecodeElementTextName() throws {
+        let xml = """
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <apps>
+            <app id="tvinput.hdmi2" type="tvin" version="1.0.0">Nintendo Switch</app>
+            <app id="41468" type="appl" subtype="sdka" version="3.9.2">Tubi - Free Movies &amp; TV</app>
+        </apps>
+        """
+
+        let apps = try XMLStreamDecoder().decode([AppLink].self, from: Data(xml.utf8))
+        let encodedApps = try JSONSerialization.jsonObject(with: JSONEncoder().encode(apps)) as? [[String: Any]]
+
+        #expect(apps.map(\.id) == ["tvinput.hdmi2", "41468"])
+        #expect(encodedApps?.compactMap { $0["name"] as? String } == ["Nintendo Switch", "Tubi - Free Movies & TV"])
+        #expect(apps.map(\.type) == ["tvin", "appl"])
+        #expect(apps.allSatisfy { $0.deviceId.isEmpty })
+    }
+
     @Test func testWebsocketHeaderdecoding() async throws {
         let hexHeader = "817e1312"
         let data = Data(hexString: hexHeader)!
@@ -43,6 +61,23 @@ struct RoamSwiftTests {
         #expect(count == 511)
         #expect(start == IP4Address(string: "172.16.32.0")!)
         #expect(end == IP4Address(string: "172.16.33.255")!)
+    }
+
+    @Test func testAddressableInterfaceRangePrefersLocalSubnet() async throws {
+        let simulatedIface = Addressed4NetworkInterface(
+            name: "Sim",
+            family: 2,
+            address: IP4Address(string: "192.168.10.22")!, netmask: IP4Address(string: "255.255.0.0")!, flags: 34915, nwInterface: nil)
+
+        let scanRange = Array(simulatedIface.scannableIPV4NetworkRange)
+        let prioritizedRange = simulatedIface.preferredScannableIPV4Ranges.flatMap { Array($0) }
+
+        #expect(prioritizedRange.count == scanRange.count)
+        #expect(prioritizedRange.sorted() == scanRange)
+        #expect(prioritizedRange[0] == IP4Address(string: "192.168.10.0")!)
+        #expect(prioritizedRange[22] == IP4Address(string: "192.168.10.22")!)
+        #expect(prioritizedRange[255] == IP4Address(string: "192.168.10.255")!)
+        #expect(prioritizedRange[256] == IP4Address(string: "192.168.0.0")!)
     }
 
     @Test func testKebabify() async throws {

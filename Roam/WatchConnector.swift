@@ -19,36 +19,27 @@
 
         func sessionReachabilityDidChange(_ session: WCSession) {
             Log.watch.notice("WCSession reachability changed to \(session.isReachable, privacy: .public)")
-            // TODO: Where is allDeviceEntities??
-//            if session.isReachable {
-//                Task {
-//                    do {
-//                        let devices = try await RoamDataHandler.shared.allDeviceEntities()
-//                        DispatchQueue.main.async {
-//                            self.transferDevices(session, devices: devices)
-//                        }
-//                    } catch {
-//                        Log.watch.error("Error refreshing devices on session active: \(error, privacy: .public)")
-//                    }
-//                }
-//            }
+            if session.isReachable {
+                transferCurrentDevices(session)
+            }
         }
 
         func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
             Log.watch.notice("WCSession got message from watch to \(message, privacy: .public). Sending devices")
-            // TODO: Where is allDeviceEntities??
-//            DispatchQueue.main.async {
-//                Task {
-//                    do {
-//                        let devices = try await RoamDataHandler.shared.allDeviceEntities()
-//                        DispatchQueue.main.async {
-//                            self.transferDevices(session, devices: devices)
-//                        }
-//                    } catch {
-//                        Log.watch.error("Error refreshing devices on session active: \(error, privacy: .public)")
-//                    }
-//                }
-//            }
+            transferCurrentDevices(session)
+        }
+
+        private func transferCurrentDevices(_ session: WCSession) {
+            Task {
+                guard let dataHandler = try? await RoamDataHandler.sharedChecked() else {
+                    Log.watch.error("Could not load data handler while refreshing devices for watch")
+                    return
+                }
+
+                let deviceIds = await dataHandler.requestDeviceList()
+                let devices = await dataHandler.requestAllDevices(deviceIds)
+                await transferDevices(session, devices: devices)
+            }
         }
 
         @MainActor
@@ -119,18 +110,7 @@
                 }
             } else {
                 Log.watch.notice("WCSession activated no error")
-                // TODO: Where is allDeviceEntities
-//                Task {
-//                    do {
-//                        let devices = try await RoamDataHandler.shared.allDeviceEntities()
-//
-//                        DispatchQueue.main.async {
-//                            self.transferDevices(session, devices: devices)
-//                        }
-//                    } catch {
-//                        Log.watch.error("Error refreshing devices on session active: \(error, privacy: .public)")
-//                    }
-//                }
+                transferCurrentDevices(session)
             }
         }
 

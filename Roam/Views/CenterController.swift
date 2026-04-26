@@ -62,7 +62,7 @@ struct CenterController: View {
                                 #if !os(watchOS)
                                 .modifier(CustomKeyboardShortcutModifier(title: button.3))
                                 #endif
-                                .buttonStyle(.borderedProminent)
+                                .buttonStyle(LiquidGlassButtonStyle(isProminent: true))
                                 #if !os(visionOS)
                                 .sensoryFeedback(.impact, trigger: pressCounter(button.1))
                                 #endif

@@ -53,11 +53,13 @@ struct RoamApp: App {
         if inScreenshotTestingContext() {
             return .contentSize
         } else {
-#if os(visionOS)
+        #if os(macOS)
+            return .contentSize
+        #elseif os(visionOS)
             return .contentMinSize
-#else
+        #else
             return .automatic
-#endif
+        #endif
         }
     }
 
@@ -81,7 +83,7 @@ struct RoamApp: App {
                     .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                         Log.lifecycle.notice("Shutting down main body from willTerminate")
                     }
-                    .frame(width: inScreenshotTestingContext() ? macOSWidth : nil, height: inScreenshotTestingContext() ? macOSHeigth : nil)
+                    .frame(width: macOSWidth, height: macOSHeigth)
                     .preferredColorScheme(.dark)
             }
             .keyboardShortcut(showRoamShortcut?.shortcut)
@@ -342,18 +344,10 @@ struct RoamApp: App {
     }
 
     var macOSWidth: CGFloat {
-        if CommandLine.arguments.contains("-WindowStyleVertical") {
-            return 400
-        } else {
-            return 1200
-        }
+        return 244
     }
 
     var macOSHeigth: CGFloat {
-        if CommandLine.arguments.contains("-WindowStyleVertical") {
-            return 1000
-        } else {
-            return 800
-        }
+        return 620
     }
 }

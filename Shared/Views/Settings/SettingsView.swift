@@ -22,10 +22,10 @@ struct SettingsView: View {
     @Environment(\.openWindow) private var openWindow
 #endif
 
-    // TODO: Get all devices including hidden ones
+    @State private var deviceListLoader = DeviceListLoader(dataHandler: .shared)
+    @State private var hiddenDeviceListLoader = HiddenDeviceListLoader(dataHandler: .shared)
+    @State private var messageLoader = MessageListLoader(dataHandler: .shared)
     @State private var allDevices: [Device]?
-    // TODO: Get unread message count from message data handler
-    @State private var unreadMessages: Int = 0
     @Binding var path: [NavigationDestination]
     let destination: SettingsDestination
 
@@ -64,13 +64,30 @@ struct SettingsView: View {
 
     #if !os(watchOS)
     func initiateScan() {
+        Log.scanning.notice(
+            "Manual settings scan requested scanningActorReady=\(scanningActor != nil, privacy: .public) ssdpActorReady=\(ssdpActor != nil, privacy: .public) scanIpAutomatically=\(scanIpAutomatically, privacy: .public) visibleDeviceCount=\(devices.count, privacy: .public)"
+        )
         Task {
+            guard let scanningActor, let ssdpActor else {
+                Log.scanning.warning("Manual settings scan skipped because discovery actors are not ready")
+                return
+            }
+
             self.isScanning = true
             defer {
                  self.isScanning = false
             }
 
-            await self.scanningActor.scanIPV4Once()
+            Log.scanning.notice("Manual settings scan starting IPV4 and one-shot SSDP")
+            await withDiscardingTaskGroup { taskGroup in
+                taskGroup.addTask {
+                    await scanningActor.scanIPV4Once()
+                }
+                taskGroup.addTask {
+                    await ssdpActor.scanSSDPOnce()
+                }
+            }
+            Log.scanning.notice("Manual settings scan completed IPV4 and one-shot SSDP")
         }
     }
     #endif
@@ -98,6 +115,18 @@ struct SettingsView: View {
         allDevices?.filter { $0.hiddenAt != nil} ?? []
     }
 
+    private var allDeviceIds: [String] {
+        (deviceListLoader.devices ?? []) + (hiddenDeviceListLoader.devices ?? [])
+    }
+
+    private var allDeviceRefreshKey: String {
+        "\(allDeviceIds.joined(separator: "|"))-\(deviceListLoader.revision)-\(hiddenDeviceListLoader.revision)"
+    }
+
+    private var unreadMessages: Int {
+        messageLoader.unreadCount
+    }
+
     var body: some View {
         if runningInPreview {
             bodyContent
@@ -111,17 +140,32 @@ struct SettingsView: View {
                     Log.lifecycle.notice("Closing \(#fileID, privacy: .public) view")
                 }
                 .onAppear {
+                    Log.scanning.notice(
+                        "SettingsView creating discovery actors scanIpAutomatically=\(scanIpAutomatically, privacy: .public)"
+                    )
                     scanningActor = DeviceDiscoveryActor()
                     ssdpActor = DeviceDiscoveryActor()
 
                 }
+                .task(id: allDeviceRefreshKey) {
+                    allDevices = await RoamDataHandler.shared.requestAllDevices(allDeviceIds)
+                }
 #if !os(watchOS)
                 .task(id: "\(scanIpAutomatically)", priority: .background) {
-                    if !scanIpAutomatically {
+                    Log.scanning.notice(
+                        "SettingsView automatic SSDP task fired actorReady=\(ssdpActor != nil, privacy: .public) scanIpAutomatically=\(scanIpAutomatically, privacy: .public)"
+                    )
+                    guard scanIpAutomatically else {
+                        Log.scanning.notice("SettingsView automatic SSDP task skipping because scanIpAutomatically is false")
+                        return
+                    }
+                    guard let ssdpActor else {
+                        Log.scanning.warning("SettingsView automatic SSDP task skipping because ssdpActor is nil")
                         return
                     }
 
                     await ssdpActor.scanSSDPContinually()
+                    Log.scanning.notice("SettingsView automatic continual SSDP scan returned")
                 }
 #endif
 #if !os(watchOS) && !os(macOS)
@@ -149,17 +193,19 @@ struct SettingsView: View {
                         DeviceListItem(device: device, idx: idx)
                     }
                     .onDelete { indexSet in
-                        // TODO: Move this into some async-compatible iterator so cancel if one fails
-                        for index in indexSet {
-                            if let model = devices[safe: index] {
-                                let pid = model.id
-                                Task {
-                                    do {
-                                        try await RoamDataHandler.shared.deleteDevice(id: pid)
-                                    } catch let error as DataHandlerError {
-                                        Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
-                                        deviceError = error
-                                    }
+                        let devicesToDelete = indexSet.compactMap { devices[safe: $0] }
+                        Task {
+                            for model in devicesToDelete {
+                                do {
+                                    try await RoamDataHandler.shared.deleteDevice(id: model.id)
+                                } catch let error as DataHandlerError {
+                                    Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
+                                    deviceError = error
+                                    return
+                                } catch {
+                                    Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
+                                    deviceError = error
+                                    return
                                 }
                             }
                         }
@@ -343,9 +389,8 @@ struct SettingsView: View {
                                 HiddenDeviceListItem(device: device)
                             }
                             .onDelete { indexSet in
-                                // TODO: Move this into some async-compatible iterator so cancel if one fails
                                 for index in indexSet {
-                                    if let model = devices[safe: index] {
+                                    if let model = hiddenDevices[safe: index] {
                                         let pid = model.id
                                         Task {
                                             do {

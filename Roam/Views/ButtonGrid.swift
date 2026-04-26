@@ -72,10 +72,7 @@ struct ButtonGrid: View {
                             .disabled(disabled.contains(button.2))
                             .breatheEffect(enabled.contains(button.2))
                             .symbolEffect(.bounce, value: pressCounter(button.2))
-#if os(macOS)
-                            .tint(Color.secondary)
-                            .buttonStyle(.borderedProminent)
-#endif
+                            .buttonStyle(LiquidGlassButtonStyle())
 #if !os(visionOS)
                             .sensoryFeedback(.impact, trigger: pressCounter(button.2))
 

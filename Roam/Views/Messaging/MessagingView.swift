@@ -9,9 +9,7 @@ struct MessageView: View {
     @State private var messageFieldText = ""
     @State private var attachedFiles: [SelectedAttachment] = []
 
-    // TODO: Handle updating these unread messages from messageStreamer
-    //    @State private var messageStream: MessageStreamer = RoamDataHandler.shared.getStreamere)
-    @State private var baseMessages: [Message]?
+    @State private var messageLoader = MessageListLoader(dataHandler: .shared)
     @State private var textEditorHeight: CGFloat = 100
     @State private var refreshInterval: TimeInterval = 20
     @State private var refreshResetId = UUID()
@@ -28,7 +26,7 @@ struct MessageView: View {
         let lastSupportTypingDate = Date(timeIntervalSince1970: lastSupportTypingTimeInterval)
 
         if lastSupportTypingDate > Date.now.addingTimeInterval(-8) {
-            if let lastSupportMessage = baseMessages?.last(where: { $0.author == .support })?.timestamp {
+            if let lastSupportMessage = messageLoader.messages?.last(where: { $0.author == .support })?.timestamp {
                 return lastSupportMessage < lastSupportTypingDate.addingTimeInterval(-2)
             } else {
                 return true
@@ -87,7 +85,7 @@ struct MessageView: View {
                 author: .support,
                 fetchedBackend: false
             )]
-            + (baseMessages ?? [])
+            + (messageLoader.messages ?? [])
                 .filter{!$0.hidden}
             + [roboMessage].compactMap({$0})
         ).filter { !$0.message.isEmpty || !$0.sentAttachments.isEmpty || $0.unsentAttachment != nil }
@@ -138,6 +136,9 @@ struct MessageView: View {
                     #endif
                     UNUserNotificationCenter.current().removeAllDeliveredNotifications()
                     UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+                    Task {
+                        try? await RoamDataHandler.shared.markMessagesViewed()
+                    }
                 }
 
 #if os(macOS)
@@ -353,22 +354,15 @@ struct MessageView: View {
             }
             Log.userInteraction.notice("Refreshing \("messages", privacy: .public)")
             try? await Task.sleep(nanoseconds: 1000 * 1000 * 1000)
-            let latestMessageId = messages.last { $0.fetchedBackend == true }?.id
+            if hasSentFirstMessage || messages.contains(where: { $0.fetchedBackend }) {
+                let result = await RoamDataHandler.shared.refreshMessages(viewed: true)
+                Log.userInteraction.notice("Got \(result, privacy: .public) message updates")
 
-            if latestMessageId != nil {
-                // TODO: Implemnt this
-//                let result = await MessageDataHandler.shared.refreshMessages(
-//                    viewed: true
-//                )
-//                Log.userInteraction.notice("Got results \(result, privacy: .public)")
-//
-//                if result > 0 {
-//                    refreshInterval = 10
-//                } else {
-//                    if refreshInterval < 60 {
-//                        refreshInterval = min(refreshInterval * 2, 60)
-//                    }
-//                }
+                if result > 0 {
+                    refreshInterval = 10
+                } else if refreshInterval < 60 {
+                    refreshInterval = min(refreshInterval * 2, 60)
+                }
             }
 
             Log.userInteraction.notice("Sleeping for \(refreshInterval, privacy: .public)s")
@@ -451,21 +445,16 @@ struct MessageView: View {
         }
         Log.userInteraction.notice("Sending message \"\(messageText, privacy: .public)\" with attachment \(attachment?.filename ?? "--", privacy: .public) attachments")
         Task {
-            // TODO: Implement this
-//            do {
-//                try await MessageDataHandler.shared.sendChatMessage(message: messageCopy, attachment: attachment)
-//
-//                Task {
-//                    let result = await MessageDataHandler.shared.refreshMessages(
-//                        viewed: true
-//                    )
-//                    if result > 0 {
-//                        refreshResetId = UUID()
-//                    }
-//                }
-//            } catch {
-//                Log.userInteraction.error("Error sending message \(error, privacy: .public)")
-//            }
+            do {
+                try await RoamDataHandler.shared.sendChatMessage(message: messageCopy, attachment: attachment)
+
+                let result = await RoamDataHandler.shared.refreshMessages(viewed: true)
+                if result > 0 {
+                    refreshResetId = UUID()
+                }
+            } catch {
+                Log.userInteraction.error("Error sending message \(error, privacy: .public)")
+            }
         }
         if !hasSentFirstMessage {
             lastApnsRequestTime = Date.now.timeIntervalSince1970

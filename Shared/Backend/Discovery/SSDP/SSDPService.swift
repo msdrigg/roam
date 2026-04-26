@@ -13,11 +13,11 @@ public struct SSDPService: Sendable {
 
     private static func parse(_ response: String) -> [String: String] {
         var result = [String: String]()
-        let headerRegex = /^(?:[^\\r\\n:]+): (.*)$/.anchorsMatchLineEndings()
+        let headerRegex = /^([^\\r\\n:]+):\s*(.*)$/.anchorsMatchLineEndings()
 
         let matches = response.matches(of: headerRegex)
         for match in matches {
-            let (key, value) = match.output
+            let (_, key, value) = match.output
             result[key.uppercased()] = String(value)
         }
 

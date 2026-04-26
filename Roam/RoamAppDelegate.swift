@@ -108,9 +108,7 @@ final class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
 
     func refreshMessages() {
         Task {
-            // TODO: Implement this for messages
-//            let dataHandler = await MessageDataHandler.shared
-//            await dataHandler.refreshMessagesIfExpectingNewMessages()
+            await RoamDataHandler.shared.refreshMessagesIfExpectingNewMessages()
         }
     }
 
@@ -298,16 +296,14 @@ extension NSApplication {
         }
 
         func refreshMessages(fetchCompletionHandler completionHandler: ((UIBackgroundFetchResult) -> Void)? = nil) {
-            // TODO: Handle this when we update to get messages working
-//            Task {
-//                let refreshResult = await MessageDataHandler.shared.refreshMessagesIfExpectingNewMessages()
-//                if refreshResult > 0 {
-//                    completionHandler?(.newData)
-//                } else {
-//                    completionHandler?(.noData)
-//                }
-//
-//            }
+            Task {
+                let refreshResult = await RoamDataHandler.shared.refreshMessagesIfExpectingNewMessages()
+                if refreshResult > 0 {
+                    completionHandler?(.newData)
+                } else {
+                    completionHandler?(.noData)
+                }
+            }
         }
 
         nonisolated func userNotificationCenter(
@@ -345,14 +341,11 @@ extension NSApplication {
             }
 
             Task {
-                // TODO: Where is fetchSelectedDevice
-//                do {
-//                    let selectedDevice = try? await RoamDataHandler.shared.fetchSelectedDevice()
-//
-//                    if let selectedDevice, ecpMonitor.ecpClient == nil {
-//                        ecpMonitor.setDevice(selectedDevice)
-//                    }
-//                }
+                let selectedDevice = await RoamDataHandler.shared.requestPrimaryDevice()
+
+                if let selectedDevice, ecpMonitor.ecpClient == nil {
+                    ecpMonitor.setDevice(selectedDevice)
+                }
             }
 
             return true

@@ -20,19 +20,19 @@ struct TopBar: View {
             #if !os(watchOS)
             .customKeyboardShortcut(.back)
             #endif
-            #if os(macOS)
-            .buttonStyle(.borderedProminent)
-            .tint(Color.secondary)
-            #endif
+            .buttonStyle(LiquidGlassButtonStyle(isProminent: true))
             #if !os(visionOS)
             .sensoryFeedback(.impact, trigger: pressCounter(.back))
             #endif
             .symbolEffect(.bounce, value: pressCounter(.back))
 
-            Button("Power On/Off", systemImage: "power", role: .destructive, action: { action(.power) })
-                .font(.title)
-                .foregroundStyle(.red)
-                .buttonStyle(.plain)
+            Button(role: .destructive, action: { action(.power) }, label: {
+                Label("Power On/Off", systemImage: "power")
+                    .frame(width: buttonWidth, height: buttonHeight)
+                    .font(.title)
+                    .foregroundStyle(.red)
+            })
+                .buttonStyle(LiquidGlassButtonStyle())
             #if !os(visionOS)
                 .sensoryFeedback(.impact, trigger: pressCounter(.power))
             #endif
@@ -45,10 +45,7 @@ struct TopBar: View {
                 Label("Home", systemImage: "house")
                     .frame(width: buttonWidth, height: buttonHeight)
             })
-            #if os(macOS)
-            .buttonStyle(.borderedProminent)
-            .tint(Color.secondary)
-            #endif
+            .buttonStyle(LiquidGlassButtonStyle(isProminent: true))
             #if !os(watchOS)
             .customKeyboardShortcut(.home)
             #endif

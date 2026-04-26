@@ -277,7 +277,12 @@ public func uploadApnsToken(_ token: String) async throws {
     }
 }
 
-public func sendMessageDirect(message: String?, attachment: AttachmentUpload?, attachmentData: Data? = nil) async -> Result<MessageModelResponse, UploadError> {
+public func sendMessageDirect(
+    message: String?,
+    attachment: AttachmentUpload?,
+    attachmentData: Data? = nil,
+    nonce: String? = nil
+) async -> Result<MessageModelResponse, UploadError> {
     guard let url = URL(string: "\(globalBackendURL)/v2/new-message") else {
         return .failure(.failed(.invalidURL))
     }
@@ -311,7 +316,7 @@ public func sendMessageDirect(message: String?, attachment: AttachmentUpload?, a
         userId: userId,
         installationInfo: InstallationInfo(),
         attachment: workersAttachment,
-        nonce: nil
+        nonce: nonce
     )
     let encoder = JSONEncoder()
     encoder.dataEncodingStrategy = .base64

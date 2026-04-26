@@ -13,6 +13,7 @@ struct DeviceDetailView: View {
     @State private var errorMessage: String = ""
 
     @State private var deviceLoader: DeviceLoader
+    @State private var lastSyncedFormSignature: String?
 
     private var runningInPreview: Bool {
         ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
@@ -46,6 +47,10 @@ struct DeviceDetailView: View {
         }
     }
 
+    var currentFormSignature: String {
+        formSignature(deviceName: deviceName, deviceIP: deviceIP, hidden: hidden)
+    }
+
     var body: some View {
         if runningInPreview {
             bodyContent
@@ -54,6 +59,7 @@ struct DeviceDetailView: View {
                 .onChange(of: device?.name) { _, new in
                     if let new = new {
                         deviceName = new
+                        lastSyncedFormSignature = currentFormSignature
                     }
                 }
                 .onChange(of: device?.location) { _, new in
@@ -61,10 +67,12 @@ struct DeviceDetailView: View {
                         let host = getHostPortDisplay(from: new)
                         Log.userInteraction.notice("Seeing host \(host, privacy: .public) in change")
                         deviceIP = host
+                        lastSyncedFormSignature = currentFormSignature
                     }
                 }
                 .onChange(of: device?.hiddenAt) { _, newHiddenAt in
                     hidden = newHiddenAt != nil
+                    lastSyncedFormSignature = currentFormSignature
                 }
                 .onAppear {
                     scanningActor = DeviceDiscoveryActor()
@@ -76,6 +84,7 @@ struct DeviceDetailView: View {
                     Log.userInteraction.notice("Seeing host \(host, privacy: .public)")
                     deviceIP = host
                     hidden = device?.hiddenAt != nil
+                    lastSyncedFormSignature = currentFormSignature
                 }
                 .onDisappear {
                     if addressValidation != nil || nameValidation != nil {
@@ -248,7 +257,11 @@ struct DeviceDetailView: View {
             Log.userInteraction.notice("Saving device settings due to submit--\(deviceIP)-\(hidden)-\(deviceName)")
             save()
         }
-        .onChange(of: "\(deviceIP)-\(hidden)-\(deviceName)", initial: false) {
+        .onChange(of: currentFormSignature, initial: false) { _, newSignature in
+            guard newSignature != lastSyncedFormSignature else {
+                return
+            }
+
             Log.userInteraction.notice("Autosaving device settings")
             save()
         }
@@ -256,23 +269,26 @@ struct DeviceDetailView: View {
         .alertingError(message: errorMessage, error: $deviceError)
     }
 
+    func formSignature(deviceName: String, deviceIP: String, hidden: Bool) -> String {
+        "\(deviceIP)-\(hidden)-\(deviceName)"
+    }
+
     func save() {
-        if let device = device {
+        if var device = device {
             let cleanedString = deviceIP.trimmingCharacters(in: .whitespacesAndNewlines)
                 .replacingOccurrences(of: "\"", with: "").replacingOccurrences(of: "'", with: "")
             let deviceUrl = addSchemeAndPort(to: cleanedString)
             Log.data.notice("Getting device url \(deviceUrl, privacy: .public)")
 
+            device.name = deviceName
+            device.location = deviceUrl
+            device.hiddenAt = hidden ? (device.hiddenAt ?? Date.now) : nil
+
             let dh = RoamDataHandler.shared
             Task {
                 do {
                     try await dh.setDeviceDetails(device: device)
-
-#if !os(watchOS)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        dismiss()
-                    }
-#endif
+                    lastSyncedFormSignature = currentFormSignature
                 } catch {
                     Log.data.info("Error updating device \(error, privacy: .public)")
                     errorMessage = "Failed to Save Device Settings"

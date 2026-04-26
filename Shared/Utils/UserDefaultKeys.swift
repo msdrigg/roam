@@ -26,4 +26,5 @@ enum UserDefaultKeys {
     static let firstInstallVersion: String = "firstInstallVersion"
     static let alreadyResetHideShortcut: String = "alreadyResetHideShortcut"
     static let didMigrateOffSwiftData: String = "didMigrateOffSwiftData"
+    static let didMigrateFileDataToGRDB: String = "didMigrateFileDataToGRDB"
 }

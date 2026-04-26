@@ -1,10 +1,59 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Message List Loader
+@Observable @MainActor
+class MessageListLoader: RegistrationListener {
+    var messages: [Message]?
+    var unreadCount: Int = 0
+    var isLoading: Bool = false
+
+    private let dataHandler: RoamDataHandler
+    private let registrationToken: RegistrationToken
+
+    init(dataHandler: RoamDataHandler) {
+        self.dataHandler = dataHandler
+        self.registrationToken = dataHandler.token()
+        self.isLoading = true
+
+        Task {
+            await dataHandler.register(self.registrationToken, self)
+            await dataHandler.registerForChange(registrationToken, change: .updateMessages)
+            await self.messagesUpdated(
+                messages: dataHandler.requestMessages(),
+                unreadCount: dataHandler.requestUnreadMessageCount()
+            )
+        }
+    }
+
+    deinit {
+        let dataHandler = self.dataHandler
+        let registrationToken = self.registrationToken
+        Task {
+            await dataHandler.unregister(registrationToken)
+        }
+    }
+
+    func messagesUpdated(messages: [Message], unreadCount: Int) {
+        self.messages = messages
+        self.unreadCount = unreadCount
+        self.isLoading = false
+    }
+
+    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String)  { }
+    func deviceDetailUpdated(for deviceId: String, device: Device?)  { }
+    func deviceListUpdated(devices: [String])  { }
+    func hiddenDeviceListUpdated(devices: [String])  { }
+    func primaryDeviceUpdated(device: Device?)  { }
+    func primaryAppsUpdated(apps: [AppLink]?)  { }
+    func deviceAppsUpdated(for deviceId: String, apps: [AppLink])  { }
+}
+
 // MARK: - Device List Loader
 @Observable @MainActor
 class DeviceListLoader: RegistrationListener {
     var devices: [String]?
+    var revision: Int = 0
     var isLoading: Bool = false
 
     private let dataHandler: RoamDataHandler
@@ -33,6 +82,7 @@ class DeviceListLoader: RegistrationListener {
     // MARK: - RegistrationListener Implementation
     func deviceListUpdated(devices: [String])  {
         self.devices = devices
+        self.revision += 1
         self.isLoading = false
     }
 
@@ -48,6 +98,7 @@ class DeviceListLoader: RegistrationListener {
 @Observable @MainActor
 class HiddenDeviceListLoader: RegistrationListener {
     var devices: [String]?
+    var revision: Int = 0
     var isLoading: Bool = false
 
     private let dataHandler: RoamDataHandler
@@ -76,6 +127,7 @@ class HiddenDeviceListLoader: RegistrationListener {
     // MARK: - RegistrationListener Implementation
     func hiddenDeviceListUpdated(devices: [String])  {
         self.devices = devices
+        self.revision += 1
         self.isLoading = false
     }
 

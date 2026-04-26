@@ -221,7 +221,14 @@ actor ECPWebsocketClient: Sendable {
             }
 
             let decoder = XMLStreamDecoder()
-            let apps = try decoder.decode(Apps.self, from: data)
+            let apps: Apps
+            do {
+                apps = try decoder.decode(Apps.self, from: data)
+            } catch {
+                let responseBody = String(bytes: data, encoding: .utf8) ?? data.toHexString()
+                Log.connection.error("Error decoding Apps response \(error, privacy: .public). Received \(data.count, privacy: .public) bytes: \(responseBody, privacy: .public)")
+                throw error
+            }
 
             return apps
         }

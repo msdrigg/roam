@@ -74,7 +74,6 @@
 		AF21300C2DFF35E300B3F2D6 /* DispatchQueueExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF21300B2DFF35E300B3F2D6 /* DispatchQueueExtension.swift */; };
 		AF21300D2DFF35E300B3F2D6 /* DispatchQueueExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF21300B2DFF35E300B3F2D6 /* DispatchQueueExtension.swift */; };
 		AF21300E2DFF35E300B3F2D6 /* DispatchQueueExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF21300B2DFF35E300B3F2D6 /* DispatchQueueExtension.swift */; };
-		AF21300F2DFF35EC00B3F2D6 /* DispatchQueueExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF21300B2DFF35E300B3F2D6 /* DispatchQueueExtension.swift */; };
 		AF2130102DFF35F300B3F2D6 /* DispatchQueueExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF21300B2DFF35E300B3F2D6 /* DispatchQueueExtension.swift */; };
 		AF2480582BDB42F600EF47AE /* TestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2480572BDB42F600EF47AE /* TestData.swift */; };
 		AF2480592BDB42F600EF47AE /* TestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2480572BDB42F600EF47AE /* TestData.swift */; };
@@ -101,22 +100,6 @@
 		AF3446AA2D5FE62A0037EFC8 /* Importers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3446A82D5FE6280037EFC8 /* Importers.swift */; };
 		AF3446AC2D5FE8CF0037EFC8 /* WrongAttempts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3446AB2D5FE8CC0037EFC8 /* WrongAttempts.swift */; };
 		AF3446AD2D5FE8CF0037EFC8 /* WrongAttempts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3446AB2D5FE8CC0037EFC8 /* WrongAttempts.swift */; };
-		AF344FE82D42D35000179FE0 /* RoamCLI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF344FE62D42D35000179FE0 /* RoamCLI.swift */; };
-		AF344FEB2D42D3BE00179FE0 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = AF344FEA2D42D3BE00179FE0 /* ArgumentParser */; };
-		AF344FEC2D42DB6C00179FE0 /* ECPWebsocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A22D370DA700A167B2 /* ECPWebsocket.swift */; };
-		AF344FED2D42DB7700179FE0 /* ECPMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */; };
-		AF344FEE2D42DB7F00179FE0 /* ECPProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A52D37183600A167B2 /* ECPProtocol.swift */; };
-		AF344FEF2D42DB8C00179FE0 /* RemoteButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E68B2ADDDF450036EC90 /* RemoteButton.swift */; };
-		AF344FF02D42E1C500179FE0 /* APIHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82942AEBFB4600CBE7F8 /* APIHelpers.swift */; };
-		AF344FF42D42E24D00179FE0 /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0D09EE2CDE5C3B0098122E /* Helpers.swift */; };
-		AF344FF52D42E27000179FE0 /* StatelessDeviceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C82922AEBFA7500CBE7F8 /* StatelessDeviceAPI.swift */; };
-		AF344FF62D42E28500179FE0 /* AppLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E68D2ADDE2BC0036EC90 /* AppLink.swift */; };
-		AF344FF92D42E30500179FE0 /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */; };
-		AF344FFA2D42E32700179FE0 /* DeviceApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA3B2AE6BFC300A42DFF /* DeviceApi.swift */; };
-		AF344FFB2D42E33700179FE0 /* ImageDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3F35082D3E9230009AF2F8 /* ImageDecoder.swift */; };
-		AF344FFC2D42E6BC00179FE0 /* AsyncHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA132AE4471200A42DFF /* AsyncHelpers.swift */; };
-		AF344FFD2D42E76600179FE0 /* DataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA222AE455B400A42DFF /* DataHelpers.swift */; };
-		AF344FFE2D42E9D200179FE0 /* NetworkHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF95B74F2ADF43FD005FC338 /* NetworkHelpers.swift */; };
 		AF35038F2BB499F3004F4337 /* RoamWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AF27400B2AE02C25007C6208 /* RoamWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AF35ACEB2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF35ACEA2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift */; };
 		AF35ACF22BA3D6B200CC8B36 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AF35ACF12BA3D21F00CC8B36 /* PrivacyInfo.xcprivacy */; };
@@ -158,7 +141,6 @@
 		AF60A7DE2E36CDEE00D1D16B /* DataLoaders.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF60A7DD2E36CDEC00D1D16B /* DataLoaders.swift */; };
 		AF60A7DF2E36CDEE00D1D16B /* DataLoaders.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF60A7DD2E36CDEC00D1D16B /* DataLoaders.swift */; };
 		AF60A7E02E36CDEE00D1D16B /* DataLoaders.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF60A7DD2E36CDEC00D1D16B /* DataLoaders.swift */; };
-		AF60A7E12E36DFA000D1D16B /* DataHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE6249C2BDCAA5000F4992E /* DataHandler.swift */; };
 		AF65A88A2BB5ABF9005ECF7F /* RoamAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF65A8892BB5ABF9005ECF7F /* RoamAppDelegate.swift */; };
 		AF65A88C2BB5AD02005ECF7F /* ExternalAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF65A88B2BB5AD02005ECF7F /* ExternalAboutView.swift */; };
 		AF68F2842D41EC2700F39530 /* DataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA222AE455B400A42DFF /* DataHelpers.swift */; };
@@ -245,6 +227,19 @@
 		AFD590D62AEC787700189620 /* ModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D52AEC787700189620 /* ModelContainer.swift */; };
 		AFD590D72AEC787700189620 /* ModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D52AEC787700189620 /* ModelContainer.swift */; };
 		AFD590D82AEC787700189620 /* ModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D52AEC787700189620 /* ModelContainer.swift */; };
+		AFD100102F00000100000001 /* DatabaseFileLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100002F00000100000001 /* DatabaseFileLock.swift */; };
+		AFD100112F00000100000001 /* RoamDataSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100012F00000100000001 /* RoamDataSnapshot.swift */; };
+		AFD100122F00000100000001 /* RoamDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100022F00000100000001 /* RoamDatabase.swift */; };
+		AFD100132F00000100000001 /* DatabaseFileLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100002F00000100000001 /* DatabaseFileLock.swift */; };
+		AFD100142F00000100000001 /* RoamDataSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100012F00000100000001 /* RoamDataSnapshot.swift */; };
+		AFD100152F00000100000001 /* RoamDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100022F00000100000001 /* RoamDatabase.swift */; };
+		AFD100162F00000100000001 /* DatabaseFileLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100002F00000100000001 /* DatabaseFileLock.swift */; };
+		AFD100172F00000100000001 /* RoamDataSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100012F00000100000001 /* RoamDataSnapshot.swift */; };
+		AFD100182F00000100000001 /* RoamDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100022F00000100000001 /* RoamDatabase.swift */; };
+		AFD100322F00000100000001 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = AFD100312F00000100000001 /* GRDB */; };
+		AFD100332F00000100000001 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = AFD100312F00000100000001 /* GRDB */; };
+		AFD100342F00000100000001 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = AFD100312F00000100000001 /* GRDB */; };
+		AFD100412F00000100000001 /* RoamDatabaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100402F00000100000001 /* RoamDatabaseTests.swift */; };
 		AFD9C4DB2AE97FE100C4079C /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA165BF2AE92F92003F45ED /* AboutView.swift */; };
 		AFD9C4DF2AE9801400C4079C /* SmallAppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD9C4DC2AE9800500C4079C /* SmallAppView.swift */; };
 		AFD9C4E32AE9808E00C4079C /* Device.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6872ADDDE110036EC90 /* Device.swift */; };
@@ -277,7 +272,6 @@
 		AFDB4FFE2D53C7B7004E27A4 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
 		AFDB4FFF2D53C7B7004E27A4 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
 		AFDB50002D53C7B7004E27A4 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
-		AFDB50012D53C7BB004E27A4 /* Loggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2B68E2D4FEBBD00A6F3B0 /* Loggers.swift */; };
 		AFE6249D2BDCAA5000F4992E /* DataHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE6249C2BDCAA5000F4992E /* DataHandler.swift */; };
 		AFE6249E2BDCAA5000F4992E /* DataHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE6249C2BDCAA5000F4992E /* DataHandler.swift */; };
 		AFE6249F2BDCAA5000F4992E /* DataHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE6249C2BDCAA5000F4992E /* DataHandler.swift */; };
@@ -364,14 +358,6 @@
 				AF15C2532AE8672800B79FD9 /* Roam.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
-		};
-		AF344FDD2D42D34A00179FE0 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolder = None;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
 		};
 		AF3503692BB493F4004F4337 /* Embed App Clips */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -462,8 +448,6 @@
 		AF3446A52D5FE5D50037EFC8 /* AttachmentError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentError.swift; sourceTree = "<group>"; };
 		AF3446A82D5FE6280037EFC8 /* Importers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Importers.swift; sourceTree = "<group>"; };
 		AF3446AB2D5FE8CC0037EFC8 /* WrongAttempts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WrongAttempts.swift; sourceTree = "<group>"; };
-		AF344FDF2D42D34A00179FE0 /* roam-cli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "roam-cli"; sourceTree = BUILT_PRODUCTS_DIR; };
-		AF344FE62D42D35000179FE0 /* RoamCLI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamCLI.swift; sourceTree = "<group>"; };
 		AF35ACEA2BA3994200CC8B36 /* KeyboardMonitorUIKit.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KeyboardMonitorUIKit.swift; sourceTree = "<group>"; };
 		AF35ACF12BA3D21F00CC8B36 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AF38A1802D29E3EC00980D41 /* RoamWidgetsMacOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RoamWidgetsMacOS.entitlements; sourceTree = "<group>"; };
@@ -563,6 +547,10 @@
 		AFD590D12AEC692700189620 /* IPhoneConnector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPhoneConnector.swift; sourceTree = "<group>"; };
 		AFD590D32AEC6B4600189620 /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS17.0.sdk/System/Library/Frameworks/WatchConnectivity.framework; sourceTree = DEVELOPER_DIR; };
 		AFD590D52AEC787700189620 /* ModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelContainer.swift; sourceTree = "<group>"; };
+		AFD100002F00000100000001 /* DatabaseFileLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseFileLock.swift; sourceTree = "<group>"; };
+		AFD100012F00000100000001 /* RoamDataSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamDataSnapshot.swift; sourceTree = "<group>"; };
+		AFD100022F00000100000001 /* RoamDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamDatabase.swift; sourceTree = "<group>"; };
+		AFD100402F00000100000001 /* RoamDatabaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamDatabaseTests.swift; sourceTree = "<group>"; };
 		AFD9C4DC2AE9800500C4079C /* SmallAppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmallAppView.swift; sourceTree = "<group>"; };
 		AFD9C4E02AE9802200C4079C /* SmallRemoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmallRemoteView.swift; sourceTree = "<group>"; };
 		AFDB19A12C0D8D4E00C4DAB7 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
@@ -593,20 +581,16 @@
 		AF15C2432AE8672700B79FD9 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				AFD100332F00000100000001 /* GRDB in Frameworks */,
 				AF0042832AEAA3ED0051BB1E /* libwebp in Frameworks */,
 			);
 		};
 		AF2740082AE02C25007C6208 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				AFD100342F00000100000001 /* GRDB in Frameworks */,
 				AF27400D2AE02C25007C6208 /* SwiftUI.framework in Frameworks */,
 				AF27400C2AE02C25007C6208 /* WidgetKit.framework in Frameworks */,
-			);
-		};
-		AF344FDC2D42D34A00179FE0 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			files = (
-				AF344FEB2D42D3BE00179FE0 /* ArgumentParser in Frameworks */,
 			);
 		};
 		AFA21D2E2C2C7C83008EF24A /* Frameworks */ = {
@@ -622,6 +606,7 @@
 		AFC24EF82AD0E5A1002AB66C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				AFD100322F00000100000001 /* GRDB in Frameworks */,
 				AFECDE1D2AE18511003F6676 /* Opus in Frameworks */,
 			);
 		};
@@ -657,6 +642,7 @@
 			isa = PBXGroup;
 			children = (
 				AF6D56122DCE50DD00B00780 /* LinkedListTests.swift */,
+				AFD100402F00000100000001 /* RoamDatabaseTests.swift */,
 				AF0532832D36DB2B00D68F8E /* RoamSwiftTests.swift */,
 			);
 			path = RoamSwiftTests;
@@ -745,14 +731,6 @@
 			path = RoamWidgets;
 			sourceTree = "<group>";
 		};
-		AF344FE72D42D35000179FE0 /* RoamCLI */ = {
-			isa = PBXGroup;
-			children = (
-				AF344FE62D42D35000179FE0 /* RoamCLI.swift */,
-			);
-			path = RoamCLI;
-			sourceTree = "<group>";
-		};
 		AF4D5F322AD4355E0055AF35 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -768,6 +746,7 @@
 		AF56E3AF2AD97AA300F5E6E0 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				AFD100032F00000100000001 /* Database */,
 				AFC6E6872ADDDE110036EC90 /* Device.swift */,
 				AFC6E68D2ADDE2BC0036EC90 /* AppLink.swift */,
 				AFBDE4532DD5340F00DD1741 /* FileLock.swift */,
@@ -781,6 +760,16 @@
 				AFE6249C2BDCAA5000F4992E /* DataHandler.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		AFD100032F00000100000001 /* Database */ = {
+			isa = PBXGroup;
+			children = (
+				AFD100002F00000100000001 /* DatabaseFileLock.swift */,
+				AFD100012F00000100000001 /* RoamDataSnapshot.swift */,
+				AFD100022F00000100000001 /* RoamDatabase.swift */,
+			);
+			path = Database;
 			sourceTree = "<group>";
 		};
 		AF56E3BA2AD9863100F5E6E0 /* Views */ = {
@@ -924,7 +913,6 @@
 				AFA21D322C2C7C83008EF24A /* RoamWatchUITests */,
 				AFA21D412C2C7CB6008EF24A /* RoamUITests */,
 				AF0532842D36DB2B00D68F8E /* RoamSwiftTests */,
-				AF344FE72D42D35000179FE0 /* RoamCLI */,
 				AFC24EFC2AD0E5A1002AB66C /* Products */,
 				AF4D5F322AD4355E0055AF35 /* Frameworks */,
 			);
@@ -939,7 +927,6 @@
 				AFA21D312C2C7C83008EF24A /* RoamWatchUITests.xctest */,
 				AFA21D402C2C7CB6008EF24A /* RoamUITests.xctest */,
 				AFEDCDF42CD1331E0001D959 /* RoamSwiftTests.xctest */,
-				AF344FDF2D42D34A00179FE0 /* roam-cli */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1044,6 +1031,7 @@
 			name = RoamWatch;
 			packageProductDependencies = (
 				AF0042822AEAA3ED0051BB1E /* libwebp */,
+				AFD100312F00000100000001 /* GRDB */,
 			);
 			productName = "RoamWatch Watch App";
 			productReference = AF15C2462AE8672700B79FD9 /* Roam.app */;
@@ -1060,27 +1048,12 @@
 			buildRules = (
 			);
 			name = RoamWidgets;
+			packageProductDependencies = (
+				AFD100312F00000100000001 /* GRDB */,
+			);
 			productName = BetterRemoteWidgetsExtension;
 			productReference = AF27400B2AE02C25007C6208 /* RoamWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
-		};
-		AF344FDE2D42D34A00179FE0 /* roam-cli */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = AF344FE52D42D34A00179FE0 /* Build configuration list for PBXNativeTarget "roam-cli" */;
-			buildPhases = (
-				AF344FDB2D42D34A00179FE0 /* Sources */,
-				AF344FDC2D42D34A00179FE0 /* Frameworks */,
-				AF344FDD2D42D34A00179FE0 /* CopyFiles */,
-			);
-			buildRules = (
-			);
-			name = "roam-cli";
-			packageProductDependencies = (
-				AF344FEA2D42D3BE00179FE0 /* ArgumentParser */,
-			);
-			productName = RoamCLI;
-			productReference = AF344FDF2D42D34A00179FE0 /* roam-cli */;
-			productType = "com.apple.product-type.tool";
 		};
 		AFA21D302C2C7C83008EF24A /* RoamWatchUITests */ = {
 			isa = PBXNativeTarget;
@@ -1140,6 +1113,7 @@
 			);
 			name = Roam;
 			packageProductDependencies = (
+				AFD100312F00000100000001 /* GRDB */,
 				AFECDE1C2AE18511003F6676 /* Opus */,
 			);
 			productName = BetterRemote;
@@ -1179,9 +1153,6 @@
 					};
 					AF27400A2AE02C25007C6208 = {
 						CreatedOnToolsVersion = 15.0;
-					};
-					AF344FDE2D42D34A00179FE0 = {
-						CreatedOnToolsVersion = 16.2;
 					};
 					AFA21D302C2C7C83008EF24A = {
 						CreatedOnToolsVersion = 16.0;
@@ -1224,7 +1195,7 @@
 			packageReferences = (
 				AFECDE1B2AE18511003F6676 /* XCRemoteSwiftPackageReference "swift-opus" */,
 				AF0042812AEAA3ED0051BB1E /* XCRemoteSwiftPackageReference "libwebp-Xcode" */,
-				AF344FE92D42D3B600179FE0 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
+				AFD100302F00000100000001 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
 			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = AFC24EFC2AD0E5A1002AB66C /* Products */;
@@ -1237,7 +1208,6 @@
 				AFA21D302C2C7C83008EF24A /* RoamWatchUITests */,
 				AFA21D3F2C2C7CB6008EF24A /* RoamUITests */,
 				AFEDCDF32CD1331E0001D959 /* RoamSwiftTests */,
-				AF344FDE2D42D34A00179FE0 /* roam-cli */,
 			);
 		};
 /* End PBXProject section */
@@ -1337,9 +1307,12 @@
 		AF15C2422AE8672700B79FD9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
-				AF70BB0B2BA7CBD3009A06EC /* PaddedHoverButtonStyle.swift in Sources */,
-				AFE6249E2BDCAA5000F4992E /* DataHandler.swift in Sources */,
-				AFE89A2E2B9EBBD30078387C /* Debugger.swift in Sources */,
+					AF70BB0B2BA7CBD3009A06EC /* PaddedHoverButtonStyle.swift in Sources */,
+					AFE6249E2BDCAA5000F4992E /* DataHandler.swift in Sources */,
+					AFD100132F00000100000001 /* DatabaseFileLock.swift in Sources */,
+					AFD100142F00000100000001 /* RoamDataSnapshot.swift in Sources */,
+					AFD100152F00000100000001 /* RoamDatabase.swift in Sources */,
+					AFE89A2E2B9EBBD30078387C /* Debugger.swift in Sources */,
 				AFD9C4FA2AE983B300C4079C /* SSDPDiscovery.swift in Sources */,
 				AF0042862AEABA9D0051BB1E /* CollectionHelpers.swift in Sources */,
 				AFD9C4E72AE980A800C4079C /* LaunchAppIntent.swift in Sources */,
@@ -1419,8 +1392,11 @@
 		AF2740072AE02C25007C6208 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
-				AFD9C4F22AE9828600C4079C /* SmallRemoteView.swift in Sources */,
-				AF468D382D333A9E00DF0F2E /* QSocket.swift in Sources */,
+					AFD9C4F22AE9828600C4079C /* SmallRemoteView.swift in Sources */,
+					AFD100162F00000100000001 /* DatabaseFileLock.swift in Sources */,
+					AFD100172F00000100000001 /* RoamDataSnapshot.swift in Sources */,
+					AFD100182F00000100000001 /* RoamDatabase.swift in Sources */,
+					AF468D382D333A9E00DF0F2E /* QSocket.swift in Sources */,
 				AF1899F62C1CDF83001EDA78 /* NavigationDestination.swift in Sources */,
 				AF205B272AE02D0100041CDF /* NetworkHelpers.swift in Sources */,
 				AF205B2B2AE02D1C00041CDF /* ButtonPressIntents.swift in Sources */,
@@ -1478,29 +1454,6 @@
 				AF736A932DCDD9370028A2B4 /* CachedAsyncImage.swift in Sources */,
 			);
 		};
-		AF344FDB2D42D34A00179FE0 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			files = (
-				AF344FFB2D42E33700179FE0 /* ImageDecoder.swift in Sources */,
-				AF344FED2D42DB7700179FE0 /* ECPMessages.swift in Sources */,
-				AF344FEC2D42DB6C00179FE0 /* ECPWebsocket.swift in Sources */,
-				AF344FFE2D42E9D200179FE0 /* NetworkHelpers.swift in Sources */,
-				AF60A7E12E36DFA000D1D16B /* DataHandler.swift in Sources */,
-				AF344FF52D42E27000179FE0 /* StatelessDeviceAPI.swift in Sources */,
-				AF21300F2DFF35EC00B3F2D6 /* DispatchQueueExtension.swift in Sources */,
-				AF344FF62D42E28500179FE0 /* AppLink.swift in Sources */,
-				AF344FF42D42E24D00179FE0 /* Helpers.swift in Sources */,
-				AF344FFD2D42E76600179FE0 /* DataHelpers.swift in Sources */,
-				AF344FEF2D42DB8C00179FE0 /* RemoteButton.swift in Sources */,
-				AF344FFC2D42E6BC00179FE0 /* AsyncHelpers.swift in Sources */,
-				AF344FEE2D42DB7F00179FE0 /* ECPProtocol.swift in Sources */,
-				AFDB50012D53C7BB004E27A4 /* Loggers.swift in Sources */,
-				AF344FFA2D42E32700179FE0 /* DeviceApi.swift in Sources */,
-				AF344FF92D42E30500179FE0 /* NetworkUtils.swift in Sources */,
-				AF344FF02D42E1C500179FE0 /* APIHelpers.swift in Sources */,
-				AF344FE82D42D35000179FE0 /* RoamCLI.swift in Sources */,
-			);
-		};
 		AFA21D2D2C2C7C83008EF24A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
@@ -1525,9 +1478,12 @@
 				AF0532812D36DB2200D68F8E /* HeadphonesModeTip.swift in Sources */,
 				AFBBE16F2C764564002B7F68 /* RemoteViewContained.swift in Sources */,
 				AF0C82952AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */,
-				AF9DE5672D553DE300C50894 /* SelectedAttachment.swift in Sources */,
-				AF60A7E02E36CDEE00D1D16B /* DataLoaders.swift in Sources */,
-				AF65A88A2BB5ABF9005ECF7F /* RoamAppDelegate.swift in Sources */,
+					AF9DE5672D553DE300C50894 /* SelectedAttachment.swift in Sources */,
+					AF60A7E02E36CDEE00D1D16B /* DataLoaders.swift in Sources */,
+					AFD100102F00000100000001 /* DatabaseFileLock.swift in Sources */,
+					AFD100112F00000100000001 /* RoamDataSnapshot.swift in Sources */,
+					AFD100122F00000100000001 /* RoamDatabase.swift in Sources */,
+					AF65A88A2BB5ABF9005ECF7F /* RoamAppDelegate.swift in Sources */,
 				AF90B5C62D3B52340063FADD /* ECPMonitor.swift in Sources */,
 				AF19CA2B2AE54AD100A42DFF /* SSDPDiscovery.swift in Sources */,
 				AF3446AD2D5FE8CF0037EFC8 /* WrongAttempts.swift in Sources */,
@@ -1634,10 +1590,11 @@
 		AFEDCDF02CD1331E0001D959 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
-				AF0D09F42CDE64750098122E /* Helpers.swift in Sources */,
-				AF68F2842D41EC2700F39530 /* DataHelpers.swift in Sources */,
-				AF6D56132DCE50DF00B00780 /* LinkedListTests.swift in Sources */,
-				AF0532852D36DB2B00D68F8E /* RoamSwiftTests.swift in Sources */,
+					AF0D09F42CDE64750098122E /* Helpers.swift in Sources */,
+					AF68F2842D41EC2700F39530 /* DataHelpers.swift in Sources */,
+					AF6D56132DCE50DF00B00780 /* LinkedListTests.swift in Sources */,
+					AFD100412F00000100000001 /* RoamDatabaseTests.swift in Sources */,
+					AF0532852D36DB2B00D68F8E /* RoamSwiftTests.swift in Sources */,
 				AFDB50002D53C7B7004E27A4 /* Loggers.swift in Sources */,
 				AF3F350D2D3E99A2009AF2F8 /* ECPMessages.swift in Sources */,
 				AF3F350C2D3E98C9009AF2F8 /* ECPProtocol.swift in Sources */,
@@ -1847,32 +1804,6 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = WIDGET;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2,4";
-			};
-			name = Release;
-		};
-		AF344FE32D42D34A00179FE0 /* Debug configuration for PBXNativeTarget "roam-cli" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG CLI $(inherited)";
-			};
-			name = Debug;
-		};
-		AF344FE42D42D34A00179FE0 /* Release configuration for PBXNativeTarget "roam-cli" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = CLI;
 			};
 			name = Release;
 		};
@@ -2283,14 +2214,6 @@
 			);
 			defaultConfigurationName = Release;
 		};
-		AF344FE52D42D34A00179FE0 /* Build configuration list for PBXNativeTarget "roam-cli" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				AF344FE32D42D34A00179FE0 /* Debug configuration for PBXNativeTarget "roam-cli" */,
-				AF344FE42D42D34A00179FE0 /* Release configuration for PBXNativeTarget "roam-cli" */,
-			);
-			defaultConfigurationName = Release;
-		};
 		AFA21D392C2C7C83008EF24A /* Build configuration list for PBXNativeTarget "RoamWatchUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -2342,12 +2265,12 @@
 				minimumVersion = 1.3.2;
 			};
 		};
-		AF344FE92D42D3B600179FE0 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+		AFD100302F00000100000001 /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
+			repositoryURL = "https://github.com/groue/GRDB.swift.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.0;
+				minimumVersion = 7.10.0;
 			};
 		};
 		AFECDE1B2AE18511003F6676 /* XCRemoteSwiftPackageReference "swift-opus" */ = {
@@ -2366,10 +2289,10 @@
 			package = AF0042812AEAA3ED0051BB1E /* XCRemoteSwiftPackageReference "libwebp-Xcode" */;
 			productName = libwebp;
 		};
-		AF344FEA2D42D3BE00179FE0 /* ArgumentParser */ = {
+		AFD100312F00000100000001 /* GRDB */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = AF344FE92D42D3B600179FE0 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
-			productName = ArgumentParser;
+			package = AFD100302F00000100000001 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
+			productName = GRDB;
 		};
 		AFECDE1C2AE18511003F6676 /* Opus */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -26,8 +26,7 @@ struct RemoteViewContained: View {
 
     @State private var devicesLoader = DeviceListLoader(dataHandler: .shared)
     @State private var primaryDeviceLoader = PrimaryDeviceLoader(dataHandler: .shared)
-    // TODO: Get unread message count from message data handler
-    @State private var unreadMessages: Int = 0
+    @State private var messageLoader = MessageListLoader(dataHandler: .shared)
     @Environment(\.dismiss) var dismiss
 
     @State private var scanningActor: DeviceDiscoveryActor?
@@ -123,6 +122,14 @@ struct RemoteViewContained: View {
         primaryDeviceLoader.device
     }
 
+    private var deviceIds: [String] {
+        devicesLoader.devices ?? []
+    }
+
+    private var unreadMessages: Int {
+        messageLoader.unreadCount
+    }
+
     private var runningInPreview: Bool {
         ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
     }
@@ -132,9 +139,15 @@ struct RemoteViewContained: View {
 
     var isHorizontal: Bool {
         if let controlledIsHorizontal {
+            #if os(macOS)
+            return false
+            #else
             return controlledIsHorizontal
+            #endif
         }
-        #if os(macOS) || os(visionOS)
+        #if os(macOS)
+        return false
+        #elseif os(visionOS)
         return windowWasLastHorizontal
         #else
         return UIDevice.current.orientation.isLandscape
@@ -211,28 +224,18 @@ struct RemoteViewContained: View {
                     }
                 }
                 .task {
-                    while !Task.isCancelled {
-                        // TODO: Figure out messages data handler
-//                        await MessageDataHandler.shared.refreshMessagesIfExpectingNewMessages()
-                        try? await Task.sleep(nanoseconds: 1000 * 1000 * 1000 * 3600)
-                    }
-                }
-                .task {
                     await RoamDataHandler.shared.initialize()
                 }
-            // TODO: Where are .devices??
-//#if os(iOS)
-//                .task(id: devices?.count, priority: .background) {
-//                    // Send devices to connected watch
-//                    if let devices {
-//                        WatchConnectivity.shared.transferDevices(WCSession.default, devices: devices)
-//
-//                        for await _ in AsyncTimerSequence.repeating(every: .seconds(60 * 10)) {
-//                            WatchConnectivity.shared.transferDevices(WCSession.default, devices: devices)
-//                        }
-//                    }
-//                }
-//#endif
+#if os(iOS)
+                .task(id: deviceIds, priority: .background) {
+                    guard !deviceIds.isEmpty else { return }
+                    await transferDevicesToWatch(deviceIds)
+
+                    for await _ in AsyncTimerSequence.repeating(every: .seconds(60 * 10)) {
+                        await transferDevicesToWatch(deviceIds)
+                    }
+                }
+#endif
 #if !os(macOS)
             .onAppear {
                 appDelegate.navigationPath.focusedWindow = .remote
@@ -255,14 +258,44 @@ struct RemoteViewContained: View {
                     Log.lifecycle.notice("Closing \(#fileID, privacy: .public) view")
                 }
                 .task(id: "\(ssdpActor != nil && scanSSDP)", priority: .background) {
-                    if scanSSDP {
-                        await ssdpActor?.scanSSDPContinually()
+                    let actorReady = ssdpActor != nil
+                    Log.scanning.notice(
+                        "RemoteViewContained SSDP task fired actorReady=\(actorReady, privacy: .public) scanSSDP=\(scanSSDP, privacy: .public) selectedDeviceId=\(selectedDevice?.id ?? "nil", privacy: .public)"
+                    )
+                    guard scanSSDP else {
+                        Log.scanning.notice("RemoteViewContained SSDP task skipping because scanSSDP is false")
+                        return
                     }
+                    guard let ssdpActor else {
+                        Log.scanning.warning("RemoteViewContained SSDP task skipping because ssdpActor is nil")
+                        return
+                    }
+
+                    Log.scanning.notice("RemoteViewContained starting continual SSDP scan")
+                    await ssdpActor.scanSSDPContinually()
+                    Log.scanning.notice("RemoteViewContained continual SSDP scan returned")
                 }
                 .task(id: "\(scanningActor != nil && selectedDevice == nil && scanSSDP)-\(networkMonitor.networkConnection)") {
-                    if scanSSDP && selectedDevice == nil {
-                        await scanningActor?.scanIPV4Once()
+                    let actorReady = scanningActor != nil
+                    Log.scanning.notice(
+                        "RemoteViewContained IPV4 task fired actorReady=\(actorReady, privacy: .public) scanSSDP=\(scanSSDP, privacy: .public) selectedDeviceId=\(selectedDevice?.id ?? "nil", privacy: .public) networkConnection=\(String(describing: networkMonitor.networkConnection), privacy: .public)"
+                    )
+                    guard scanSSDP else {
+                        Log.scanning.notice("RemoteViewContained IPV4 task skipping because scanSSDP is false")
+                        return
                     }
+                    guard selectedDevice == nil else {
+                        Log.scanning.notice("RemoteViewContained IPV4 task skipping because selectedDevice is not nil")
+                        return
+                    }
+                    guard let scanningActor else {
+                        Log.scanning.warning("RemoteViewContained IPV4 task skipping because scanningActor is nil")
+                        return
+                    }
+
+                    Log.scanning.notice("RemoteViewContained starting IPV4 scan")
+                    await scanningActor.scanIPV4Once()
+                    Log.scanning.notice("RemoteViewContained IPV4 scan returned")
                 }
                 .task(id: selectedDevice?.id, priority: .medium) {
                     for await _ in exponentialBackoff(min: 30, max: 3600) {
@@ -334,6 +367,9 @@ struct RemoteViewContained: View {
                     }
                 }
                 .onAppear {
+                    Log.scanning.notice(
+                        "RemoteViewContained creating discovery actors scanSSDP=\(scanSSDP, privacy: .public) selectedDeviceId=\(selectedDevice?.id ?? "nil", privacy: .public)"
+                    )
                     scanningActor = DeviceDiscoveryActor()
                     ssdpActor = DeviceDiscoveryActor()
                 }
@@ -369,6 +405,14 @@ struct RemoteViewContained: View {
         }
     }
 
+#if os(iOS)
+    @MainActor
+    private func transferDevicesToWatch(_ deviceIds: [String]) async {
+        let devices = await RoamDataHandler.shared.requestAllDevices(deviceIds)
+        WatchConnectivity.shared.transferDevices(WCSession.default, devices: devices)
+    }
+#endif
+
     var remotePage: some View {
         ZStack {
             Color.clear
@@ -389,7 +433,7 @@ struct RemoteViewContained: View {
                     }
                 }
 
-            HStack {
+            HStack(alignment: .top) {
                 Spacer()
                 VStack(alignment: .center, spacing: 0) {
                     #if os(macOS)
@@ -519,6 +563,9 @@ struct RemoteViewContained: View {
                         .foregroundStyle(Color.secondary)
 #endif
                         .customKeyboardShortcut(.addDevice)
+                        #if os(macOS)
+                        .padding(.bottom, 22)
+                        #endif
                     }
 
                     if isHorizontal {
@@ -562,12 +609,21 @@ struct RemoteViewContained: View {
                     if showKeyboardEntry {
                         Spacer()
                     }
-#endif
+            #endif
                 }
+                #if os(macOS)
+                .fixedSize(horizontal: false, vertical: true)
+                #else
                 .frame(maxHeight: .infinity)
+                #endif
                 Spacer()
             }
+            #if os(macOS)
+            .frame(width: 225, alignment: .top)
+            .frame(maxHeight: .infinity, alignment: .top)
+            #else
             .frame(maxHeight: .infinity)
+            #endif
             #if !os(macOS)
             .overlay {
                 #if os(iOS)
@@ -634,9 +690,16 @@ struct RemoteViewContained: View {
                 }
             }
             #endif
+            #if os(macOS)
+            .padding(.horizontal, 6)
+            #else
             .padding(.horizontal, 20)
+            #endif
 #if os(macOS) || os(visionOS)
             .applyBuilder {
+                #if os(macOS)
+                $0.padding(.top, 0)
+                #else
                 if #available(macOS 15.0, *) {
                     $0
                         .padding(.top, 10)
@@ -644,11 +707,40 @@ struct RemoteViewContained: View {
                     $0
                         .padding(.top, 20)
                 }
+                #endif
             }
 #else
             .padding(.top, 20)
 #endif
+            #if os(macOS)
+            .padding(.bottom, 6)
+            #else
             .padding(.bottom, 10)
+            #endif
+#if os(iOS)
+            .safeAreaInset(edge: .bottom) {
+                if !showKeyboardEntry {
+                    DevicePicker(
+                        device: selectedDevice,
+                        ecpSessionState: ecpSessionState,
+                        showScanning: true
+                    )
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background {
+                        Capsule(style: .continuous)
+                            .fill(.ultraThinMaterial)
+                    }
+                    .overlay {
+                        Capsule(style: .continuous)
+                            .stroke(.white.opacity(0.16), lineWidth: 0.8)
+                    }
+                    .liquidGlass(cornerRadius: 32)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 4)
+                }
+            }
+#endif
 #if !os(visionOS) && !os(macOS)
             .toolbar(id: "remote") {
                 ToolbarItem(id: "keyboard", placement: .topBarLeading) {
@@ -730,15 +822,6 @@ struct RemoteViewContained: View {
                     .buttonStyle(.borderless)
                     .disabled(selectedDevice == nil)
                     .font(.headline)
-                }
-            ToolbarItem(id: "device-picker", placement: .topBarTrailing) {
-                    DevicePicker(
-                        device: selectedDevice,
-                        ecpSessionState: ecpSessionState
-                    )
-                    .buttonStyle(.plain)
-                    .frame(idealWidth: 100, maxWidth: 350)
-                    .disabled(selectedDevice == nil)
                 }
             }
 #endif
@@ -834,10 +917,39 @@ struct RemoteViewContained: View {
     }
 
     func verticalBody() -> some View {
+        #if os(macOS)
+        return VStack(alignment: .center, spacing: 30) {
+            TopBar(pressCounter: buttonPressCount, action: pressButton)
+                .matchedGeometryEffect(id: "topBar", in: animation)
+                .focusSection()
+
+            CenterController(pressCounter: buttonPressCount, action: pressButton)
+                .transition(.scale.combined(with: .opacity))
+                .matchedGeometryEffect(id: "centerController", in: animation)
+                .focusSection()
+
+            if !hideUIForKeyboardEntry {
+                ButtonGrid(
+                    pressCounter: buttonPressCount,
+                    action: pressButton,
+                    enabled: headphonesModeEnabled ? Set([.headphonesMode]) : Set([]),
+                    disabled: headphonesModeDisabled ? Set([.headphonesMode]) : Set([])
+                )
+                .transition(.scale.combined(with: .opacity))
+                .matchedGeometryEffect(id: "buttonGrid", in: animation)
+                .focusSection()
+            }
+
+            if !hideAppsForKeyboardEntry && selectedDevice != nil {
+                AppLinksView(deviceId: selectedDevice?.udn, rows: appLinkRows, handleOpenApp: launchApp)
+                    .matchedGeometryEffect(id: "appLinksBar", in: animation)
+                    .sensoryFeedback(SensoryFeedback.impact, trigger: buttonPressCount(.inputAV1))
+            }
+        }
+        .fixedSize()
+        #else
         VStack(alignment: .center, spacing: 0) {
-            #if os(macOS)
-                Spacer()
-            #elseif os(visionOS)
+            #if os(visionOS)
                 Spacer()
                     .frame(maxHeight: 30)
             #endif
@@ -876,11 +988,9 @@ struct RemoteViewContained: View {
             } else {
                 Spacer()
             }
-#if os(macOS)
-            Spacer()
-#endif
             Spacer()
         }
+        #endif
     }
 
     func shouldRequestReview() -> Bool {

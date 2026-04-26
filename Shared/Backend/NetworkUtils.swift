@@ -1,6 +1,7 @@
 import Darwin
 import Foundation
 import Network
+import OSLog
 
 struct IP4Address: Comparable, Equatable, Strideable, Codable {
     func distance(to other: IP4Address) -> Int {
@@ -34,11 +35,22 @@ struct IP4Address: Comparable, Equatable, Strideable, Codable {
         uInt32ToIP(address)
     }
 
+    var isLoopback: Bool {
+        address & 0xFF00_0000 == 0x7F00_0000
+    }
+
     func localNetworkRange(subnetMask: IP4Address) -> Range<IP4Address> {
         let networkAddressInt = address & subnetMask.address
         let broadcastAddressInt = networkAddressInt | ~subnetMask.address
 
         return IP4Address(address: networkAddressInt) ..< IP4Address(address: broadcastAddressInt)
+    }
+
+    var containing24BitRange: Range<IP4Address> {
+        let networkAddressInt = address & 0xFFFF_FF00
+        let upperAddressInt = networkAddressInt == 0xFFFF_FF00 ? UInt32.max : networkAddressInt + 256
+
+        return IP4Address(address: networkAddressInt) ..< IP4Address(address: upperAddressInt)
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -88,6 +100,14 @@ struct Addressed4NetworkInterface: Codable {
         isIPv4 && (self.nwInterface?.type == .wifi || self.nwInterface?.type == .wiredEthernet)
     }
 
+    var isLoopback: Bool {
+        (flags & UInt32(IFF_LOOPBACK) != 0) || address.isLoopback || nwInterface?.type == .loopback
+    }
+
+    var isUnsupportedForDiscovery: Bool {
+        isLoopback || isUnsupportedDiscoveryInterfaceName(name)
+    }
+
     var familyDescription: String {
         switch family {
            case AF_INET:
@@ -124,6 +144,19 @@ struct Addressed4NetworkInterface: Codable {
 
     var scannableIPV4NetworkRange: Range<IP4Address> {
         address.localNetworkRange(subnetMask: netmask)
+    }
+
+    var preferredScannableIPV4Ranges: [Range<IP4Address>] {
+        let scannableRange = scannableIPV4NetworkRange
+        guard let preferredRange = scannableRange.intersection(with: address.containing24BitRange) else {
+            return [scannableRange]
+        }
+
+        return [
+            preferredRange,
+            scannableRange.lowerBound ..< preferredRange.lowerBound,
+            preferredRange.upperBound ..< scannableRange.upperBound,
+        ].filter { !$0.isEmpty }
     }
 
     func withNWInterface(_ iface: NWInterface?) -> Addressed4NetworkInterface {
@@ -207,15 +240,87 @@ struct Addressed4NetworkInterface: Codable {
 func allAddressedInterfaces() async -> [Addressed4NetworkInterface] {
     let darwinInterfaces = listInterfacesDarwin()
     let nwInterfaces = await listInterfacesNW()
-    var combinedInterfaces: [Addressed4NetworkInterface] = []
+    let nwInterfacesByName = Dictionary(nwInterfaces.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
 
-    for netInterface in darwinInterfaces {
-        if let matched = nwInterfaces.first(where: { $0.name == netInterface.name }) {
-            combinedInterfaces.append(netInterface.withNWInterface(matched))
+    Log.network.notice(
+        "Found \(darwinInterfaces.count, privacy: .public) Darwin addressed interfaces and \(nwInterfaces.count, privacy: .public) NW interfaces"
+    )
+    Log.network.debug("Darwin interfaces: \(describeDarwinInterfaces(darwinInterfaces), privacy: .public)")
+    Log.network.debug("NW interfaces: \(describeNWInterfaces(nwInterfaces), privacy: .public)")
+
+    let combinedInterfaces: [Addressed4NetworkInterface] = darwinInterfaces.compactMap { netInterface in
+        let matched = nwInterfacesByName[netInterface.name]
+        let combinedInterface = netInterface.withNWInterface(matched)
+
+        if combinedInterface.isUnsupportedForDiscovery {
+            Log.network.debug(
+                "Ignoring unsupported discovery interface \(combinedInterface.name, privacy: .public) address \(combinedInterface.address.addressString, privacy: .public)"
+            )
+            return nil
+        } else if matched == nil {
+            Log.network.debug(
+                "No NWInterface match for Darwin interface \(netInterface.name, privacy: .public) address \(netInterface.address.addressString, privacy: .public)"
+            )
         }
+
+        return combinedInterface
     }
 
+    Log.network.notice(
+        "Returning \(combinedInterfaces.count, privacy: .public) addressed interfaces with \(combinedInterfaces.filter { $0.nwInterface != nil }.count, privacy: .public) NW matches"
+    )
+
     return combinedInterfaces
+}
+
+func isUnsupportedDiscoveryInterfaceName(_ name: String) -> Bool {
+    name == "lo0" ||
+        name.hasPrefix("utun") ||
+        name.hasPrefix("tun") ||
+        name.hasPrefix("tap") ||
+        name.hasPrefix("ipsec")
+}
+
+private func describeDarwinInterfaces(_ interfaces: [Addressed4NetworkInterface]) -> String {
+    interfaces.map {
+        "\($0.name) \($0.familyDescription) \($0.address.addressString)/\($0.netmask.addressString) flags=\($0.getFlagList().joined(separator: ","))"
+    }.joined(separator: "; ")
+}
+
+private func describeNWInterfaces(_ interfaces: [NWInterface]) -> String {
+    interfaces.map {
+        "\($0.name) type=\(describeNWInterfaceType($0.type))"
+    }.joined(separator: "; ")
+}
+
+private func describeNWInterfaceType(_ type: NWInterface.InterfaceType) -> String {
+    switch type {
+    case .wifi:
+        return "wifi"
+    case .wiredEthernet:
+        return "wiredEthernet"
+    case .cellular:
+        return "cellular"
+    case .loopback:
+        return "loopback"
+    case .other:
+        return "other"
+    default:
+        return "unknown"
+    }
+}
+
+private extension Range where Bound == IP4Address {
+    func intersection(with other: Range<IP4Address>) -> Range<IP4Address>? {
+        let lowerBound = Swift.max(lowerBound, other.lowerBound)
+        let upperBound = Swift.min(upperBound, other.upperBound)
+
+        guard lowerBound < upperBound else {
+            return nil
+        }
+
+        return lowerBound ..< upperBound
+    }
 }
 
 private func ipToUInt32(_ ip: String) -> UInt32? {
@@ -286,19 +391,26 @@ private func listInterfacesDarwin() -> [Addressed4NetworkInterface] {
             }
         }
         freeifaddrs(addrList)
+    } else {
+        Log.network.error("getifaddrs failed with errno \(errno, privacy: .public)")
     }
     return networkInterfaces
 }
 
 private func listInterfacesNW() async -> [NWInterface] {
     let monitor = NWPathMonitor()
-    monitor.start(queue: .network)
 
     var matchedNWInterfacesStream = AsyncStream { continuation in
         monitor.pathUpdateHandler = { path in
+            Log.network.debug(
+                "NWPathMonitor update status \(String(describing: path.status), privacy: .public) available interfaces \(describeNWInterfaces(path.availableInterfaces), privacy: .public)"
+            )
             continuation.yield(path.availableInterfaces)
+            continuation.finish()
         }
     }.makeAsyncIterator()
+
+    monitor.start(queue: .network)
     let matchedNWInterfaces = await matchedNWInterfacesStream.next()
 
     monitor.cancel()

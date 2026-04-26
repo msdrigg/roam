@@ -18,17 +18,14 @@ final class RoamWatchAppDelegate: NSObject, ObservableObject, Sendable {
     }
 
     func refreshMessages(fetchCompletionHandler completionHandler: ((WKBackgroundFetchResult) -> Void)? = nil) {
-        // TODO: Handle this when we get messages working
-//        Task {
-//            let dataHandler = MessageDataHandler.shared
-//            let refreshResult = await dataHandler.refreshMessagesIfExpectingNewMessages()
-//            if refreshResult > 0 {
-//                completionHandler?(.newData)
-//            } else {
-//                completionHandler?(.noData)
-//            }
-//
-//        }
+        Task {
+            let refreshResult = await RoamDataHandler.shared.refreshMessagesIfExpectingNewMessages()
+            if refreshResult > 0 {
+                completionHandler?(.newData)
+            } else {
+                completionHandler?(.noData)
+            }
+        }
     }
 }
 

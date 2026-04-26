@@ -13,14 +13,14 @@ import Foundation
     let globalGlowingRadius: CGFloat = 6
     let globalButtonRadius: CGFloat = 10
 #elseif os(macOS)
-    let globalButtonWidth: CGFloat = 44
-    let globalButtonHeight: CGFloat = 36
-    let globalButtonSpacing: CGFloat = 10
+    let globalButtonWidth: CGFloat = 42
+    let globalButtonHeight: CGFloat = 34
+    let globalButtonSpacing: CGFloat = 8
     let globalButtonHeightPadding: CGFloat = 4
     let globalButtonWidthPadding: CGFloat = 16
     let globalButtonHeightPaddingSmall: CGFloat = 6
     let globalButtonWidthPaddingSmall: CGFloat = 8
-    let globalButtonRadius: CGFloat = 6
+    let globalButtonRadius: CGFloat = 7
     let globalGlowingRadius: CGFloat = 4
     let globalAppLinkShrinkWidth: CGFloat = 500
 #else
@@ -90,6 +90,54 @@ struct CustomAccentColorForeground: ViewModifier {
     }
 }
 
+struct LiquidGlassButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
+
+    @ScaledMetric private var buttonRadius = globalButtonRadius
+
+    var isProminent: Bool = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .applyBuilder {
+                #if os(macOS)
+                $0
+                #else
+                if isProminent {
+                    $0.foregroundStyle(.white)
+                } else {
+                    $0
+                }
+                #endif
+            }
+            .background {
+                RoundedRectangle(cornerRadius: buttonRadius, style: .continuous)
+                    .fill(backgroundColor)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: buttonRadius, style: .continuous)
+                    .stroke(.white.opacity(isProminent ? 0.28 : 0.18), lineWidth: 0.8)
+            }
+            .contentShape(.rect(cornerRadius: buttonRadius))
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .opacity(isEnabled ? 1 : 0.35)
+            .animation(.smooth(duration: 0.18), value: configuration.isPressed)
+            .liquidGlass(isProminent: isProminent, isInteractive: isEnabled, cornerRadius: buttonRadius)
+    }
+
+    private var backgroundColor: Color {
+        #if os(macOS)
+        return Color.secondary.opacity(isProminent ? 0.16 : 0.10)
+        #else
+        if isProminent {
+            return customAccentColor.opacity(0.26)
+        }
+        return Color.secondary.opacity(0.12)
+        #endif
+    }
+}
+
 extension View {
     func customAccentColorTint() -> some View {
         modifier(CustomAccentColorTint())
@@ -97,6 +145,36 @@ extension View {
 
     func customAccentColorForeground() -> some View {
         modifier(CustomAccentColorForeground())
+    }
+
+    func liquidGlass(
+        isProminent: Bool = false,
+        isInteractive: Bool = true,
+        cornerRadius: CGFloat = globalButtonRadius
+    ) -> some View {
+        self.applyBuilder {
+            #if !os(visionOS)
+            if #available(iOS 26.0, macOS 26.0, watchOS 26.0, *) {
+                #if os(macOS)
+                $0.glassEffect(
+                    .regular.interactive(isInteractive),
+                    in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                )
+                #else
+                $0.glassEffect(
+                    .regular
+                        .tint(isProminent ? Color.accentColor.opacity(0.18) : nil)
+                        .interactive(isInteractive),
+                    in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                )
+                #endif
+            } else {
+                $0
+            }
+            #else
+            $0
+            #endif
+        }
     }
 }
 
@@ -271,7 +349,7 @@ struct BreatheEffect: ViewModifier {
 
                 content
                     .tint(customAccentColor)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(LiquidGlassButtonStyle(isProminent: true))
             }
             .frame(width: buttonWidth, height: buttonHeight)
         } else {
