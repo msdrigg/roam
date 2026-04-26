@@ -9,6 +9,10 @@ tokio = { version = "^1", features = [
     "rt-multi-thread",
     "tracing",
     "signal",
+    "fs",
+    "io-util",
+    "process",
+    "sync",
 ] }
 serde = { version = "^1", features = ["derive"] }
 dotenvy = "^0.15"
@@ -21,6 +25,8 @@ ahash = "^0.8"
 thiserror = "^2"
 serde_json = "^1"
 regex = "^1.11"
+object = { version = "0.36.7", default-features = false, features = ["read"] }
+zip = { version = "=4.6.1", default-features = false, features = ["deflate-flate2"] }
 
 clap = { version = "^4.5", features = ["derive", "env"] }
 clap_derive = { version = "^4.5" }
@@ -53,7 +59,7 @@ sqlx = { version = "^0.8", default-features = false, features = [
 
 
 memmap2 = { version = "^0.9" }
-samply-symbols = { version = "^0.24.1" }
+samply-symbols = { version = "^0.24.1", features = ["send_futures"] }
 
 tracing = { version = "^0.1", features = ["attributes"] }
 tracing-subscriber = { version = "^0.3", features = ["env-filter"] }

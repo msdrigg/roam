@@ -2,7 +2,7 @@ use crate::{
     database::{DeviceInfo, User, UserUpdate},
     discord::{DiscordAuthor, DiscordFile, DiscordFileUpload, DiscordMessageOptions},
     presence::UserPresenceInfo,
-    symbolicate::RoamDebugInfo,
+    symbolicate::{DsymUploadMetadata, RoamDebugInfo},
     utils::{base64_data_de, i64_to_string, string_to_i64_optional},
 };
 use anyhow::Context;
@@ -18,7 +18,7 @@ use base64::{prelude::BASE64_STANDARD, Engine};
 pub use error::ApiError;
 use futures::{stream, FutureExt, StreamExt};
 use opentelemetry::trace::{SpanKind, TraceContextExt};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tokio::{net::TcpListener, task::JoinHandle};
 use tower_http::{
     catch_panic::CatchPanicLayer,
@@ -446,9 +446,7 @@ async fn upload_metric_diagnostics(
         let metric_uuid = Uuid::new_v4();
         tokio::fs::create_dir_all(&symbolication_dir)
             .await
-            .map_err(|e| {
-                ApiError::BadRequest(format!("Error creating symbolication dir: {e}"))
-            })?;
+            .map_err(|e| ApiError::BadRequest(format!("Error creating symbolication dir: {e}")))?;
         let metric_file_path = symbolication_dir.join(format!("{metric_uuid}.json"));
         tokio::fs::write(&metric_file_path, payload)
             .await
@@ -499,20 +497,62 @@ async fn upload_metric_diagnostics(
     Ok(())
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct DsymUploadRequest {
+    bundle_identifier: String,
+    app_version: String,
+    build_version: String,
+    platform: String,
     #[serde(deserialize_with = "base64_data_de")]
     dsym_zip: Vec<u8>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DsymUploadResponse {
+    extracted_root: String,
+    indexed_debug_ids: Vec<String>,
 }
 
 async fn upload_roam_dsym(
     State(app_context): State<AppContext>,
     Json(dsym_request): Json<DsymUploadRequest>,
-) -> Result<(), ApiError> {
-    // TODO: Implement decoding the zip archive
-    // TODO: Implement decoding the dsym plist file to get the bundle version, os version and build number
-    todo!("Implement Roam dSYM upload");
+) -> Result<Json<DsymUploadResponse>, ApiError> {
+    let DsymUploadRequest {
+        bundle_identifier,
+        app_version,
+        build_version,
+        platform,
+        dsym_zip,
+    } = dsym_request;
+
+    if bundle_identifier.trim().is_empty()
+        || app_version.trim().is_empty()
+        || build_version.trim().is_empty()
+        || platform.trim().is_empty()
+    {
+        return Err(ApiError::BadRequest(
+            "bundleIdentifier, appVersion, buildVersion, and platform are required".to_string(),
+        ));
+    }
+
+    let metadata = DsymUploadMetadata {
+        bundle_identifier,
+        app_version,
+        build_version,
+        platform,
+    };
+    let stored = app_context.store_dsym_zip(metadata, dsym_zip).await?;
+    tracing::info!(
+        path = %stored.extracted_root.display(),
+        indexed_uuids = stored.indexed_debug_ids.len(),
+        "Stored uploaded dSYM archive"
+    );
+    Ok(Json(DsymUploadResponse {
+        extracted_root: stored.extracted_root.display().to_string(),
+        indexed_debug_ids: stored.indexed_debug_ids,
+    }))
 }
 
 #[derive(serde::Deserialize)]

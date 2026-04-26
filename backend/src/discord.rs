@@ -621,10 +621,25 @@ mod types {
                 || (self.content.is_empty() && self.attachments.is_empty())
                 || self.content.starts_with("!HiddenMessage")
                 || self.content.starts_with(":ninja:")
+                || self.is_translate_command()
         }
 
         pub fn suppress_notification(&self) -> bool {
             self.content.starts_with(":cold:")
+        }
+
+        fn is_translate_command(&self) -> bool {
+            let content = self.content.trim_start();
+            if content.starts_with(":translate:")
+                || content == "/translate"
+                || content.starts_with("/translate ")
+            {
+                return true;
+            }
+
+            Regex::new(r"^<@!?\d+>\s*(:translate:|/translate)(\s|$)")
+                .unwrap()
+                .is_match(content)
         }
 
         pub fn normalize(mut self) -> DiscordMessage {
@@ -755,5 +770,37 @@ mod tests {
         assert!(!normalized.is_hidden());
         assert_eq!(normalized.author_id(), 3);
         assert_eq!(normalized.message_type, 0);
+    }
+
+    #[test]
+    fn translate_commands_are_hidden() {
+        let messages = [
+            DiscordMessage {
+                id: 1,
+                content: ":translate: Please try again".to_string(),
+                nonce: None,
+                author: DiscordAuthor { id: 2 },
+                message_type: 0,
+                attachments: vec![],
+            },
+            DiscordMessage {
+                id: 2,
+                content: "<@123> :translate: Please try again".to_string(),
+                nonce: None,
+                author: DiscordAuthor { id: 2 },
+                message_type: 0,
+                attachments: vec![],
+            },
+            DiscordMessage {
+                id: 3,
+                content: "/translate Please try again".to_string(),
+                nonce: None,
+                author: DiscordAuthor { id: 2 },
+                message_type: 0,
+                attachments: vec![],
+            },
+        ];
+
+        assert!(messages.iter().all(DiscordMessage::is_hidden));
     }
 }

@@ -62,6 +62,38 @@ pub struct RoamCli {
     /// Disable APNS
     #[arg(long, env)]
     pub apns_disabled: bool,
+
+    /// Enable the AI responder Discord bot
+    #[arg(long, env, default_value = "false")]
+    pub ai_responder_enabled: bool,
+
+    /// Discord Token for the AI responder bot
+    #[arg(long, env)]
+    pub ai_responder_discord_token: Option<String>,
+
+    /// Discord Bot ID for the AI responder bot
+    #[arg(long, env)]
+    pub ai_responder_discord_bot_id: Option<i64>,
+
+    /// Discord user ID to mention when the AI responder escalates to a human
+    #[arg(long, env)]
+    pub ai_responder_human_support_user_id: Option<i64>,
+
+    /// OpenAI API key used by the AI responder
+    #[arg(long, env)]
+    pub openai_api_key: Option<String>,
+
+    /// OpenAI model used by the AI responder
+    #[arg(long, env, default_value = "gpt-5.4-mini")]
+    pub ai_responder_model: String,
+
+    /// Delay before the AI responder answers the latest user message
+    #[arg(long, env, default_value = "30")]
+    pub ai_responder_delay_seconds: u64,
+
+    /// Local docs directory used to build the AI responder docs search index
+    #[arg(long, env, default_value = "../docs/src/pages")]
+    pub ai_responder_docs_dir: String,
 }
 
 impl RoamCli {

@@ -4,7 +4,7 @@ mod sym;
 use std::{fmt::Display, str::FromStr};
 
 pub use diagnostics::RoamDebugInfo;
-pub use sym::SymbolicationClient;
+pub use sym::{DsymUploadMetadata, StoredDsymArchive, SymbolicationClient};
 
 #[allow(clippy::enum_variant_names)]
 pub enum ApplePlatformVersion {

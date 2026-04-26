@@ -4,7 +4,14 @@ import re
 import subprocess
 from datetime import datetime
 import argparse
+import base64
+import json
+import os
+import shutil
+import tempfile
 from typing import Tuple
+import urllib.error
+import urllib.request
 
 # 1. Before running, make sure you create an API key from App Store Connect
 #     (App Store Connect -> Users and Access -> Integrations -> App Store Connect API) and store the downloaded key in ~/.private_keys
@@ -39,6 +46,92 @@ def publish_to_app_store(platform: str, render_github_actions: bool = False):
     )
 
     print(f"Publish succeeded for platform {platform}")
+
+
+def load_dotenv(path: str) -> dict[str, str]:
+    values: dict[str, str] = {}
+    if not os.path.exists(path):
+        return values
+
+    with open(path, "r") as file:
+        for raw_line in file:
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            values[key] = value
+
+    return values
+
+
+def resolve_required_config(
+    name: str,
+    cli_value: str | None,
+    dotenv_values: dict[str, str],
+) -> str:
+    value = cli_value or os.environ.get(name) or dotenv_values.get(name)
+    if not value:
+        raise ValueError(
+            f"{name} is required. Pass --{name.lower().replace('_', '-')} or add {name}=... to .env"
+        )
+    return value
+
+
+def upload_dsyms(
+    platform: str,
+    backend_url: str,
+    backend_api_key: str,
+    bundle_identifier: str,
+):
+    archive_path = f"./Archives/XCArchives/{platform}.xcarchive"
+    dsym_dir = f"{archive_path}/dSYMs"
+    if not os.path.isdir(dsym_dir):
+        raise FileNotFoundError(f"No dSYMs directory found at {dsym_dir}")
+
+    app_version, build_version = get_current_versions()
+    backend_url = backend_url.rstrip("/")
+
+    print(
+        f"Uploading dSYMs for {platform} {bundle_identifier} {app_version} ({build_version})"
+    )
+    with tempfile.TemporaryDirectory() as tmp:
+        zip_base = os.path.join(tmp, f"{platform}-dSYMs")
+        zip_path = shutil.make_archive(zip_base, "zip", root_dir=archive_path, base_dir="dSYMs")
+
+        with open(zip_path, "rb") as file:
+            dsym_zip = base64.b64encode(file.read()).decode("utf-8")
+
+        payload = json.dumps(
+            {
+                "bundleIdentifier": bundle_identifier,
+                "appVersion": app_version,
+                "buildVersion": build_version,
+                "platform": platform,
+                "dsymZip": dsym_zip,
+            }
+        ).encode("utf-8")
+
+        request = urllib.request.Request(
+            f"{backend_url}/v2/upload-roam-dsym",
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": backend_api_key,
+            },
+            method="POST",
+        )
+
+        try:
+            with urllib.request.urlopen(request, timeout=180) as response:
+                body = response.read().decode("utf-8")
+                print(f"dSYM upload succeeded for {platform}: {body}")
+        except urllib.error.HTTPError as error:
+            body = error.read().decode("utf-8", errors="replace")
+            raise RuntimeError(
+                f"dSYM upload failed for {platform}: HTTP {error.code} {body}"
+            ) from error
 
 
 def get_current_versions() -> Tuple[str, str]:
@@ -154,16 +247,68 @@ if __name__ == "__main__":
         help="Don't update versions to match git",
         action="store_true",
     )
+    parser.add_argument(
+        "--upload-dsyms",
+        help="Upload archived dSYMs to the Roam backend",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--backend-url",
+        help="Backend base URL. Falls back to BACKEND_URL in the environment or .env",
+    )
+    parser.add_argument(
+        "--backend-api-key",
+        help="Backend API key. Falls back to BACKEND_API_KEY in the environment or .env",
+    )
+    parser.add_argument(
+        "--bundle-identifier",
+        help="Bundle identifier to record with the dSYM upload",
+        default="com.msdrigg.roam",
+    )
+    parser.add_argument(
+        "--env-file",
+        help="Path to the env file used for backend upload settings",
+        default=".env",
+    )
 
     args = parser.parse_args()
 
-    if not args.no_bump:
+    if not args.no_bump and (args.archive or args.publish):
         bump_versions()
 
     if args.archive:
         for platform in args.platform or []:
             archive_application(platform, render_github_actions=args.github_actions)
 
+    backend_url = None
+    backend_api_key = None
+    if args.upload_dsyms:
+        dotenv_values = load_dotenv(args.env_file)
+        try:
+            backend_url = resolve_required_config(
+                "BACKEND_URL", args.backend_url, dotenv_values
+            )
+            backend_api_key = resolve_required_config(
+                "BACKEND_API_KEY", args.backend_api_key, dotenv_values
+            )
+        except ValueError as error:
+            parser.error(str(error))
+
     if args.publish:
         for platform in args.platform or []:
             publish_to_app_store(platform, render_github_actions=args.github_actions)
+            if args.upload_dsyms:
+                upload_dsyms(
+                    platform,
+                    backend_url,
+                    backend_api_key,
+                    args.bundle_identifier,
+                )
+    elif args.upload_dsyms:
+        for platform in args.platform or []:
+            upload_dsyms(
+                platform,
+                backend_url,
+                backend_api_key,
+                args.bundle_identifier,
+            )

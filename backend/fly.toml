@@ -2,10 +2,12 @@ app = 'roam-backend'
 primary_region = 'iad'
 
 [build]
+dockerfile = 'Dockerfile'
 
 [env]
 DATA_DIR = '/app/data'
 RUST_LOG = 'info'
+AI_RESPONDER_DOCS_DIR = '/app/docs/pages'
 
 [[mounts]]
 source = 'roam_backend_data'

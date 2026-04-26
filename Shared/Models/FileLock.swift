@@ -30,6 +30,7 @@ final class FileLock {
         self.appGroupIdentifier = appGroupIdentifier
     }
 
+    @MainActor
     func withLock<T, E>(mode: Mode, _ body: () throws (E) -> T) throws (FileLockError<E>) -> T {
         Log.data.notice("Beginning file lock")
         guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) else {

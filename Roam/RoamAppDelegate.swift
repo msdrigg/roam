@@ -298,15 +298,16 @@ extension NSApplication {
         }
 
         func refreshMessages(fetchCompletionHandler completionHandler: ((UIBackgroundFetchResult) -> Void)? = nil) {
-            Task {
-                let refreshResult = await MessageDataHandler.shared.refreshMessagesIfExpectingNewMessages()
-                if refreshResult > 0 {
-                    completionHandler?(.newData)
-                } else {
-                    completionHandler?(.noData)
-                }
-
-            }
+            // TODO: Handle this when we update to get messages working
+//            Task {
+//                let refreshResult = await MessageDataHandler.shared.refreshMessagesIfExpectingNewMessages()
+//                if refreshResult > 0 {
+//                    completionHandler?(.newData)
+//                } else {
+//                    completionHandler?(.noData)
+//                }
+//
+//            }
         }
 
         nonisolated func userNotificationCenter(
@@ -344,13 +345,14 @@ extension NSApplication {
             }
 
             Task {
-                do {
-                    let selectedDevice = try? await RoamDataHandler.shared.fetchSelectedDevice()
-
-                    if let selectedDevice, ecpMonitor.ecpClient == nil {
-                        ecpMonitor.setDevice(selectedDevice)
-                    }
-                }
+                // TODO: Where is fetchSelectedDevice
+//                do {
+//                    let selectedDevice = try? await RoamDataHandler.shared.fetchSelectedDevice()
+//
+//                    if let selectedDevice, ecpMonitor.ecpClient == nil {
+//                        ecpMonitor.setDevice(selectedDevice)
+//                    }
+//                }
             }
 
             return true

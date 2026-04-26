@@ -1,4 +1,13 @@
-fly.toml
-.git/
-target/
-.env
+*
+
+!backend/
+!backend/**
+!docs/
+!docs/src/
+!docs/src/pages/
+!docs/src/pages/**
+
+backend/.env
+backend/data/
+backend/target/
+backend/.git/

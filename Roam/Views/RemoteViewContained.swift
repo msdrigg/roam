@@ -220,18 +220,19 @@ struct RemoteViewContained: View {
                 .task {
                     await RoamDataHandler.shared.initialize()
                 }
-#if os(iOS)
-                .task(id: devices?.count, priority: .background) {
-                    // Send devices to connected watch
-                    if let devices {
-                        WatchConnectivity.shared.transferDevices(WCSession.default, devices: devices)
-
-                        for await _ in AsyncTimerSequence.repeating(every: .seconds(60 * 10)) {
-                            WatchConnectivity.shared.transferDevices(WCSession.default, devices: devices)
-                        }
-                    }
-                }
-#endif
+            // TODO: Where are .devices??
+//#if os(iOS)
+//                .task(id: devices?.count, priority: .background) {
+//                    // Send devices to connected watch
+//                    if let devices {
+//                        WatchConnectivity.shared.transferDevices(WCSession.default, devices: devices)
+//
+//                        for await _ in AsyncTimerSequence.repeating(every: .seconds(60 * 10)) {
+//                            WatchConnectivity.shared.transferDevices(WCSession.default, devices: devices)
+//                        }
+//                    }
+//                }
+//#endif
 #if !os(macOS)
             .onAppear {
                 appDelegate.navigationPath.focusedWindow = .remote

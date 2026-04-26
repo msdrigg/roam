@@ -1,5 +1,5 @@
 use clap::Parser;
-use roam_backend::{cli::RoamCli, gateway, logging, server, tasks};
+use roam_backend::{ai_responder, cli::RoamCli, gateway, logging, server, tasks};
 
 #[tokio::main]
 async fn main() {
@@ -25,16 +25,24 @@ async fn main() {
             return;
         }
     };
-    let mut task_handle = match tasks::start_tasks(app_context).await {
+    let mut task_handle = match tasks::start_tasks(app_context.clone()).await {
         Ok(handle) => handle,
         Err(why) => {
             tracing::error!("Task setup error: {why:?}");
             return;
         }
     };
+    let mut ai_responder_handle = match ai_responder::start_client(app_context.clone()).await {
+        Ok(handle) => handle,
+        Err(why) => {
+            tracing::error!("AI responder setup error: {why:?}");
+            return;
+        }
+    };
 
     tokio::select! {
         res = gateway_client.start() => {
+            ai_responder_handle.abort();
             if let Err(why) = res {
                 tracing::error!("Gateway client error: {why:?}");
             } else {
@@ -43,6 +51,7 @@ async fn main() {
         }
         res = &mut server => {
             task_handle.abort();
+            ai_responder_handle.abort();
             if let Err(why) = res {
                 tracing::error!("Server error: {why:?}");
             } else {
@@ -51,16 +60,27 @@ async fn main() {
         }
         res = &mut task_handle => {
             server.abort();
+            ai_responder_handle.abort();
             if let Err(why) = res {
                 tracing::error!("Task error: {why:?}");
             } else {
                 tracing::warn!("Task exited");
             }
         }
+        res = &mut ai_responder_handle => {
+            server.abort();
+            task_handle.abort();
+            if let Err(why) = res {
+                tracing::error!("AI responder error: {why:?}");
+            } else {
+                tracing::warn!("AI responder exited");
+            }
+        }
         _ = tokio::signal::ctrl_c() => {
             tracing::warn!("Received SIGINT, shutting down");
             server.abort();
             task_handle.abort();
+            ai_responder_handle.abort();
         }
     }
 }

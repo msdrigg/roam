@@ -1432,7 +1432,7 @@
       "comment" : "Label for accent color picker"
     },
     "Add a device manually" : {
-      "comment" : "Label on a button to add a device",
+      "comment" : "Label on a button to add a device\nLabel on a button to open the device setup page",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2428,7 +2428,7 @@
 
     },
     "App Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3095,6 +3095,9 @@
         }
       }
     },
+    "Bad context: %@" : {
+
+    },
     "Before you add your TV, go to **Settings > System > Advanced system settings > Control by mobile apps > Network access and make sure it's set to 'Permissive' or 'Enabled'" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3345,7 +3348,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -5832,6 +5835,9 @@
           }
         }
       }
+    },
+    "Data error: %@" : {
+
     },
     "Delete" : {
       "comment" : "Label on a button to delete a device",
@@ -9732,6 +9738,9 @@
         }
       }
     },
+    "Invalid Device URL: %@" : {
+
+    },
     "Invalid IP address format" : {
       "comment" : "Error for invalid IP address format",
       "localizations" : {
@@ -12238,6 +12247,9 @@
           }
         }
       }
+    },
+    "Missing required header: %@" : {
+
     },
     "Mom's TV" : {
       "localizations" : {
@@ -17482,7 +17494,7 @@
       }
     },
     "Roku Apps" : {
-      "comment" : "Siri spotlight recommendation",
+      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -17565,7 +17577,7 @@
       }
     },
     "Roku Controls" : {
-      "comment" : "Siri spotlight recommendation",
+      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

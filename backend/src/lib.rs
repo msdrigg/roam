@@ -1,6 +1,7 @@
 use std::{
     path::{Path, PathBuf},
     sync::Arc,
+    time::Duration,
 };
 
 use anyhow::Context;
@@ -10,8 +11,11 @@ use discord::{DiscordClient, DiscordMessage, DiscordMessageOptions};
 use presence::{PresenceClient, UserPresenceInfo};
 use server::ApiError;
 
-use crate::symbolicate::{ApplePlatformVersion, RoamDebugInfo};
+use crate::symbolicate::{
+    ApplePlatformVersion, DsymUploadMetadata, RoamDebugInfo, StoredDsymArchive,
+};
 
+pub mod ai_responder;
 pub mod apns;
 pub mod cli;
 pub mod database;
@@ -41,6 +45,15 @@ pub struct AppContext {
     backend_api_key: String,
     data_dir: PathBuf,
     port: u16,
+    ai_responder_enabled: bool,
+    ai_responder_discord_client: Option<DiscordClient>,
+    ai_responder_discord_token: Option<String>,
+    ai_responder_discord_bot_id: Option<i64>,
+    ai_responder_human_support_user_id: Option<i64>,
+    openai_api_key: Option<String>,
+    ai_responder_model: String,
+    ai_responder_delay: Duration,
+    ai_responder_docs: Arc<ai_responder::DocsIndex>,
 }
 
 impl AppContext {
@@ -55,6 +68,22 @@ impl AppContext {
             cli.discord_help_channel,
             cli.discord_guild_id,
         );
+        let ai_responder_discord_client = cli.ai_responder_discord_token.as_ref().map(|token| {
+            DiscordClient::new(
+                token.clone(),
+                cli.discord_help_channel,
+                cli.discord_guild_id,
+            )
+        });
+        let ai_responder_docs = ai_responder::DocsIndex::load(&cli.ai_responder_docs_dir)
+            .unwrap_or_else(|err| {
+                tracing::warn!(
+                    error = ?err,
+                    docs_dir = %cli.ai_responder_docs_dir,
+                    "Could not load AI responder docs directory; using bundled fallback docs"
+                );
+                ai_responder::DocsIndex::fallback()
+            });
         let apns_client = ApnsClient::new(
             cli.apns_key_id,
             cli.apns_team_id,
@@ -77,6 +106,15 @@ impl AppContext {
             symbolicate_client: symbolicate::SymbolicationClient::new(dsym_dir),
             data_dir: cli.data_dir.clone().into(),
             apns_disabled: cli.apns_disabled,
+            ai_responder_enabled: cli.ai_responder_enabled,
+            ai_responder_discord_client,
+            ai_responder_discord_token: cli.ai_responder_discord_token,
+            ai_responder_discord_bot_id: cli.ai_responder_discord_bot_id,
+            ai_responder_human_support_user_id: cli.ai_responder_human_support_user_id,
+            openai_api_key: cli.openai_api_key,
+            ai_responder_model: cli.ai_responder_model,
+            ai_responder_delay: Duration::from_secs(cli.ai_responder_delay_seconds),
+            ai_responder_docs: Arc::new(ai_responder_docs),
         })
     }
 
@@ -108,6 +146,42 @@ impl AppContext {
         &self.backend_api_key
     }
 
+    pub fn ai_responder_enabled(&self) -> bool {
+        self.ai_responder_enabled
+    }
+
+    pub fn ai_responder_discord_client(&self) -> Option<&DiscordClient> {
+        self.ai_responder_discord_client.as_ref()
+    }
+
+    pub fn ai_responder_discord_token(&self) -> Option<&str> {
+        self.ai_responder_discord_token.as_deref()
+    }
+
+    pub fn ai_responder_discord_bot_id(&self) -> Option<i64> {
+        self.ai_responder_discord_bot_id
+    }
+
+    pub fn ai_responder_human_support_user_id(&self) -> Option<i64> {
+        self.ai_responder_human_support_user_id
+    }
+
+    pub fn openai_api_key(&self) -> Option<&str> {
+        self.openai_api_key.as_deref()
+    }
+
+    pub fn ai_responder_model(&self) -> &str {
+        &self.ai_responder_model
+    }
+
+    pub fn ai_responder_delay(&self) -> Duration {
+        self.ai_responder_delay
+    }
+
+    pub fn ai_responder_docs(&self) -> Arc<ai_responder::DocsIndex> {
+        self.ai_responder_docs.clone()
+    }
+
     async fn presence_info(&self, device_id: &UserId) -> UserPresenceInfo {
         self.presence_info.get_user_presence_info(device_id).await
     }
@@ -125,6 +199,17 @@ impl AppContext {
             .map_err(ApiError::SymbolicationError)?;
 
         Ok(())
+    }
+
+    async fn store_dsym_zip(
+        &self,
+        metadata: DsymUploadMetadata,
+        dsym_zip: Vec<u8>,
+    ) -> Result<StoredDsymArchive, ApiError> {
+        self.symbolicate_client
+            .store_dsym_zip_with_metadata(Some(metadata), dsym_zip)
+            .await
+            .map_err(ApiError::SymbolicationError)
     }
 
     async fn symbolicate_diagnostics(
