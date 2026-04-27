@@ -11,9 +11,7 @@ use discord::{DiscordClient, DiscordMessage, DiscordMessageOptions};
 use presence::{PresenceClient, UserPresenceInfo};
 use server::ApiError;
 
-use crate::symbolicate::{
-    ApplePlatformVersion, DsymUploadMetadata, RoamDebugInfo, StoredDsymArchive,
-};
+use crate::symbolicate::{DsymUploadMetadata, RoamDebugInfo, StoredDsymArchive};
 
 pub mod ai_responder;
 pub mod apns;
@@ -184,21 +182,6 @@ impl AppContext {
 
     async fn presence_info(&self, device_id: &UserId) -> UserPresenceInfo {
         self.presence_info.get_user_presence_info(device_id).await
-    }
-
-    async fn store_dsym(
-        &self,
-        build_version: &str,
-        bundle_identifier: &str,
-        os_platform: &ApplePlatformVersion,
-        dsym: Vec<u8>,
-    ) -> Result<(), ApiError> {
-        self.symbolicate_client
-            .store_dsym(build_version, bundle_identifier, os_platform, dsym)
-            .await
-            .map_err(ApiError::SymbolicationError)?;
-
-        Ok(())
     }
 
     async fn store_dsym_zip(

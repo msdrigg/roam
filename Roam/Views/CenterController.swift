@@ -11,6 +11,7 @@ import SwiftUI
 struct CenterController: View {
     let pressCounter: (RemoteButton) -> Int
     let action: (RemoteButton) -> Void
+    var usesNativeGlassButtons = false
     @State private var pressCount: [RemoteButton: Int] = [:]
 
     @ScaledMetric var buttonWidth = globalButtonWidth
@@ -62,7 +63,6 @@ struct CenterController: View {
                                 #if !os(watchOS)
                                 .modifier(CustomKeyboardShortcutModifier(title: button.3))
                                 #endif
-                                .buttonStyle(LiquidGlassButtonStyle(isProminent: true))
                                 #if !os(visionOS)
                                 .sensoryFeedback(.impact, trigger: pressCounter(button.1))
                                 #endif
@@ -74,7 +74,6 @@ struct CenterController: View {
                 }
             }
             .environment(\.layoutDirection, .leftToRight)
-            .customAccentColorTint()
         }
         .fixedSize()
         .id("controllerGrid")

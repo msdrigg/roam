@@ -64,6 +64,13 @@ struct AddDeviceFlow: View {
     var ipHint: String {
         selfIpGuess.split(separator: ".").dropLast(1).joined(separator: ".") + ".*"
     }
+    var runningInLocalDevMode: Bool {
+        #if DEBUG
+        true
+        #else
+        false
+        #endif
+    }
 
     var body: some View {
         if runningInPreview {
@@ -234,6 +241,18 @@ struct AddDeviceFlow: View {
                         .font(.callout)
                         .foregroundColor(.red.opacity(0.8))
                 }
+
+                if runningInLocalDevMode {
+                    Button("Force add device", action: {
+                        Task {
+                            await forceAddDevice()
+                        }
+                    })
+                    .disabled(ipAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    #if !os(watchOS)
+                    .buttonStyle(.bordered)
+                    #endif
+                }
             }
         }
 
@@ -358,6 +377,71 @@ struct AddDeviceFlow: View {
         )
 
         try await dataHandler.makePrimaryDevice(id: device)
+    }
+
+    private func forceAddDevice() async {
+        connectTask?.cancel()
+
+        let trimmedIPAddress = ipAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedIPAddress.isEmpty else {
+            await MainActor.run {
+                withAnimation {
+                    let error = AddDeviceError.invalidIPAddress
+                    globalError = error.errorDescription
+                    connectionStatus = .failure(error)
+                }
+            }
+            return
+        }
+
+        do {
+            let dataHandler = RoamDataHandler.shared
+            let deviceId = try await dataHandler.addDevice(
+                location: "http://\(trimmedIPAddress):8060/",
+                friendlyDeviceName: "Device \(trimmedIPAddress)",
+                udn: UUID().uuidString,
+                serial: UUID().uuidString,
+                hidden: false
+            )
+
+            try await dataHandler.makePrimaryDevice(id: deviceId)
+
+            await MainActor.run {
+                withAnimation {
+                    globalError = nil
+                    connectionStatus = .success
+                }
+            }
+        } catch let error as AddDeviceError {
+            await MainActor.run {
+                withAnimation {
+                    globalError = error.errorDescription
+                    connectionStatus = .failure(error)
+                }
+            }
+        } catch let error as DataHandlerError {
+            await MainActor.run {
+                withAnimation {
+                    globalError = error.errorDescription
+                    connectionStatus = .failure(.saveDeviceError(error))
+                }
+            }
+        } catch let error as LocalizedError {
+            await MainActor.run {
+                withAnimation {
+                    globalError = error.errorDescription
+                    connectionStatus = .failure(.saveDeviceError(error))
+                }
+            }
+        } catch {
+            let deviceError = AddDeviceError.unknown(error.localizedDescription)
+            await MainActor.run {
+                withAnimation {
+                    globalError = deviceError.errorDescription
+                    connectionStatus = .failure(deviceError)
+                }
+            }
+        }
     }
 
     func submit() {

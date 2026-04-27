@@ -24,13 +24,14 @@ const HIDDEN_MESSAGE_PREFIX: &str = "!HiddenMessage";
 const TRANSLATE_COMMAND_PREFIX: &str = ":translate:";
 const TRANSLATE_SLASH_COMMAND: &str = "/translate";
 const NO_TRANSLATION: &str = "NO_TRANSLATION";
+const AI_CONTEXT_FETCH_LIMIT: u8 = 50;
 const FALLBACK_DOCS: &str = include_str!("ai_responder_roam_docs.md");
 
-pub async fn start_client(ctx: AppContext) -> anyhow::Result<JoinHandle<()>> {
+pub async fn start_client(ctx: AppContext) -> anyhow::Result<JoinHandle<anyhow::Result<()>>> {
     if !ctx.ai_responder_enabled() {
         tracing::info!("AI responder is disabled");
         return Ok(tokio::spawn(async {
-            std::future::pending::<()>().await;
+            std::future::pending::<anyhow::Result<()>>().await
         }));
     }
 
@@ -48,6 +49,7 @@ pub async fn start_client(ctx: AppContext) -> anyhow::Result<JoinHandle<()>> {
         .context("AI_RESPONDER_HUMAN_SUPPORT_USER_ID is required when AI responder is enabled")?;
 
     let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::MESSAGE_CONTENT;
+    tracing::info!("Starting AI responder gateway client");
     let handler = Handler {
         ctx,
         pending_messages: Arc::new(Mutex::new(HashMap::new())),
@@ -60,9 +62,10 @@ pub async fn start_client(ctx: AppContext) -> anyhow::Result<JoinHandle<()>> {
     let handle = tokio::task::Builder::new()
         .name("ai-responder-gateway")
         .spawn(async move {
-            if let Err(err) = client.start().await {
-                tracing::error!(error = ?err, "AI responder gateway client exited with error");
-            }
+            client
+                .start()
+                .await
+                .context("AI responder gateway client exited with error")
         })
         .context("Error spawning AI responder gateway client")?;
 
@@ -81,11 +84,25 @@ impl EventHandler for Handler {
             return;
         };
 
+        let author_id = u64::from(msg.author.id) as i64;
+        let thread_id = u64::from(msg.channel_id) as i64;
+        let message_id = u64::from(msg.id) as i64;
+        tracing::info!(
+            thread_id,
+            message_id,
+            author_id,
+            "AI responder received gateway message"
+        );
+
         if u64::from(msg.author.id) as i64 == ai_bot_id {
+            tracing::debug!(
+                thread_id,
+                message_id,
+                "AI responder ignored its own message"
+            );
             return;
         }
 
-        let author_id = u64::from(msg.author.id) as i64;
         if Some(author_id) == self.ctx.ai_responder_human_support_user_id()
             && extract_translate_command_text(
                 &msg.content,
@@ -96,7 +113,6 @@ impl EventHandler for Handler {
             )
             .is_some()
         {
-            let thread_id = u64::from(msg.channel_id) as i64;
             self.pending_messages
                 .lock()
                 .expect("AI responder pending mutex should not poison")
@@ -117,9 +133,22 @@ impl EventHandler for Handler {
             if Some(author_id) == self.ctx.ai_responder_human_support_user_id() {
                 let message = discord_message_from_gateway(&msg);
                 if message.is_hidden() {
+                    tracing::debug!(
+                        thread_id,
+                        message_id,
+                        "AI responder ignored hidden human support message"
+                    );
                     return;
                 }
-                let thread_id = u64::from(msg.channel_id) as i64;
+                self.pending_messages
+                    .lock()
+                    .expect("AI responder pending mutex should not poison")
+                    .remove(&thread_id);
+                tracing::info!(
+                    thread_id,
+                    message_id,
+                    "AI responder cancelled pending response because human support replied"
+                );
                 let content = msg.content.clone();
                 let ctx = self.ctx.clone();
                 tokio::spawn(async move {
@@ -147,10 +176,9 @@ impl EventHandler for Handler {
             return;
         }
 
-        let thread_id = u64::from(msg.channel_id) as i64;
-        let message_id = u64::from(msg.id) as i64;
         let message = discord_message_from_gateway(&msg);
         if message.is_hidden() {
+            tracing::debug!(thread_id, message_id, "AI responder ignored hidden message");
             return;
         }
 
@@ -173,6 +201,13 @@ impl EventHandler for Handler {
                 .expect("AI responder pending mutex should not poison");
             pending.insert(thread_id, message_id);
         }
+
+        tracing::info!(
+            thread_id,
+            message_id,
+            delay_seconds = self.ctx.ai_responder_delay().as_secs(),
+            "AI responder scheduled response"
+        );
 
         let ctx = self.ctx.clone();
         let pending_messages = self.pending_messages.clone();
@@ -234,7 +269,7 @@ async fn respond_to_latest_message(
 ) -> anyhow::Result<()> {
     let mut messages = ctx
         .discord_client()
-        .get_messages_in_thread(thread_id, None)
+        .get_recent_messages_in_thread(thread_id, AI_CONTEXT_FETCH_LIMIT)
         .await
         .context("Error fetching Discord thread for AI responder")?;
     messages.sort_by_key(|message| message.id);
@@ -304,6 +339,33 @@ async fn respond_to_latest_message(
 
     match responder.run(thread_id, &messages).await? {
         AiDecision::Respond(content) => {
+            if !is_still_pending(&pending_messages, thread_id, message_id) {
+                tracing::info!(
+                    thread_id,
+                    message_id,
+                    "AI responder skipped because pending response was cancelled before send"
+                );
+                return Ok(());
+            }
+            let mut latest_messages = ctx
+                .discord_client()
+                .get_recent_messages_in_thread(thread_id, AI_CONTEXT_FETCH_LIMIT)
+                .await
+                .context("Error refetching Discord thread before AI responder send")?;
+            latest_messages.sort_by_key(|message| message.id);
+            latest_messages.retain(|message| !message.is_hidden());
+            if latest_messages.iter().any(|message| {
+                message.id > message_id && message.author_id() != ctx.discord_bot_id()
+            }) {
+                tracing::info!(
+                    thread_id,
+                    message_id,
+                    "AI responder skipped because support or AI replied before send"
+                );
+                clear_pending(&pending_messages, thread_id, message_id);
+                return Ok(());
+            }
+
             ai_client
                 .send_message(
                     thread_id,
@@ -694,7 +756,7 @@ fn format_conversation(ctx: &AppContext, messages: &[DiscordMessage]) -> String 
     messages
         .iter()
         .rev()
-        .take(25)
+        .take(AI_CONTEXT_FETCH_LIMIT as usize)
         .collect::<Vec<_>>()
         .into_iter()
         .rev()
@@ -707,12 +769,7 @@ fn format_conversation(ctx: &AppContext, messages: &[DiscordMessage]) -> String 
                 "Human support"
             };
             let normalized = message.clone().normalize();
-            let attachment_note = if normalized.attachments.is_empty() {
-                String::new()
-            } else {
-                format!(" [{} attachment(s)]", normalized.attachments.len())
-            };
-            format!("{role}: {}{attachment_note}", normalized.content)
+            format!("{role}: {}", normalized.content)
         })
         .collect::<Vec<_>>()
         .join("\n")

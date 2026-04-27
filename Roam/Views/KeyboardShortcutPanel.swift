@@ -334,7 +334,7 @@ extension CustomKeyboardShortcut {
     }
 }
 
-extension KeyEquivalent: Codable {
+extension KeyEquivalent: @retroactive Codable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.singleValueContainer()
         let value = try container.decode(String.self)
@@ -427,13 +427,14 @@ extension KeyEquivalent {
     }
 }
 
-extension EventModifiers: Codable {
+extension EventModifiers: @retroactive Decodable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.singleValueContainer()
         let rawValue = try container.decode(Int.self)
         self = EventModifiers(rawValue: rawValue)
     }
-
+}
+extension EventModifiers: @retroactive Encodable {
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encode(self.rawValue)

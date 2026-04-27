@@ -127,7 +127,6 @@ enum APIError: Swift.Error, LocalizedError, CustomLocalizedStringResourceConvert
         }
     }
 
-    
     case badURLError(_ url: String)
     case missingHeader(_ header: String)
     case wrongContext(_ message: String)

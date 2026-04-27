@@ -15,6 +15,8 @@ public struct Message: Codable, Sendable {
     var unsentAttachment: AttachmentUpload?
     var messageTitle: String?
     var robotMessage: Bool = false
+    var aiMessage: Bool = false
+    var humanSupportMessage: Bool = false
 
     enum AuthorType: String, Codable {
         case me
@@ -34,7 +36,9 @@ public struct Message: Codable, Sendable {
         fetchedBackend: Bool = true, viewed: Bool = false,
         attachments: [SentAttachment] = [], unsentAttachment: AttachmentUpload? = nil,
         nonce: String? = nil, messageTitle: String? = nil,
-        robotMessage: Bool = false
+        robotMessage: Bool = false,
+        aiMessage: Bool = false,
+        humanSupportMessage: Bool = false
     ) {
         self.id = id
         self.message = message
@@ -46,6 +50,8 @@ public struct Message: Codable, Sendable {
         self.unsentAttachment = unsentAttachment
         self.messageTitle = messageTitle
         self.robotMessage = robotMessage
+        self.aiMessage = aiMessage
+        self.humanSupportMessage = humanSupportMessage
 
         self.sentAttachments = attachments
     }
@@ -113,7 +119,9 @@ extension Message {
                     filename: attachment.filename,
                     mimetype: attachment.contentType
                 )
-            }) ?? []
+            }) ?? [],
+            aiMessage: message.aiMessage,
+            humanSupportMessage: message.humanSupportMessage
         )
     }
 }

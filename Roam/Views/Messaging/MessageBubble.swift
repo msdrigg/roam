@@ -18,7 +18,7 @@ struct MessageBubble: View {
         let calendar = Calendar.current
         let currentComponents = calendar.dateComponents([.year, .month, .day], from: currentDate)
         let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE" // Full weekday name
+        formatter.dateFormat = "EEEE"  // Full weekday name
         formatter.locale = Locale.autoupdatingCurrent
         formatter.timeZone = TimeZone.autoupdatingCurrent
         let weekday = formatter.string(from: currentDate)
@@ -69,24 +69,33 @@ struct MessageBubble: View {
                             MessageMetadataOverlay(message: message)
                                 .foregroundStyle(Color.secondary)
                         }
-#if !os(watchOS)
-#if !os(macOS)
-                        .contentShape([.contextMenuPreview], RoundedRectangle(cornerRadius: 15))
-#endif
-                        .contextMenu {
-                            Button(action: {
-                                let copying = [message.messageTitle, message.message].compactMap{$0}.joined(separator: "\n")
-#if os(macOS)
-                                NSPasteboard.general.clearContents()
-                                NSPasteboard.general.setString(copying, forType: .string)
-#else
-                                UIPasteboard.general.string = copying
-#endif
-                            }, label: {
-                                Label(String(localized: "Copy", comment: "Label on a button to copy the text"), systemImage: "document.on.document")
-                            })
-                        }
-#endif
+                        #if !os(watchOS)
+                            #if !os(macOS)
+                                .contentShape(
+                                    [.contextMenuPreview], RoundedRectangle(cornerRadius: 15))
+                            #endif
+                            .contextMenu {
+                                Button(
+                                    action: {
+                                        let copying = [message.messageTitle, message.message]
+                                            .compactMap { $0 }.joined(separator: "\n")
+                                        #if os(macOS)
+                                            NSPasteboard.general.clearContents()
+                                            NSPasteboard.general.setString(
+                                                copying, forType: .string)
+                                        #else
+                                            UIPasteboard.general.string = copying
+                                        #endif
+                                    },
+                                    label: {
+                                        Label(
+                                            String(
+                                                localized: "Copy",
+                                                comment: "Label on a button to copy the text"),
+                                            systemImage: "document.on.document")
+                                    })
+                            }
+                        #endif
                 }
             }
 
@@ -104,10 +113,10 @@ struct MessageBubble: View {
                     AttachmentView(attachment: attachment, message: message)
                         .background(color)
                         .frame(minWidth: 120, maxHeight: globalMaxThumbnailSize / 2)
-               }
+                }
             }
         }
-            .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -117,10 +126,25 @@ struct MessageMetadataOverlay: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 3) {
-            #if !os(watchOS)
-            if let shownTime = message.shownTime {
-                Text(shownTime)
+            if message.aiMessage {
+                HStack(alignment: .center, spacing: 2) {
+                    Text("AI")
+                    Image(systemName: "cpu")
+                        .imageScale(.small)
+                }
+                .accessibilityLabel(Text("AI response"))
+            } else if message.humanSupportMessage {
+                HStack(alignment: .center, spacing: 2) {
+                    Text("Scott")
+                    Image(systemName: "person.fill")
+                        .imageScale(.small)
+                }
+                .accessibilityLabel(Text("Scott response"))
             }
+            #if !os(watchOS)
+                if let shownTime = message.shownTime {
+                    Text(shownTime)
+                }
             #endif
             if message.showSending {
                 Image(systemName: "rays")
@@ -149,24 +173,24 @@ struct MessageFraming<C: View>: View {
                 content()
                     .cornerRadius(15)
                     .padding(.trailing, 10)
-                #if !os(watchOS)
-                    .containerRelativeFrame(
-                        .horizontal, alignment: .topTrailing
-                    ) { length, _ in
-                        return length / 3.0 * 2.0
-                    }
-                #endif
+                    #if !os(watchOS)
+                        .containerRelativeFrame(
+                            .horizontal, alignment: .topTrailing
+                        ) { length, _ in
+                            return length / 3.0 * 2.0
+                        }
+                    #endif
             } else {
                 content()
                     .cornerRadius(15)
                     .padding(.leading, 10)
-                #if !os(watchOS)
-                    .containerRelativeFrame(
-                        .horizontal, alignment: .topLeading
-                    ) { length, _ in
-                        return length / 3.0 * 2.0
-                    }
-                #endif
+                    #if !os(watchOS)
+                        .containerRelativeFrame(
+                            .horizontal, alignment: .topLeading
+                        ) { length, _ in
+                            return length / 3.0 * 2.0
+                        }
+                    #endif
                 Spacer()
             }
         }
@@ -174,17 +198,20 @@ struct MessageFraming<C: View>: View {
 }
 
 // swiftlint:disable:next force_try
-@MainActor private let linkDetector = try! Regex(#"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)"#)
+@MainActor private let linkDetector = try! Regex(
+    #"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)"#
+)
 
 private struct LinkedText: View {
     let text: String
     let replaced: String
 
-    init (_ text: String) {
+    init(_ text: String) {
         self.text = text
 
         // find the ranges of the string that have URLs
-        replaced = text.replacing(linkDetector, with: { match in "[\(text[match.range])](\(text[match.range]))" })
+        replaced = text.replacing(
+            linkDetector, with: { match in "[\(text[match.range])](\(text[match.range]))" })
     }
 
     var body: Text {
@@ -194,13 +221,15 @@ private struct LinkedText: View {
 
 struct SupportTypingIndicator: View {
     var body: some View {
-        MessageFraming(message: Message(id: "support-typing-indicator", message: "", author: .support)) {
+        MessageFraming(
+            message: Message(id: "support-typing-indicator", message: "", author: .support)
+        ) {
             TypingIndicator()
-            #if os(macOS)
-                .padding(.vertical, 8)
-            #else
-                .padding(.vertical, 12)
-            #endif
+                #if os(macOS)
+                    .padding(.vertical, 8)
+                #else
+                    .padding(.vertical, 12)
+                #endif
                 .padding(.horizontal, 12)
                 .background(Color.support)
         }
@@ -255,22 +284,32 @@ private struct MessageViewText: View {
 
     var extraSpacing: String {
         var count: Int = 0
-#if !os(watchOS)
-        if let st = message.shownTime {
-            count += st.count * 4 / 3 + 4
-        }
+        #if !os(watchOS)
+            if let st = message.shownTime {
+                count += st.count * 4 / 3 + 4
+            }
 
-        if message.showSending && message.shownTime != nil {
-            count += 2
-        }
-        if message.showSending {
-            count += 2
-        }
-#else
-        if message.showSending {
-            count += 4
-        }
-#endif
+            if message.showSending && message.shownTime != nil {
+                count += 2
+            }
+            if message.showSending {
+                count += 2
+            }
+            if message.aiMessage {
+                count += 3
+            } else if message.humanSupportMessage {
+                count += 7
+            }
+        #else
+            if message.showSending {
+                count += 4
+            }
+            if message.aiMessage {
+                count += 3
+            } else if message.humanSupportMessage {
+                count += 7
+            }
+        #endif
 
         if count > 0 {
             return String(repeating: " ", count: count) + "⠀"
@@ -317,7 +356,7 @@ extension Message {
         }
 
         if !self.fetchedBackend && !self.robotMessage && self.id != "start" {
-             return true
+            return true
         }
 
         return false
@@ -325,58 +364,66 @@ extension Message {
 }
 
 #if DEBUG
-#Preview("Typing Indicator") {
-    SupportTypingIndicator()
-        .padding()
-}
+    #Preview("Typing Indicator") {
+        SupportTypingIndicator()
+            .padding()
+    }
 
-#Preview("Messaging Attachment") {
-    MessageBubble(message: getAttachmentMessage(), previous: nil)
-        .padding()
-}
+    #Preview("Messaging Attachment") {
+        MessageBubble(message: getAttachmentMessage(), previous: nil)
+            .padding()
+    }
 
-func getAttachmentMessage() -> Message {
-    var m = Message(
-        id: "123",
-        message: "Hi Scott, this is a test message",
-        author: .me,
-        attachments: [Message.SentAttachment(
-            id: "hi",
-            dataHash: "nil",
-            dataSize: 0,
-            filename: "diagnostics.json",
-            mimetype: "application/json"
-        )]
-    )
-    m.lastSendAttempt = .now
-    return m
-}
+    func getAttachmentMessage() -> Message {
+        var m = Message(
+            id: "123",
+            message: "Hi Scott, this is a test message",
+            author: .me,
+            attachments: [
+                Message.SentAttachment(
+                    id: "hi",
+                    dataHash: "nil",
+                    dataSize: 0,
+                    filename: "diagnostics.json",
+                    mimetype: "application/json"
+                )
+            ]
+        )
+        m.lastSendAttempt = .now
+        return m
+    }
 
-#Preview("Messaging Bubble") {
-    MessageBubble(message: Message(
-        id: "123",
-        message: "Hi Scott, this is a test message",
-        author: .me
-    ), previous: nil)
+    #Preview("Messaging Bubble") {
+        MessageBubble(
+            message: Message(
+                id: "123",
+                message: "Hi Scott, this is a test message",
+                author: .me
+            ), previous: nil
+        )
         .padding()
-}
+    }
 
-#Preview("Messaging Bubble Response") {
-    MessageBubble(message: Message(
-        id: "123",
-        message: "Hi dude, this is a response message with a https://example.com link",
-        author: .support
-    ), previous: nil)
+    #Preview("Messaging Bubble Response") {
+        MessageBubble(
+            message: Message(
+                id: "123",
+                message: "Hi dude, this is a response message with a https://example.com link",
+                author: .support
+            ), previous: nil
+        )
         .padding()
-}
+    }
 
-#Preview("Messaging Bubble Response Robot") {
-    MessageBubble(message: Message(
-        id: "123",
-        message: "Hi dude, this is a response message [https://test.com]",
-        author: .support,
-        robotMessage: true
-    ), previous: nil)
+    #Preview("Messaging Bubble Response Robot") {
+        MessageBubble(
+            message: Message(
+                id: "123",
+                message: "Hi dude, this is a response message [https://test.com]",
+                author: .support,
+                robotMessage: true
+            ), previous: nil
+        )
         .padding()
-}
+    }
 #endif

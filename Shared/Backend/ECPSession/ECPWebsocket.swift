@@ -24,7 +24,7 @@ enum ECPWebsocketState: Equatable, CustomDebugStringConvertible {
     }
 }
 
-actor ECPWebsocketClient: Sendable {
+actor ECPWebsocketClient {
     enum ECPError: Error {
         case requestFailed(String)
         case badKeypress(RemoteButton)

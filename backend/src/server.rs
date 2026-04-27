@@ -16,7 +16,7 @@ use axum::{
 use axum::{routing::get, serve::ListenerExt, Router};
 use base64::{prelude::BASE64_STANDARD, Engine};
 pub use error::ApiError;
-use futures::{stream, FutureExt, StreamExt};
+use futures::{stream, StreamExt};
 use opentelemetry::trace::{SpanKind, TraceContextExt};
 use serde::{Deserialize, Serialize};
 use tokio::{net::TcpListener, task::JoinHandle};
@@ -35,7 +35,9 @@ use crate::{discord::DiscordMessage, AppContext};
 
 const UPLOAD_LIMIT: usize = 10 * 1024 * 1024;
 
-pub async fn start_server(app_context: AppContext) -> anyhow::Result<JoinHandle<()>> {
+pub async fn start_server(
+    app_context: AppContext,
+) -> anyhow::Result<JoinHandle<anyhow::Result<()>>> {
     let port = app_context.port;
     let router = build_app(app_context);
     let router = router.clone();
@@ -52,8 +54,7 @@ pub async fn start_server(app_context: AppContext) -> anyhow::Result<JoinHandle<
         let server = axum::serve(tcp_listener, router.into_make_service());
         server.await.context("error running HTTP server")?;
         anyhow::Result::Ok(())
-    }
-    .map(|_: Result<(), anyhow::Error>| ());
+    };
 
     tokio::task::Builder::new()
         .name("http-server")
@@ -208,9 +209,17 @@ pub struct DiscordMessageDownload {
     #[serde(rename = "type")]
     pub message_type: u8,
     pub attachments: Vec<DiscordFile>,
+    pub ai_message: bool,
+    pub human_support_message: bool,
 }
 impl DiscordMessageDownload {
-    async fn prepare(message: DiscordMessage) -> Result<Self, error::ApiError> {
+    async fn prepare(
+        message: DiscordMessage,
+        ai_bot_id: Option<i64>,
+        human_support_user_id: Option<i64>,
+    ) -> Result<Self, error::ApiError> {
+        let ai_message = Some(message.author.id) == ai_bot_id;
+        let human_support_message = Some(message.author.id) == human_support_user_id;
         let attachments = stream::iter(message.attachments.into_iter())
             .map(|attachment| async move {
                 let url = attachment.url;
@@ -253,6 +262,8 @@ impl DiscordMessageDownload {
             author: message.author,
             message_type: message.message_type,
             attachments,
+            ai_message,
+            human_support_message,
         })
     }
 }
@@ -273,8 +284,12 @@ async fn get_user_state(
         .into_iter()
         .filter(|m| !m.is_hidden())
         .map(|m| m.normalize());
+    let ai_bot_id = app_context.ai_responder_discord_bot_id();
+    let human_support_user_id = app_context.ai_responder_human_support_user_id();
     let messages = stream::iter(messages)
-        .map(|m| async { DiscordMessageDownload::prepare(m).await }) // Async mapping
+        .map(|m| async move {
+            DiscordMessageDownload::prepare(m, ai_bot_id, human_support_user_id).await
+        }) // Async mapping
         .buffer_unordered(10) // Adjust concurrency level as needed
         .collect::<Vec<_>>() // Collect into Vec
         .await;
@@ -555,13 +570,6 @@ async fn upload_roam_dsym(
     }))
 }
 
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct DeviceDsymUploadRequest {
-    #[serde(deserialize_with = "base64_data_de")]
-    dsym_zip: Vec<u8>,
-}
-
 async fn new_message(
     State(app_context): State<AppContext>,
     Json(message_request): Json<MessageRequestV2>,
@@ -573,12 +581,35 @@ async fn new_message(
         attachment,
         nonce,
     } = message_request;
+    let attachment_summary = attachment
+        .as_ref()
+        .map(|attachment| {
+            format!(
+                "{} bytes={} type={} paired_messages={}",
+                attachment.filename,
+                attachment.data.len(),
+                attachment.content_type,
+                attachment.paired_messages.len()
+            )
+        })
+        .unwrap_or_else(|| "none".to_string());
+    tracing::info!(
+        user_id = %device_id,
+        nonce = nonce.as_deref().unwrap_or("--"),
+        content_bytes = content.len(),
+        attachment = %attachment_summary,
+        "Received new-message request"
+    );
     let options = DiscordMessageOptions {
         nonce,
         ..Default::default()
     };
 
     if content.is_empty() && attachment.is_none() {
+        tracing::warn!(
+            user_id = %device_id,
+            "Rejecting new-message request with no content or attachment"
+        );
         return Err(ApiError::BadRequest(
             "Content or attachments must be provided".to_string(),
         ));
@@ -598,11 +629,41 @@ async fn new_message(
     let user = app_context
         .refresh_user(user, None, &installation_info)
         .await?;
+    if app_context.ai_responder_enabled() {
+        if let Some(ai_client) = app_context.ai_responder_discord_client() {
+            if let Err(err) = ai_client.join_thread(user.thread_id).await {
+                tracing::warn!(
+                    user_id = %device_id,
+                    thread_id = user.thread_id,
+                    error = ?err,
+                    "AI responder bot could not access or join support thread before user message"
+                );
+            }
+        }
+    }
+    tracing::info!(
+        user_id = %device_id,
+        thread_id = user.thread_id,
+        "Sending new-message request to Discord"
+    );
     let message_result = app_context
         .discord_client()
         .send_message(user.thread_id, &content, attachment, Some(&options))
         .await?;
-    Ok(Json(DiscordMessageDownload::prepare(message_result).await?))
+    tracing::info!(
+        user_id = %device_id,
+        thread_id = user.thread_id,
+        discord_message_id = message_result.id,
+        "Sent new-message request to Discord"
+    );
+    Ok(Json(
+        DiscordMessageDownload::prepare(
+            message_result,
+            app_context.ai_responder_discord_bot_id(),
+            app_context.ai_responder_human_support_user_id(),
+        )
+        .await?,
+    ))
 }
 
 async fn new_message_old(

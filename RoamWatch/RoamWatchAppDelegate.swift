@@ -3,7 +3,7 @@ import UserNotifications
 import Combine
 
 @MainActor
-final class RoamWatchAppDelegate: NSObject, ObservableObject, Sendable {
+final class RoamWatchAppDelegate: NSObject, ObservableObject {
     @Published var navigationPath: NavigationManager
     @Published var networkMonitor: NetworkMonitor
 

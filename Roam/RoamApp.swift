@@ -2,6 +2,7 @@ import OSLog
 import SwiftUI
 import TipKit
 import UniformTypeIdentifiers
+
 #if os(macOS)
     import AppKit
 #endif
@@ -21,7 +22,8 @@ struct RoamApp: App {
 
     @AppStorage(UserDefaultKeys.showMenuBar) private var showMenuBar: Bool = false
     @KeyboardShortcutStorage(.showRoam) var showRoamShortcut: CustomKeyboardShortcut?
-    @KeyboardShortcutStorage(.keyboardShortcuts) var keyboardShortcutPanelShortcut: CustomKeyboardShortcut?
+    @KeyboardShortcutStorage(.keyboardShortcuts) var keyboardShortcutPanelShortcut:
+        CustomKeyboardShortcut?
     @KeyboardShortcutStorage(.chatWithDeveloper) var messagesShortcut: CustomKeyboardShortcut?
     @State var hotkeyRef: Any?
 
@@ -29,22 +31,22 @@ struct RoamApp: App {
     init() {
         Log.lifecycle.notice("Starting Roam")
         #if !os(macOS)
-        installAborter()
+            installAborter()
         #endif
         installSIGPIPEHandler()
 
-#if !os(macOS)
-        let dontKillAssertion = QActivityRunInBackgroundAssertion(name: "Tips.configure")
-        if dontKillAssertion.isReleased() {
-            return
-        }
-        defer {
-            dontKillAssertion.release()
-        }
-#endif
+        #if !os(macOS)
+            let dontKillAssertion = QActivityRunInBackgroundAssertion(name: "Tips.configure")
+            if dontKillAssertion.isReleased() {
+                return
+            }
+            defer {
+                dontKillAssertion.release()
+            }
+        #endif
         try? Tips.configure([
             .displayFrequency(.immediate),
-            .datastoreLocation(.groupContainer(identifier: mainAppGroup))
+            .datastoreLocation(.groupContainer(identifier: mainAppGroup)),
         ])
         migrateOffSwiftData()
     }
@@ -53,13 +55,13 @@ struct RoamApp: App {
         if inScreenshotTestingContext() {
             return .contentSize
         } else {
-        #if os(macOS)
-            return .contentSize
-        #elseif os(visionOS)
-            return .contentMinSize
-        #else
-            return .automatic
-        #endif
+            #if os(macOS)
+                return .contentSize
+            #elseif os(visionOS)
+                return .contentMinSize
+            #else
+                return .automatic
+            #endif
         }
     }
 
@@ -76,38 +78,58 @@ struct RoamApp: App {
                     }
                     .onDisappear {
                         // If there is only one window left (this one), then revert to .accessory app
-                        if NSApp.windows.filter({$0.level != .statusBar && $0.isVisible}).count <= 1 && showMenuBar {
+                        if NSApp.windows.filter({ $0.level != .statusBar && $0.isVisible }).count
+                            <= 1 && showMenuBar
+                        {
                             NSApp.setActivationPolicy(.accessory)
                         }
                     }
-                    .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+                    .onReceive(
+                        NotificationCenter.default.publisher(
+                            for: NSApplication.willTerminateNotification)
+                    ) { _ in
                         Log.lifecycle.notice("Shutting down main body from willTerminate")
                     }
-                    .frame(width: macOSWidth, height: macOSHeigth)
+                    .frame(
+                        minWidth: macOSMinWidth,
+                        idealWidth: macOSWidth,
+                        maxWidth: macOSMaxWidth,
+                        minHeight: macOSMinHeight,
+                        idealHeight: macOSHeigth,
+                        maxHeight: macOSMaxHeight
+                    )
                     .preferredColorScheme(.dark)
             }
             .keyboardShortcut(showRoamShortcut?.shortcut)
             .onChange(of: showRoamShortcut, initial: true) { _, new in
                 if let currentHotkeyRef = hotkeyRef {
                     hotkeyRef = nil
-                    Log.lifecycle.notice("Uninstalling old global hotkey \(String(describing: showRoamShortcut), privacy: .public)")
+                    Log.lifecycle.notice(
+                        "Uninstalling old global hotkey \(String(describing: showRoamShortcut), privacy: .public)"
+                    )
                     do {
                         try uninstallCarbonHandler(currentHotkeyRef)
                     } catch {
-                        Log.lifecycle.warning("Unable to uninstall global hotkey with error \(error, privacy: .public)")
+                        Log.lifecycle.warning(
+                            "Unable to uninstall global hotkey with error \(error, privacy: .public)"
+                        )
                     }
                 } else {
                     Log.lifecycle.notice("No global hotkey to uninstall")
                 }
                 do {
                     if let shortcut = new, let key = shortcut.key {
-                        Log.lifecycle.notice("Installing global hotkey \(String(describing: shortcut), privacy: .public)")
-                        hotkeyRef = try installCarbonHandler(key: key, modifiers: shortcut.modifiers)
+                        Log.lifecycle.notice(
+                            "Installing global hotkey \(String(describing: shortcut), privacy: .public)"
+                        )
+                        hotkeyRef = try installCarbonHandler(
+                            key: key, modifiers: shortcut.modifiers)
                     } else {
                         Log.lifecycle.notice("No global hotkey to install")
                     }
                 } catch {
-                    Log.lifecycle.warning("Unable to install global hotkey with error \(error, privacy: .public)")
+                    Log.lifecycle.warning(
+                        "Unable to install global hotkey with error \(error, privacy: .public)")
                 }
             }
             .enableBackgroundDragging()
@@ -117,85 +139,122 @@ struct RoamApp: App {
             .windowToolbarStyle(.unifiedCompact(showsTitle: false))
             .commands {
                 CommandGroup(replacing: CommandGroupPlacement.appInfo) {
-                    Button(action: {
-                        openWindow(id: "about")
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            NSApp.forceFront("about")
-                        }
-                    }, label: {
-                        Text("About Roam", comment: "Button to open the about page of the Roam app")
-                    })
+                    Button(
+                        action: {
+                            openWindow(id: "about")
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                NSApp.forceFront("about")
+                            }
+                        },
+                        label: {
+                            Text(
+                                "About Roam",
+                                comment: "Button to open the about page of the Roam app")
+                        })
                 }
 
                 if appDelegate.navigationPath.focusedWindow == .remote {
                     CommandGroup(replacing: CommandGroupPlacement.pasteboard) {
-                        PasteButton(payloadType: String.self, onPaste: { item in
-                            Task {
-                                guard let first = item.first else {
-                                    Log.lifecycle.notice("Failed to paste because no item in pasteboard")
-                                    return
-                                }
-                                guard let texteditId = appDelegate.ecpMonitor.textEditStatus.texteditId else {
-                                    Log.lifecycle.notice("Failed to paste because no textedit id")
+                        PasteButton(
+                            payloadType: String.self,
+                            onPaste: { item in
+                                Task {
+                                    guard let first = item.first else {
+                                        Log.lifecycle.notice(
+                                            "Failed to paste because no item in pasteboard")
+                                        return
+                                    }
+                                    guard
+                                        let texteditId = appDelegate.ecpMonitor.textEditStatus
+                                            .texteditId
+                                    else {
+                                        Log.lifecycle.notice(
+                                            "Failed to paste because no textedit id")
 
-                                    if let (app, params) = parsePastedUrl(first) {
-                                        do {
-                                            try await appDelegate.ecpMonitor.ecpClient?.launchApp(app, params: params)
-                                        } catch {
-                                            Log.lifecycle.error("Error opening app from url app=\(app, privacy: .public) params=\(params, privacy: .public): \(error, privacy: .public)")
+                                        if let (app, params) = parsePastedUrl(first) {
+                                            do {
+                                                try await appDelegate.ecpMonitor.ecpClient?
+                                                    .launchApp(app, params: params)
+                                            } catch {
+                                                Log.lifecycle.error(
+                                                    "Error opening app from url app=\(app, privacy: .public) params=\(params, privacy: .public): \(error, privacy: .public)"
+                                                )
+                                            }
                                         }
+
+                                        return
                                     }
 
-                                    return
-                                }
-
-                                do {
-                                    try await appDelegate.ecpMonitor.ecpClient?.setTextEdit(first, texteditId: texteditId)
-                                } catch {
-                                    Log.lifecycle.error("Failed to paste: \(error, privacy: .public)")
+                                    do {
+                                        try await appDelegate.ecpMonitor.ecpClient?.setTextEdit(
+                                            first, texteditId: texteditId)
+                                    } catch {
+                                        Log.lifecycle.error(
+                                            "Failed to paste: \(error, privacy: .public)")
+                                    }
                                 }
                             }
-                        })
+                        )
                         .customKeyboardShortcut(.paste)
 
-                        Button("Cut", systemImage: "clipboard", action: {
-                            Task {
-                                guard let texteditId = appDelegate.ecpMonitor.textEditStatus.texteditId else {
-                                    Log.lifecycle.notice("Failed to paste because no textedit id")
-                                    return
-                                }
+                        Button(
+                            "Cut", systemImage: "clipboard",
+                            action: {
+                                Task {
+                                    guard
+                                        let texteditId = appDelegate.ecpMonitor.textEditStatus
+                                            .texteditId
+                                    else {
+                                        Log.lifecycle.notice(
+                                            "Failed to paste because no textedit id")
+                                        return
+                                    }
 
-                                if let texteditText = appDelegate.ecpMonitor.textEditStatus.text {
-                                    Log.lifecycle.notice("Cutting text \(texteditText, privacy: .public)")
-                                    NSPasteboard.general.clearContents()
-                                    NSPasteboard.general.setString(texteditText, forType: .string)
-                                }
+                                    if let texteditText = appDelegate.ecpMonitor.textEditStatus.text
+                                    {
+                                        Log.lifecycle.notice(
+                                            "Cutting text \(texteditText, privacy: .public)")
+                                        NSPasteboard.general.clearContents()
+                                        NSPasteboard.general.setString(
+                                            texteditText, forType: .string)
+                                    }
 
-                                do {
-                                    try await appDelegate.ecpMonitor.ecpClient?.setTextEdit("", texteditId: texteditId)
-                                } catch {
-                                    Log.lifecycle.error("Failed to paste: \(error, privacy: .public)")
+                                    do {
+                                        try await appDelegate.ecpMonitor.ecpClient?.setTextEdit(
+                                            "", texteditId: texteditId)
+                                    } catch {
+                                        Log.lifecycle.error(
+                                            "Failed to paste: \(error, privacy: .public)")
+                                    }
                                 }
                             }
-                        })
+                        )
                         .customKeyboardShortcut(.cut)
                         .disabled(appDelegate.ecpMonitor.textEditStatus.texteditId == nil)
 
-                        Button("Copy", systemImage: "clipboard", action: {
-                            Task {
-                                if let texteditText = appDelegate.ecpMonitor.textEditStatus.text {
-                                    Log.lifecycle.notice("Copying text \(texteditText, privacy: .public)")
-                                    NSPasteboard.general.clearContents()
-                                    NSPasteboard.general.setString(texteditText, forType: .string)
+                        Button(
+                            "Copy", systemImage: "clipboard",
+                            action: {
+                                Task {
+                                    if let texteditText = appDelegate.ecpMonitor.textEditStatus.text
+                                    {
+                                        Log.lifecycle.notice(
+                                            "Copying text \(texteditText, privacy: .public)")
+                                        NSPasteboard.general.clearContents()
+                                        NSPasteboard.general.setString(
+                                            texteditText, forType: .string)
+                                    }
                                 }
                             }
-                        })
+                        )
                         .customKeyboardShortcut(.copy)
                         .disabled(appDelegate.ecpMonitor.textEditStatus.texteditId == nil)
                     }
                 }
 
-                if appDelegate.navigationPath.focusedWindow == .settings || appDelegate.navigationPath.focusedWindow == .remote {
+                if appDelegate.navigationPath.focusedWindow == .settings
+                    || appDelegate.navigationPath.focusedWindow == .remote
+                {
                     CommandGroup(after: .appSettings) {
                         Divider()
                         Button("Add Device", systemImage: "plus") {
@@ -229,10 +288,15 @@ struct RoamApp: App {
                 }
             }
 
-            MenuBarExtra("Roam Menu Bar", systemImage: "appletvremote.gen3", isInserted: self.$showMenuBar) {
+            MenuBarExtra(
+                "Roam Menu Bar", systemImage: "appletvremote.gen3", isInserted: self.$showMenuBar
+            ) {
                 RemoteViewContained(isInMenuBar: true)
                     .environmentObject(appDelegate)
-                    .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+                    .onReceive(
+                        NotificationCenter.default.publisher(
+                            for: NSApplication.willTerminateNotification)
+                    ) { _ in
                         Log.lifecycle.notice("Shutting meuBar down from willTerminate")
                     }
                     .preferredColorScheme(.dark)
@@ -240,34 +304,46 @@ struct RoamApp: App {
             .menuBarExtraStyle(.window)
         #else
             WindowGroup {
-                    RemoteView()
-#if os(visionOS)
-                        .frame(width: inScreenshotTestingContext() ? macOSWidth : nil, height: inScreenshotTestingContext() ? macOSHeigth : nil)
+                RemoteView()
+                    #if os(visionOS)
+                        .frame(
+                            width: inScreenshotTestingContext() ? macOSWidth : nil,
+                            height: inScreenshotTestingContext() ? macOSHeigth : nil
+                        )
                         .frame(minWidth: 400, minHeight: 950)
-#endif
-                        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
-                            Log.lifecycle.notice("Shutting down from willTerminate")
-                        }
-                        .preferredColorScheme(.dark)
+                    #endif
+                    .onReceive(
+                        NotificationCenter.default.publisher(
+                            for: UIApplication.willTerminateNotification)
+                    ) { _ in
+                        Log.lifecycle.notice("Shutting down from willTerminate")
+                    }
+                    .preferredColorScheme(.dark)
             }
             #if os(visionOS)
-            .windowResizability(windowResizability)
-            .defaultSize(width: visionOSWidth, height: 1000)
+                .windowResizability(windowResizability)
+                .defaultSize(width: visionOSWidth, height: 1000)
             #endif
         #endif
 
         #if os(macOS)
-            Window(String(localized: "Messages", comment: "Window header for the messages window"), id: "messages") {
+            Window(
+                String(localized: "Messages", comment: "Window header for the messages window"),
+                id: "messages"
+            ) {
                 MessageView()
                     .frame(width: 400)
                     .translucentBackground()
+                    .removeToolbarTitle()
                     .onAppear {
                         NSApp.setActivationPolicy(.regular)
                         NSApp.forceFront("messages")
                     }
                     .onDisappear {
                         // If there is only one window left (this one), then revert to .accessory app
-                        if NSApp.windows.filter({$0.level != .statusBar && $0.isVisible}).count <= 1 && showMenuBar {
+                        if NSApp.windows.filter({ $0.level != .statusBar && $0.isVisible }).count
+                            <= 1 && showMenuBar
+                        {
                             NSApp.setActivationPolicy(.accessory)
                         }
                     }
@@ -279,12 +355,15 @@ struct RoamApp: App {
             Window("Keyboard Shortcuts", id: "keyboard-shortcuts") {
                 KeyboardShortcutPanel()
                     .translucentBackground()
+                    .removeToolbarTitle()
                     .onAppear {
                         NSApp.setActivationPolicy(.regular)
                         NSApp.forceFront("keyboard-shortcuts")
                     }
                     .onDisappear {
-                        if NSApp.windows.filter({!$0.isExcludedFromWindowsMenu && $0.canBecomeKey && $0.isVisible}).count <= 1 && showMenuBar {
+                        if NSApp.windows.filter({
+                            !$0.isExcludedFromWindowsMenu && $0.canBecomeKey && $0.isVisible
+                        }).count <= 1 && showMenuBar {
                             NSApp.setActivationPolicy(.accessory)
                         }
                     }
@@ -298,12 +377,15 @@ struct RoamApp: App {
             Settings {
                 MacSettings()
                     .translucentBackground()
+                    .removeToolbarTitle()
                     .enableResize()
                     .onAppear {
                         NSApp.setActivationPolicy(.regular)
                     }
                     .onDisappear {
-                        if NSApp.windows.filter({$0.level != .statusBar && $0.isVisible}).count <= 1 && showMenuBar {
+                        if NSApp.windows.filter({ $0.level != .statusBar && $0.isVisible }).count
+                            <= 1 && showMenuBar
+                        {
                             NSApp.setActivationPolicy(.accessory)
                         }
                     }
@@ -324,7 +406,9 @@ struct RoamApp: App {
                         NSApp.forceFront("about")
                     }
                     .onDisappear {
-                        if NSApp.windows.filter({$0.level != .statusBar && $0.isVisible}).count <= 1 && showMenuBar {
+                        if NSApp.windows.filter({ $0.level != .statusBar && $0.isVisible }).count
+                            <= 1 && showMenuBar
+                        {
                             NSApp.setActivationPolicy(.accessory)
                         }
                     }
@@ -344,10 +428,26 @@ struct RoamApp: App {
     }
 
     var macOSWidth: CGFloat {
-        return 244
+        return 760
     }
 
     var macOSHeigth: CGFloat {
-        return 620
+        return 680
+    }
+
+    var macOSMinWidth: CGFloat {
+        return 560
+    }
+
+    var macOSMaxWidth: CGFloat {
+        return 1100
+    }
+
+    var macOSMinHeight: CGFloat {
+        return 560
+    }
+
+    var macOSMaxHeight: CGFloat {
+        return 900
     }
 }

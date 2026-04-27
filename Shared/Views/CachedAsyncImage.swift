@@ -56,7 +56,7 @@ enum ThumbnailSize: CustomStringConvertible {
     }
 }
 
-final actor ThumbnailGenerator: Sendable {
+final actor ThumbnailGenerator {
     nonisolated static let shared = ThumbnailGenerator()
 
     private let thumbnailQueue = DispatchQueue.imagesWorkQueue

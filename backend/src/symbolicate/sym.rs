@@ -1,5 +1,5 @@
 use crate::database::DeviceInfo;
-use crate::symbolicate::{ApplePlatformVersion, RoamDebugInfo};
+use crate::symbolicate::RoamDebugInfo;
 use anyhow::{Context, Result};
 use object::read::macho::{FatArch, MachOFatFile32, MachOFatFile64};
 use object::{FileKind, Object};
@@ -49,10 +49,6 @@ impl RoamFileAndPathHelper {
             symbolication_root,
             device_uuid,
         }
-    }
-
-    fn device_dir(&self, device_uuid: Uuid) -> PathBuf {
-        self.symbolication_root.join(device_uuid.to_string())
     }
 
     async fn load_file_impl(
@@ -305,9 +301,7 @@ impl FileAndPathHelper for RoamFileAndPathHelper {
 }
 
 pub struct AddressResult {
-    pub symbol_address: u32,
     pub symbol_name: String,
-    pub function_size: Option<u32>,
     pub inline_frames: Option<Vec<FrameDebugInfo>>,
 }
 
@@ -341,17 +335,9 @@ impl LookedUpAddresses {
         }
     }
 
-    pub fn add_address_symbol(
-        &mut self,
-        address: u32,
-        symbol_address: u32,
-        symbol_name: String,
-        function_size: Option<u32>,
-    ) {
+    pub fn add_address_symbol(&mut self, address: u32, symbol_name: String) {
         *self.address_results.get_mut(&address).unwrap() = Some(AddressResult {
-            symbol_address,
             symbol_name,
-            function_size,
             inline_frames: None,
         });
     }
@@ -374,10 +360,8 @@ impl LookedUpAddresses {
                 // This happens when we only have debug info but no symbol for this address.
                 // This is a rare case.
                 *entry = Some(AddressResult {
-                    symbol_address: address, // TODO: Would be nice to get the actual function start address from addr2line
                     symbol_name: outer_function_name
                         .map_or_else(|| format!("0x{address:x}"), str::to_string),
-                    function_size: None,
                     inline_frames: Some(frames),
                 });
             }
@@ -436,12 +420,7 @@ impl SymbolicationClient {
 
         for &address in &addresses {
             if let Some(address_info) = symbol_map.lookup_sync(LookupAddress::Relative(address)) {
-                symbolication_result.add_address_symbol(
-                    address,
-                    address_info.symbol.address,
-                    address_info.symbol.name,
-                    address_info.symbol.size,
-                );
+                symbolication_result.add_address_symbol(address, address_info.symbol.name);
                 match address_info.frames {
                     Some(FramesLookupResult::Available(frames)) => {
                         symbolication_result.add_address_debug_info(address, frames)
@@ -471,58 +450,6 @@ impl SymbolicationClient {
 }
 
 impl SymbolicationClient {
-    // Placeholder methods that you would implement based on your storage
-    fn device_dsym_dir(&self, device_uuid: &str) -> PathBuf {
-        self.symbolication_root
-            .join("device-roots")
-            .join(device_uuid)
-    }
-
-    fn binary_dsym_path(
-        &self,
-        build_version: &str,
-        bundle_identifier: &str,
-        os_platform: &ApplePlatformVersion,
-    ) -> PathBuf {
-        self.symbolication_root
-            .join("binaries")
-            .join(build_version)
-            .join(os_platform.to_string())
-            .join(format!("{bundle_identifier}.dSYM"))
-    }
-
-    pub async fn download_device_dsyms(
-        &self,
-        device_type_identifier: &str,
-        os_build_id: &str,
-    ) -> Result<PathBuf> {
-        // 0. Need to get the firmware UUID and download path from https://api.ipsw.me/v4/
-        // 0.5 Need to check our downloads to make sure we don't already have everything downloaded
-        // 1. Need to get the ipsw file from the download path retrieved above
-        // 2. Need to extract all relevant dSYMs from it using available methods
-        // 3. Need to symlink all binaries from from <dsym_path>/cache/<binary_UUID> to the dsym_path
-        let _ = (device_type_identifier, os_build_id);
-        anyhow::bail!("device dSYM download is not implemented yet")
-    }
-
-    pub async fn store_dsym(
-        &self,
-        build_version: &str,
-        bundle_identifier: &str,
-        os_platform: &ApplePlatformVersion,
-        dsym: Vec<u8>,
-    ) -> Result<(), anyhow::Error> {
-        let binary_dsym_path = self.binary_dsym_path(build_version, bundle_identifier, os_platform);
-        tokio::fs::create_dir_all(binary_dsym_path.parent().unwrap()).await?;
-        tokio::fs::write(&binary_dsym_path, dsym).await?;
-        self.symlink_dsym_binaries(&binary_dsym_path).await?;
-        Ok(())
-    }
-
-    pub async fn store_dsym_zip(&self, dsym_zip: Vec<u8>) -> Result<StoredDsymArchive> {
-        self.store_dsym_zip_with_metadata(None, dsym_zip).await
-    }
-
     pub async fn store_dsym_zip_with_metadata(
         &self,
         metadata: Option<DsymUploadMetadata>,
@@ -598,22 +525,6 @@ impl SymbolicationClient {
             extracted_root,
             indexed_debug_ids,
         })
-    }
-
-    async fn symlink_dsym_binaries(&self, binary_dsym_path: &Path) -> anyhow::Result<()> {
-        let binary_dsym_path = binary_dsym_path.to_path_buf();
-        let symbolication_root = self.symbolication_root.clone();
-        tokio::task::spawn_blocking(move || {
-            let dwarf_files = find_dwarf_files(&binary_dsym_path)?;
-            for dwarf_file in dwarf_files {
-                for debug_id in debug_ids_for_macho(&dwarf_file)? {
-                    index_debug_file(&symbolication_root, debug_id, &dwarf_file)?;
-                }
-            }
-            Ok(())
-        })
-        .await
-        .context("joining dSYM indexing task")?
     }
 
     async fn ensure_system_symbols_cached(&self, payload: &MetricKitPayload) -> Result<()> {
@@ -782,8 +693,6 @@ struct MetricKitCallStackFrame {
     binary_uuid: Option<String>,
     #[serde(default)]
     binary_name: Option<String>,
-    #[serde(default)]
-    address: Option<u64>,
     #[serde(default)]
     offset_into_binary_text_segment: Option<u64>,
     #[serde(default)]
@@ -1273,13 +1182,6 @@ fn link_or_copy_debug_file(source: &Path, destination: &Path) -> Result<()> {
     }
 
     Ok(())
-}
-
-#[derive(Debug)]
-struct SymbolInfo {
-    symbol_name: String,
-    file_name: Option<String>,
-    line_number: Option<u64>,
 }
 
 #[cfg(test)]

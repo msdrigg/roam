@@ -84,7 +84,10 @@ struct AppLinksView: View {
                         spacing: gridSpacing
                     ) {
                         ForEach(Array(appLinks.enumerated()), id: \.element.id) { _, app in
-                            AppLinkButton(app: app, action: handleOpenApp)
+                            AppLinkButton(
+                                app: app,
+                                action: handleOpenApp
+                            )
                                 .scrollTransition(.interactive) { content, phase in
                                     content
                                         .scaleEffect(phase != .identity ? 0.7 : 1)
@@ -106,6 +109,10 @@ struct AppLinksView: View {
                 .safeAreaPadding(.horizontal, 4)
             }
         }
+            .onChange(of: deviceId) { _, newDeviceId in
+                appLoader = Self.makeAppLoader(deviceId: newDeviceId)
+            }
+            .foregroundStyle(.white.opacity(0.8))
             .frame(height: totalGridHeight)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -148,7 +155,14 @@ struct AppLinkButton: View {
                     .frame(maxWidth: gridWidth)
             }
         })
-        .buttonStyle(.plain)
+        .appLinkButtonStyle()
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func appLinkButtonStyle() -> some View {
+        self.buttonStyle(.plain)
     }
 }
 

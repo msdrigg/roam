@@ -5,16 +5,6 @@ use std::collections::HashMap;
 use crate::database::DeviceInfo;
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct DebugError {
-    pub message: String,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct BadResponseError {
-    pub message: String,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LogEntry {
     pub message: String,
@@ -38,17 +28,6 @@ pub struct DeviceDebugInfo {
     pub device: DeviceAppEntity,
     pub success_response: Option<ResponseData>,
     pub error_response: Option<String>,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct InstallationInfo {
-    pub user_id: String,
-    pub build_version: Option<String>,
-    pub release_version: Option<String>,
-    pub os_platform: Option<String>,
-    pub os_version: Option<String>,
-    pub user_locale: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

@@ -3,9 +3,12 @@
 !backend/
 !backend/**
 !docs/
+docs/*
 !docs/src/
+docs/src/*
 !docs/src/pages/
 !docs/src/pages/**
+docs/src/pages/**/*.mov
 
 backend/.env
 backend/data/

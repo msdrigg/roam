@@ -76,18 +76,90 @@ When `AI_RESPONDER_ENABLED=true`, these are required:
 
 ## Discord Setup
 
-Create a second Discord application for the AI responder. Do not reuse the bridge bot token.
+This backend uses two Discord applications. Keep their tokens and bot user IDs separate:
 
-Required bot permissions/intents:
-
--   Server membership in the same guild as the bridge bot.
--   Access to the support channel and its threads.
--   Send Messages.
--   Send Messages in Threads.
--   Read Message History.
--   Use the Message Content privileged intent, because the responder needs thread text for context.
+-   The bridge bot is configured by `DISCORD_TOKEN` and `DISCORD_BOT_ID`.
+-   The AI responder bot is configured by `AI_RESPONDER_DISCORD_TOKEN` and `AI_RESPONDER_DISCORD_BOT_ID`.
 
 Set `AI_RESPONDER_DISCORD_BOT_ID` to the bot user's numeric Discord id, not the application id if those differ.
+
+### Bridge bot install
+
+The bridge bot creates support threads and posts app-user messages into them.
+
+OAuth2 guild install scopes:
+
+-   `bot`
+-   `applications.commands` only if slash commands are added for this bot.
+
+Bot permissions:
+
+-   View Channels
+-   Send Messages
+-   Send Messages in Threads
+-   Create Public Threads
+-   Create Private Threads, only if support threads are changed to private threads.
+-   Read Message History
+
+Privileged gateway intents:
+
+-   Message Content Intent, because the bridge bot reads support-thread messages and forwards human replies back to app users.
+
+### AI responder bot install
+
+Create a second Discord application for the AI responder. Do not reuse the bridge bot token.
+
+OAuth2 guild install scopes:
+
+-   `bot`
+-   `applications.commands` only if real Discord slash commands are added. The current `:translate:` and `/translate` support is parsed from normal message text, so this scope is optional today.
+
+Bot permissions:
+
+-   View Channels
+-   Send Messages
+-   Send Messages in Threads
+-   Read Message History
+
+Privileged gateway intents:
+
+-   Message Content Intent, because the responder receives thread messages over the gateway and needs message text for context.
+-   Server Members Intent is not required.
+-   Presence Intent is not required.
+
+The AI bot does not create support threads. It watches existing support threads, joins them when needed, sends typing indicators, posts AI replies, and posts hidden handoff/translation messages.
+
+### Adding bots to the server
+
+For each Discord application:
+
+1.  Open the Discord Developer Portal.
+2.  Select the application.
+3.  Go to OAuth2 -> URL Generator.
+4.  Select the guild install scopes listed above.
+5.  Select the bot permissions listed above.
+6.  Open the generated authorization URL in a browser.
+7.  Choose the support server and authorize the bot.
+8.  Go to Bot -> Privileged Gateway Intents and enable Message Content Intent.
+
+After installing, verify the bot role has access to the parent support channel. Channel-specific permission overrides can deny access even when the OAuth install permissions are correct.
+
+### Support channel and thread access
+
+The parent support channel must allow both bot roles to:
+
+-   View Channel
+-   Read Message History
+-   Send Messages in Threads
+-   Send Messages
+
+If support threads are public threads, the AI bot can join a thread itself as long as it can view the parent channel and the thread is not archived.
+
+If support threads are private threads, the AI bot must be explicitly added to each private thread, or it must have a moderator-style permission such as Manage Threads that lets it see private threads. Private threads are only visible to invited members and moderators. A bot that cannot see a private thread will not receive gateway `MESSAGE_CREATE` events for that thread and REST calls such as joining the thread will fail with `403 Missing Access`.
+
+The current backend attempts to have the AI bot add itself to a support thread before the bridge bot posts a user message. That means the actor is the AI bot, using `AI_RESPONDER_DISCORD_TOKEN`. If this logs `Missing Access`, fix the AI bot role's support-channel access or explicitly add the AI bot to the private thread.
+
+If the design changes so the bridge bot adds the AI bot to private threads, the actor would be the bridge bot. In that case the bridge bot must already be able to access the thread and send messages in it, and it must call Discord's add-thread-member endpoint for `AI_RESPONDER_DISCORD_BOT_ID`.
 
 ## Fly Deployment
 

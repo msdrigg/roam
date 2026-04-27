@@ -107,12 +107,16 @@ struct SettingsView: View {
         customAccentColor = UserDefaults.standard.color(forKey: UserDefaultKeys.customAccentColor) ?? .accentColor
     }
 
+    private var allDevicesById: [String: Device] {
+        Dictionary((allDevices ?? []).map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    }
+
     var devices: [Device] {
-        allDevices?.filter { $0.visible } ?? []
+        (deviceListLoader.devices ?? []).compactMap { allDevicesById[$0] }.filter { $0.visible }
     }
 
     var hiddenDevices: [Device] {
-        allDevices?.filter { $0.hiddenAt != nil} ?? []
+        (hiddenDeviceListLoader.devices ?? []).compactMap { allDevicesById[$0] }.filter { $0.hiddenAt != nil }
     }
 
     private var allDeviceIds: [String] {

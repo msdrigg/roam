@@ -57,6 +57,7 @@ impl DiscordClient {
     const DISCORD_API_BASE_URL: &str = "https://discord.com/api/v10";
     const DEFAULT_AUTO_ARCHIVE_DURATION: i64 = 10080;
     const DISCORD_CONCURRENT_REQUESTS: usize = 3;
+    const DISCORD_NONCE_MAX_LENGTH: usize = 25;
 
     fn get_flags(options: Option<&DiscordMessageOptions>) -> u32 {
         let notify = options.map(|o| o.notify).unwrap_or(true);
@@ -68,6 +69,31 @@ impl DiscordClient {
         }
 
         flags
+    }
+
+    fn normalize_nonce(nonce: &str) -> String {
+        if nonce.len() <= Self::DISCORD_NONCE_MAX_LENGTH {
+            return nonce.to_string();
+        }
+
+        let compact: String = nonce
+            .chars()
+            .filter(|c| c.is_ascii_alphanumeric())
+            .take(Self::DISCORD_NONCE_MAX_LENGTH)
+            .collect();
+
+        if compact.is_empty() {
+            "0".to_string()
+        } else {
+            compact
+        }
+    }
+
+    fn normalize_options(options: Option<&DiscordMessageOptions>) -> Option<DiscordMessageOptions> {
+        options.map(|options| DiscordMessageOptions {
+            nonce: options.nonce.as_deref().map(Self::normalize_nonce),
+            notify: options.notify,
+        })
     }
 
     async fn acquire(&self) -> Result<tokio::sync::SemaphorePermit<'_>, AcquireError> {
@@ -186,6 +212,25 @@ impl DiscordClient {
         thread_id: i64,
         last_message_id: Option<i64>,
     ) -> Result<Vec<DiscordMessage>, DiscordError> {
+        self.get_messages_in_thread_with_limit(thread_id, last_message_id, None)
+            .await
+    }
+
+    pub async fn get_recent_messages_in_thread(
+        &self,
+        thread_id: i64,
+        limit: u8,
+    ) -> Result<Vec<DiscordMessage>, DiscordError> {
+        self.get_messages_in_thread_with_limit(thread_id, None, Some(limit))
+            .await
+    }
+
+    async fn get_messages_in_thread_with_limit(
+        &self,
+        thread_id: i64,
+        last_message_id: Option<i64>,
+        limit: Option<u8>,
+    ) -> Result<Vec<DiscordMessage>, DiscordError> {
         let _permit = self.acquire().await.expect("Semaphore should never close");
         self.error_on_locked()?;
 
@@ -195,8 +240,15 @@ impl DiscordClient {
             thread_id
         );
 
+        let mut query = Vec::new();
         if let Some(last_id) = last_message_id {
-            url = format!("{url}?after={last_id}");
+            query.push(format!("after={last_id}"));
+        }
+        if let Some(limit) = limit {
+            query.push(format!("limit={}", limit.clamp(1, 100)));
+        }
+        if !query.is_empty() {
+            url = format!("{url}?{}", query.join("&"));
         }
 
         tracing::info!("Fetching messages in thread: {}", thread_id);
@@ -389,6 +441,34 @@ impl DiscordClient {
         Ok(())
     }
 
+    pub async fn join_thread(&self, thread_id: i64) -> Result<(), DiscordError> {
+        let _permit = self.acquire().await.expect("Semaphore should never close");
+        self.error_on_locked()?;
+
+        let url = format!(
+            "{}/channels/{}/thread-members/@me",
+            Self::DISCORD_API_BASE_URL,
+            thread_id
+        );
+        tracing::info!("Joining thread {}", thread_id);
+
+        let response = self
+            .client
+            .put(&url)
+            .header("Authorization", format!("Bot {}", self.token))
+            .send()
+            .await
+            .map_err(|e| DiscordError::ConnectionError(e.into()))?;
+
+        self.update_rate_limit(response.headers());
+
+        let _ = self
+            .except_error_response(response, "joining thread")
+            .await?;
+
+        Ok(())
+    }
+
     pub async fn send_message(
         &self,
         thread_id: i64,
@@ -396,6 +476,9 @@ impl DiscordClient {
         attachment: Option<DiscordFileUpload>,
         options: Option<&DiscordMessageOptions>,
     ) -> Result<DiscordMessage, DiscordError> {
+        let normalized_options = Self::normalize_options(options);
+        let options = normalized_options.as_ref();
+
         if let Some(nonce) = options.and_then(|o| o.nonce.as_deref()) {
             if nonce.len() > 25 {
                 return Err(DiscordError::InvalidInput(
@@ -453,7 +536,9 @@ impl DiscordClient {
         attachments: Vec<DiscordFileUpload>,
         options: Option<&DiscordMessageOptions>,
     ) -> Result<(), DiscordError> {
-        let nonce = options.as_ref().and_then(|o| o.nonce.as_deref());
+        let normalized_options = Self::normalize_options(options);
+        let options = normalized_options.as_ref();
+        let nonce = options.and_then(|o| o.nonce.as_deref());
         if let Some(nonce) = nonce {
             if nonce.len() > 25 {
                 return Err(DiscordError::InvalidInput(
@@ -714,11 +799,6 @@ mod types {
         pub last_message_id: i64,
     }
 
-    #[derive(Debug, Clone, Deserialize, Serialize)]
-    pub struct ApiError {
-        pub code: u16,
-        pub message: String,
-    }
     #[derive(Deserialize)]
     pub struct IdResponse {
         #[serde(deserialize_with = "string_to_i64")]
@@ -734,6 +814,19 @@ mod types {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn normalizes_nonce_to_discord_limit() {
+        assert_eq!(
+            DiscordClient::normalize_nonce("550E8400-E29B-41D4-A716-446655440000"),
+            "550E8400E29B41D4A71644665"
+        );
+        assert_eq!(DiscordClient::normalize_nonce("short-nonce"), "short-nonce");
+        assert_eq!(
+            DiscordClient::normalize_nonce("--------------------------"),
+            "0"
+        );
+    }
 
     #[test]
     fn test_discord_message_normalization() {

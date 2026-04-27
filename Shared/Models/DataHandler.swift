@@ -48,6 +48,9 @@ extension RegistrationListener {
 
 // MARK: - Main Data Handler
 actor RoamDataHandler {
+    private static let pendingMessageRetryDelay: TimeInterval = 30
+    private static let discordNonceMaxLength = 25
+
     private let database: RoamDatabase
     private var updateListeners: [RegistrationToken: RegistrationListenerRef] = [:]
     private var updateRegistrations: [ChangeOperation: Set<RegistrationToken>] = [:]
@@ -61,6 +64,7 @@ actor RoamDataHandler {
     private var cachedPrimaryApps: [AppLink]?
     private var cachedMessages: [Message]?
     private var cachedUnreadMessageCount: Int?
+    private var isSendingPendingMessages = false
 
     @MainActor
     private static let _shared: RoamDataHandler? = getForShared()
@@ -318,7 +322,7 @@ actor RoamDataHandler {
     }
 
     // MARK: - Public Update Functions
-    func addDevice(location: String, friendlyDeviceName: String, udn: String, serial: String, hidden: Bool = false) throws -> String {
+    func addDevice(location: String, friendlyDeviceName: String, udn: String, serial: String, hidden: Bool = false) async throws -> String {
         let device = Device(
             name: friendlyDeviceName,
             location: location,
@@ -327,53 +331,53 @@ actor RoamDataHandler {
             hiddenAt: hidden ? Date.now : nil,
         )
 
-        try saveDeviceToDisk(device)
+        try await saveDeviceToDisk(device)
         cachedDeviceData[device.id] = device
 
         // Update lists
-        try updateDeviceListsAfterSave(device)
+        try await updateDeviceListsAfterSave(device)
 
         self.notifyDeviceUpdated(deviceId: device.id, device: device)
 
         return device.id
     }
 
-    func setDeviceHidden(id: String, hidden: Bool) throws {
+    func setDeviceHidden(id: String, hidden: Bool) async throws {
         guard var device = try cachedDeviceData[id] ?? loadDeviceFromDisk(id: id) else {
             throw DataHandlerError.deviceNotFound
         }
 
         device.hiddenAt = hidden ? Date.now : nil
 
-        try saveDeviceToDisk(device)
+        try await saveDeviceToDisk(device)
         cachedDeviceData[id] = device
 
-        try updateDeviceListsAfterSave(device)
+        try await updateDeviceListsAfterSave(device)
 
         self.notifyDeviceUpdated(deviceId: id, device: device)
     }
 
-    func updateDeviceLocation(id: String, location: String) throws {
+    func updateDeviceLocation(id: String, location: String) async throws {
         guard var device = try cachedDeviceData[id] ?? loadDeviceFromDisk(id: id) else {
             throw DataHandlerError.deviceNotFound
         }
 
         device.location = location
 
-        try saveDeviceToDisk(device)
+        try await saveDeviceToDisk(device)
         cachedDeviceData[id] = device
 
         self.notifyDeviceUpdated(deviceId: id, device: device)
     }
 
-    func updateDeviceName(id: String, name: String) throws {
+    func updateDeviceName(id: String, name: String) async throws {
         guard var device = try cachedDeviceData[id] ?? loadDeviceFromDisk(id: id) else {
             throw DataHandlerError.deviceNotFound
         }
 
         device.name = name
 
-        try saveDeviceToDisk(device)
+        try await saveDeviceToDisk(device)
         cachedDeviceData[id] = device
 
         self.notifyDeviceUpdated(deviceId: id, device: device)
@@ -383,27 +387,27 @@ actor RoamDataHandler {
         Log.data.info("App selected \(appId, privacy: .public) for device \(deviceId, privacy: .public)")
     }
 
-    func deleteDevice(id: String) throws {
+    func deleteDevice(id: String) async throws {
         guard let device = try cachedDeviceData[id] ?? loadDeviceFromDisk(id: id) else {
             throw DataHandlerError.deviceNotFound
         }
 
         if device.id == self.requestPrimaryDevice()?.id {
             if let newDeviceId = self.requestDeviceList().first {
-                try self.makePrimaryDevice(id: newDeviceId)
+                try await self.makePrimaryDevice(id: newDeviceId)
             }
         }
 
-        try deleteDeviceOnDisk(id)
+        try await deleteDeviceOnDisk(id)
         cachedDeviceData[id] = nil // Remove from cache since it's deleted
 
-        try updateDeviceListsAfterDelete(udn: id)
+        try await updateDeviceListsAfterDelete(udn: id)
 
         self.notifyDeviceUpdated(deviceId: id, device: nil)
     }
 
-    func setDeviceApps(deviceId: String, apps: [AppLink]) throws {
-        try saveDeviceAppsToDisk(deviceId: deviceId, apps: apps)
+    func setDeviceApps(deviceId: String, apps: [AppLink]) async throws {
+        try await saveDeviceAppsToDisk(deviceId: deviceId, apps: apps)
         cachedDeviceApps[deviceId] = apps
 
         // Update primary apps cache if this is primary device
@@ -415,11 +419,11 @@ actor RoamDataHandler {
         self.notifyDeviceAppsUpdated(deviceId: deviceId, apps: apps)
     }
 
-    func setDeviceDetails(device: Device) throws {
-        try saveDeviceToDisk(device)
+    func setDeviceDetails(device: Device) async throws {
+        try await saveDeviceToDisk(device)
         cachedDeviceData[device.id] = device
 
-        try updateDeviceListsAfterSave(device)
+        try await updateDeviceListsAfterSave(device)
 
         // Update primary device cache if this is primary device
         if cachedPrimaryDevice?.id == device.id {
@@ -430,13 +434,13 @@ actor RoamDataHandler {
         self.notifyDeviceUpdated(deviceId: device.id, device: device)
     }
 
-    func saveMessageFromMigration(_ message: Message) throws {
-        try database.saveMessage(message)
+    func saveMessageFromMigration(_ message: Message) async throws {
+        try await database.saveMessage(message)
         refreshMessageCache()
     }
 
-    func markMessagesViewed() throws {
-        try database.markMessagesViewed()
+    func markMessagesViewed() async throws {
+        try await database.markMessagesViewed()
         refreshMessageCache()
     }
 
@@ -467,31 +471,35 @@ actor RoamDataHandler {
             }
 
             if !messagesToSave.isEmpty {
-                try database.saveMessages(messagesToSave)
+                try await database.saveMessages(messagesToSave)
             }
             for messageId in pendingMessagesToDelete {
-                try database.deleteMessage(id: messageId)
+                try await database.deleteMessage(id: messageId)
             }
             if !messagesToSave.isEmpty || !pendingMessagesToDelete.isEmpty {
                 refreshMessageCache()
             }
-            return messagesToSave.count
+
+            let sentPendingCount = await sendPendingMessagesIfIdle(reason: "refreshMessages")
+            return messagesToSave.count + sentPendingCount
         } catch {
             Log.backend.warning("Error refreshing messages: \(error, privacy: .public)")
+            await sendPendingMessagesIfIdle(reason: "refreshMessages after refresh failure")
             return 0
         }
     }
 
     @discardableResult
     func refreshMessagesIfExpectingNewMessages() async -> Int {
-        guard UserDefaults.standard.bool(forKey: UserDefaultKeys.hasSentFirstMessage) else {
+        guard UserDefaults.standard.bool(forKey: UserDefaultKeys.hasSentFirstMessage) || hasPendingMessagesToSend() else {
             return 0
         }
         return await refreshMessages(viewed: false)
     }
 
     func sendChatMessage(message: String, attachment: AttachmentUpload?) async throws {
-        let nonce = UUID().uuidString
+        let nonce = Self.makeDiscordNonce()
+        Log.backend.notice("sendChatMessage started nonce=\(nonce, privacy: .public) contentBytes=\(message.utf8.count, privacy: .public) attachment=\(attachment?.filename ?? "--", privacy: .public)")
         var pendingMessage = Message(
             id: "pending-\(nonce)",
             message: message,
@@ -503,26 +511,130 @@ actor RoamDataHandler {
         )
         pendingMessage.lastSendAttempt = Date.now
 
-        try database.saveMessage(pendingMessage)
+        Log.backend.notice("Saving pending message nonce=\(nonce, privacy: .public) pendingId=\(pendingMessage.id, privacy: .public)")
+        try await database.saveMessage(pendingMessage)
+        Log.backend.notice("Saved pending message nonce=\(nonce, privacy: .public) pendingId=\(pendingMessage.id, privacy: .public)")
         refreshMessageCache()
 
-        let result = await sendMessageDirect(message: message, attachment: attachment, nonce: nonce)
-        switch result {
-        case .success(let response):
-            var savedMessage = Message(response)
-            savedMessage.viewed = true
-            try database.saveMessage(savedMessage)
-            try database.deleteMessage(id: pendingMessage.id)
-            refreshMessageCache()
-            UserDefaults.standard.set(true, forKey: UserDefaultKeys.hasSentFirstMessage)
-        case .failure(let error):
-            Log.backend.error("Error sending message: \(error, privacy: .public)")
-            throw error
+        Log.backend.notice("Attempting pending message queue after enqueue nonce=\(nonce, privacy: .public)")
+        await sendPendingMessagesIfIdle(reason: "sendChatMessage", force: true)
+        Log.backend.notice("sendChatMessage queued nonce=\(nonce, privacy: .public)")
+    }
+
+    private func hasPendingMessagesToSend() -> Bool {
+        database.messages().contains { message in
+            message.author == .me && !message.fetchedBackend && message.nonce != nil
         }
+    }
+
+    private func pendingMessagesToSend(force: Bool) -> [Message] {
+        let nextAllowedSendAttempt = Date.now.addingTimeInterval(-Self.pendingMessageRetryDelay)
+        return database.messages()
+            .filter { message in
+                guard message.author == .me && !message.fetchedBackend && message.nonce != nil else {
+                    return false
+                }
+                if force {
+                    return true
+                }
+                return message.lastSendAttempt.map { $0 <= nextAllowedSendAttempt } ?? true
+            }
+            .sorted { lhs, rhs in
+                switch (lhs.lastSendAttempt, rhs.lastSendAttempt) {
+                case let (left?, right?):
+                    if left == right {
+                        return lhs.id < rhs.id
+                    }
+                    return left < right
+                case (_?, nil):
+                    return false
+                case (nil, _?):
+                    return true
+                case (nil, nil):
+                    return lhs.id < rhs.id
+                }
+            }
+    }
+
+    private static func makeDiscordNonce() -> String {
+        normalizeDiscordNonce(UUID().uuidString)
+    }
+
+    private static func normalizeDiscordNonce(_ nonce: String) -> String {
+        if nonce.count <= discordNonceMaxLength {
+            return nonce
+        }
+
+        let compact = nonce.replacingOccurrences(of: "-", with: "")
+        let source = compact.isEmpty ? nonce : compact
+        return String(source.prefix(discordNonceMaxLength))
+    }
+
+    @discardableResult
+    private func sendPendingMessagesIfIdle(reason: String, force: Bool = false) async -> Int {
+        guard !isSendingPendingMessages else {
+            Log.backend.notice("Skipping pending message send because another send is active reason=\(reason, privacy: .public)")
+            return 0
+        }
+
+        isSendingPendingMessages = true
+        defer {
+            isSendingPendingMessages = false
+        }
+
+        var sentCount = 0
+        while var pendingMessage = pendingMessagesToSend(force: force).first {
+            guard var nonce = pendingMessage.nonce else {
+                Log.backend.error("Skipping pending message without nonce pendingId=\(pendingMessage.id, privacy: .public)")
+                break
+            }
+            let normalizedNonce = Self.normalizeDiscordNonce(nonce)
+            if normalizedNonce != nonce {
+                Log.backend.notice("Normalizing pending message nonce pendingId=\(pendingMessage.id, privacy: .public) oldNonce=\(nonce, privacy: .public) newNonce=\(normalizedNonce, privacy: .public)")
+                pendingMessage.nonce = normalizedNonce
+                nonce = normalizedNonce
+            }
+
+            Log.backend.notice("Sending pending message reason=\(reason, privacy: .public) pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public) contentBytes=\(pendingMessage.message.utf8.count, privacy: .public) attachment=\(pendingMessage.unsentAttachment?.filename ?? "--", privacy: .public)")
+            pendingMessage.lastSendAttempt = Date.now
+            do {
+                try await database.saveMessage(pendingMessage)
+                refreshMessageCache()
+            } catch {
+                Log.backend.error("Error updating pending message send attempt pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public): \(error, privacy: .public)")
+                return sentCount
+            }
+
+            let result = await sendMessageDirect(message: pendingMessage.message, attachment: pendingMessage.unsentAttachment, nonce: nonce)
+            switch result {
+            case .success(let response):
+                Log.backend.notice("Pending message send succeeded pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public) backendMessageId=\(response.id, privacy: .public)")
+                var savedMessage = Message(response)
+                savedMessage.viewed = pendingMessage.viewed
+                do {
+                    try await database.saveMessage(savedMessage)
+                    try await database.deleteMessage(id: pendingMessage.id)
+                    refreshMessageCache()
+                    UserDefaults.standard.set(true, forKey: UserDefaultKeys.hasSentFirstMessage)
+                    sentCount += 1
+                } catch {
+                    Log.backend.error("Error saving sent pending message pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public): \(error, privacy: .public)")
+                    return sentCount
+                }
+            case .failure(let error):
+                Log.backend.error("Pending message send failed pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public): \(error, privacy: .public)")
+                return sentCount
+            }
+        }
+
+        if sentCount > 0 {
+            Log.backend.notice("Finished pending message send reason=\(reason, privacy: .public) sentCount=\(sentCount, privacy: .public)")
+        }
+        return sentCount
     }
 #endif
 
-    func makePrimaryDevice(id: String) throws {
+    func makePrimaryDevice(id: String) async throws {
         guard let device = try cachedDeviceData[id] ?? loadDeviceFromDisk(id: id) else {
             throw DataHandlerError.deviceNotFound
         }
@@ -530,13 +642,10 @@ actor RoamDataHandler {
         // Update device's lastSelectedAt
         var updatedDevice = device
         updatedDevice.lastSelectedAt = Date.now
-        try saveDeviceToDisk(updatedDevice)
+        try await saveDeviceToDisk(updatedDevice)
         cachedDeviceData[id] = updatedDevice
 
-        try database.setPrimaryDevice(id: id)
-
-        // Update device order in lists
-        try updateDeviceOrderAfterSelection(selectedUdn: id)
+        try await database.setPrimaryDevice(id: id)
 
         // Update caches
         cachedPrimaryDevice = updatedDevice
@@ -546,6 +655,16 @@ actor RoamDataHandler {
         if let apps = self.cachedPrimaryApps {
             self.notifyPrimaryAppsUpdated(apps: apps)
         }
+    }
+
+    func reorderDevices(fromOffsets: IndexSet, toOffset: Int) async throws {
+        var devices = try cachedDeviceList ?? loadDeviceListFromDisk()
+        devices.move(fromOffsets: fromOffsets, toOffset: toOffset)
+
+        try await saveDeviceListToDisk(devices)
+        cachedDeviceList = devices
+
+        self.notifyDeviceListUpdated(devices: devices)
     }
 
     // MARK: - Preload Functions
@@ -606,28 +725,28 @@ actor RoamDataHandler {
         database.primaryApps()
     }
 
-    private func saveDeviceToDisk(_ device: Device) throws {
-        try database.saveDevice(device)
+    private func saveDeviceToDisk(_ device: Device) async throws {
+        try await database.saveDevice(device)
     }
 
-    private func deleteDeviceOnDisk(_ deviceId: String) throws {
-        try database.deleteDevice(id: deviceId)
+    private func deleteDeviceOnDisk(_ deviceId: String) async throws {
+        try await database.deleteDevice(id: deviceId)
     }
 
-    private func saveDeviceAppsToDisk(deviceId: String, apps: [AppLink]) throws {
-        try database.saveDeviceApps(deviceId: deviceId, apps: apps)
+    private func saveDeviceAppsToDisk(deviceId: String, apps: [AppLink]) async throws {
+        try await database.saveDeviceApps(deviceId: deviceId, apps: apps)
     }
 
-    private func saveDeviceListToDisk(_ devices: [String]) throws {
-        try database.saveDeviceList(devices, kind: .visible)
+    private func saveDeviceListToDisk(_ devices: [String]) async throws {
+        try await database.saveDeviceList(devices, kind: .visible)
     }
 
-    private func saveHiddenDeviceListToDisk(_ devices: [String]) throws {
-        try database.saveDeviceList(devices, kind: .hidden)
+    private func saveHiddenDeviceListToDisk(_ devices: [String]) async throws {
+        try await database.saveDeviceList(devices, kind: .hidden)
     }
 
     // MARK: - Private Helper Methods
-    private func updateDeviceListsAfterSave(_ device: Device) throws {
+    private func updateDeviceListsAfterSave(_ device: Device) async throws {
         let isHidden = device.hiddenAt != nil
 
         var devices = try cachedDeviceList ?? loadDeviceListFromDisk()
@@ -635,60 +754,57 @@ actor RoamDataHandler {
 
         let hasNewPrimary = devices.isEmpty
 
-        // Remove from both lists first
+        let existingVisibleIndex = devices.firstIndex(of: device.id)
+        let existingHiddenIndex = hiddenDevices.firstIndex(of: device.id)
+
         devices.removeAll { $0 == device.id }
         hiddenDevices.removeAll { $0 == device.id }
 
         // Add to appropriate list
         if isHidden {
-            hiddenDevices.append(device.id)
+            if let existingHiddenIndex {
+                hiddenDevices.insert(device.id, at: min(existingHiddenIndex, hiddenDevices.count))
+            } else {
+                hiddenDevices.append(device.id)
+            }
         } else {
-            devices.append(device.id)
+            if let existingVisibleIndex {
+                devices.insert(device.id, at: min(existingVisibleIndex, devices.count))
+            } else {
+                devices.insert(device.id, at: 0)
+            }
         }
 
         // Save and update cache
-        try saveDeviceListToDisk(devices)
-        try saveHiddenDeviceListToDisk(hiddenDevices)
+        try await saveDeviceListToDisk(devices)
+        try await saveHiddenDeviceListToDisk(hiddenDevices)
 
         cachedDeviceList = devices
         cachedHiddenDeviceList = hiddenDevices
 
         if hasNewPrimary {
-            try self.makePrimaryDevice(id: device.id)
+            try await self.makePrimaryDevice(id: device.id)
         }
 
         self.notifyDeviceListUpdated(devices: devices)
         self.notifyHiddenDeviceListUpdated(devices: hiddenDevices)
     }
 
-    private func updateDeviceListsAfterDelete(udn: String) throws {
+    private func updateDeviceListsAfterDelete(udn: String) async throws {
         var devices = try cachedDeviceList ?? loadDeviceListFromDisk()
         var hiddenDevices = try cachedHiddenDeviceList ?? loadHiddenDeviceListFromDisk()
 
         devices.removeAll { $0 == udn }
         hiddenDevices.removeAll { $0 == udn }
 
-        try saveDeviceListToDisk(devices)
-        try saveHiddenDeviceListToDisk(hiddenDevices)
+        try await saveDeviceListToDisk(devices)
+        try await saveHiddenDeviceListToDisk(hiddenDevices)
 
         cachedDeviceList = devices
         cachedHiddenDeviceList = hiddenDevices
 
         self.notifyDeviceListUpdated(devices: devices)
         self.notifyHiddenDeviceListUpdated(devices: hiddenDevices)
-    }
-
-    private func updateDeviceOrderAfterSelection(selectedUdn: String) throws {
-        var devices = try cachedDeviceList ?? loadDeviceListFromDisk()
-
-        // Move selected device to front
-        devices.removeAll { $0 == selectedUdn }
-        devices.insert(selectedUdn, at: 0)
-
-        try saveDeviceListToDisk(devices)
-        cachedDeviceList = devices
-
-        self.notifyDeviceListUpdated(devices: devices)
     }
 
     private func refreshMessageCache() {
@@ -911,7 +1027,7 @@ extension RoamDataHandler {
             var updatedDevice = device
             updatedDevice.location = location
             do {
-                try self.setDeviceDetails(device: updatedDevice)
+                try await self.setDeviceDetails(device: updatedDevice)
                 return updatedDevice.id
             } catch {
                 Log.data.warning("Error updating device fields: \(error, privacy: .public)")
@@ -924,7 +1040,7 @@ extension RoamDataHandler {
             var updatedDevice = device
             updatedDevice.location = location
             do {
-                try self.setDeviceDetails(device: updatedDevice)
+                try await self.setDeviceDetails(device: updatedDevice)
                 return updatedDevice.id
             } catch {
                 Log.data.warning("Error updating device fields: \(error, privacy: .public)")
@@ -972,7 +1088,7 @@ extension RoamDataHandler {
         }
 
         do {
-            try self.setDeviceDetails(device: device)
+            try await self.setDeviceDetails(device: device)
             Log.data.notice("Added device \(device.id, privacy: .public)")
 
             // Trigger device refresh in background
@@ -1012,7 +1128,7 @@ extension RoamDataHandler {
         do {
             if var device = self.requestDevice(id: deviceId) {
                 device.lastSentToWatch = Date.now
-                try self.setDeviceDetails(device: device)
+                try await self.setDeviceDetails(device: device)
             }
         } catch {
             Log.data.warning("Error marking device \(deviceId, privacy: .public) as sent to watch: \(error, privacy: .public)")
@@ -1026,7 +1142,7 @@ extension RoamDataHandler {
             for deviceId in allDeviceIds {
                 if var device = self.requestDevice(id: deviceId) {
                     device.lastSentToWatch = nil
-                    try self.setDeviceDetails(device: device)
+                    try await self.setDeviceDetails(device: device)
                 }
             }
         } catch {
@@ -1119,7 +1235,7 @@ extension RoamDataHandler {
         existingApps.count > 0
 
         do {
-            try self.setDeviceDetails(device: device)
+            try await self.setDeviceDetails(device: device)
         } catch {
             Log.data.error("Failed to save device details: \(error, privacy: .public)")
         }
@@ -1167,7 +1283,7 @@ extension RoamDataHandler {
         var earlyUpdatedApps: [AppLink]?
         var afterUpdateApps = existingApps
 
-        if var fetchedApps = fetchedApps {
+        if let fetchedApps = fetchedApps {
             var shouldUpdate: Bool = false
 
             if fetchedApps.count != existingApps.count {
@@ -1201,9 +1317,9 @@ extension RoamDataHandler {
 
         // Save updated device and apps
         do {
-            try self.setDeviceDetails(device: device)
+            try await self.setDeviceDetails(device: device)
             if let earlyUpdatedApps {
-                try self.setDeviceApps(deviceId: deviceId, apps: earlyUpdatedApps)
+                try await self.setDeviceApps(deviceId: deviceId, apps: earlyUpdatedApps)
             }
         } catch {
             Log.data.error("Failed to save device and apps: \(error, privacy: .public)")
@@ -1240,7 +1356,7 @@ extension RoamDataHandler {
             do {
                 try storeIconToDisk(iconData: deviceIconData, hash: iconHash)
                 device.iconHash = iconHash
-                try self.setDeviceDetails(device: device)
+                try await self.setDeviceDetails(device: device)
                 Log.data.notice("Stored device icon")
             } catch {
                 Log.data.error("Error storing device icon: \(error, privacy: .public)")
@@ -1274,7 +1390,7 @@ extension RoamDataHandler {
             // Save updated apps with icon hashes
             if !appsToUpdate.isEmpty {
                 do {
-                    try self.setDeviceApps(deviceId: deviceId, apps: afterUpdateApps)
+                    try await self.setDeviceApps(deviceId: deviceId, apps: afterUpdateApps)
                 } catch {
                     Log.data.error("Failed to save apps with updated icons: \(error, privacy: .public)")
                 }
@@ -1366,19 +1482,19 @@ public let mainAppGroup = "group.com.msdrigg.roam"
 
 // MARK: - Testing Support
 extension RoamDataHandler {
-    func initialize() {
+    func initialize() async {
         if loadTestingData() {
             // swiftlint:disable:next force_try
-            try! self.loadTestData()
+            try! await self.loadTestData()
         } else if usingTestingData() {
             // swiftlint:disable:next force_try
-            try! self.clearData()
+            try! await self.clearData()
         }
     }
 
-    private func loadTestData() throws {
+    private func loadTestData() async throws {
         // Clear existing data first
-        try clearData()
+        try await clearData()
 
         #if DEBUG
         // Load test devices
@@ -1386,40 +1502,40 @@ extension RoamDataHandler {
         var deviceIds: [String] = []
 
         for device in testDevices {
-            try saveDeviceToDisk(device)
+            try await saveDeviceToDisk(device)
             cachedDeviceData[device.id] = device
             deviceIds.append(device.id)
 
             // Load apps for this device
             let testApps = getTestingAppLinks(deviceId: device.udn)
-            try saveDeviceAppsToDisk(deviceId: device.id, apps: testApps)
+            try await saveDeviceAppsToDisk(deviceId: device.id, apps: testApps)
             cachedDeviceApps[device.id] = testApps
         }
 
         // Save device lists
-        try saveDeviceListToDisk(deviceIds)
+        try await saveDeviceListToDisk(deviceIds)
         cachedDeviceList = deviceIds
 
         // Initialize empty hidden device list
         cachedHiddenDeviceList = []
-        try saveHiddenDeviceListToDisk([])
+        try await saveHiddenDeviceListToDisk([])
 
         // Set first device as primary if available
         if let firstDevice = testDevices.first {
-            try self.makePrimaryDevice(id: firstDevice.id)
+            try await self.makePrimaryDevice(id: firstDevice.id)
         }
 
         // Load test messages
         let testMessages = getTestingMessages()
         for message in testMessages {
-            try database.saveMessage(message)
+            try await database.saveMessage(message)
         }
 
         Log.data.info("Loaded test data: \(testDevices.count) devices, \(testDevices.map { cachedDeviceApps[$0.id]?.count ?? 0 }.reduce(0, +)) total apps, \(testMessages.count) messages")
         #endif
     }
 
-    private func clearData() throws {
+    private func clearData() async throws {
         // Clear all caches
         cachedDeviceData.removeAll()
         cachedDeviceApps.removeAll()
@@ -1428,7 +1544,7 @@ extension RoamDataHandler {
         cachedPrimaryDevice = nil
         cachedPrimaryApps = nil
 
-        try database.clearAll()
+        try await database.clearAll()
 
         Log.data.info("Cleared all data and caches")
     }

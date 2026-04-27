@@ -52,10 +52,16 @@ async fn main() {
         res = &mut server => {
             task_handle.abort();
             ai_responder_handle.abort();
-            if let Err(why) = res {
-                tracing::error!("Server error: {why:?}");
-            } else {
-                tracing::warn!("Server exited");
+            match res {
+                Ok(Ok(())) => {
+                    tracing::warn!("Server exited");
+                }
+                Ok(Err(why)) => {
+                    tracing::error!("Server error: {why:?}");
+                }
+                Err(why) => {
+                    tracing::error!("Server task error: {why:?}");
+                }
             }
         }
         res = &mut task_handle => {
@@ -70,10 +76,16 @@ async fn main() {
         res = &mut ai_responder_handle => {
             server.abort();
             task_handle.abort();
-            if let Err(why) = res {
-                tracing::error!("AI responder error: {why:?}");
-            } else {
-                tracing::warn!("AI responder exited");
+            match res {
+                Ok(Ok(())) => {
+                    tracing::warn!("AI responder exited");
+                }
+                Ok(Err(why)) => {
+                    tracing::error!("AI responder error: {why:?}");
+                }
+                Err(why) => {
+                    tracing::error!("AI responder task error: {why:?}");
+                }
             }
         }
         _ = tokio::signal::ctrl_c() => {

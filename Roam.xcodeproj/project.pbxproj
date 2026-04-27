@@ -199,6 +199,7 @@
 		AFA9F8972B1B878600829B7C /* Shortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6B72ADE28C80036EC90 /* Shortcuts.swift */; };
 		AFA9F8992B1D29E000829B7C /* KeyboardShortcutPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */; };
 		AFBBE16F2C764564002B7F68 /* RemoteViewContained.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBBE16D2C76455E002B7F68 /* RemoteViewContained.swift */; };
+		AFD100202F00000100000001 /* RemoteViewContainedMacOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100212F00000100000001 /* RemoteViewContainedMacOS.swift */; };
 		AFBDE4542DD5341700DD1741 /* FileLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDE4532DD5340F00DD1741 /* FileLock.swift */; };
 		AFBDE4552DD5341700DD1741 /* FileLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDE4532DD5340F00DD1741 /* FileLock.swift */; };
 		AFBDE4562DD5341700DD1741 /* FileLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDE4532DD5340F00DD1741 /* FileLock.swift */; };
@@ -520,6 +521,7 @@
 		AFA68FE72BD06474005A102E /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = docs/src; sourceTree = "<group>"; };
 		AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutPanel.swift; sourceTree = "<group>"; };
 		AFBBE16D2C76455E002B7F68 /* RemoteViewContained.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteViewContained.swift; sourceTree = "<group>"; };
+		AFD100212F00000100000001 /* RemoteViewContainedMacOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteViewContainedMacOS.swift; sourceTree = "<group>"; };
 		AFBDE4532DD5340F00DD1741 /* FileLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileLock.swift; sourceTree = "<group>"; };
 		AFBDEA2E2D7D121D00C15B18 /* AddDeviceFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddDeviceFlow.swift; sourceTree = "<group>"; };
 		AFBDEA312D7D157100C15B18 /* StandardDislosureGroupStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandardDislosureGroupStyle.swift; sourceTree = "<group>"; };
@@ -659,6 +661,7 @@
 				AF3AD55A2AE2947E00E2D780 /* KeyboardEntry.swift */,
 				AF0C828B2AEB494D00CBE7F8 /* VolumeSliderView.swift */,
 				AFBBE16D2C76455E002B7F68 /* RemoteViewContained.swift */,
+				AFD100212F00000100000001 /* RemoteViewContainedMacOS.swift */,
 				AFFC71E52AD1212100EE8EA0 /* RemoteView.swift */,
 				AF3AD5522AE28F7400E2D780 /* ButtonGrid.swift */,
 				AF3AD5542AE2910B00E2D780 /* CenterController.swift */,
@@ -1477,6 +1480,7 @@
 				AFBDEA322D7D157500C15B18 /* StandardDislosureGroupStyle.swift in Sources */,
 				AF0532812D36DB2200D68F8E /* HeadphonesModeTip.swift in Sources */,
 				AFBBE16F2C764564002B7F68 /* RemoteViewContained.swift in Sources */,
+				AFD100202F00000100000001 /* RemoteViewContainedMacOS.swift in Sources */,
 				AF0C82952AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */,
 					AF9DE5672D553DE300C50894 /* SelectedAttachment.swift in Sources */,
 					AF60A7E02E36CDEE00D1D16B /* DataLoaders.swift in Sources */,

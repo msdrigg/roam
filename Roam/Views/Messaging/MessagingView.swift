@@ -441,17 +441,26 @@ struct MessageView: View {
     private func sendMessageText(messageText: String, attachment: AttachmentUpload? = nil) {
         let messageCopy = messageText
         if messageCopy.isEmpty && attachment == nil {
+            Log.userInteraction.notice("Ignoring empty message send with no attachment")
             return
         }
-        Log.userInteraction.notice("Sending message \"\(messageText, privacy: .public)\" with attachment \(attachment?.filename ?? "--", privacy: .public) attachments")
+        let attachmentSummary = attachment.map { attachment in
+            "\(attachment.filename) id=\(attachment.id) hash=\(attachment.dataHash) bytes=\(attachment.dataSize) type=\(attachment.contentType)"
+        } ?? "none"
+        Log.userInteraction.notice("Sending message \"\(messageText, privacy: .public)\" contentBytes=\(messageCopy.utf8.count, privacy: .public) attachment=\(attachmentSummary, privacy: .public)")
         Task {
             do {
+                Log.userInteraction.notice("Message send task started attachment=\(attachment?.filename ?? "--", privacy: .public)")
                 try await RoamDataHandler.shared.sendChatMessage(message: messageCopy, attachment: attachment)
+                Log.userInteraction.notice("Message send task completed; refreshing messages")
 
                 let result = await RoamDataHandler.shared.refreshMessages(viewed: true)
+                Log.userInteraction.notice("Message send refresh completed newMessageCount=\(result, privacy: .public)")
                 if result > 0 {
                     refreshResetId = UUID()
                 }
+            } catch is CancellationError {
+                Log.userInteraction.error("Message send task cancelled attachment=\(attachment?.filename ?? "--", privacy: .public)")
             } catch {
                 Log.userInteraction.error("Error sending message \(error, privacy: .public)")
             }

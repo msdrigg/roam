@@ -1844,6 +1844,12 @@
         }
       }
     },
+    "AI response" : {
+
+    },
+    "AI-" : {
+
+    },
     "An unknown error occurred: %@" : {
       "comment" : "Unknown error with message",
       "localizations" : {
@@ -7750,6 +7756,9 @@
         }
       }
     },
+    "Force add device" : {
+
+    },
     "Getting in Touch" : {
       "localizations" : {
         "ar" : {
@@ -10747,6 +10756,9 @@
           }
         }
       }
+    },
+    "Loading devices" : {
+
     },
     "Loading..." : {
       "localizations" : {
@@ -18004,7 +18016,6 @@
       }
     },
     "Scanning for devices" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -18168,6 +18179,12 @@
           }
         }
       }
+    },
+    "Scott" : {
+
+    },
+    "Scott response" : {
+
     },
     "Search" : {
       "comment" : "Remote button to search",

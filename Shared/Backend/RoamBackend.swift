@@ -95,6 +95,8 @@ public struct MessageModelResponse: Decodable, Sendable {
     let author: Message.AuthorType
     let nonce: String?
     let attachments: [WorkersAttachmentDownload]?
+    let aiMessage: Bool
+    let humanSupportMessage: Bool
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -102,6 +104,8 @@ public struct MessageModelResponse: Decodable, Sendable {
         case author
         case attachments
         case nonce
+        case aiMessage = "ai_message"
+        case humanSupportMessage = "human_support_message"
     }
 
     public init(from decoder: any Decoder) throws {
@@ -122,6 +126,8 @@ public struct MessageModelResponse: Decodable, Sendable {
         self.attachments = attachmentsData
 
         nonce = try container.decodeIfPresent(String.self, forKey: .nonce)
+        aiMessage = try container.decodeIfPresent(Bool.self, forKey: .aiMessage) ?? false
+        humanSupportMessage = try container.decodeIfPresent(Bool.self, forKey: .humanSupportMessage) ?? false
     }
 
     private enum AuthorKeys: String, CodingKey {
@@ -284,11 +290,16 @@ public func sendMessageDirect(
     nonce: String? = nil
 ) async -> Result<MessageModelResponse, UploadError> {
     guard let url = URL(string: "\(globalBackendURL)/v2/new-message") else {
+        Log.backend.error("Unable to build send-message URL from backend URL \(globalBackendURL, privacy: .public)")
         return .failure(.failed(.invalidURL))
     }
 
     let userId = getSystemInstallID()
-    Log.backend.notice("Sending message to backend \(userId, privacy: .public)")
+    let messageContent = message ?? ""
+    let attachmentSummary = attachment.map { attachment in
+        "\(attachment.filename) id=\(attachment.id) hash=\(attachment.dataHash) bytes=\(attachment.dataSize) type=\(attachment.contentType) pairedMessages=\(attachment.pairedMessages.count)"
+    } ?? "none"
+    Log.backend.notice("Preparing send-message request user=\(userId, privacy: .public) nonce=\(nonce ?? "--", privacy: .public) contentBytes=\(messageContent.utf8.count, privacy: .public) attachment=\(attachmentSummary, privacy: .public)")
 
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
@@ -298,7 +309,9 @@ public func sendMessageDirect(
     var workersAttachment: WorkersAttachmentUpload?
     do {
         if let attachment {
+            Log.backend.notice("Loading send-message attachment from disk filename=\(attachment.filename, privacy: .public) hash=\(attachment.dataHash, privacy: .public)")
             let data = try attachmentData ?? loadAttachmentFromDisk(hash: attachment.dataHash, filename: attachment.filename)
+            Log.backend.notice("Loaded send-message attachment filename=\(attachment.filename, privacy: .public) encodedBytes=\(data.count, privacy: .public)")
             workersAttachment = WorkersAttachmentUpload(
                 filename: attachment.filename,
                 data: data,
@@ -308,11 +321,11 @@ public func sendMessageDirect(
             )
         }
     } catch {
-        Log.backend.error("Error loading attachment from disk: \(error, privacy: .public)")
+        Log.backend.error("Error loading send-message attachment from disk filename=\(attachment?.filename ?? "--", privacy: .public) hash=\(attachment?.dataHash ?? "--", privacy: .public): \(error, privacy: .public)")
     }
 
     let messageRequest = MessageRequest(
-        content: message ?? "",
+        content: messageContent,
         userId: userId,
         installationInfo: InstallationInfo(),
         attachment: workersAttachment,
@@ -323,17 +336,22 @@ public func sendMessageDirect(
     do {
         let jsonData = try encoder.encode(messageRequest)
         request.httpBody = jsonData
+        Log.backend.notice("Encoded send-message request user=\(userId, privacy: .public) nonce=\(nonce ?? "--", privacy: .public) requestBytes=\(jsonData.count, privacy: .public) includesAttachment=\((workersAttachment != nil), privacy: .public)")
     } catch {
+        Log.backend.error("Failed to encode send-message request user=\(userId, privacy: .public) nonce=\(nonce ?? "--", privacy: .public): \(error, privacy: .public)")
         return .failure(.failed(.invalidJSON))
     }
 
     do {
+        Log.backend.notice("Starting send-message HTTP POST url=\(url.absoluteString, privacy: .public) user=\(userId, privacy: .public) nonce=\(nonce ?? "--", privacy: .public)")
         let (data, response) = try await URLSession.shared.data(for: request)
+        Log.backend.notice("Finished send-message HTTP POST user=\(userId, privacy: .public) nonce=\(nonce ?? "--", privacy: .public) responseBytes=\(data.count, privacy: .public)")
 
         guard let httpResponse = response as? HTTPURLResponse else {
             Log.backend.error("Received non-http response \(String(describing: response), privacy: .public)")
             return .failure(.failed(.badResponse(nil)))
         }
+        Log.backend.notice("Received send-message HTTP status=\(httpResponse.statusCode, privacy: .public) user=\(userId, privacy: .public) nonce=\(nonce ?? "--", privacy: .public)")
         guard httpResponse.statusCode == 200 else {
             if let responseData = String(data: data, encoding: .utf8) {
                 Log.backend.error("Received failed \(httpResponse.statusCode, privacy: .public) send-messages response with data: \(responseData, privacy: .public)")
@@ -346,9 +364,14 @@ public func sendMessageDirect(
         decoder.dateDecodingStrategy = .iso8601
         decoder.dataDecodingStrategy = .base64
         let message = try decoder.decode(MessageModelResponse.self, from: data)
+        Log.backend.notice("Decoded send-message response backendMessageId=\(message.id, privacy: .public) nonce=\(message.nonce ?? "--", privacy: .public) attachmentCount=\(message.attachments?.count ?? 0, privacy: .public)")
         Log.backend.notice("Sent message \(message.id, privacy: .public) to backend")
         return .success(message)
+    } catch is CancellationError {
+        Log.backend.error("Send-message request cancelled user=\(userId, privacy: .public) nonce=\(nonce ?? "--", privacy: .public)")
+        return .failure(.retryable(CancellationError()))
     } catch {
+        Log.backend.error("Send-message request failed user=\(userId, privacy: .public) nonce=\(nonce ?? "--", privacy: .public): \(error, privacy: .public)")
         return .failure(.retryable(error))
     }
 }

@@ -6,6 +6,7 @@ struct ButtonGrid: View {
     let action: (RemoteButton) -> Void
     let enabled: Set<RemoteButton>
     let disabled: Set<RemoteButton>
+    var usesNativeGlassButtons = false
 
     @ScaledMetric var buttonWidth = globalButtonWidth
     @ScaledMetric var buttonHeight = globalButtonHeight
@@ -72,7 +73,6 @@ struct ButtonGrid: View {
                             .disabled(disabled.contains(button.2))
                             .breatheEffect(enabled.contains(button.2))
                             .symbolEffect(.bounce, value: pressCounter(button.2))
-                            .buttonStyle(LiquidGlassButtonStyle())
 #if !os(visionOS)
                             .sensoryFeedback(.impact, trigger: pressCounter(button.2))
 
@@ -86,6 +86,5 @@ struct ButtonGrid: View {
             }
         }
         .fixedSize()
-        .customAccentColorTint()
     }
 }

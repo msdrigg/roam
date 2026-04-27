@@ -1,4 +1,5 @@
 import Foundation
+import Dispatch
 import GRDB
 import OSLog
 
@@ -13,7 +14,6 @@ final class RoamDatabase: @unchecked Sendable {
     private let dbPool: DatabasePool
     private let fileLock: DatabaseFileLock
     private let stateLock = NSRecursiveLock()
-    private let externalChangeQueue = DispatchQueue(label: "RoamDatabase.externalChange", qos: .utility)
     private var snapshot: RoamDataSnapshot
     private var notificationObserver: UnsafeRawPointer?
 
@@ -35,6 +35,7 @@ final class RoamDatabase: @unchecked Sendable {
 
         var configuration = Configuration()
         configuration.label = "RoamDatabase"
+        configuration.qos = .userInteractive
         configuration.busyMode = .timeout(5)
         configuration.foreignKeysEnabled = true
 
@@ -113,8 +114,23 @@ final class RoamDatabase: @unchecked Sendable {
         }
     }
 
+    func saveDevice(_ device: Device) async throws {
+        try await writeAsync { db in
+            try Self.upsertDevice(device, db: db)
+        }
+    }
+
     func deleteDevice(id: String) throws {
         try write { db in
+            try db.execute(sql: "DELETE FROM app_links WHERE device_id = ?", arguments: [id])
+            try db.execute(sql: "DELETE FROM device_lists WHERE device_id = ?", arguments: [id])
+            try db.execute(sql: "DELETE FROM devices WHERE udn = ?", arguments: [id])
+            try db.execute(sql: "UPDATE app_state SET primary_device_id = NULL WHERE id = 1 AND primary_device_id = ?", arguments: [id])
+        }
+    }
+
+    func deleteDevice(id: String) async throws {
+        try await writeAsync { db in
             try db.execute(sql: "DELETE FROM app_links WHERE device_id = ?", arguments: [id])
             try db.execute(sql: "DELETE FROM device_lists WHERE device_id = ?", arguments: [id])
             try db.execute(sql: "DELETE FROM devices WHERE udn = ?", arguments: [id])
@@ -131,14 +147,35 @@ final class RoamDatabase: @unchecked Sendable {
         }
     }
 
+    func saveDeviceApps(deviceId: String, apps: [AppLink]) async throws {
+        try await writeAsync { db in
+            try db.execute(sql: "DELETE FROM app_links WHERE device_id = ?", arguments: [deviceId])
+            for (index, app) in apps.enumerated() {
+                try Self.insertApp(app, sortOrder: index, db: db)
+            }
+        }
+    }
+
     func saveDeviceList(_ devices: [String], kind: DeviceListKind) throws {
         try write { db in
             try Self.saveDeviceList(devices, kind: kind, db: db)
         }
     }
 
+    func saveDeviceList(_ devices: [String], kind: DeviceListKind) async throws {
+        try await writeAsync { db in
+            try Self.saveDeviceList(devices, kind: kind, db: db)
+        }
+    }
+
     func setPrimaryDevice(id: String) throws {
         try write { db in
+            try db.execute(sql: "UPDATE app_state SET primary_device_id = ? WHERE id = 1", arguments: [id])
+        }
+    }
+
+    func setPrimaryDevice(id: String) async throws {
+        try await writeAsync { db in
             try db.execute(sql: "UPDATE app_state SET primary_device_id = ? WHERE id = 1", arguments: [id])
         }
     }
@@ -154,8 +191,25 @@ final class RoamDatabase: @unchecked Sendable {
         }
     }
 
+    func clearAll() async throws {
+        try await writeAsync { db in
+            try db.execute(sql: "DELETE FROM message_attachments")
+            try db.execute(sql: "DELETE FROM messages")
+            try db.execute(sql: "DELETE FROM app_links")
+            try db.execute(sql: "DELETE FROM device_lists")
+            try db.execute(sql: "DELETE FROM devices")
+            try db.execute(sql: "UPDATE app_state SET primary_device_id = NULL WHERE id = 1")
+        }
+    }
+
     func saveMessage(_ message: Message) throws {
         try write { db in
+            try Self.upsertMessage(message, db: db)
+        }
+    }
+
+    func saveMessage(_ message: Message) async throws {
+        try await writeAsync { db in
             try Self.upsertMessage(message, db: db)
         }
     }
@@ -168,14 +222,34 @@ final class RoamDatabase: @unchecked Sendable {
         }
     }
 
+    func saveMessages(_ messages: [Message]) async throws {
+        try await writeAsync { db in
+            for message in messages {
+                try Self.upsertMessage(message, db: db)
+            }
+        }
+    }
+
     func deleteMessage(id: String) throws {
         try write { db in
             try db.execute(sql: "DELETE FROM messages WHERE id = ?", arguments: [id])
         }
     }
 
+    func deleteMessage(id: String) async throws {
+        try await writeAsync { db in
+            try db.execute(sql: "DELETE FROM messages WHERE id = ?", arguments: [id])
+        }
+    }
+
     func markMessagesViewed() throws {
         try write { db in
+            try db.execute(sql: "UPDATE messages SET viewed = 1 WHERE viewed = 0")
+        }
+    }
+
+    func markMessagesViewed() async throws {
+        try await writeAsync { db in
             try db.execute(sql: "UPDATE messages SET viewed = 1 WHERE viewed = 0")
         }
     }
@@ -211,8 +285,38 @@ final class RoamDatabase: @unchecked Sendable {
         }
     }
 
+    private func writeAsync(_ body: @escaping @Sendable (Database) throws -> Void) async throws {
+        do {
+            let nextSnapshot = try await dbPool.writeWithoutTransaction { [fileLock] db in
+                try fileLock.withExclusiveLock {
+                    try db.inTransaction {
+                        try body(db)
+                        try db.execute(sql: "UPDATE app_state SET revision = revision + 1 WHERE id = 1")
+                        return .commit
+                    }
+
+                    return try Self.loadSnapshot(from: db)
+                }
+            }
+
+            stateLock.withLock {
+                snapshot = nextSnapshot
+            }
+            postExternalChangeNotification()
+        } catch {
+            throw DataHandlerError.from(error: error)
+        }
+    }
+
     private func reloadSnapshot() throws {
         let nextSnapshot = try Self.loadSnapshot(from: dbPool)
+        stateLock.withLock {
+            snapshot = nextSnapshot
+        }
+    }
+
+    private func reloadSnapshotAsync() async throws {
+        let nextSnapshot = try await Self.loadSnapshotAsync(from: dbPool)
         stateLock.withLock {
             snapshot = nextSnapshot
         }
@@ -233,8 +337,29 @@ final class RoamDatabase: @unchecked Sendable {
         return true
     }
 
+    @discardableResult
+    func reloadSnapshotIfChangedFromDiskAsync() async throws -> Bool {
+        let currentRevision = stateLock.withLock { snapshot.revision }
+        let diskRevision = try await dbPool.read { db in
+            try Int64.fetchOne(db, sql: "SELECT revision FROM app_state WHERE id = 1") ?? 0
+        }
+
+        guard diskRevision != currentRevision else {
+            return false
+        }
+
+        try await reloadSnapshotAsync()
+        return true
+    }
+
     private static func loadSnapshot(from dbPool: DatabasePool) throws -> RoamDataSnapshot {
         try dbPool.read { db in
+            try loadSnapshot(from: db)
+        }
+    }
+
+    private static func loadSnapshotAsync(from dbPool: DatabasePool) async throws -> RoamDataSnapshot {
+        try await dbPool.read { db in
             try loadSnapshot(from: db)
         }
     }
@@ -369,6 +494,12 @@ private extension RoamDatabase {
             try db.execute(sql: "CREATE INDEX IF NOT EXISTS app_links_device_idx ON app_links(device_id, sort_order)")
             try db.execute(sql: "INSERT OR IGNORE INTO app_state (id, revision) VALUES (1, 0)")
         }
+        migrator.registerMigration("v2") { db in
+            try db.execute(sql: "ALTER TABLE messages ADD COLUMN ai_message INTEGER NOT NULL DEFAULT 0")
+        }
+        migrator.registerMigration("v3") { db in
+            try db.execute(sql: "ALTER TABLE messages ADD COLUMN human_support_message INTEGER NOT NULL DEFAULT 0")
+        }
         return migrator
     }
 
@@ -499,7 +630,9 @@ private extension RoamDatabase {
             unsentAttachment: unsentAttachment,
             nonce: row["nonce"],
             messageTitle: row["message_title"],
-            robotMessage: row["robot_message"]
+            robotMessage: row["robot_message"],
+            aiMessage: row["ai_message"],
+            humanSupportMessage: row["human_support_message"]
         )
         message.hidden = row["hidden"]
         message.lastSendAttempt = row["last_send_attempt"]
@@ -515,8 +648,9 @@ private extension RoamDatabase {
             sql: """
                 INSERT INTO messages (
                     id, message, author, viewed, hidden, fetched_backend, last_send_attempt,
-                    nonce, sent_attachments_data, unsent_attachment_data, message_title, robot_message
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    nonce, sent_attachments_data, unsent_attachment_data, message_title, robot_message,
+                    ai_message, human_support_message
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     message = excluded.message,
                     author = excluded.author,
@@ -528,7 +662,9 @@ private extension RoamDatabase {
                     sent_attachments_data = excluded.sent_attachments_data,
                     unsent_attachment_data = excluded.unsent_attachment_data,
                     message_title = excluded.message_title,
-                    robot_message = excluded.robot_message
+                    robot_message = excluded.robot_message,
+                    ai_message = excluded.ai_message,
+                    human_support_message = excluded.human_support_message
                 """,
             arguments: [
                 message.id,
@@ -543,6 +679,8 @@ private extension RoamDatabase {
                 unsentAttachmentData,
                 message.messageTitle,
                 message.robotMessage,
+                message.aiMessage,
+                message.humanSupportMessage,
             ])
 
         try db.execute(sql: "DELETE FROM message_attachments WHERE message_id = ?", arguments: [message.id])
@@ -674,14 +812,14 @@ private extension RoamDatabase {
     }
 
     func handleExternalChangeNotification() {
-        externalChangeQueue.async { [weak self] in
-            self?.processExternalChangeNotification()
+        Task.detached(priority: .userInitiated) { [weak self] in
+            await self?.processExternalChangeNotification()
         }
     }
 
-    private func processExternalChangeNotification() {
+    private func processExternalChangeNotification() async {
         do {
-            if try reloadSnapshotIfChangedFromDisk() {
+            if try await reloadSnapshotIfChangedFromDiskAsync() {
                 onExternalChange?()
             }
         } catch {

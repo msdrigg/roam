@@ -97,34 +97,11 @@ struct DeviceDetailView: View {
     @ViewBuilder
     var bodyContent: some View {
         Form {
-            Section(content: {
+            Section {
                 EmptyView()
-            }, header: {
-                EmptyView()
-            }, footer: {
-                VStack {
-                    HStack(alignment: .center) {
-                        FallibleImage(from: device?.iconURL, fallback: "tv", maxSize: 120)
-#if os(macOS)
-                            .frame(maxWidth: 120, maxHeight: 45)
-#else
-                            .frame(maxWidth: 120, maxHeight: 85)
-#endif
-                            .padding(.horizontal, 12)
-                            .padding(4)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 8)
-
-                    Text(device?.name ?? getGlobalNewDeviceName())
-                    #if os(macOS)
-                        .font(.title3.bold())
-                    #else
-                        .font(.headline)
-                    #endif
-                }
-            })
-
+            } footer: {
+                deviceHeader
+            }
             Section(String(localized: "Parameters", comment: "Settings section title indicating device parameters")) {
                 VStack(alignment: .leading, spacing: 4) {
                     TextField(String(localized: "Name", comment: "Settings field label for the device name"), text: $deviceName)
@@ -140,11 +117,11 @@ struct DeviceDetailView: View {
                         TextField(String(localized: "IP Address", comment: "Settings field label for the device's IP address"), text: $deviceIP)
                             .frame(maxWidth: .infinity)
 #if os(watchOS)
-                        .textContentType(.URL)
+                            .textContentType(.URL)
 #elseif !os(macOS)
-                        .keyboardType(.numbersAndPunctuation)
+                            .keyboardType(.numbersAndPunctuation)
 #endif
-                        #if !os(watchOS)
+#if !os(watchOS)
                         Spacer()
                             .frame(maxWidth: 10)
 
@@ -153,7 +130,7 @@ struct DeviceDetailView: View {
                                 .labelStyle(.iconOnly)
                         }
                         .foregroundStyle(Color.secondary)
-                        #endif
+#endif
                     }
 
                     if let addressValidation {
@@ -243,7 +220,7 @@ struct DeviceDetailView: View {
                     }
                 }
             }, label: {
-              Text("Delete Device", comment: "Text on a button to delete the device")
+                Text("Delete Device", comment: "Text on a button to delete the device")
             })
             .frame(maxWidth: .infinity)
             .buttonStyle(.borderless)
@@ -267,6 +244,39 @@ struct DeviceDetailView: View {
         }
         .formStyle(.grouped)
         .alertingError(message: errorMessage, error: $deviceError)
+    }
+
+    @ViewBuilder
+    private var deviceHeader: some View {
+#if os(macOS)
+        VStack(alignment: .center, spacing: 6) {
+            FallibleImage(from: device?.iconURL, fallback: "tv", maxSize: 120)
+                .frame(maxWidth: 120, maxHeight: 36, alignment: .center)
+
+            Text(device?.name ?? getGlobalNewDeviceName())
+                .font(.title3.bold())
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+        }
+        .padding(.horizontal)
+        .padding(.top, 6)
+        .padding(.bottom, 4)
+        .frame(maxWidth: .infinity, alignment: .center)
+#else
+        VStack {
+            HStack(alignment: .center) {
+                FallibleImage(from: device?.iconURL, fallback: "tv", maxSize: 120)
+                    .frame(maxWidth: 120, maxHeight: 85)
+                    .padding(.horizontal, 12)
+                    .padding(4)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 8)
+
+            Text(device?.name ?? getGlobalNewDeviceName())
+                .font(.headline)
+        }
+#endif
     }
 
     func formSignature(deviceName: String, deviceIP: String, hidden: Bool) -> String {

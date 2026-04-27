@@ -4,10 +4,12 @@ import SwiftUI
 struct TopBar: View {
     let pressCounter: (RemoteButton) -> Int
     let action: (RemoteButton) -> Void
+    var usesNativeGlassButtons = false
 
     @ScaledMetric var buttonWidth = globalButtonWidth
     @ScaledMetric var buttonHeight = globalButtonHeight
     @ScaledMetric var buttonSpacing = globalButtonSpacing
+    private let powerIconScale: CGFloat = 0.85
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -20,7 +22,6 @@ struct TopBar: View {
             #if !os(watchOS)
             .customKeyboardShortcut(.back)
             #endif
-            .buttonStyle(LiquidGlassButtonStyle(isProminent: true))
             #if !os(visionOS)
             .sensoryFeedback(.impact, trigger: pressCounter(.back))
             #endif
@@ -30,9 +31,9 @@ struct TopBar: View {
                 Label("Power On/Off", systemImage: "power")
                     .frame(width: buttonWidth, height: buttonHeight)
                     .font(.title)
+                    .scaleEffect(powerIconScale)
                     .foregroundStyle(.red)
             })
-                .buttonStyle(LiquidGlassButtonStyle())
             #if !os(visionOS)
                 .sensoryFeedback(.impact, trigger: pressCounter(.power))
             #endif
@@ -45,7 +46,6 @@ struct TopBar: View {
                 Label("Home", systemImage: "house")
                     .frame(width: buttonWidth, height: buttonHeight)
             })
-            .buttonStyle(LiquidGlassButtonStyle(isProminent: true))
             #if !os(watchOS)
             .customKeyboardShortcut(.home)
             #endif

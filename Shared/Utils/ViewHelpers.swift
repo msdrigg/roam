@@ -90,50 +90,76 @@ struct CustomAccentColorForeground: ViewModifier {
     }
 }
 
-struct LiquidGlassButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
-    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
-
-    @ScaledMetric private var buttonRadius = globalButtonRadius
-
+struct GlassIfSupportedButtonStyle: PrimitiveButtonStyle {
     var isProminent: Bool = false
 
+    @ViewBuilder
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .applyBuilder {
-                #if os(macOS)
-                $0
-                #else
-                if isProminent {
-                    $0.foregroundStyle(.white)
-                } else {
-                    $0
+        #if os(visionOS)
+        Button(role: configuration.role, action: configuration.trigger) {
+            configuration.label
+        }
+        .buttonStyle(.bordered)
+        #else
+        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *) {
+            if isProminent {
+                Button(role: configuration.role, action: configuration.trigger) {
+                    configuration.label
                 }
-                #endif
+                .buttonStyle(.glassProminent)
+            } else {
+                Button(role: configuration.role, action: configuration.trigger) {
+                    configuration.label
+                }
+                .buttonStyle(.glass)
             }
-            .background {
-                RoundedRectangle(cornerRadius: buttonRadius, style: .continuous)
-                    .fill(backgroundColor)
+        } else {
+            if isProminent {
+                Button(role: configuration.role, action: configuration.trigger) {
+                    configuration.label
+                }
+                .buttonStyle(.borderedProminent)
+            } else {
+                Button(role: configuration.role, action: configuration.trigger) {
+                    configuration.label
+                }
+                .buttonStyle(.bordered)
             }
-            .overlay {
-                RoundedRectangle(cornerRadius: buttonRadius, style: .continuous)
-                    .stroke(.white.opacity(isProminent ? 0.28 : 0.18), lineWidth: 0.8)
-            }
-            .contentShape(.rect(cornerRadius: buttonRadius))
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .opacity(isEnabled ? 1 : 0.35)
-            .animation(.smooth(duration: 0.18), value: configuration.isPressed)
-            .liquidGlass(isProminent: isProminent, isInteractive: isEnabled, cornerRadius: buttonRadius)
+        }
+        #endif
+    }
+}
+
+extension PrimitiveButtonStyle where Self == GlassIfSupportedButtonStyle {
+    static var glassIfSupported: GlassIfSupportedButtonStyle {
+        GlassIfSupportedButtonStyle()
     }
 
-    private var backgroundColor: Color {
-        #if os(macOS)
-        return Color.secondary.opacity(isProminent ? 0.16 : 0.10)
+    static func glassIfSupported(isProminent: Bool) -> GlassIfSupportedButtonStyle {
+        GlassIfSupportedButtonStyle(isProminent: isProminent)
+    }
+}
+
+struct GlassContainerIfSupported<Content: View>: View {
+    private let spacing: CGFloat?
+    private let content: Content
+
+    init(spacing: CGFloat? = nil, @ViewBuilder content: () -> Content) {
+        self.spacing = spacing
+        self.content = content()
+    }
+
+    var body: some View {
+        #if os(visionOS)
+        content
         #else
-        if isProminent {
-            return customAccentColor.opacity(0.26)
+        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *) {
+            GlassEffectContainer(spacing: spacing) {
+                content
+            }
+        } else {
+            content
         }
-        return Color.secondary.opacity(0.12)
         #endif
     }
 }
@@ -147,34 +173,84 @@ extension View {
         modifier(CustomAccentColorForeground())
     }
 
+    @ViewBuilder
+    func glassEffectIfSupported() -> some View {
+        #if os(visionOS)
+        self
+        #else
+        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *) {
+            self.glassEffect()
+        } else {
+            self
+        }
+        #endif
+    }
+
+    @ViewBuilder
+    func glassEffectIfSupported<S: Shape>(
+        tint: Color? = nil,
+        isInteractive: Bool = true,
+        in shape: S
+    ) -> some View {
+        #if os(visionOS)
+        self
+        #else
+        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *) {
+            self.glassEffect(
+                .regular
+                    .tint(tint)
+                    .interactive(isInteractive),
+                in: shape
+            )
+        } else {
+            self
+        }
+        #endif
+    }
+
+    func glassEffectIfSupported(
+        cornerRadius: CGFloat,
+        tint: Color? = nil,
+        isInteractive: Bool = true
+    ) -> some View {
+        glassEffectIfSupported(
+            tint: tint,
+            isInteractive: isInteractive,
+            in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        )
+    }
+
     func liquidGlass(
         isProminent: Bool = false,
         isInteractive: Bool = true,
         cornerRadius: CGFloat = globalButtonRadius
     ) -> some View {
-        self.applyBuilder {
-            #if !os(visionOS)
-            if #available(iOS 26.0, macOS 26.0, watchOS 26.0, *) {
-                #if os(macOS)
-                $0.glassEffect(
-                    .regular.interactive(isInteractive),
-                    in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                )
-                #else
-                $0.glassEffect(
-                    .regular
-                        .tint(isProminent ? Color.accentColor.opacity(0.18) : nil)
-                        .interactive(isInteractive),
-                    in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                )
-                #endif
-            } else {
-                $0
+        #if os(macOS)
+        let tint: Color? = nil
+        #else
+        let tint = isProminent ? Color.accentColor.opacity(0.18) : nil
+        #endif
+
+        return glassEffectIfSupported(
+            cornerRadius: cornerRadius,
+            tint: tint,
+            isInteractive: isInteractive
+        )
+    }
+
+    @ViewBuilder
+    func glassContainerIfSupported(spacing: CGFloat? = nil) -> some View {
+        #if os(visionOS)
+        self
+        #else
+        if #available(iOS 26.0, macOS 26.0, tvOS 26.0, watchOS 26.0, *) {
+            GlassEffectContainer(spacing: spacing) {
+                self
             }
-            #else
-            $0
-            #endif
+        } else {
+            self
         }
+        #endif
     }
 }
 
@@ -349,7 +425,7 @@ struct BreatheEffect: ViewModifier {
 
                 content
                     .tint(customAccentColor)
-                    .buttonStyle(LiquidGlassButtonStyle(isProminent: true))
+                    .buttonStyle(.glassIfSupported)
             }
             .frame(width: buttonWidth, height: buttonHeight)
         } else {

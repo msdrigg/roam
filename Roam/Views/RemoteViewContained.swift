@@ -1,3 +1,4 @@
+#if !os(macOS)
 import AppIntents
 import AVFoundation
 import Intents
@@ -1162,4 +1163,5 @@ struct RemoteViewContained: View {
     RemoteView()
         .environmentObject(RoamAppDelegate())
 }
+#endif
 #endif
