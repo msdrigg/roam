@@ -296,9 +296,9 @@ private struct MessageViewText: View {
                 count += 2
             }
             if message.aiMessage {
-                count += 3
+                count += 5
             } else if message.humanSupportMessage {
-                count += 7
+                count += 9
             }
         #else
             if message.showSending {

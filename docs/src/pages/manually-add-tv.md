@@ -6,6 +6,7 @@ hide_table_of_contents: true
 
 1. Find your TV's IP Address
     - Turn on your TV and navigate to **Settings** > **Network** > **About**
+    - If you do not have a physical remote or another way to control the TV, check your home router's admin interface or DHCP client list for the Roku's IP address instead
     - The IP Address should look like 10.x.x.x, 172.x.x.x, 173.x.x.x or 192.168.x.x
     - This page may list a "Gateway" address and an "IP Address". Make sure you are NOT using the "Gateway" address
 2. Navigate to Roam settings and click "Add a device manually"
@@ -22,6 +23,7 @@ If Roam still can't control your Roku, please try the following steps
 -   Make sure Local Network Permissions is enabled for Roam (or disable and re-enable it if it is already enabled)
     -   On macOS: Go to System Settings -> Privacy and Security -> Local Network -> Roam
     -   On iOS: Go to Settings -> Apps -> Roam -> Local Network
+-   If the Roku is not connected to WiFi and you do not have a physical remote, follow Roku's mobile app connection steps here: [https://support.roku.com/article/115001480188](https://support.roku.com/article/115001480188)
 -   See additional possibilities here [https://support.roku.com/article/115001480188](https://support.roku.com/article/115001480188)
 
 ## What if I have a complicated network/VPN setup? What protocols does this app use?

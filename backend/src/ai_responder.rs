@@ -6,6 +6,7 @@ use std::{
 };
 
 use anyhow::{bail, Context as AnyhowContext};
+use chrono::{DateTime, Duration as ChronoDuration, Utc};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use serenity::{
@@ -15,16 +16,28 @@ use serenity::{
 use tokio::{task::JoinHandle, time::sleep};
 
 use crate::{
-    discord::{DiscordFileUpload, DiscordMessage, DiscordMessageOptions, MessageAttachment},
+    discord::{
+        DiscordFileUpload, DiscordMessage, DiscordMessageOptions, MessageAttachment, Thread,
+    },
     AppContext,
 };
 
 const NO_RESPONSE: &str = "NO_RESPONSE";
-const HIDDEN_MESSAGE_PREFIX: &str = "!HiddenMessage";
+const HIDDEN_MESSAGE_PREFIX: &str = ":ninja:";
+const LEGACY_HIDDEN_MESSAGE_PREFIX: &str = "!HiddenMessage";
 const TRANSLATE_COMMAND_PREFIX: &str = ":translate:";
 const TRANSLATE_SLASH_COMMAND: &str = "/translate";
 const NO_TRANSLATION: &str = "NO_TRANSLATION";
+const NO_RESPONSE_EVALUATED_MARKER: &str = "AI responder evaluated: no response needed";
 const AI_CONTEXT_FETCH_LIMIT: u8 = 50;
+const THREAD_TITLE_CONTEXT_FETCH_LIMIT: u8 = 50;
+const THREAD_RENAME_MIN_AGE: ChronoDuration = ChronoDuration::minutes(10);
+const THREAD_RENAME_MAX_AGE: ChronoDuration = ChronoDuration::days(7);
+const HUMAN_SUPPORT_RECENT_WINDOW: ChronoDuration = ChronoDuration::hours(1);
+const HUMAN_SUPPORT_RECENT_REPLY_DELAY: std::time::Duration =
+    std::time::Duration::from_secs(10 * 60);
+const DISCORD_EPOCH_MS: i64 = 1_420_070_400_000;
+const DISCORD_THREAD_NAME_LIMIT: usize = 100;
 const FALLBACK_DOCS: &str = include_str!("ai_responder_roam_docs.md");
 
 pub async fn start_client(ctx: AppContext) -> anyhow::Result<JoinHandle<anyhow::Result<()>>> {
@@ -70,6 +83,189 @@ pub async fn start_client(ctx: AppContext) -> anyhow::Result<JoinHandle<anyhow::
         .context("Error spawning AI responder gateway client")?;
 
     Ok(handle)
+}
+
+pub async fn rename_recent_threads(ctx: AppContext) -> anyhow::Result<()> {
+    if !ctx.ai_responder_enabled() || ctx.openai_api_key().is_none() {
+        return Ok(());
+    }
+
+    let now = Utc::now();
+    let threads = ctx
+        .discord_client()
+        .get_active_threads_updated_since(None)
+        .await
+        .context("Error fetching active Discord threads for AI title rename")?;
+
+    for thread in threads {
+        if let Err(err) = rename_thread_if_needed(&ctx, &thread, now).await {
+            tracing::warn!(
+                thread_id = thread.id,
+                current_name = %thread.name,
+                error = ?err,
+                "AI title rename failed for thread; continuing with remaining threads"
+            );
+        }
+    }
+
+    Ok(())
+}
+
+async fn rename_active_thread_by_id_if_needed(
+    ctx: AppContext,
+    thread_id: i64,
+) -> anyhow::Result<()> {
+    let now = Utc::now();
+    let threads = ctx
+        .discord_client()
+        .get_active_threads_updated_since(None)
+        .await
+        .context("Error fetching active Discord threads for targeted AI title rename")?;
+    let Some(thread) = threads.into_iter().find(|thread| thread.id == thread_id) else {
+        tracing::debug!(
+            thread_id,
+            "AI title rename skipped targeted thread because it is not active"
+        );
+        return Ok(());
+    };
+
+    rename_thread_if_needed(&ctx, &thread, now).await
+}
+
+async fn rename_thread_if_needed(
+    ctx: &AppContext,
+    thread: &Thread,
+    now: DateTime<Utc>,
+) -> anyhow::Result<()> {
+    if thread_name_has_ai_tag(&thread.name) {
+        return Ok(());
+    }
+
+    if ctx
+        .db_client()
+        .get_user_with_thread(thread.id)
+        .await
+        .context("Error loading thread user for AI title rename")?
+        .is_none()
+    {
+        return Ok(());
+    }
+
+    let mut messages = ctx
+        .discord_client()
+        .get_recent_messages_in_thread(thread.id, THREAD_TITLE_CONTEXT_FETCH_LIMIT)
+        .await
+        .with_context(|| format!("Error fetching messages for thread {}", thread.id))?;
+    messages.sort_by_key(|message| message.id);
+
+    let Some(title_basis_at) = title_eligibility_datetime(&messages, ctx, thread.last_message_id)
+    else {
+        tracing::debug!(
+            thread_id = thread.id,
+            last_message_id = thread.last_message_id,
+            "AI title rename skipped thread with invalid title eligibility timestamp"
+        );
+        return Ok(());
+    };
+    let age = now - title_basis_at;
+    if age < THREAD_RENAME_MIN_AGE || age > THREAD_RENAME_MAX_AGE {
+        tracing::debug!(
+            thread_id = thread.id,
+            age_seconds = age.num_seconds(),
+            "AI title rename skipped thread outside title age window"
+        );
+        return Ok(());
+    }
+
+    let Some(title) = AiResponder::new(ctx.clone())
+        .create_thread_title(&thread.name, &messages)
+        .await?
+    else {
+        return Ok(());
+    };
+
+    if title == thread.name {
+        return Ok(());
+    }
+
+    ctx.discord_client()
+        .update_thread_name(thread.id, &title)
+        .await
+        .with_context(|| format!("Error renaming Discord thread {}", thread.id))?;
+
+    Ok(())
+}
+
+pub async fn respond_to_old_messages(ctx: AppContext) -> anyhow::Result<()> {
+    if !ctx.ai_responder_enabled() || ctx.openai_api_key().is_none() {
+        return Ok(());
+    }
+
+    let now = Utc::now();
+    let threads = ctx
+        .discord_client()
+        .get_active_threads_updated_since(None)
+        .await
+        .context("Error fetching active Discord threads for old AI responder sweep")?;
+
+    for thread in threads {
+        let Some(last_message_at) = discord_snowflake_datetime(thread.last_message_id) else {
+            tracing::debug!(
+                thread_id = thread.id,
+                last_message_id = thread.last_message_id,
+                "AI responder old-message sweep skipped thread with invalid snowflake"
+            );
+            continue;
+        };
+        let age = now - last_message_at;
+        if age < THREAD_RENAME_MIN_AGE || age > THREAD_RENAME_MAX_AGE {
+            continue;
+        }
+
+        if ctx
+            .db_client()
+            .get_user_with_thread(thread.id)
+            .await
+            .context("Error loading thread user for old AI responder sweep")?
+            .is_none()
+        {
+            continue;
+        }
+
+        let mut messages = ctx
+            .discord_client()
+            .get_recent_messages_in_thread(thread.id, AI_CONTEXT_FETCH_LIMIT)
+            .await
+            .with_context(|| {
+                format!(
+                    "Error fetching messages for old AI responder sweep in thread {}",
+                    thread.id
+                )
+            })?;
+        messages.sort_by_key(|message| message.id);
+
+        let Some(message_id) = latest_user_message_needing_ai_evaluation(&messages, &ctx) else {
+            continue;
+        };
+
+        tracing::info!(
+            thread_id = thread.id,
+            message_id,
+            "AI responder old-message sweep processing stale user message"
+        );
+        if let Err(err) =
+            respond_to_user_message(ctx.clone(), None, thread.id, message_id, messages).await
+        {
+            tracing::warn!(
+                thread_id = thread.id,
+                message_id,
+                error = ?err,
+                "AI responder old-message sweep failed to process thread"
+            );
+        }
+    }
+
+    Ok(())
 }
 
 struct Handler {
@@ -194,6 +390,17 @@ impl EventHandler for Handler {
             }
         }
 
+        let response_delay = response_delay_for_thread(&self.ctx, thread_id)
+            .await
+            .unwrap_or_else(|err| {
+                tracing::warn!(
+                    thread_id,
+                    error = ?err,
+                    "AI responder could not inspect thread for response delay; using default delay"
+                );
+                self.ctx.ai_responder_delay()
+            });
+
         {
             let mut pending = self
                 .pending_messages
@@ -205,14 +412,14 @@ impl EventHandler for Handler {
         tracing::info!(
             thread_id,
             message_id,
-            delay_seconds = self.ctx.ai_responder_delay().as_secs(),
+            delay_seconds = response_delay.as_secs(),
             "AI responder scheduled response"
         );
 
         let ctx = self.ctx.clone();
         let pending_messages = self.pending_messages.clone();
         tokio::spawn(async move {
-            sleep(ctx.ai_responder_delay()).await;
+            sleep(response_delay).await;
             if !is_still_pending(&pending_messages, thread_id, message_id) {
                 return;
             }
@@ -225,6 +432,21 @@ impl EventHandler for Handler {
                     message_id,
                     error = ?err,
                     "AI responder failed to process message"
+                );
+            }
+        });
+
+        let ctx = self.ctx.clone();
+        tokio::spawn(async move {
+            let delay = THREAD_RENAME_MIN_AGE
+                .to_std()
+                .unwrap_or_else(|_| std::time::Duration::from_secs(10 * 60));
+            sleep(delay).await;
+            if let Err(err) = rename_active_thread_by_id_if_needed(ctx, thread_id).await {
+                tracing::warn!(
+                    thread_id,
+                    error = ?err,
+                    "AI title rename failed after user-message delay"
                 );
             }
         });
@@ -261,6 +483,25 @@ fn clear_pending(pending_messages: &Mutex<HashMap<i64, i64>>, thread_id: i64, me
     }
 }
 
+async fn response_delay_for_thread(
+    ctx: &AppContext,
+    thread_id: i64,
+) -> anyhow::Result<std::time::Duration> {
+    let mut messages = ctx
+        .discord_client()
+        .get_recent_messages_in_thread(thread_id, AI_CONTEXT_FETCH_LIMIT)
+        .await
+        .context("Error fetching Discord thread for AI response delay")?;
+    messages.sort_by_key(|message| message.id);
+
+    let cutoff = Utc::now() - HUMAN_SUPPORT_RECENT_WINDOW;
+    if has_visible_human_support_response_since(&messages, ctx, cutoff) {
+        Ok(HUMAN_SUPPORT_RECENT_REPLY_DELAY)
+    } else {
+        Ok(ctx.ai_responder_delay())
+    }
+}
+
 async fn respond_to_latest_message(
     ctx: AppContext,
     pending_messages: Arc<Mutex<HashMap<i64, i64>>>,
@@ -273,6 +514,31 @@ async fn respond_to_latest_message(
         .await
         .context("Error fetching Discord thread for AI responder")?;
     messages.sort_by_key(|message| message.id);
+
+    respond_to_user_message(ctx, Some(pending_messages), thread_id, message_id, messages).await
+}
+
+async fn respond_to_user_message(
+    ctx: AppContext,
+    pending_messages: Option<Arc<Mutex<HashMap<i64, i64>>>>,
+    thread_id: i64,
+    message_id: i64,
+    mut messages: Vec<DiscordMessage>,
+) -> anyhow::Result<()> {
+    let diagnostics_received = has_diagnostics_submission(&messages);
+
+    if has_unanswered_human_support_handoff(&messages, &ctx, message_id) {
+        tracing::info!(
+            thread_id,
+            message_id,
+            "AI responder skipped because human support has already been summoned"
+        );
+        if let Some(pending_messages) = pending_messages.as_ref() {
+            clear_pending(pending_messages, thread_id, message_id);
+        }
+        return Ok(());
+    }
+
     messages.retain(|message| !message.is_hidden());
 
     if messages
@@ -284,7 +550,9 @@ async fn respond_to_latest_message(
             message_id,
             "AI responder skipped because support or AI already replied"
         );
-        clear_pending(&pending_messages, thread_id, message_id);
+        if let Some(pending_messages) = pending_messages.as_ref() {
+            clear_pending(pending_messages, thread_id, message_id);
+        }
         return Ok(());
     }
 
@@ -300,7 +568,9 @@ async fn respond_to_latest_message(
             message_id,
             "AI responder skipped because this is no longer the latest user message"
         );
-        clear_pending(&pending_messages, thread_id, message_id);
+        if let Some(pending_messages) = pending_messages.as_ref() {
+            clear_pending(pending_messages, thread_id, message_id);
+        }
         return Ok(());
     }
 
@@ -337,60 +607,91 @@ async fn respond_to_latest_message(
         }
     }
 
-    match responder.run(thread_id, &messages).await? {
-        AiDecision::Respond(content) => {
-            if !is_still_pending(&pending_messages, thread_id, message_id) {
-                tracing::info!(
-                    thread_id,
-                    message_id,
-                    "AI responder skipped because pending response was cancelled before send"
-                );
-                return Ok(());
-            }
-            let mut latest_messages = ctx
-                .discord_client()
-                .get_recent_messages_in_thread(thread_id, AI_CONTEXT_FETCH_LIMIT)
-                .await
-                .context("Error refetching Discord thread before AI responder send")?;
-            latest_messages.sort_by_key(|message| message.id);
-            latest_messages.retain(|message| !message.is_hidden());
-            if latest_messages.iter().any(|message| {
-                message.id > message_id && message.author_id() != ctx.discord_bot_id()
-            }) {
-                tracing::info!(
-                    thread_id,
-                    message_id,
-                    "AI responder skipped because support or AI replied before send"
-                );
-                clear_pending(&pending_messages, thread_id, message_id);
-                return Ok(());
-            }
+    let decision = responder
+        .run(
+            thread_id,
+            &messages,
+            ResponderContext {
+                diagnostics_received,
+            },
+        )
+        .await?;
+    let no_response = matches!(decision, AiDecision::NoResponse);
+    let response = match decision {
+        AiDecision::Respond(content) => Some((content, None)),
+        AiDecision::RespondThenEscalate { content, reason } => Some((content, Some(reason))),
+        AiDecision::Escalated | AiDecision::NoResponse => None,
+    };
 
-            ai_client
-                .send_message(
-                    thread_id,
-                    &content,
-                    None,
-                    Some(&DiscordMessageOptions::default()),
-                )
-                .await
-                .context("Error sending AI responder message")?;
-            if let Err(err) = responder
-                .send_hidden_english_translation_if_needed(thread_id, "AI response", &content)
-                .await
-            {
-                tracing::warn!(
-                    thread_id,
-                    message_id,
-                    error = ?err,
-                    "AI responder failed to send hidden AI response translation"
-                );
-            }
+    if let Some((content, escalation_reason)) = response {
+        if pending_messages.as_ref().is_some_and(|pending_messages| {
+            !is_still_pending(pending_messages, thread_id, message_id)
+        }) {
+            tracing::info!(
+                thread_id,
+                message_id,
+                "AI responder skipped because pending response was cancelled before send"
+            );
+            return Ok(());
         }
-        AiDecision::Escalated | AiDecision::NoResponse => {}
+        let mut latest_messages = ctx
+            .discord_client()
+            .get_recent_messages_in_thread(thread_id, AI_CONTEXT_FETCH_LIMIT)
+            .await
+            .context("Error refetching Discord thread before AI responder send")?;
+        latest_messages.sort_by_key(|message| message.id);
+        latest_messages.retain(|message| !message.is_hidden());
+        if latest_messages
+            .iter()
+            .any(|message| message.id > message_id && message.author_id() != ctx.discord_bot_id())
+        {
+            tracing::info!(
+                thread_id,
+                message_id,
+                "AI responder skipped because support or AI replied before send"
+            );
+            if let Some(pending_messages) = pending_messages.as_ref() {
+                clear_pending(pending_messages, thread_id, message_id);
+            }
+            return Ok(());
+        }
+
+        ai_client
+            .send_message(
+                thread_id,
+                &content,
+                None,
+                Some(&DiscordMessageOptions::default()),
+            )
+            .await
+            .context("Error sending AI responder message")?;
+        if let Err(err) = responder
+            .send_hidden_english_translation_if_needed(thread_id, "AI response", &content)
+            .await
+        {
+            tracing::warn!(
+                thread_id,
+                message_id,
+                error = ?err,
+                "AI responder failed to send hidden AI response translation"
+            );
+        }
+        if let Some(reason) = escalation_reason {
+            responder
+                .bring_in_human_support(thread_id, &reason)
+                .await
+                .context("Error bringing in human support after AI response")?;
+        }
+    } else if no_response {
+        responder
+            .mark_no_response_evaluated(thread_id)
+            .await
+            .context("Error marking AI no-response evaluation")?;
     }
 
-    clear_pending(&pending_messages, thread_id, message_id);
+    if let Some(pending_messages) = pending_messages.as_ref() {
+        clear_pending(pending_messages, thread_id, message_id);
+    }
     Ok(())
 }
 
@@ -418,8 +719,14 @@ fn discord_message_from_gateway(msg: &Message) -> DiscordMessage {
 
 enum AiDecision {
     Respond(String),
+    RespondThenEscalate { content: String, reason: String },
     Escalated,
     NoResponse,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+struct ResponderContext {
+    diagnostics_received: bool,
 }
 
 struct AiResponder {
@@ -435,8 +742,14 @@ impl AiResponder {
         }
     }
 
-    async fn run(&self, thread_id: i64, messages: &[DiscordMessage]) -> anyhow::Result<AiDecision> {
+    async fn run(
+        &self,
+        thread_id: i64,
+        messages: &[DiscordMessage],
+        responder_context: ResponderContext,
+    ) -> anyhow::Result<AiDecision> {
         let conversation = format_conversation(&self.ctx, messages);
+        let internal_context = format_internal_context(responder_context);
         let latest_user_message = messages
             .iter()
             .rev()
@@ -449,8 +762,8 @@ impl AiResponder {
             "content": [{
                 "type": "input_text",
                 "text": format!(
-                    "Latest user message:\n{}\n\nRecent conversation:\n{}",
-                    latest_user_message, conversation
+                    "Latest user message:\n{}\n\nRecent conversation:\n{}\n\nInternal support context:\n{}",
+                    latest_user_message, conversation, internal_context
                 )
             }]
         })];
@@ -497,6 +810,27 @@ impl AiResponder {
                             .unwrap_or("AI responder requested human support");
                         self.bring_in_human_support(thread_id, reason).await?;
                         return Ok(AiDecision::Escalated);
+                    }
+                    "apologize_and_bring_in_human_support" => {
+                        let content = tool_call
+                            .arguments
+                            .get("user_message")
+                            .and_then(Value::as_str)
+                            .unwrap_or("Sorry about that. I am going to have a person take a look.")
+                            .trim()
+                            .to_string();
+                        let reason = tool_call
+                            .arguments
+                            .get("reason")
+                            .and_then(Value::as_str)
+                            .unwrap_or("User is hostile or upset and needs human support.")
+                            .trim()
+                            .to_string();
+                        if content.is_empty() {
+                            self.bring_in_human_support(thread_id, &reason).await?;
+                            return Ok(AiDecision::Escalated);
+                        }
+                        return Ok(AiDecision::RespondThenEscalate { content, reason });
                     }
                     name => {
                         input.push(json!({
@@ -658,6 +992,55 @@ impl AiResponder {
         Ok(output.trim().to_string())
     }
 
+    async fn create_thread_title(
+        &self,
+        current_name: &str,
+        messages: &[DiscordMessage],
+    ) -> anyhow::Result<Option<String>> {
+        let conversation = format_thread_title_conversation(&self.ctx, messages);
+        let output = self
+            .create_text_response(
+                thread_title_prompt(),
+                &format!(
+                    "Current thread name:\n{current_name}\n\nRecent conversation:\n{conversation}"
+                ),
+            )
+            .await?;
+        let title = sanitize_thread_title(&output);
+
+        if title.is_empty() || !thread_name_has_ai_tag(&title) {
+            tracing::warn!(
+                current_name,
+                output,
+                "AI title rename produced an invalid title"
+            );
+            return Ok(None);
+        }
+
+        Ok(Some(title))
+    }
+
+    async fn mark_no_response_evaluated(&self, thread_id: i64) -> anyhow::Result<()> {
+        let Some(ai_client) = self.ctx.ai_responder_discord_client() else {
+            bail!("AI responder Discord client is not configured");
+        };
+
+        let message = format!("{HIDDEN_MESSAGE_PREFIX} {NO_RESPONSE_EVALUATED_MARKER}");
+        ai_client
+            .send_message(
+                thread_id,
+                &message,
+                None::<DiscordFileUpload>,
+                Some(&DiscordMessageOptions {
+                    notify: false,
+                    ..Default::default()
+                }),
+            )
+            .await
+            .context("Error sending AI no-response evaluation marker")?;
+        Ok(())
+    }
+
     async fn bring_in_human_support(&self, thread_id: i64, reason: &str) -> anyhow::Result<()> {
         let support_user_id = self
             .ctx
@@ -691,11 +1074,34 @@ Write concise, natural support replies. Do not announce that you are an AI, do n
 
 Respond in the user's language. If the latest user message is not in English, write the full reply in that same language. If the user's language is ambiguous or mixed, use the dominant language in the latest user message.
 
-Use search_roam_docs before answering product, troubleshooting, privacy, compatibility, or setup questions unless the answer is already present in the recent conversation. Prefer one clear next step over a long checklist. If the user appears to be reporting a bug, ask them to use Roam settings -> Send feedback when diagnostics would help.
+Use search_roam_docs before answering product, troubleshooting, privacy, compatibility, or setup questions unless the answer is already present in the recent conversation. Prefer one clear next step over a long checklist. If the user appears to be reporting a bug, ask them to use Roam settings -> Send feedback when diagnostics would help. If the user only shared diagnostics, especially more than once, most often ignore it because diagnostics are frequently shared accidentally.
 
-Call bring_in_human_support and do not reply to the user when: the user asks for a human/developer, you are unsure after searching docs, the issue involves private listening working in the official Roku app but not Roam, crash reports or diagnostics need review, the user is upset, the request is outside Roam support, or the next action requires account/backend access.
+When diagnostics are received, they may appear internally as a support-only message beginning with ":ninja:\n\n### Installation Info" or as a diagnostics.json attachment. If internal support context says diagnostics have already been received, do not ask the user to share diagnostics again unless a new, separate diagnostic package is clearly needed.
+
+Do not mention router admin pages, DHCP client lists, or no-remote workarounds unless the user specifically says they do not have a physical remote or another way to control the Roku. If the user only says they cannot connect or cannot find the TV, use normal same-Wi-Fi, TV-on, Local Network permission, and manual-add guidance first. If they explicitly say they have no remote/no TV control and need the TV's IP address, suggest checking the home router's admin interface or DHCP client list. If they explicitly have no Wi-Fi and no physical remote, refer them to Roku's mobile app connection article: https://support.roku.com/article/115001480188
+
+Call bring_in_human_support and do not reply to the user when: the user asks for a human/developer, you are unsure after searching docs, the issue involves private listening working in the official Roku app but not Roam, crash reports or diagnostics need review, the request is outside Roam support, or the next action requires account/backend access. If the user is hostile or upset, call apologize_and_bring_in_human_support with a brief direct apology to the user instead.
 
 If no useful response is needed, such as a thanks-only message or an empty/unclear message, respond exactly with NO_RESPONSE."#
+}
+
+fn thread_title_prompt() -> &'static str {
+    r#"Create one Discord thread title for a Roam support chat.
+
+Output only the title, with no quotes or explanation.
+
+Use this format:
+[Bug|Feature|Question] [iOS | macOS | visionOS | watchOS | Apple TV | <platform>] [Optional, only if non-English: <language>] <short description>
+
+For non-English chats, insert a bracketed English language name after the platform, such as [Spanish]. Do not include a language tag for English chats.
+
+If the chat has no user issue, no useful user text, or only accidental/no-context messages, output exactly:
+[Dead]
+
+If the chat contains only diagnostics or diagnostic sharing without a clear user issue, output exactly:
+[Dead] Diagnostics
+
+Choose Bug for broken behavior, Feature for requests or suggestions, and Question for setup/how-to/general support. Use support-only device info to identify the platform when available. Keep the description short, specific, and under the Discord title limit."#
 }
 
 fn translation_to_english_prompt() -> &'static str {
@@ -749,6 +1155,27 @@ fn tools() -> Vec<Value> {
             },
             "strict": true
         }),
+        json!({
+            "type": "function",
+            "name": "apologize_and_bring_in_human_support",
+            "description": "Send the user a brief apology, then privately mention the configured human support user in Discord.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_message": {
+                        "type": "string",
+                        "description": "Brief direct apology to send to the user before human support is summoned."
+                    },
+                    "reason": {
+                        "type": "string",
+                        "description": "Brief internal reason a human should take over."
+                    }
+                },
+                "required": ["user_message", "reason"],
+                "additionalProperties": false
+            },
+            "strict": true
+        }),
     ]
 }
 
@@ -773,6 +1200,240 @@ fn format_conversation(ctx: &AppContext, messages: &[DiscordMessage]) -> String 
         })
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+fn format_internal_context(context: ResponderContext) -> String {
+    let mut notes = Vec::new();
+    if context.diagnostics_received {
+        notes.push("Diagnostics have already been received in this chat as an internal :ninja: installation-info message or diagnostics.json attachment. Do not ask the user to share diagnostics again unless a new, separate diagnostic package is clearly needed.");
+    }
+
+    if notes.is_empty() {
+        "None.".to_string()
+    } else {
+        notes.join("\n")
+    }
+}
+
+fn format_thread_title_conversation(ctx: &AppContext, messages: &[DiscordMessage]) -> String {
+    let mut output = String::new();
+    let recent_messages = messages
+        .iter()
+        .rev()
+        .take(THREAD_TITLE_CONTEXT_FETCH_LIMIT as usize)
+        .collect::<Vec<_>>();
+    for message in recent_messages.into_iter().rev() {
+        let role = if message.author_id() == ctx.discord_bot_id() {
+            "User"
+        } else if Some(message.author_id()) == ctx.ai_responder_discord_bot_id() {
+            if message.is_hidden() {
+                "Roam support internal"
+            } else {
+                "Roam support"
+            }
+        } else if message.is_hidden() {
+            "Support internal"
+        } else {
+            "Human support"
+        };
+        let normalized = message.clone().normalize();
+        let mut content = truncate_for_model(&normalized.content, 1000);
+        if !message.attachments.is_empty() {
+            let filenames = message
+                .attachments
+                .iter()
+                .map(|attachment| attachment.filename.as_str())
+                .collect::<Vec<_>>()
+                .join(", ");
+            if content.is_empty() {
+                content = format!("[attachments: {filenames}]");
+            } else {
+                content = format!("{content} [attachments: {filenames}]");
+            }
+        }
+        if !content.is_empty() {
+            output.push_str(role);
+            output.push_str(": ");
+            output.push_str(&content);
+            output.push('\n');
+        }
+    }
+    output.trim().to_string()
+}
+
+fn truncate_for_model(text: &str, limit: usize) -> String {
+    if text.len() <= limit {
+        return text.to_string();
+    }
+
+    let mut end = limit - "...".len();
+    while end > 0 && !text.is_char_boundary(end) {
+        end -= 1;
+    }
+    format!("{}...", &text[..end])
+}
+
+fn has_unanswered_human_support_handoff(
+    messages: &[DiscordMessage],
+    ctx: &AppContext,
+    latest_user_message_id: i64,
+) -> bool {
+    let Some(handoff_id) = messages
+        .iter()
+        .rev()
+        .find(|message| {
+            Some(message.author_id()) == ctx.ai_responder_discord_bot_id()
+                && is_ai_handoff_message(&message.content)
+        })
+        .map(|message| message.id)
+    else {
+        return false;
+    };
+
+    if handoff_id >= latest_user_message_id {
+        return false;
+    }
+
+    !messages.iter().any(|message| {
+        message.id > handoff_id
+            && Some(message.author_id()) == ctx.ai_responder_human_support_user_id()
+            && !message.is_hidden()
+    })
+}
+
+fn has_visible_human_support_response_since(
+    messages: &[DiscordMessage],
+    ctx: &AppContext,
+    cutoff: DateTime<Utc>,
+) -> bool {
+    messages.iter().any(|message| {
+        Some(message.author_id()) == ctx.ai_responder_human_support_user_id()
+            && !message.is_hidden()
+            && discord_snowflake_datetime(message.id).is_some_and(|timestamp| timestamp >= cutoff)
+    })
+}
+
+fn has_diagnostics_submission(messages: &[DiscordMessage]) -> bool {
+    messages.iter().any(is_diagnostics_submission_message)
+}
+
+fn is_diagnostics_submission_message(message: &DiscordMessage) -> bool {
+    message
+        .attachments
+        .iter()
+        .any(|attachment| attachment.filename == "diagnostics.json")
+        || is_diagnostics_submission_content(&message.content)
+}
+
+fn is_diagnostics_submission_content(content: &str) -> bool {
+    let trimmed = content.trim_start();
+    (trimmed.starts_with(HIDDEN_MESSAGE_PREFIX)
+        || trimmed.starts_with(LEGACY_HIDDEN_MESSAGE_PREFIX))
+        && (trimmed.contains("### Installation Info")
+            || trimmed.contains("### Device info")
+            || trimmed.contains("Diagnostics Payload Received")
+            || trimmed.contains("Diagnostics Supporting Data"))
+}
+
+fn title_eligibility_datetime(
+    messages: &[DiscordMessage],
+    ctx: &AppContext,
+    fallback_message_id: i64,
+) -> Option<DateTime<Utc>> {
+    messages
+        .iter()
+        .rev()
+        .find(|message| {
+            (message.author_id() == ctx.discord_bot_id() && !message.is_hidden())
+                || is_diagnostics_submission_message(message)
+        })
+        .and_then(|message| discord_snowflake_datetime(message.id))
+        .or_else(|| discord_snowflake_datetime(fallback_message_id))
+}
+
+fn latest_user_message_needing_ai_evaluation(
+    messages: &[DiscordMessage],
+    ctx: &AppContext,
+) -> Option<i64> {
+    let latest_user_message = messages
+        .iter()
+        .rev()
+        .find(|message| message.author_id() == ctx.discord_bot_id() && !message.is_hidden())?;
+
+    if messages.iter().any(|message| {
+        message.id > latest_user_message.id && is_ai_evaluation_message(message, ctx)
+    }) {
+        return None;
+    }
+
+    if has_unanswered_human_support_handoff(messages, ctx, latest_user_message.id) {
+        return None;
+    }
+
+    Some(latest_user_message.id)
+}
+
+fn is_ai_evaluation_message(message: &DiscordMessage, ctx: &AppContext) -> bool {
+    let author_id = message.author_id();
+    if author_id != ctx.discord_bot_id() && !message.is_hidden() {
+        return true;
+    }
+
+    Some(author_id) == ctx.ai_responder_discord_bot_id()
+        && (is_ai_handoff_message(&message.content)
+            || is_no_response_evaluation_message(&message.content))
+}
+
+fn is_ai_handoff_message(content: &str) -> bool {
+    (content.starts_with(HIDDEN_MESSAGE_PREFIX)
+        || content.starts_with(LEGACY_HIDDEN_MESSAGE_PREFIX))
+        && content.contains("AI responder handoff requested")
+}
+
+fn is_no_response_evaluation_message(content: &str) -> bool {
+    (content.starts_with(HIDDEN_MESSAGE_PREFIX)
+        || content.starts_with(LEGACY_HIDDEN_MESSAGE_PREFIX))
+        && content.contains(NO_RESPONSE_EVALUATED_MARKER)
+}
+
+fn thread_name_has_ai_tag(name: &str) -> bool {
+    let name = name.trim();
+    ["[Bug]", "[Feature]", "[Question]", "[Dead]"]
+        .iter()
+        .any(|tag| name.starts_with(tag))
+}
+
+fn discord_snowflake_datetime(id: i64) -> Option<DateTime<Utc>> {
+    if id < 0 {
+        return None;
+    }
+    DateTime::<Utc>::from_timestamp_millis((id >> 22) + DISCORD_EPOCH_MS)
+}
+
+fn sanitize_thread_title(output: &str) -> String {
+    let mut title = output
+        .lines()
+        .find(|line| !line.trim().is_empty())
+        .unwrap_or_default()
+        .trim()
+        .trim_matches('"')
+        .trim_matches('\'')
+        .replace(['\r', '\n'], " ")
+        .replace('@', "at ");
+
+    while title.contains("  ") {
+        title = title.replace("  ", " ");
+    }
+
+    if title.len() <= DISCORD_THREAD_NAME_LIMIT {
+        return title;
+    }
+
+    let mut end = DISCORD_THREAD_NAME_LIMIT;
+    while end > 0 && !title.is_char_boundary(end) {
+        end -= 1;
+    }
+    title[..end].trim().to_string()
 }
 
 #[derive(Debug)]
@@ -1181,13 +1842,66 @@ mod tests {
     fn hidden_handoff_prefix_is_filtered_by_discord_message() {
         let message = DiscordMessage::new(
             1,
-            "!HiddenMessage <@123> AI responder handoff requested".to_string(),
+            ":ninja: <@123> AI responder handoff requested".to_string(),
             2,
             0,
             vec![],
             None,
         );
         assert!(message.is_hidden());
+    }
+
+    #[test]
+    fn legacy_hidden_handoff_prefix_is_still_detected() {
+        assert!(is_ai_handoff_message(
+            "!HiddenMessage <@123> AI responder handoff requested"
+        ));
+        assert!(is_no_response_evaluation_message(&format!(
+            ":ninja: {NO_RESPONSE_EVALUATED_MARKER}"
+        )));
+    }
+
+    #[test]
+    fn thread_title_helpers_validate_and_sanitize_titles() {
+        assert!(thread_name_has_ai_tag("[Bug] [iOS] Cannot connect"));
+        assert!(thread_name_has_ai_tag("[Dead] Diagnostics"));
+        assert!(!thread_name_has_ai_tag("New message from device"));
+
+        let long_title = format!(
+            "\"[Question] [macOS] {}\"",
+            "How to find the Roku IP address without a remote ".repeat(4)
+        );
+        let title = sanitize_thread_title(&long_title);
+        assert!(title.starts_with("[Question] [macOS]"));
+        assert!(title.len() <= DISCORD_THREAD_NAME_LIMIT);
+    }
+
+    #[test]
+    fn diagnostics_submission_detection_matches_hidden_content_and_attachment() {
+        assert!(is_diagnostics_submission_content(
+            ":ninja:\n\n### Installation Info\n\n- **User ID**: abc"
+        ));
+        assert!(is_diagnostics_submission_content(
+            ":ninja: MK Diagnostics Payload Received"
+        ));
+        assert!(!is_diagnostics_submission_content(
+            ":ninja: AI responder evaluated: no response needed"
+        ));
+
+        let message = DiscordMessage::new(
+            1,
+            ":ninja:".to_string(),
+            2,
+            0,
+            vec![MessageAttachment {
+                id: 3,
+                filename: "diagnostics.json".to_string(),
+                content_type: Some("application/json".to_string()),
+                url: "https://example.com/diagnostics.json".to_string(),
+            }],
+            None,
+        );
+        assert!(has_diagnostics_submission(&[message]));
     }
 
     #[test]

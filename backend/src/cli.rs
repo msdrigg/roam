@@ -84,7 +84,7 @@ pub struct RoamCli {
     pub openai_api_key: Option<String>,
 
     /// OpenAI model used by the AI responder
-    #[arg(long, env, default_value = "gpt-5.4-mini")]
+    #[arg(long, env, default_value = "gpt-5.5")]
     pub ai_responder_model: String,
 
     /// Delay before the AI responder answers the latest user message

@@ -5,9 +5,11 @@ use chrono::{DateTime, Utc};
 use reqwest::{Response, StatusCode};
 use serde::Serialize;
 use tokio::sync::AcquireError;
-use types::{IdResponse, Thread, ThreadResponse};
+use types::{IdResponse, ThreadResponse};
 
-pub use types::{DiscordAuthor, DiscordFile, DiscordFileUpload, DiscordMessage, MessageAttachment};
+pub use types::{
+    DiscordAuthor, DiscordFile, DiscordFileUpload, DiscordMessage, MessageAttachment, Thread,
+};
 
 #[derive(Debug, Clone)]
 pub struct DiscordClient {
@@ -464,6 +466,33 @@ impl DiscordClient {
 
         let _ = self
             .except_error_response(response, "joining thread")
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn update_thread_name(&self, thread_id: i64, name: &str) -> Result<(), DiscordError> {
+        let _permit = self.acquire().await.expect("Semaphore should never close");
+        self.error_on_locked()?;
+
+        let url = format!("{}/channels/{}", Self::DISCORD_API_BASE_URL, thread_id);
+        tracing::info!(thread_id, name, "Updating Discord thread name");
+        let body = serde_json::json!({ "name": name });
+
+        let response = self
+            .client
+            .patch(&url)
+            .header("Authorization", format!("Bot {}", self.token))
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| DiscordError::ConnectionError(e.into()))?;
+
+        self.update_rate_limit(response.headers());
+
+        let _ = self
+            .except_error_response(response, "updating thread name")
             .await?;
 
         Ok(())

@@ -8,6 +8,10 @@ Common discovery and connection fixes:
 - On iOS, Local Network permission is in Settings -> Apps -> Roam -> Local Network.
 - On macOS, Local Network permission is in System Settings -> Privacy and Security -> Local Network -> Roam.
 - Users can manually add a TV from Roam settings by choosing "Add a device manually" and entering the Roku IP address shown on the Roku under Settings -> Network -> About.
+- Do not mention router admin pages, DHCP client lists, or no-remote workarounds unless the user specifically says they do not have a physical remote or another way to control the Roku.
+- If the user only says they cannot connect or cannot find the TV, use normal same-Wi-Fi, TV-on, Local Network permission, and manual-add guidance first.
+- If the user explicitly says they have no remote/no TV control and need the TV's IP address, suggest checking the home router's admin interface or DHCP client list.
+- If the user explicitly says they have no Wi-Fi and no physical remote, refer them to Roku's mobile app connection article: https://support.roku.com/article/115001480188
 - The Roku IP address is usually in a private range such as 10.x.x.x, 172.x.x.x, or 192.168.x.x. Tell users not to use the gateway address.
 - Roam talks to Roku devices over TCP port 8060 for commands and device state, UDP wake-on-LAN broadcast for wake, and UDP port 6970 for private listening audio.
 - If a network uses port forwarding, the manual IP field can include a port, for example 192.168.8.242:8061.
@@ -30,6 +34,7 @@ Keyboard input and iPad arrows:
 Feedback and diagnostics:
 
 - For bugs, ask the user to open Roam settings and use Send feedback so the app can generate a diagnostic report.
+- Shared diagnostics are often sent accidentally, especially repeated diagnostic shares. If a user only shared diagnostics and did not describe a problem, most often ignore the diagnostic share instead of asking follow-up questions or escalating.
 - If the app is crashing, ask them to enable Apple analytics sharing in Settings -> Privacy & Security -> Analytics & Improvements, including Share iPhone & Watch Analytics and Share With App Developers.
 - For feature requests, users can email roam-support@msd3.io, chat in Roam from Settings -> Chat with the Developer, or join the Roam Discord.
 
