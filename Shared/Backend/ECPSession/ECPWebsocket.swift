@@ -50,6 +50,9 @@ actor ECPWebsocketClient {
     private let errorWhileWaitingLimit = 2
     private var errorWhileWaitingCount = 0
 
+    private let maxInFlightVolumeCommands = 2
+    private var inFlightVolumeCommands: Int = 0
+
     private var inError: Bool = false
 
     private let uuid = UUID()
@@ -117,6 +120,21 @@ actor ECPWebsocketClient {
         guard let keypress = button.apiValue else {
             Log.connection.fault("Bad key with no api value \(button.description, privacy: .public)")
             throw ECPError.badKeypress(button)
+        }
+
+        if button == .volumeUp || button == .volumeDown {
+            guard await self.tryReserveVolumeSlot() else {
+                Log.connection.notice("Dropping \(button.description, privacy: .public) — in-flight volume cap reached")
+                return
+            }
+            do {
+                try await self.sendKey(keypress)
+            } catch {
+                await self.releaseVolumeSlot()
+                throw error
+            }
+            await self.releaseVolumeSlot()
+            return
         }
 
         try await self.sendKey(keypress)
@@ -326,6 +344,20 @@ actor ECPWebsocketClient {
                 }
             })
         )
+    }
+
+    private func tryReserveVolumeSlot() -> Bool {
+        guard inFlightVolumeCommands < maxInFlightVolumeCommands else {
+            return false
+        }
+        inFlightVolumeCommands += 1
+        return true
+    }
+
+    private func releaseVolumeSlot() {
+        if inFlightVolumeCommands > 0 {
+            inFlightVolumeCommands -= 1
+        }
     }
 
     private func clearHandlers() {

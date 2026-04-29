@@ -10,7 +10,11 @@ use chrono::{DateTime, Duration as ChronoDuration, Utc};
 use reqwest::StatusCode;
 use serde_json::{json, Value};
 use serenity::{
-    all::{Context, EventHandler, GatewayIntents, Message, Nonce, Ready, ResumedEvent},
+    all::{
+        CommandDataOptionValue, CommandInteraction, Context, CreateInteractionResponse,
+        CreateInteractionResponseMessage, EditInteractionResponse, EventHandler, GatewayIntents,
+        Interaction, Message, Nonce, Ready, ResumedEvent,
+    },
     async_trait, Client,
 };
 use tokio::{task::JoinHandle, time::sleep};
@@ -27,6 +31,8 @@ const HIDDEN_MESSAGE_PREFIX: &str = ":ninja:";
 const LEGACY_HIDDEN_MESSAGE_PREFIX: &str = "!HiddenMessage";
 const TRANSLATE_COMMAND_PREFIX: &str = ":translate:";
 const TRANSLATE_SLASH_COMMAND: &str = "/translate";
+const TRANSLATE_SLASH_COMMAND_NAME: &str = "translate";
+const TRANSLATE_SLASH_COMMAND_TEXT_OPTION: &str = "text";
 const NO_TRANSLATION: &str = "NO_TRANSLATION";
 const NO_RESPONSE_EVALUATED_MARKER: &str = "AI responder evaluated: no response needed";
 const AI_CONTEXT_FETCH_LIMIT: u8 = 50;
@@ -60,8 +66,14 @@ pub async fn start_client(ctx: AppContext) -> anyhow::Result<JoinHandle<anyhow::
         .context("OPENAI_API_KEY is required when AI responder is enabled")?;
     ctx.ai_responder_human_support_user_id()
         .context("AI_RESPONDER_HUMAN_SUPPORT_USER_ID is required when AI responder is enabled")?;
+    ctx.ai_responder_discord_client()
+        .context("AI responder Discord REST client was not configured")?
+        .register_guild_translate_command()
+        .await
+        .context("Error registering AI responder /translate guild command")?;
 
-    let intents = GatewayIntents::GUILD_MESSAGES | GatewayIntents::MESSAGE_CONTENT;
+    let intents =
+        GatewayIntents::GUILDS | GatewayIntents::GUILD_MESSAGES | GatewayIntents::MESSAGE_CONTENT;
     tracing::info!("Starting AI responder gateway client");
     let handler = Handler {
         ctx,
@@ -452,6 +464,26 @@ impl EventHandler for Handler {
         });
     }
 
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+        let Interaction::Command(command) = interaction else {
+            return;
+        };
+        if command.data.name != TRANSLATE_SLASH_COMMAND_NAME {
+            return;
+        }
+
+        let thread_id = u64::from(command.channel_id) as i64;
+        let command_id = u64::from(command.id) as i64;
+        if let Err(err) = handle_translate_interaction(self.ctx.clone(), ctx, command).await {
+            tracing::warn!(
+                thread_id,
+                command_id,
+                error = ?err,
+                "AI responder failed to handle /translate interaction"
+            );
+        }
+    }
+
     async fn ready(&self, _: Context, ready: Ready) {
         tracing::info!("AI responder {} is connected!", ready.user.name);
     }
@@ -526,6 +558,7 @@ async fn respond_to_user_message(
     mut messages: Vec<DiscordMessage>,
 ) -> anyhow::Result<()> {
     let diagnostics_received = has_diagnostics_submission(&messages);
+    let device_platform = device_platform_from_messages(&messages);
 
     if has_unanswered_human_support_handoff(&messages, &ctx, message_id) {
         tracing::info!(
@@ -613,6 +646,7 @@ async fn respond_to_user_message(
             &messages,
             ResponderContext {
                 diagnostics_received,
+                device_platform,
             },
         )
         .await?;
@@ -724,9 +758,10 @@ enum AiDecision {
     NoResponse,
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Default)]
 struct ResponderContext {
     diagnostics_received: bool,
+    device_platform: Option<String>,
 }
 
 struct AiResponder {
@@ -1078,6 +1113,8 @@ Use search_roam_docs before answering product, troubleshooting, privacy, compati
 
 When diagnostics are received, they may appear internally as a support-only message beginning with ":ninja:\n\n### Installation Info" or as a diagnostics.json attachment. If internal support context says diagnostics have already been received, do not ask the user to share diagnostics again unless a new, separate diagnostic package is clearly needed.
 
+When internal support context includes a support-only Device Info OS platform such as macOS, iOS, or watchOS, use it for platform-specific guidance and do not ask the user what device or platform they are using. Roam behavior is unified across devices on the same platform.
+
 Do not mention router admin pages, DHCP client lists, or no-remote workarounds unless the user specifically says they do not have a physical remote or another way to control the Roku. If the user only says they cannot connect or cannot find the TV, use normal same-Wi-Fi, TV-on, Local Network permission, and manual-add guidance first. If they explicitly say they have no remote/no TV control and need the TV's IP address, suggest checking the home router's admin interface or DHCP client list. If they explicitly have no Wi-Fi and no physical remote, refer them to Roku's mobile app connection article: https://support.roku.com/article/115001480188
 
 Call bring_in_human_support and do not reply to the user when: the user asks for a human/developer, you are unsure after searching docs, the issue involves private listening working in the official Roku app but not Roam, crash reports or diagnostics need review, the request is outside Roam support, or the next action requires account/backend access. If the user is hostile or upset, call apologize_and_bring_in_human_support with a brief direct apology to the user instead.
@@ -1205,7 +1242,16 @@ fn format_conversation(ctx: &AppContext, messages: &[DiscordMessage]) -> String 
 fn format_internal_context(context: ResponderContext) -> String {
     let mut notes = Vec::new();
     if context.diagnostics_received {
-        notes.push("Diagnostics have already been received in this chat as an internal :ninja: installation-info message or diagnostics.json attachment. Do not ask the user to share diagnostics again unless a new, separate diagnostic package is clearly needed.");
+        notes.push("Diagnostics have already been received in this chat as an internal :ninja: installation-info message or diagnostics.json attachment. Do not ask the user to share diagnostics again unless a new, separate diagnostic package is clearly needed.".to_string());
+    }
+    if let Some(platform) = context.device_platform {
+        let instruction = match platform.as_str() {
+            "macOS" | "iOS" | "watchOS" => "Do not ask what device or platform the user is on before giving platform-specific Roam guidance; behavior is unified across devices on the same platform.",
+            _ => "Use it for platform-specific Roam guidance.",
+        };
+        notes.push(format!(
+            "Support-only Device Info OS platform: {platform}. {instruction}"
+        ));
     }
 
     if notes.is_empty() {
@@ -1315,6 +1361,39 @@ fn has_visible_human_support_response_since(
 
 fn has_diagnostics_submission(messages: &[DiscordMessage]) -> bool {
     messages.iter().any(is_diagnostics_submission_message)
+}
+
+fn device_platform_from_messages(messages: &[DiscordMessage]) -> Option<String> {
+    messages
+        .iter()
+        .rev()
+        .find_map(|message| device_platform_from_content(&message.content))
+}
+
+fn device_platform_from_content(content: &str) -> Option<String> {
+    let trimmed = content.trim_start();
+    if !(trimmed.starts_with(HIDDEN_MESSAGE_PREFIX)
+        || trimmed.starts_with(LEGACY_HIDDEN_MESSAGE_PREFIX))
+    {
+        return None;
+    }
+    let lower = trimmed.to_ascii_lowercase();
+    if !(lower.contains("### device info") || lower.contains("### installation info")) {
+        return None;
+    }
+
+    trimmed.lines().find_map(|line| {
+        let line = line.trim();
+        let value = line
+            .strip_prefix("- **OS platform**:")
+            .or_else(|| line.strip_prefix("- **OS Platform**:"))?
+            .trim();
+        if value.is_empty() || value == "--" {
+            None
+        } else {
+            Some(value.to_string())
+        }
+    })
 }
 
 fn is_diagnostics_submission_message(message: &DiscordMessage) -> bool {
@@ -1572,6 +1651,20 @@ fn strip_translate_command_prefix(content: &str) -> Option<&str> {
     content.strip_prefix("/translate ")
 }
 
+fn extract_translate_interaction_text(command: &CommandInteraction) -> Option<String> {
+    command
+        .data
+        .options
+        .iter()
+        .find(|option| option.name == TRANSLATE_SLASH_COMMAND_TEXT_OPTION)
+        .and_then(|option| match &option.value {
+            CommandDataOptionValue::String(text) => Some(text.trim()),
+            _ => None,
+        })
+        .filter(|text| !text.is_empty())
+        .map(ToString::to_string)
+}
+
 async fn translate_human_support_message(ctx: AppContext, msg: &Message) -> anyhow::Result<()> {
     let Some(ai_bot_id) = ctx.ai_responder_discord_bot_id() else {
         bail!("AI responder bot id is not configured");
@@ -1587,6 +1680,90 @@ async fn translate_human_support_message(ctx: AppContext, msg: &Message) -> anyh
     };
     let thread_id = u64::from(msg.channel_id) as i64;
 
+    translate_and_send_human_support_message(ctx, thread_id, &text).await?;
+    Ok(())
+}
+
+async fn handle_translate_interaction(
+    app_ctx: AppContext,
+    discord_ctx: Context,
+    command: CommandInteraction,
+) -> anyhow::Result<()> {
+    let thread_id = u64::from(command.channel_id) as i64;
+    let author_id = u64::from(command.user.id) as i64;
+    if Some(author_id) != app_ctx.ai_responder_human_support_user_id() {
+        command
+            .create_response(
+                &discord_ctx.http,
+                CreateInteractionResponse::Message(
+                    CreateInteractionResponseMessage::new()
+                        .content("Only the configured human support user can use /translate.")
+                        .ephemeral(true),
+                ),
+            )
+            .await
+            .context("Error sending unauthorized /translate response")?;
+        return Ok(());
+    }
+
+    let Some(text) = extract_translate_interaction_text(&command) else {
+        command
+            .create_response(
+                &discord_ctx.http,
+                CreateInteractionResponse::Message(
+                    CreateInteractionResponseMessage::new()
+                        .content("Add the support reply in the text field.")
+                        .ephemeral(true),
+                ),
+            )
+            .await
+            .context("Error sending invalid /translate response")?;
+        return Ok(());
+    };
+
+    command
+        .create_response(
+            &discord_ctx.http,
+            CreateInteractionResponse::Message(
+                CreateInteractionResponseMessage::new()
+                    .content("Translating...")
+                    .ephemeral(true),
+            ),
+        )
+        .await
+        .context("Error acknowledging /translate interaction")?;
+
+    let status = match translate_and_send_human_support_message(app_ctx, thread_id, &text).await {
+        Ok(true) => "Sent translated message.",
+        Ok(false) => "No translated message was sent. Make sure this command is used in a Roam support thread with a recent user message.",
+        Err(err) => {
+            let _ = command
+                .edit_response(
+                    &discord_ctx.http,
+                    EditInteractionResponse::new()
+                        .content("Translation failed. Check backend logs for details."),
+                )
+                .await;
+            return Err(err);
+        }
+    };
+
+    command
+        .edit_response(
+            &discord_ctx.http,
+            EditInteractionResponse::new().content(status),
+        )
+        .await
+        .context("Error updating /translate response")?;
+
+    Ok(())
+}
+
+async fn translate_and_send_human_support_message(
+    ctx: AppContext,
+    thread_id: i64,
+    text: &str,
+) -> anyhow::Result<bool> {
     if ctx
         .db_client()
         .get_user_with_thread(thread_id)
@@ -1598,7 +1775,7 @@ async fn translate_human_support_message(ctx: AppContext, msg: &Message) -> anyh
             thread_id,
             "AI responder ignored translate command in unknown thread"
         );
-        return Ok(());
+        return Ok(false);
     }
 
     let Some(ai_client) = ctx.ai_responder_discord_client() else {
@@ -1620,7 +1797,7 @@ async fn translate_human_support_message(ctx: AppContext, msg: &Message) -> anyh
         .translate_for_user_language(&messages, &text)
         .await?;
     if translated.trim().is_empty() {
-        return Ok(());
+        return Ok(false);
     }
 
     ai_client
@@ -1633,7 +1810,7 @@ async fn translate_human_support_message(ctx: AppContext, msg: &Message) -> anyh
         .await
         .context("Error sending translated human support message")?;
 
-    Ok(())
+    Ok(true)
 }
 
 async fn send_hidden_translation_for_visible_message(
@@ -1902,6 +2079,29 @@ mod tests {
             None,
         );
         assert!(has_diagnostics_submission(&[message]));
+    }
+
+    #[test]
+    fn device_info_platform_is_added_to_internal_context() {
+        let message = DiscordMessage::new(
+            1,
+            ":ninja:\n\n### Device info\n\n- **User ID**: abc\n- **OS platform**: macOS\n- **OS version**: 15.0"
+                .to_string(),
+            2,
+            0,
+            vec![],
+            None,
+        );
+
+        let platform = device_platform_from_messages(&[message]);
+        assert_eq!(platform.as_deref(), Some("macOS"));
+
+        let context = format_internal_context(ResponderContext {
+            diagnostics_received: false,
+            device_platform: platform,
+        });
+        assert!(context.contains("Device Info OS platform: macOS"));
+        assert!(context.contains("Do not ask what device or platform"));
     }
 
     #[test]

@@ -112,7 +112,7 @@ Create a second Discord application for the AI responder. Do not reuse the bridg
 OAuth2 guild install scopes:
 
 -   `bot`
--   `applications.commands` only if real Discord slash commands are added. The current `:translate:` and `/translate` support is parsed from normal message text, so this scope is optional today.
+-   `applications.commands`, because the AI responder auto-registers the guild-scoped `/translate` command at startup.
 
 Bot permissions:
 
@@ -120,6 +120,8 @@ Bot permissions:
 -   Send Messages
 -   Send Messages in Threads
 -   Read Message History
+
+The AI responder registers `/translate` as a guild command when it starts. The command accepts a required `text` option, acknowledges privately to the human support user, then sends the translated message visibly in the support thread. Guild command registration is intentionally used so command changes are available immediately in the support server.
 
 Privileged gateway intents:
 

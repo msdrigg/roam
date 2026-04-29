@@ -2,6 +2,21 @@
 
 Roam is a free Roku remote app with no ads. It runs on Mac, iPhone, iPad, Apple Watch, Vision Pro, and Apple TV. It supports shortcuts, widgets, Siri, local network discovery, keyboard shortcuts on Mac, hardware volume controls on iOS, and private listening on supported devices.
 
+Platform/device context:
+
+- If support-only Device Info already shows the OS platform as macOS, iOS, or watchOS, do not ask what device or platform the user is using before answering. Roam behavior is unified across devices on the same platform.
+
+Remote features:
+
+- Roam includes the normal Roku remote controls, including directional buttons, select, back, home, play/pause, and related TV controls when the Roku supports them.
+- Volume controls may not work on Roku Sticks because they are HDMI-only devices and cannot control TV volume through Roam's Roku network commands.
+- On macOS, there is no keyboard button. When the Roam window is focused, the Mac keyboard works automatically with the TV.
+- On iOS and iPadOS, there is a keyboard button at the top of the remote.
+- watchOS does not have keyboard functionality at this time.
+- Some Roku apps ignore keyboard input from remote apps. Prime Video is a known app where keyboard entry may not work because the Roku app does not accept it.
+- Private listening plays TV audio through the user's device on supported Roku devices.
+- Private listening is supported in Roam on Mac, iPad, iPhone, VisionOS, and Apple TV, but it does not work on every Roku TV.
+
 Common discovery and connection fixes:
 
 - If Roam cannot auto-discover a Roku TV, ask the user to confirm the phone or computer is on the same Wi-Fi network as the Roku, the TV is turned on, and Local Network permission is enabled for Roam.
@@ -10,6 +25,7 @@ Common discovery and connection fixes:
 - Users can manually add a TV from Roam settings by choosing "Add a device manually" and entering the Roku IP address shown on the Roku under Settings -> Network -> About.
 - Do not mention router admin pages, DHCP client lists, or no-remote workarounds unless the user specifically says they do not have a physical remote or another way to control the Roku.
 - If the user only says they cannot connect or cannot find the TV, use normal same-Wi-Fi, TV-on, Local Network permission, and manual-add guidance first.
+- If a previously working device stopped working after a home network configuration change, suggest deleting the saved device from Roam and scanning for it again.
 - If the user explicitly says they have no remote/no TV control and need the TV's IP address, suggest checking the home router's admin interface or DHCP client list.
 - If the user explicitly says they have no Wi-Fi and no physical remote, refer them to Roku's mobile app connection article: https://support.roku.com/article/115001480188
 - The Roku IP address is usually in a private range such as 10.x.x.x, 172.x.x.x, or 192.168.x.x. Tell users not to use the gateway address.
@@ -30,6 +46,9 @@ Keyboard input and iPad arrows:
 
 - If arrow keys sometimes do not work on iPad, iPadOS may be taking over keyboard navigation. The workaround is Settings -> Accessibility -> Keyboards and disabling Full Keyboard Access, or disabling the Move Up, Move Down, Move Left, and Move Right commands under Full Keyboard Access -> Commands -> Basic.
 - If typing on a hardware keyboard does not show up on the TV, some Roku apps ignore hardware keyboard input. Ask the user to test the same field in the official Roku app. Prime Video is a known app with this problem.
+- On macOS, do not tell users to look for a keyboard button. The Mac keyboard works automatically with the TV while the Roam window is focused.
+- On iOS and iPadOS, users can open keyboard input from the keyboard button at the top of the remote.
+- watchOS does not have keyboard functionality at this time.
 
 Feedback and diagnostics:
 

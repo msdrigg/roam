@@ -3,13 +3,18 @@ use std::sync::{Arc, Mutex};
 use crate::utils::{serialize_anyhow, serialize_reqwest, serialize_status_code};
 use chrono::{DateTime, Utc};
 use reqwest::{Response, StatusCode};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tokio::sync::AcquireError;
 use types::{IdResponse, ThreadResponse};
 
 pub use types::{
     DiscordAuthor, DiscordFile, DiscordFileUpload, DiscordMessage, MessageAttachment, Thread,
 };
+
+#[derive(Debug, Deserialize)]
+struct CurrentApplicationResponse {
+    id: String,
+}
 
 #[derive(Debug, Clone)]
 pub struct DiscordClient {
@@ -207,6 +212,68 @@ impl DiscordClient {
             )),
             client: reqwest::Client::new(),
         }
+    }
+
+    pub async fn register_guild_translate_command(&self) -> Result<(), DiscordError> {
+        let _permit = self.acquire().await.expect("Semaphore should never close");
+        self.error_on_locked()?;
+
+        let application_url = format!("{}/oauth2/applications/@me", Self::DISCORD_API_BASE_URL);
+        let response = self
+            .client
+            .get(&application_url)
+            .header("Authorization", format!("Bot {}", self.token))
+            .send()
+            .await
+            .map_err(|e| DiscordError::ConnectionError(e.into()))?;
+        self.update_rate_limit(response.headers());
+
+        let status = response.status();
+        let response = self
+            .except_error_response(response, "getting current application")
+            .await?;
+        let application: CurrentApplicationResponse =
+            response.json().await.map_err(|e| DiscordError::ApiError {
+                message: format!("Failed to parse current application: {e}"),
+                status,
+            })?;
+
+        let command_url = format!(
+            "{}/applications/{}/guilds/{}/commands",
+            Self::DISCORD_API_BASE_URL,
+            application.id,
+            self.guild_id
+        );
+        let body = serde_json::json!({
+            "name": "translate",
+            "type": 1,
+            "description": "Translate a support reply to the user's language",
+            "options": [{
+                "type": 3,
+                "name": "text",
+                "description": "Support message to translate",
+                "required": true
+            }]
+        });
+
+        let response = self
+            .client
+            .post(&command_url)
+            .header("Authorization", format!("Bot {}", self.token))
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| DiscordError::ConnectionError(e.into()))?;
+        self.update_rate_limit(response.headers());
+        self.except_error_response(response, "registering translate command")
+            .await?;
+        tracing::info!(
+            guild_id = self.guild_id,
+            "Registered AI responder /translate guild command"
+        );
+
+        Ok(())
     }
 
     pub async fn get_messages_in_thread(

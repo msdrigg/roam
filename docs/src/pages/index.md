@@ -19,6 +19,20 @@ Roam offers everything you want and nothing you don't
 -   Fast and lightweight, less than 8 MB on all devices and opens in less than half a second!
 -   Open source (https://github.com/msdrigg/roam)
 
+## Features
+
+-   Remote controls
+    -   Roam includes the normal Roku remote controls, including directional buttons, select, back, home, play/pause, and related TV controls when the Roku supports them.
+    -   Volume controls may not work on Roku Sticks because they are HDMI-only devices and cannot control TV volume through Roam's Roku network commands.
+-   Keyboard input
+    -   On macOS, there is no keyboard button. When the Roam window is focused, the Mac keyboard works automatically with the TV.
+    -   On iOS and iPadOS, there is a keyboard button at the top of the remote.
+    -   watchOS does not have keyboard functionality at this time.
+    -   Some Roku apps ignore keyboard input from remote apps. Prime Video is a known example where keyboard entry may not work because the Roku app does not accept it.
+-   Headphones mode/private listening
+    -   Private listening plays TV audio through your device on supported Roku devices.
+    -   Private listening is supported in Roam on Mac, iPad, iPhone, VisionOS, and Apple TV, but it does not work on every Roku TV.
+
 ## Common Issues
 
 -   What can I do if Roam doesn't auto-discover my TV
@@ -39,6 +53,7 @@ Roam offers everything you want and nothing you don't
     -   You can work arround this by going into Settings -> Accessiblity -> Keyboards and disabling "Full Keyboard Access" or alternatively going to Settings -> Accessiblity -> Keyboards -> Full Keyboard Access -> Commands -> Basic and disabling the "Move Up", "Move Down", "Move Left" and "Move Right" commands
 -   Why doesn't typing on my keyboard show up on the TV
     -   On some Roku Apps the app ignores hardware keyboard entry. You can test if this is a Roam bug or a bug in the app by trying to use the keyboard entry feature in the official Roku App and checking if this works
+    -   On macOS, there is no keyboard button because the Mac keyboard works automatically with the TV when the Roam window is focused. On iOS and iPadOS, use the keyboard button at the top of the remote. watchOS does not support keyboard input at this time.
     -   Apps with known bugs
         -   Prime Video
 -   Why does Roam work on my iPhone and mac app work but not on my Apple Watch?
