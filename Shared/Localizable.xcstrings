@@ -6424,6 +6424,9 @@
         }
       }
     },
+    "Done" : {
+
+    },
     "Down" : {
       "comment" : "Keyboard shortcut to move down\nRemote button to move down",
       "localizations" : {
@@ -17270,6 +17273,12 @@
         }
       }
     },
+    "Roam cannot access its saved data. Device control may still work, but saved devices and messages are unavailable." : {
+
+    },
+    "Roam could not open its saved data. Device control may still work, but changes may not be saved." : {
+
+    },
     "Roam Help" : {
       "localizations" : {
         "ar" : {
@@ -17516,6 +17525,18 @@
           }
         }
       }
+    },
+    "Roam's saved data appears damaged. Device control may still work, but saved devices and messages are unavailable." : {
+
+    },
+    "Roam's saved data cannot be written right now. Device control still works, but changes may not be saved." : {
+
+    },
+    "Roam's saved data is busy. Changes may not be saved until Roam can access it again." : {
+
+    },
+    "Roam's saved data is busy. Roam is using temporary data and will retry automatically." : {
+
     },
     "Roku Apps" : {
       "comment" : "Siri spotlight recommendation",
@@ -19179,6 +19200,12 @@
           }
         }
       }
+    },
+    "Storage is full. Roam can control devices for now, but changes to devices and messages may not be saved until you free up space." : {
+
+    },
+    "Storage is full. Roam cannot save changes to devices or messages until you free up space." : {
+
     },
     "Support Page" : {
       "comment" : "Version label in about page for the app",

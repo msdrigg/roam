@@ -6,6 +6,7 @@ struct NetworkConnectivityBanner: View {
 #else
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 #endif
+    @ObservedObject private var databaseStatus = DatabaseStatusMonitor.shared
 
     private var networkMonitor: NetworkMonitor {
         self.appDelegate.networkMonitor
@@ -26,7 +27,10 @@ struct NetworkConnectivityBanner: View {
     @AppStorage(UserDefaultKeys.localNetworkPermissionGranted) private var localNetworkPermissionGranted: Bool = false
 
     var body: some View {
-        mainBody
+        VStack(spacing: 0) {
+            databaseBody
+            mainBody
+        }
             .onAppear {
                 networkPermissionBannerDismissed = false
             }
@@ -38,6 +42,22 @@ struct NetworkConnectivityBanner: View {
         #else
         false
         #endif
+    }
+
+    @ViewBuilder
+    var databaseBody: some View {
+        if let issue = databaseStatus.issue {
+            NotificationBanner(
+                message: issue.message,
+                onClick: issue.isRetryable && issue.isVolatile ? {
+                    Task {
+                        await RoamDataHandler.shared.retryOpeningPersistentDatabase()
+                    }
+                } : nil,
+                level: issue.kind == .corrupt ? .error : .warning
+            )
+            .padding(.bottom, 8)
+        }
     }
 
     @ViewBuilder

@@ -50,8 +50,37 @@ extension RegistrationListener {
 actor RoamDataHandler {
     private static let pendingMessageRetryDelay: TimeInterval = 30
     private static let discordNonceMaxLength = 25
+    private static let persistentDatabaseRetryDelay: UInt64 = 30_000_000_000
 
-    private let database: RoamDatabase
+#if DEBUG
+    private static let debugDatabaseStartupOpenCountKey = "debugDatabaseStartupOpenCount"
+
+    private struct DebugStartupDatabaseFault {
+        enum Stage {
+            case persistent
+            case volatile
+
+            var logName: String {
+                switch self {
+                case .persistent:
+                    return "persistent"
+                case .volatile:
+                    return "volatile"
+                }
+            }
+        }
+
+        let stage: Stage
+        let error: DataHandlerError
+    }
+#endif
+
+    private var database: RoamDatabase
+    private let persistentDatabaseURL: URL?
+    private let persistentLockURL: URL?
+    private let legacyRootPath: String?
+    private var shouldRetryPersistentOpen: Bool
+    private var persistentRetryTask: Task<Void, Never>?
     private var updateListeners: [RegistrationToken: RegistrationListenerRef] = [:]
     private var updateRegistrations: [ChangeOperation: Set<RegistrationToken>] = [:]
 
@@ -85,8 +114,18 @@ actor RoamDataHandler {
         return shared
     }
 
-    private init(database: RoamDatabase) {
+    private init(
+        database: RoamDatabase,
+        persistentDatabaseURL: URL?,
+        persistentLockURL: URL?,
+        legacyRootPath: String?,
+        shouldRetryPersistentOpen: Bool = false
+    ) {
         self.database = database
+        self.persistentDatabaseURL = persistentDatabaseURL
+        self.persistentLockURL = persistentLockURL
+        self.legacyRootPath = legacyRootPath
+        self.shouldRetryPersistentOpen = shouldRetryPersistentOpen
         self.database.onExternalChange = { [weak self] in
             Task {
                 await self?.handleExternalDatabaseChange()
@@ -97,22 +136,208 @@ actor RoamDataHandler {
             await self.preloadPrimaryDevice()
             await self.preloadPrimaryApps()
             await self.preloadMessages()
+            await self.startPersistentRetryLoopIfNeeded()
         }
     }
 
+    deinit {
+        persistentRetryTask?.cancel()
+    }
+
     private static func getForShared() -> Self? {
-        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup) else {
+        let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup)
+        guard let containerURL else {
             Log.backend.error("Failed to get app group container URL")
-            return nil
+            return makeVolatileShared(
+                persistentDatabaseURL: nil,
+                persistentLockURL: nil,
+                legacyRootPath: nil,
+                error: .noContainerURL)
         }
         print("Getting container url \(containerURL)")
         let rootPath = containerURL.appendingPathComponent("rootData").path(percentEncoded: false)
+        let databaseURL = containerURL.appendingPathComponent("Roam.sqlite")
+        let lockURL = containerURL.appendingPathComponent(".Roam.sqlite.lock")
+#if DEBUG
+        let debugStartupFault = debugStartupDatabaseFaultIfNeeded()
+#endif
         do {
-            let database = try RoamDatabase.openShared(containerURL: containerURL, legacyRootPath: rootPath)
-            return self.init(database: database)
+#if DEBUG
+            if let debugStartupFault {
+                Log.backend.warning(
+                    "DEBUG injecting \(debugStartupFault.stage.logName, privacy: .public) database startup fault: \(debugStartupFault.error.localizedDescription, privacy: .public)"
+                )
+                throw debugStartupFault.error
+            }
+#endif
+            let database = try RoamDatabase(databaseURL: databaseURL, lockURL: lockURL, legacyRootPath: rootPath)
+            return self.init(
+                database: database,
+                persistentDatabaseURL: databaseURL,
+                persistentLockURL: lockURL,
+                legacyRootPath: rootPath)
         } catch {
-            Log.backend.error("Failed to open Roam database: \(error, privacy: .public)")
+            let dataError = DataHandlerError.from(error: error)
+            Log.backend.error("Failed to open Roam database: \(dataError, privacy: .public)")
+#if DEBUG
+            if debugStartupFault?.stage == .volatile {
+                return makeVolatileShared(
+                    persistentDatabaseURL: databaseURL,
+                    persistentLockURL: lockURL,
+                    legacyRootPath: rootPath,
+                    error: dataError,
+                    debugVolatileStartupError: debugStartupFault?.error)
+            }
+#endif
+            return makeVolatileShared(
+                persistentDatabaseURL: databaseURL,
+                persistentLockURL: lockURL,
+                legacyRootPath: rootPath,
+                error: dataError)
+        }
+    }
+
+    private static func makeVolatileShared(
+        persistentDatabaseURL: URL?,
+        persistentLockURL: URL?,
+        legacyRootPath: String?,
+        error: DataHandlerError,
+        debugVolatileStartupError: DataHandlerError? = nil
+    ) -> Self? {
+        do {
+#if DEBUG
+            if let debugVolatileStartupError {
+                Log.backend.warning(
+                    "DEBUG injecting volatile database startup fault: \(debugVolatileStartupError.localizedDescription, privacy: .public)"
+                )
+                throw debugVolatileStartupError
+            }
+#endif
+            let database = try RoamDatabase.openVolatile()
+            let issue = DatabaseStatusIssue(error: error, isVolatile: true, operation: .open)
+            Task { @MainActor in
+                DatabaseStatusMonitor.shared.setIssue(issue)
+            }
+            return self.init(
+                database: database,
+                persistentDatabaseURL: persistentDatabaseURL,
+                persistentLockURL: persistentLockURL,
+                legacyRootPath: legacyRootPath,
+                shouldRetryPersistentOpen: issue.isRetryable)
+        } catch {
+            Log.backend.error("Failed to open volatile Roam database: \(error, privacy: .public)")
+            Task { @MainActor in
+                DatabaseStatusMonitor.shared.setIssue(DatabaseStatusIssue(
+                    error: DataHandlerError.from(error: error),
+                    isVolatile: false,
+                    operation: .open))
+            }
             return nil
+        }
+    }
+
+#if DEBUG
+    private static func debugStartupDatabaseFaultIfNeeded() -> DebugStartupDatabaseFault? {
+        let defaults = UserDefaults.standard
+        let openCount = defaults.integer(forKey: debugDatabaseStartupOpenCountKey) + 1
+        defaults.set(openCount, forKey: debugDatabaseStartupOpenCountKey)
+
+        guard openCount % 5 == 0 else {
+            return nil
+        }
+
+        let errors: [DataHandlerError] = [
+            .noSpaceOnDisk,
+            .databaseLocked,
+            .databaseReadOnly,
+            .databasePermissionDenied,
+            .databaseCorrupt,
+            .unknown,
+        ]
+        return DebugStartupDatabaseFault(
+            stage: Bool.random() ? .persistent : .volatile,
+            error: errors.randomElement() ?? .unknown
+        )
+    }
+#endif
+
+    private func configureDatabaseCallbacks() {
+        database.onExternalChange = { [weak self] in
+            Task {
+                await self?.handleExternalDatabaseChange()
+            }
+        }
+    }
+
+    private func startPersistentRetryLoopIfNeeded() {
+        guard !database.isPersistent,
+              persistentDatabaseURL != nil,
+              persistentRetryTask == nil,
+              shouldRetryPersistentOpen
+        else {
+            return
+        }
+
+        persistentRetryTask = Task { [weak self] in
+            while !Task.isCancelled {
+                do {
+                    try await Task.sleep(nanoseconds: Self.persistentDatabaseRetryDelay)
+                } catch {
+                    return
+                }
+                await self?.retryOpeningPersistentDatabase()
+            }
+        }
+    }
+
+    func retryOpeningPersistentDatabase() {
+        guard shouldRetryPersistentOpen else {
+            persistentRetryTask?.cancel()
+            persistentRetryTask = nil
+            return
+        }
+
+        guard !database.isPersistent,
+              let persistentDatabaseURL,
+              let persistentLockURL
+        else {
+            persistentRetryTask?.cancel()
+            persistentRetryTask = nil
+            return
+        }
+
+        let volatileSnapshot = database.exportSnapshot()
+
+        do {
+            let persistentDatabase = try RoamDatabase(
+                databaseURL: persistentDatabaseURL,
+                lockURL: persistentLockURL,
+                legacyRootPath: legacyRootPath)
+            try persistentDatabase.mergeVolatileSnapshot(volatileSnapshot)
+            database = persistentDatabase
+            configureDatabaseCallbacks()
+            handleExternalDatabaseChange()
+            persistentRetryTask?.cancel()
+            persistentRetryTask = nil
+            shouldRetryPersistentOpen = false
+            Task { @MainActor in
+                DatabaseStatusMonitor.shared.clearIssue()
+            }
+            Log.backend.notice("Reopened persistent Roam database")
+        } catch {
+            let dataError = DataHandlerError.from(error: error)
+            Task { @MainActor in
+                DatabaseStatusMonitor.shared.setIssue(DatabaseStatusIssue(
+                    error: dataError,
+                    isVolatile: true,
+                    operation: .open))
+            }
+            shouldRetryPersistentOpen = DatabaseStatusIssue(
+                error: dataError,
+                isVolatile: true,
+                operation: .open
+            ).isRetryable
+            Log.backend.warning("Persistent Roam database retry failed: \(dataError, privacy: .public)")
         }
     }
 

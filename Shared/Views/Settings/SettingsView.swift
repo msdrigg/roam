@@ -467,7 +467,7 @@ struct SettingsView: View {
 struct MacSettings: View {
     @State var navPath: [NavigationDestination] = []
     var body: some View {
-        SettingsNavigationWrapper(path: $navPath) {
+        SettingsNavigationWrapper(path: $navPath, showsMacSettingsControls: true) {
             SettingsView(path: $navPath, destination: .global)
         }
         .frame(minWidth: 300)

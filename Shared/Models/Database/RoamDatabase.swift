@@ -11,11 +11,12 @@ final class RoamDatabase: @unchecked Sendable {
 
     private static let notificationName = "com.msdrigg.roam.database.changed"
 
-    private let dbPool: DatabasePool
-    private let fileLock: DatabaseFileLock
+    private let dbWriter: any DatabaseWriter
+    private let fileLock: DatabaseFileLock?
     private let stateLock = NSRecursiveLock()
     private var snapshot: RoamDataSnapshot
     private var notificationObserver: UnsafeRawPointer?
+    let isPersistent: Bool
 
     var onExternalChange: (@Sendable () -> Void)?
 
@@ -32,31 +33,55 @@ final class RoamDatabase: @unchecked Sendable {
         )
 
         fileLock = DatabaseFileLock(lockURL: lockURL)
+        isPersistent = true
 
-        var configuration = Configuration()
-        configuration.label = "RoamDatabase"
-        configuration.qos = .userInteractive
-        configuration.busyMode = .timeout(5)
-        configuration.foreignKeysEnabled = true
+        let configuration = Self.makeConfiguration()
 
-        dbPool = try DatabasePool(path: databaseURL.path, configuration: configuration)
+        dbWriter = try DatabasePool(path: databaseURL.path, configuration: configuration)
         snapshot = RoamDataSnapshot()
 
-        try fileLock.withExclusiveLock {
-            try RoamDatabase.migrator.migrate(dbPool)
-            try dbPool.write { db in
+        try withExclusiveDatabaseLock {
+            try RoamDatabase.migrator.migrate(dbWriter)
+            try dbWriter.write { db in
                 try db.execute(sql: "PRAGMA journal_mode = WAL")
                 try db.execute(sql: "PRAGMA foreign_keys = ON")
             }
         }
 
-        snapshot = try Self.loadSnapshot(from: dbPool)
+        snapshot = try Self.loadSnapshot(from: dbWriter)
 
         if let legacyRootPath {
             try migrateLegacyFileDataIfNeeded(rootPath: legacyRootPath)
         }
 
         startExternalChangeObserver()
+    }
+
+    private init(volatileName: String) throws {
+        fileLock = nil
+        isPersistent = false
+        dbWriter = try DatabaseQueue(named: volatileName, configuration: Self.makeConfiguration())
+        snapshot = RoamDataSnapshot()
+
+        try RoamDatabase.migrator.migrate(dbWriter)
+        try dbWriter.write { db in
+            try db.execute(sql: "PRAGMA foreign_keys = ON")
+        }
+
+        snapshot = try Self.loadSnapshot(from: dbWriter)
+    }
+
+    static func openVolatile() throws -> RoamDatabase {
+        try RoamDatabase(volatileName: "Roam-\(UUID().uuidString)")
+    }
+
+    private static func makeConfiguration() -> Configuration {
+        var configuration = Configuration()
+        configuration.label = "RoamDatabase"
+        configuration.qos = .userInteractive
+        configuration.busyMode = .timeout(5)
+        configuration.foreignKeysEnabled = true
+        return configuration
     }
 
     deinit {
@@ -264,59 +289,56 @@ final class RoamDatabase: @unchecked Sendable {
 
     private func write(_ body: (Database) throws -> Void) throws {
         do {
-            let nextSnapshot = try fileLock.withExclusiveLock {
-                try dbPool.writeWithoutTransaction { db in
-                    try db.inTransaction {
-                        try body(db)
-                        try db.execute(sql: "UPDATE app_state SET revision = revision + 1 WHERE id = 1")
-                        return .commit
-                    }
-
-                    return try Self.loadSnapshot(from: db)
+            let nextSnapshot = try withExclusiveDatabaseLock {
+                try dbWriter.writeWithoutTransaction { db in
+                    try Self.performWrite(body, db: db)
                 }
             }
 
             stateLock.withLock {
                 snapshot = nextSnapshot
             }
+            recordSuccessfulPersistentAccess()
             postExternalChangeNotification()
         } catch {
-            throw DataHandlerError.from(error: error)
+            let dataError = DataHandlerError.from(error: error)
+            recordPersistentError(dataError)
+            throw dataError
         }
     }
 
     private func writeAsync(_ body: @escaping @Sendable (Database) throws -> Void) async throws {
         do {
-            let nextSnapshot = try await dbPool.writeWithoutTransaction { [fileLock] db in
-                try fileLock.withExclusiveLock {
-                    try db.inTransaction {
-                        try body(db)
-                        try db.execute(sql: "UPDATE app_state SET revision = revision + 1 WHERE id = 1")
-                        return .commit
+            let nextSnapshot = try await dbWriter.writeWithoutTransaction { [fileLock] db in
+                if let fileLock {
+                    return try fileLock.withExclusiveLock {
+                        try Self.performWrite(body, db: db)
                     }
-
-                    return try Self.loadSnapshot(from: db)
                 }
+                return try Self.performWrite(body, db: db)
             }
 
             stateLock.withLock {
                 snapshot = nextSnapshot
             }
+            recordSuccessfulPersistentAccess()
             postExternalChangeNotification()
         } catch {
-            throw DataHandlerError.from(error: error)
+            let dataError = DataHandlerError.from(error: error)
+            recordPersistentError(dataError)
+            throw dataError
         }
     }
 
     private func reloadSnapshot() throws {
-        let nextSnapshot = try Self.loadSnapshot(from: dbPool)
+        let nextSnapshot = try Self.loadSnapshot(from: dbWriter)
         stateLock.withLock {
             snapshot = nextSnapshot
         }
     }
 
     private func reloadSnapshotAsync() async throws {
-        let nextSnapshot = try await Self.loadSnapshotAsync(from: dbPool)
+        let nextSnapshot = try await Self.loadSnapshotAsync(from: dbWriter)
         stateLock.withLock {
             snapshot = nextSnapshot
         }
@@ -324,8 +346,9 @@ final class RoamDatabase: @unchecked Sendable {
 
     @discardableResult
     func reloadSnapshotIfChangedFromDisk() throws -> Bool {
+        guard isPersistent else { return false }
         let currentRevision = stateLock.withLock { snapshot.revision }
-        let diskRevision = try dbPool.read { db in
+        let diskRevision = try dbWriter.read { db in
             try Int64.fetchOne(db, sql: "SELECT revision FROM app_state WHERE id = 1") ?? 0
         }
 
@@ -339,8 +362,9 @@ final class RoamDatabase: @unchecked Sendable {
 
     @discardableResult
     func reloadSnapshotIfChangedFromDiskAsync() async throws -> Bool {
+        guard isPersistent else { return false }
         let currentRevision = stateLock.withLock { snapshot.revision }
-        let diskRevision = try await dbPool.read { db in
+        let diskRevision = try await dbWriter.read { db in
             try Int64.fetchOne(db, sql: "SELECT revision FROM app_state WHERE id = 1") ?? 0
         }
 
@@ -352,14 +376,118 @@ final class RoamDatabase: @unchecked Sendable {
         return true
     }
 
-    private static func loadSnapshot(from dbPool: DatabasePool) throws -> RoamDataSnapshot {
-        try dbPool.read { db in
+    func exportSnapshot() -> RoamDataSnapshot {
+        stateLock.withLock { snapshot }
+    }
+
+    func mergeVolatileSnapshot(_ source: RoamDataSnapshot) throws {
+        guard isPersistent else { return }
+
+        let nextSnapshot = try withExclusiveDatabaseLock {
+            try dbWriter.writeWithoutTransaction { db in
+                try db.inTransaction {
+                    let existingSnapshot = try Self.loadSnapshot(from: db)
+                    for device in source.devicesByID.values {
+                        try Self.upsertDevice(device, db: db)
+                    }
+
+                    for (deviceID, apps) in source.appsByDeviceID {
+                        try db.execute(sql: "DELETE FROM app_links WHERE device_id = ?", arguments: [deviceID])
+                        for (index, app) in apps.enumerated() {
+                            try Self.insertApp(app, sortOrder: index, db: db)
+                        }
+                    }
+
+                    let hiddenIDs = Self.mergedList(source.hiddenDeviceIDs, with: existingSnapshot.hiddenDeviceIDs)
+                    let visibleIDs = Self.mergedList(
+                        source.visibleDeviceIDs,
+                        with: existingSnapshot.visibleDeviceIDs
+                    ).filter { !hiddenIDs.contains($0) }
+                    try Self.saveDeviceList(visibleIDs, kind: .visible, db: db)
+                    try Self.saveDeviceList(hiddenIDs, kind: .hidden, db: db)
+
+                    if let primaryDeviceID = source.primaryDeviceID {
+                        try db.execute(
+                            sql: "UPDATE app_state SET primary_device_id = ? WHERE id = 1",
+                            arguments: [primaryDeviceID])
+                    }
+
+                    for message in source.messages {
+                        try Self.upsertMessage(message, db: db)
+                    }
+
+                    try db.execute(sql: "UPDATE app_state SET revision = revision + 1 WHERE id = 1")
+                    return .commit
+                }
+
+                return try Self.loadSnapshot(from: db)
+            }
+        }
+
+        stateLock.withLock {
+            snapshot = nextSnapshot
+        }
+        recordSuccessfulPersistentAccess()
+        postExternalChangeNotification()
+    }
+
+    private func withExclusiveDatabaseLock<T>(_ body: () throws -> T) throws -> T {
+        if let fileLock {
+            return try fileLock.withExclusiveLock(body)
+        }
+        return try body()
+    }
+
+    private static func performWrite(
+        _ body: (Database) throws -> Void,
+        db: Database
+    ) throws -> RoamDataSnapshot {
+        try db.inTransaction {
+            try body(db)
+            try db.execute(sql: "UPDATE app_state SET revision = revision + 1 WHERE id = 1")
+            return .commit
+        }
+
+        return try Self.loadSnapshot(from: db)
+    }
+
+    private static func mergedList(_ preferred: [String], with existing: [String]) -> [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+
+        for id in preferred + existing where !seen.contains(id) {
+            seen.insert(id)
+            result.append(id)
+        }
+
+        return result
+    }
+
+    private func recordPersistentError(_ error: DataHandlerError) {
+        guard isPersistent else { return }
+        Task { @MainActor in
+            DatabaseStatusMonitor.shared.setIssue(DatabaseStatusIssue(
+                error: error,
+                isVolatile: false,
+                operation: .write))
+        }
+    }
+
+    private func recordSuccessfulPersistentAccess() {
+        guard isPersistent else { return }
+        Task { @MainActor in
+            DatabaseStatusMonitor.shared.clearIssue()
+        }
+    }
+
+    private static func loadSnapshot(from dbReader: any DatabaseReader) throws -> RoamDataSnapshot {
+        try dbReader.read { db in
             try loadSnapshot(from: db)
         }
     }
 
-    private static func loadSnapshotAsync(from dbPool: DatabasePool) async throws -> RoamDataSnapshot {
-        try await dbPool.read { db in
+    private static func loadSnapshotAsync(from dbReader: any DatabaseReader) async throws -> RoamDataSnapshot {
+        try await dbReader.read { db in
             try loadSnapshot(from: db)
         }
     }
@@ -744,8 +872,8 @@ private extension RoamDatabase {
             let hiddenIDs = (try? legacyFiles.loadJSON("hiddenDevices.bin", as: DeviceListData.self).devices) ?? []
             let allIDs = Array(Set(visibleIDs + hiddenIDs))
 
-            try fileLock.withExclusiveLock {
-                try dbPool.write { db in
+            try withExclusiveDatabaseLock {
+                try dbWriter.write { db in
                     for id in allIDs {
                         let filename = "\(id).bin"
                         guard legacyFiles.fileExists(filename),

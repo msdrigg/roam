@@ -377,7 +377,6 @@ struct RemoteViewContained: View {
                 )
             }
 
-
             settingsNavigationToolbarContent
         }
         .tint(.none)

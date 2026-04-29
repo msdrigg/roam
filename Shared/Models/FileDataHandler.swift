@@ -1,4 +1,6 @@
 import Foundation
+import Combine
+import GRDB
 import OSLog
 
 // MARK: - File Data Handler
@@ -144,6 +146,22 @@ enum DataHandlerError: Error, LocalizedError {
         if let error = error as? DataHandlerError {
             return error
         }
+        if let error = error as? DatabaseError {
+            switch error.resultCode {
+            case .SQLITE_FULL:
+                return .noSpaceOnDisk
+            case .SQLITE_READONLY:
+                return .databaseReadOnly
+            case .SQLITE_BUSY, .SQLITE_LOCKED:
+                return .databaseLocked
+            case .SQLITE_PERM, .SQLITE_AUTH:
+                return .databasePermissionDenied
+            case .SQLITE_CORRUPT, .SQLITE_NOTADB:
+                return .databaseCorrupt
+            default:
+                break
+            }
+        }
         let nsError = error as NSError
         if nsError.domain == NSCocoaErrorDomain && nsError.code == NSFileWriteOutOfSpaceError {
             return .noSpaceOnDisk
@@ -183,6 +201,98 @@ enum DataHandlerError: Error, LocalizedError {
         default:
             return fallback
         }
+    }
+}
+
+enum DatabaseStatusOperation: Equatable, Sendable {
+    case open
+    case migration
+    case write
+}
+
+struct DatabaseStatusIssue: Equatable, Sendable {
+    enum Kind: Equatable, Sendable {
+        case noSpaceOnDisk
+        case locked
+        case readOnly
+        case permissionDenied
+        case corrupt
+        case unavailable
+        case unknown
+    }
+
+    let kind: Kind
+    let operation: DatabaseStatusOperation
+    let isVolatile: Bool
+
+    init(error: DataHandlerError, isVolatile: Bool, operation: DatabaseStatusOperation) {
+        self.operation = operation
+        self.isVolatile = isVolatile
+        switch error {
+        case .noSpaceOnDisk:
+            kind = .noSpaceOnDisk
+        case .databaseLocked:
+            kind = .locked
+        case .databaseReadOnly:
+            kind = .readOnly
+        case .databasePermissionDenied, .noContainerURL:
+            kind = .permissionDenied
+        case .databaseCorrupt:
+            kind = .corrupt
+        case .suspending, .deviceNotFound:
+            kind = .unavailable
+        case .rootError, .unknown:
+            kind = .unknown
+        }
+    }
+
+    var isRetryable: Bool {
+        switch kind {
+        case .noSpaceOnDisk, .locked:
+            return true
+        case .readOnly, .permissionDenied, .corrupt, .unavailable, .unknown:
+            return false
+        }
+    }
+
+    var message: String {
+        switch kind {
+        case .noSpaceOnDisk:
+            if isVolatile {
+                return String(localized: "Storage is full. Roam can control devices for now, but changes to devices and messages may not be saved until you free up space.")
+            }
+            return String(localized: "Storage is full. Roam cannot save changes to devices or messages until you free up space.")
+        case .locked:
+            if isVolatile {
+                return String(localized: "Roam's saved data is busy. Roam is using temporary data and will retry automatically.")
+            }
+            return String(localized: "Roam's saved data is busy. Changes may not be saved until Roam can access it again.")
+        case .readOnly:
+            return String(localized: "Roam's saved data cannot be written right now. Device control still works, but changes may not be saved.")
+        case .permissionDenied:
+            return String(localized: "Roam cannot access its saved data. Device control may still work, but saved devices and messages are unavailable.")
+        case .corrupt:
+            return String(localized: "Roam's saved data appears damaged. Device control may still work, but saved devices and messages are unavailable.")
+        case .unavailable, .unknown:
+            return String(localized: "Roam could not open its saved data. Device control may still work, but changes may not be saved.")
+        }
+    }
+}
+
+@MainActor
+final class DatabaseStatusMonitor: ObservableObject {
+    static let shared = DatabaseStatusMonitor()
+
+    @Published private(set) var issue: DatabaseStatusIssue?
+
+    private init() {}
+
+    func setIssue(_ issue: DatabaseStatusIssue) {
+        self.issue = issue
+    }
+
+    func clearIssue() {
+        issue = nil
     }
 }
 

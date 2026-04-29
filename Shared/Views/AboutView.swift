@@ -33,6 +33,8 @@ let mainLicenses: [Dependency] = [
     Dependency(name: "Opus", link: "https://github.com/xiph/opus/tree/master", licenseType: "BSD-3-Clause"),
     // Not Vendored
     Dependency(name: "Swift-Opus", link: "https://github.com/alta/swift-opus", licenseType: "BSD-3-Clause"),
+    // Not Vendored
+    Dependency(name: "GRDB", link: "https://github.com/groue/GRDB.swift", licenseType: "MIT"),
     // Vendored
     Dependency(name: "Swift-RTP", link: "https://github.com/alta/swift-rtp", licenseType: "MIT"),
     // Vendored
