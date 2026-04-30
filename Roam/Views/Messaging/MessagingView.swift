@@ -79,7 +79,7 @@ struct MessageView: View {
             [Message(
                 id: "start",
                 message: String(
-                    localized: "Hi, I'm Scott. I make the Roam app. What's on your mind? I'll do my best to respond to these messages as quick as I can.",
+                    localized: "Hi, I'm Scott. I make the Roam app. What's on your mind? I'll do my best to respond to these messages as quick as I can. I've asked a virtual assistant to do an initial followup to get you the fastest response, but I read every message personally!",
                     comment: "First message to user in a chat"
                 ),
                 author: .support,

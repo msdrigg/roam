@@ -30,10 +30,13 @@ struct TopBar: View {
             Button(role: .destructive, action: { action(.power) }, label: {
                 Label("Power On/Off", systemImage: "power")
                     .frame(width: buttonWidth, height: buttonHeight)
-                    .font(.title)
+                    .font(.title.weight(.semibold))
                     .scaleEffect(powerIconScale)
-                    .foregroundStyle(.red)
+                    .symbolVariant(.fill)
+                    .foregroundStyle(.white)
             })
+            .tint(.red)
+            .buttonStyle(.glassIfSupported(isProminent: true))
             #if !os(visionOS)
                 .sensoryFeedback(.impact, trigger: pressCounter(.power))
             #endif

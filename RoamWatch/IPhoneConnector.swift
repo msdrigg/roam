@@ -64,7 +64,6 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
                                 let formatter = ISO8601DateFormatter()
                                 return formatter.date(from: $0)
                             }
-                            let id = existingDevice.id
                             existingDevice.name = name
                             existingDevice.location = location
                             existingDevice.hiddenAt = hiddenAt

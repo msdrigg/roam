@@ -6,6 +6,59 @@ import Foundation
 import SwiftUI
 
 @available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
+public enum PressCountAppEnum: String, AppEnum {
+    case one = "1"
+    case two = "2"
+    case three = "3"
+    case four = "4"
+    case five = "5"
+    case six = "6"
+    case seven = "7"
+    case eight = "8"
+    case nine = "9"
+    case ten = "10"
+
+    public static let typeDisplayRepresentation: TypeDisplayRepresentation = TypeDisplayRepresentation(name: "Press Count")
+    public static let caseDisplayRepresentations: [PressCountAppEnum: DisplayRepresentation] = [
+        .one: "1",
+        .two: "2",
+        .three: "3",
+        .four: "4",
+        .five: "5",
+        .six: "6",
+        .seven: "7",
+        .eight: "8",
+        .nine: "9",
+        .ten: "10",
+    ]
+
+    var intValue: Int {
+        switch self {
+        case .one:
+            1
+        case .two:
+            2
+        case .three:
+            3
+        case .four:
+            4
+        case .five:
+            5
+        case .six:
+            6
+        case .seven:
+            7
+        case .eight:
+            8
+        case .nine:
+            9
+        case .ten:
+            10
+        }
+    }
+}
+
+@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public struct PlayIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigratedAppIntent, PredictableIntent {
     public static let intentClassName = "PlayIntent"
 
@@ -107,6 +160,74 @@ public struct MuteIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigr
 }
 
 @available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
+public enum TimedMuteDuration: String, AppEnum {
+    case thirtySeconds = "30Seconds"
+    case oneMinute = "1Minute"
+    case twoMinutes = "2Minutes"
+    case threeMinutes = "3Minutes"
+
+    public static let typeDisplayRepresentation: TypeDisplayRepresentation = TypeDisplayRepresentation(name: "Mute Duration")
+    public static let caseDisplayRepresentations: [TimedMuteDuration: DisplayRepresentation] = [
+        .thirtySeconds: "30 seconds",
+        .oneMinute: "1 minute",
+        .twoMinutes: "2 minutes",
+        .threeMinutes: "3 minutes",
+    ]
+
+    var seconds: Int {
+        switch self {
+        case .thirtySeconds:
+            30
+        case .oneMinute:
+            60
+        case .twoMinutes:
+            120
+        case .threeMinutes:
+            180
+        }
+    }
+}
+
+@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
+public struct TimedMuteIntent: AppIntent, CustomIntentMigratedAppIntent, PredictableIntent {
+    public static let intentClassName = "TimedMuteIntent"
+
+    public static let title: LocalizedStringResource = LocalizedStringResource("Mute temporarily", comment: "Title for timed mute intent")
+    public static let description = IntentDescription(LocalizedStringResource("Mute the device for a duration, then unmute it", comment: "Description for timed mute intent"))
+
+    public init() {}
+    public init(device: Device?, duration: TimedMuteDuration = .thirtySeconds) {
+        self.device = device
+        self.duration = duration
+    }
+
+    @Parameter(title: "Device")
+    public var device: Device?
+
+    @Parameter(title: "Duration", default: .thirtySeconds, requestValueDialog: "How long should mute last?")
+    public var duration: TimedMuteDuration
+
+    public static var parameterSummary: some ParameterSummary {
+        Summary("Mute \(\.$device) for \(\.$duration)")
+    }
+
+    public static var predictionConfiguration: some IntentPredictionConfiguration {
+        IntentPrediction(parameters: (\.$device, \.$duration)) { device, duration in
+            DisplayRepresentation(
+                title: LocalizedStringResource("Mute \(device!) for \(duration)", comment: "Label on a configuration parameter")
+            )
+        }
+    }
+
+    public func perform() async throws -> some IntentResult {
+        try await setMuted(true, device: device)
+        try await Task.sleep(nanoseconds: UInt64(duration.seconds) * 1_000_000_000)
+        try await setMuted(false, device: device)
+        return .result()
+    }
+}
+
+@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public struct VolumeUpIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigratedAppIntent,
     PredictableIntent
 {
@@ -118,25 +239,29 @@ public struct VolumeUpIntent: AppIntent, WidgetConfigurationIntent, CustomIntent
     public init() {}
     public init(device: Device?) {
         self.device = device
+        self.count = .one
     }
 
     @Parameter(title: "Device")
     public var device: Device?
 
+    @Parameter(title: "Times", default: .one, requestValueDialog: "How many times?")
+    public var count: PressCountAppEnum
+
     public static var parameterSummary: some ParameterSummary {
-        Summary("Increase the volume on \(\.$device)")
+        Summary("Increase the volume \(\.$count) times on \(\.$device)")
     }
 
     public static var predictionConfiguration: some IntentPredictionConfiguration {
-        IntentPrediction(parameters: \.$device) { device in
+        IntentPrediction(parameters: (\.$device, \.$count)) { device, count in
             DisplayRepresentation(
-                title: LocalizedStringResource("Increase the volume on \(device!)", comment: "Label on a configuration parameter")
+                title: LocalizedStringResource("Increase the volume \(count) times on \(device!)", comment: "Label on a configuration parameter")
             )
         }
     }
 
     public func perform() async throws -> some IntentResult {
-        try await clickButton(button: .volumeUp, device: device)
+        try await clickButton(button: .volumeUp, device: device, count: count.intValue)
         return .result()
     }
 }
@@ -152,25 +277,29 @@ public struct VolumeDownIntent: AppIntent, WidgetConfigurationIntent, CustomInte
     public init() {}
     public init(device: Device?) {
         self.device = device
+        self.count = .one
     }
 
     @Parameter(title: "Device")
     public var device: Device?
 
+    @Parameter(title: "Times", default: .one, requestValueDialog: "How many times?")
+    public var count: PressCountAppEnum
+
     public static var parameterSummary: some ParameterSummary {
-        Summary("Lower the volume on \(\.$device)")
+        Summary("Lower the volume \(\.$count) times on \(\.$device)")
     }
 
     public static var predictionConfiguration: some IntentPredictionConfiguration {
-        IntentPrediction(parameters: \.$device) { device in
+        IntentPrediction(parameters: (\.$device, \.$count)) { device, count in
             DisplayRepresentation(
-                title: LocalizedStringResource("Lower the volume on \(device!)", comment: "Label on a configuration parameter")
+                title: LocalizedStringResource("Lower the volume \(count) times on \(device!)", comment: "Label on a configuration parameter")
             )
         }
     }
 
     public func perform() async throws -> some IntentResult {
-        try await clickButton(button: .volumeDown, device: device)
+        try await clickButton(button: .volumeDown, device: device, count: count.intValue)
         return .result()
     }
 }

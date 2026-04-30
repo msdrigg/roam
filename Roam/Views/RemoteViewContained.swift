@@ -719,26 +719,15 @@ struct RemoteViewContained: View {
             .padding(.bottom, 10)
             #endif
 #if os(iOS)
-            .safeAreaInset(edge: .bottom) {
+            .toolbar {
                 if !showKeyboardEntry {
-                    DevicePicker(
-                        device: selectedDevice,
-                        ecpSessionState: ecpSessionState,
-                        showScanning: true
-                    )
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background {
-                        Capsule(style: .continuous)
-                            .fill(.ultraThinMaterial)
+                    ToolbarItem(placement: .bottomBar) {
+                        DevicePicker(
+                            device: selectedDevice,
+                            ecpSessionState: ecpSessionState,
+                            showScanning: true
+                        )
                     }
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .stroke(.white.opacity(0.16), lineWidth: 0.8)
-                    }
-                    .liquidGlass(cornerRadius: 32)
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 4)
                 }
             }
 #endif

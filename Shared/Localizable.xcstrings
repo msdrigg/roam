@@ -770,6 +770,48 @@
         }
       }
     },
+    "1" : {
+
+    },
+    "1 minute" : {
+
+    },
+    "2" : {
+
+    },
+    "2 minutes" : {
+
+    },
+    "3" : {
+
+    },
+    "3 minutes" : {
+
+    },
+    "4" : {
+
+    },
+    "5" : {
+
+    },
+    "6" : {
+
+    },
+    "7" : {
+
+    },
+    "8" : {
+
+    },
+    "9" : {
+
+    },
+    "10" : {
+
+    },
+    "30 seconds" : {
+
+    },
     "A control that lowers the volume on your TV" : {
       "localizations" : {
         "ar" : {
@@ -1432,7 +1474,7 @@
       "comment" : "Label for accent color picker"
     },
     "Add a device manually" : {
-      "comment" : "Label on a button to add a device",
+      "comment" : "Label on a button to add a device\nLabel on a button to open the device setup page",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2434,7 +2476,7 @@
 
     },
     "App Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3354,7 +3396,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6593,6 +6635,9 @@
         }
       }
     },
+    "Duration" : {
+
+    },
     "Edit" : {
       "comment" : "Label on a button to edit a device",
       "localizations" : {
@@ -8181,6 +8226,7 @@
     },
     "Hi, I'm Scott. I make the Roam app. What's on your mind? I'll do my best to respond to these messages as quick as I can." : {
       "comment" : "First message to user in a chat",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8261,6 +8307,9 @@
           }
         }
       }
+    },
+    "Hi, I'm Scott. I make the Roam app. What's on your mind? I'll do my best to respond to these messages as quick as I can. I've asked a virtual assistant to do an initial followup to get you the fastest response, but I read every message personally!" : {
+      "comment" : "First message to user in a chat"
     },
     "Hidden Devices" : {
       "localizations" : {
@@ -8509,6 +8558,12 @@
         }
       }
     },
+    "How long should mute last?" : {
+
+    },
+    "How many times?" : {
+
+    },
     "https://roam.msd3.io" : {
       "localizations" : {
         "ar" : {
@@ -8755,8 +8810,23 @@
         }
       }
     },
+    "Increase the volume %@ times on %@" : {
+      "comment" : "Label on a configuration parameter",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Increase the volume %1$@ times on %2$@"
+          }
+        }
+      }
+    },
+    "Increase the volume ${count} times on ${device}" : {
+
+    },
     "Increase the volume on %@" : {
       "comment" : "Label on a configuration parameter",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8839,6 +8909,7 @@
       }
     },
     "Increase the volume on ${device}" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -11099,8 +11170,23 @@
         }
       }
     },
+    "Lower the volume %@ times on %@" : {
+      "comment" : "Label on a configuration parameter",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Lower the volume %1$@ times on %2$@"
+          }
+        }
+      }
+    },
+    "Lower the volume ${count} times on ${device}" : {
+
+    },
     "Lower the volume on %@" : {
       "comment" : "Label on a configuration parameter",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -11183,6 +11269,7 @@
       }
     },
     "Lower the volume on ${device}" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -12431,6 +12518,23 @@
         }
       }
     },
+    "Mute %@ for %@" : {
+      "comment" : "Label on a configuration parameter",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mute %1$@ for %2$@"
+          }
+        }
+      }
+    },
+    "Mute ${device} for ${duration}" : {
+
+    },
+    "Mute Duration" : {
+
+    },
     "Mute or unmute the device" : {
       "comment" : "Description for mute intent",
       "localizations" : {
@@ -12595,6 +12699,15 @@
           }
         }
       }
+    },
+    "Mute temporarily" : {
+      "comment" : "Title for timed mute intent"
+    },
+    "Mute Temporarily" : {
+      "comment" : "Siri shortcut to mute for a duration, then unmute"
+    },
+    "Mute the device for a duration, then unmute it" : {
+      "comment" : "Description for timed mute intent"
     },
     "Mute/Unmute" : {
       "comment" : "Remote button to mute/unmute\nSiri shortcut to mute/unmute the device",
@@ -15693,8 +15806,20 @@
         }
       }
     },
+    "Press %@ %lld times on %@" : {
+      "comment" : "Title for a shortcut action",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Press %1$@ %2$lld times on %3$@"
+          }
+        }
+      }
+    },
     "Press %@ on %@" : {
       "comment" : "Title for a shortcut action",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -15782,7 +15907,11 @@
         }
       }
     },
+    "Press ${button} ${count} times on ${device}" : {
+
+    },
     "Press ${button} on ${device}" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -16112,6 +16241,9 @@
           }
         }
       }
+    },
+    "Press Count" : {
+
     },
     "Press Me" : {
       "localizations" : {
@@ -17539,7 +17671,7 @@
 
     },
     "Roku Apps" : {
-      "comment" : "Siri spotlight recommendation",
+      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -17622,7 +17754,7 @@
       }
     },
     "Roku Controls" : {
-      "comment" : "Siri spotlight recommendation",
+      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -19719,6 +19851,9 @@
           }
         }
       }
+    },
+    "Times" : {
+      "comment" : "Configuration field title for a repeat count"
     },
     "To work around this limitation, first discover devices on the iPhone app and then the devices will be transferred in the background from the iPhone to the watch (or you can manually add the TV if you can get it's IP address)." : {
       "comment" : "Description of watchOS discovery alternatives",

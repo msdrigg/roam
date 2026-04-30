@@ -64,14 +64,29 @@ struct RoamAppShortcutsProvider: AppShortcutsProvider {
             systemImageName: "speaker.slash"
         )
         AppShortcut(
+            intent: TimedMuteIntent(),
+            phrases: [
+                "Mute for \(\.$duration) with \(.applicationName)",
+                "Mute for \(\.$duration) then unmute with \(.applicationName)",
+                "\(.applicationName) mute for \(\.$duration)",
+            ],
+            shortTitle: LocalizedStringResource("Mute Temporarily", comment: "Siri shortcut to mute for a duration, then unmute"),
+            systemImageName: "speaker.slash"
+        )
+        AppShortcut(
             intent: VolumeDownIntent(),
             phrases: [
                 "Volume down with \(.applicationName)",
                 "Volume down on \(\.$device) with \(.applicationName)",
+                "Volume down \(\.$count) with \(.applicationName)",
                 "Lower volume with \(.applicationName)",
                 "Lower volume \(\.$device) with \(.applicationName)",
+                "Lower volume \(\.$count) with \(.applicationName)",
                 "Turn volume down with \(.applicationName)",
                 "Turn volume down on \(\.$device) with \(.applicationName)",
+                "Turn volume down \(\.$count) with \(.applicationName)",
+                "\(.applicationName) volume down \(\.$count)",
+                "\(.applicationName) down \(\.$count)",
             ],
             shortTitle: LocalizedStringResource("Volume Down", comment: "Siri shortcut to turn the volume down"),
             systemImageName: "speaker.minus"
@@ -81,10 +96,15 @@ struct RoamAppShortcutsProvider: AppShortcutsProvider {
             phrases: [
                 "Volume up with \(.applicationName)",
                 "Volume up on \(\.$device) with \(.applicationName)",
+                "Volume up \(\.$count) with \(.applicationName)",
                 "Raise volume with \(.applicationName)",
                 "Raise volume \(\.$device) with \(.applicationName)",
+                "Raise volume \(\.$count) with \(.applicationName)",
                 "Turn volume up with \(.applicationName)",
                 "Turn volume up on \(\.$device) with \(.applicationName)",
+                "Turn volume up \(\.$count) with \(.applicationName)",
+                "\(.applicationName) volume up \(\.$count)",
+                "\(.applicationName) up \(\.$count)",
             ],
             shortTitle: LocalizedStringResource("Volume Up", comment: "Siri shortcut to turn the volume up"),
             systemImageName: "speaker.plus"
