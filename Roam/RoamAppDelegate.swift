@@ -233,11 +233,13 @@ extension NSApplication {
         @Published var navigationPath: NavigationManager
         @Published var ecpMonitor: ECPMonitor
         @Published var networkMonitor: NetworkMonitor
+        let discoveryCoordinator: DiscoveryCoordinator
 
         override init() {
             self.navigationPath = NavigationManager()
             self.ecpMonitor = ECPMonitor()
             self.networkMonitor = NetworkMonitor()
+            self.discoveryCoordinator = DiscoveryCoordinator()
             super.init()
             UNUserNotificationCenter.current().delegate = self
         }
@@ -287,9 +289,7 @@ extension NSApplication {
             Log.notifications.notice("didReceive notification. Showing Messages...")
             DispatchQueue.main.async {
                 self.refreshMessages()
-                if self.navigationPath.last != NavigationDestination.messageDestination {
-                    self.navigationPath.append(NavigationDestination.messageDestination)
-                }
+                self.navigationPath.openMessages()
             }
 
             completionHandler()

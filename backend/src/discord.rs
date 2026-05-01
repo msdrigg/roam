@@ -843,7 +843,7 @@ mod types {
         pub id: i64,
     }
 
-    #[derive(Deserialize, Debug)]
+    #[derive(Deserialize)]
     pub struct DiscordFileUpload {
         pub filename: String,
         pub content_type: String,
@@ -854,6 +854,17 @@ mod types {
         pub data: Vec<u8>,
         #[serde(default)]
         pub paired_messages: Vec<String>,
+    }
+
+    impl std::fmt::Debug for DiscordFileUpload {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.debug_struct("DiscordFileUpload")
+                .field("filename", &self.filename)
+                .field("content_type", &self.content_type)
+                .field("data", &format!("{} bytes", self.data.len()))
+                .field("paired_messages", &self.paired_messages)
+                .finish()
+        }
     }
 
     #[derive(Deserialize, Serialize)]

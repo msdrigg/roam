@@ -860,9 +860,6 @@ struct KeyboardShortcutPanel: View {
                 CustomKeyboardShortcut(title: focusedShortcut, shortcut: KeyboardShortcut(key.key, modifiers: key.modifiers)).persist()
             }
         })
-        .onAppear {
-            appDelegate.navigationPath.focusedWindow = .keyboardShortcuts
-        }
         #endif
         .formStyle(.grouped)
         .navigationTitle("Keyboard Shortcuts")

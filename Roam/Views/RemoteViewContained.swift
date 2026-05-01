@@ -7,10 +7,6 @@ import StoreKit
 import SwiftUI
 import Foundation
 
-#if os(iOS)
-import WatchConnectivity
-#endif
-
 let globalToolbarShrinkWidth: CGFloat = 300
 
 let globalMajorActions: [RemoteButton] = [.power, .playPause, .mute, .headphonesMode]
@@ -25,13 +21,8 @@ struct RemoteViewContained: View {
 
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 
-    @State private var devicesLoader = DeviceListLoader(dataHandler: .shared)
-    @State private var primaryDeviceLoader = PrimaryDeviceLoader(dataHandler: .shared)
-    @State private var messageLoader = MessageListLoader(dataHandler: .shared)
     @Environment(\.dismiss) var dismiss
 
-    @State private var scanningActor: DeviceDiscoveryActor?
-    @State private var ssdpActor: DeviceDiscoveryActor?
     @State private var showKeyboardEntryManual: Bool = false
     @State private var keyboardLeaving: Bool = false
     @State var buttonPresses: [RemoteButton: Int] = [:]
@@ -40,11 +31,9 @@ struct RemoteViewContained: View {
     @AppStorage(UserDefaultKeys.localNetworkPermissionGranted) private var networkPermissionGranted: Bool = false
     @AllCustomKeyboardShortcuts private var allKeyboardShortcuts: [CustomKeyboardShortcut]
 
-    private var networkMonitor: NetworkMonitor {
-        self.appDelegate.networkMonitor
-    }
-
-    private var isInMenuBar: Bool
+    private let device: Device?
+    private let unreadMessages: Int
+    private let isInMenuBar: Bool
 
     private var ecpSessionState: ECPMonitor {
         appDelegate.ecpMonitor
@@ -64,7 +53,9 @@ struct RemoteViewContained: View {
     }
     #endif
 
-    init(isInMenuBar: Bool = false) {
+    init(device: Device? = nil, unreadMessages: Int = 0, isInMenuBar: Bool = false) {
+        self.device = device
+        self.unreadMessages = unreadMessages
         self.isInMenuBar = isInMenuBar
     }
 
@@ -92,12 +83,7 @@ struct RemoteViewContained: View {
 #endif
     }
 
-    @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var shouldScanIPRangeAutomatically: Bool = true
     @AppStorage(UserDefaultKeys.shouldControlVolumeWithHWButtons) private var controlVolumeWithHWButtons: Bool = true
-
-    var scanSSDP: Bool {
-        shouldScanIPRangeAutomatically
-    }
 
     @Environment(\.verticalSizeClass) var verticalSizeClass
 
@@ -120,15 +106,7 @@ struct RemoteViewContained: View {
     #endif
 
     private var selectedDevice: Device? {
-        primaryDeviceLoader.device
-    }
-
-    private var deviceIds: [String] {
-        devicesLoader.devices ?? []
-    }
-
-    private var unreadMessages: Int {
-        messageLoader.unreadCount
+        device
     }
 
     private var runningInPreview: Bool {
@@ -168,8 +146,6 @@ struct RemoteViewContained: View {
     }
 
     @Namespace var animation
-
-    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
 
     func buttonPressCount(_ key: RemoteButton) -> Int {
         buttonPresses[key] ?? 0
@@ -225,24 +201,6 @@ struct RemoteViewContained: View {
                     }
                 }
                 .task {
-                    await RoamDataHandler.shared.initialize()
-                }
-#if os(iOS)
-                .task(id: deviceIds, priority: .background) {
-                    guard !deviceIds.isEmpty else { return }
-                    await transferDevicesToWatch(deviceIds)
-
-                    for await _ in AsyncTimerSequence.repeating(every: .seconds(60 * 10)) {
-                        await transferDevicesToWatch(deviceIds)
-                    }
-                }
-#endif
-#if !os(macOS)
-            .onAppear {
-                appDelegate.navigationPath.focusedWindow = .remote
-            }
-#endif
-                .task {
                     do {
                         Log.network.notice("\("Checking", privacy: .public) for local network permission")
                         let permission = try await requestLocalNetworkAuthorization()
@@ -257,46 +215,6 @@ struct RemoteViewContained: View {
                 }
                 .onDisappear {
                     Log.lifecycle.notice("Closing \(#fileID, privacy: .public) view")
-                }
-                .task(id: "\(ssdpActor != nil && scanSSDP)", priority: .background) {
-                    let actorReady = ssdpActor != nil
-                    Log.scanning.notice(
-                        "RemoteViewContained SSDP task fired actorReady=\(actorReady, privacy: .public) scanSSDP=\(scanSSDP, privacy: .public) selectedDeviceId=\(selectedDevice?.id ?? "nil", privacy: .public)"
-                    )
-                    guard scanSSDP else {
-                        Log.scanning.notice("RemoteViewContained SSDP task skipping because scanSSDP is false")
-                        return
-                    }
-                    guard let ssdpActor else {
-                        Log.scanning.warning("RemoteViewContained SSDP task skipping because ssdpActor is nil")
-                        return
-                    }
-
-                    Log.scanning.notice("RemoteViewContained starting continual SSDP scan")
-                    await ssdpActor.scanSSDPContinually()
-                    Log.scanning.notice("RemoteViewContained continual SSDP scan returned")
-                }
-                .task(id: "\(scanningActor != nil && selectedDevice == nil && scanSSDP)-\(networkMonitor.networkConnection)") {
-                    let actorReady = scanningActor != nil
-                    Log.scanning.notice(
-                        "RemoteViewContained IPV4 task fired actorReady=\(actorReady, privacy: .public) scanSSDP=\(scanSSDP, privacy: .public) selectedDeviceId=\(selectedDevice?.id ?? "nil", privacy: .public) networkConnection=\(String(describing: networkMonitor.networkConnection), privacy: .public)"
-                    )
-                    guard scanSSDP else {
-                        Log.scanning.notice("RemoteViewContained IPV4 task skipping because scanSSDP is false")
-                        return
-                    }
-                    guard selectedDevice == nil else {
-                        Log.scanning.notice("RemoteViewContained IPV4 task skipping because selectedDevice is not nil")
-                        return
-                    }
-                    guard let scanningActor else {
-                        Log.scanning.warning("RemoteViewContained IPV4 task skipping because scanningActor is nil")
-                        return
-                    }
-
-                    Log.scanning.notice("RemoteViewContained starting IPV4 scan")
-                    await scanningActor.scanIPV4Once()
-                    Log.scanning.notice("RemoteViewContained IPV4 scan returned")
                 }
                 .task(id: selectedDevice?.id, priority: .medium) {
                     for await _ in exponentialBackoff(min: 30, max: 3600) {
@@ -367,13 +285,6 @@ struct RemoteViewContained: View {
                         }
                     }
                 }
-                .onAppear {
-                    Log.scanning.notice(
-                        "RemoteViewContained creating discovery actors scanSSDP=\(scanSSDP, privacy: .public) selectedDeviceId=\(selectedDevice?.id ?? "nil", privacy: .public)"
-                    )
-                    scanningActor = DeviceDiscoveryActor()
-                    ssdpActor = DeviceDiscoveryActor()
-                }
                 #if os(macOS)
                 .onKeyDown({ key in pressKey(key.key, modifiers: key.modifiers) }, enabled: true)
                 .onWindowFocused {
@@ -405,14 +316,6 @@ struct RemoteViewContained: View {
 
         }
     }
-
-#if os(iOS)
-    @MainActor
-    private func transferDevicesToWatch(_ deviceIds: [String]) async {
-        let devices = await RoamDataHandler.shared.requestAllDevices(deviceIds)
-        WatchConnectivity.shared.transferDevices(WCSession.default, devices: devices)
-    }
-#endif
 
     var remotePage: some View {
         ZStack {
@@ -495,10 +398,10 @@ struct RemoteViewContained: View {
                                     }
 
                                     if title == .chatWithDeveloper {
-                                        appDelegate.navigationPath.append(.messageDestination)
+                                        appDelegate.navigationPath.openMessages()
                                     } else
                                     if title == .keyboardShortcuts {
-                                        appDelegate.navigationPath.append(.keyboardShortcutDestinaion)
+                                        appDelegate.navigationPath.openKeyboardShortcuts()
                                     } else {
                                         Log.userInteraction.warning("Unknown function for keyboard shortcut \(title, privacy: .public)")
                                     }
@@ -517,57 +420,8 @@ struct RemoteViewContained: View {
                         .disabled(selectedDevice == nil)
 
                         Spacer()
-
-                        DevicePicker(
-                            device: selectedDevice,
-                            ecpSessionState: ecpSessionState,
-                            showScanning: true
-                        )
-                        .buttonStyle(PaddedBorderlessButtonStyle())
-                        .menuStyle(.button)
-                        .controlSize(.extraLarge)
-                        .hoverEffect(.highlight)
-                        .cornerRadius(buttonRadius)
-                        .glowing(enabled: selectedDevice == nil)
-                    }
-                    #elseif os(iOS)
-                    if selectedDevice == nil {
-                        HStack(alignment: .center) {
-                            Spacer()
-
-                            DevicePicker(
-                                device: selectedDevice,
-                                ecpSessionState: ecpSessionState,
-                                showScanning: true
-                            )
-                            .buttonStyle(PaddedBorderlessButtonStyle())
-                            .glowing(enabled: selectedDevice == nil)
-
-                            Spacer()
-                        }
-                        .offset(y: -20)
                     }
                     #endif
-
-                    if selectedDevice == nil {
-                        Button(String(localized: "Add a device manually", comment: "Label on a button to add a device"), systemImage: "plus") {
-                            appDelegate.navigationPath.showAddDevice = true
-                        }
-                        .labelStyle(.titleAndIcon)
-                        .font(.body)
-#if os(iOS)
-                        .offset(y: -20)
-                        .buttonStyle(.bordered)
-                        .foregroundStyle(customAccentColor)
-#else
-                        .buttonStyle(.borderless)
-                        .foregroundStyle(Color.secondary)
-#endif
-                        .customKeyboardShortcut(.addDevice)
-                        #if os(macOS)
-                        .padding(.bottom, 22)
-                        #endif
-                    }
 
                     if isHorizontal {
                         horizontalBody()
@@ -599,7 +453,7 @@ struct RemoteViewContained: View {
                                     NSApp.forceFront("messages")
                                 }
 #else
-                                appDelegate.navigationPath.append(NavigationDestination.messageDestination)
+                                appDelegate.navigationPath.openMessages()
 #endif
                             }, level: .info)
                         }
@@ -718,19 +572,6 @@ struct RemoteViewContained: View {
             #else
             .padding(.bottom, 10)
             #endif
-#if os(iOS)
-            .toolbar {
-                if !showKeyboardEntry {
-                    ToolbarItem(placement: .bottomBar) {
-                        DevicePicker(
-                            device: selectedDevice,
-                            ecpSessionState: ecpSessionState,
-                            showScanning: true
-                        )
-                    }
-                }
-            }
-#endif
 #if !os(visionOS) && !os(macOS)
             .toolbar(id: "remote") {
                 ToolbarItem(id: "keyboard", placement: .topBarLeading) {
@@ -756,9 +597,9 @@ struct RemoteViewContained: View {
                                 }
 
                                 if title == .chatWithDeveloper{
-                                    appDelegate.navigationPath.append(.messageDestination)
+                                    appDelegate.navigationPath.openMessages()
                                 } else if title == .keyboardShortcuts {
-                                    appDelegate.navigationPath.append(.keyboardShortcutDestinaion)
+                                    appDelegate.navigationPath.openKeyboardShortcuts()
                                 } else if title == .copy {
                                     if let text = ecpSessionState.textEditStatus.text {
                                         UIPasteboard.general.string = text
@@ -820,9 +661,6 @@ struct RemoteViewContained: View {
 #endif
         }
         .customAccentColorTint()
-        .sheet(isPresented: appDelegate.navigationPath.showingAddDevice(for: .remote)) {
-            AddDeviceFlow()
-        }
         .defaultFocus($focusKeyboardMonitor, .monitor, priority: .userInitiated)
     }
 

@@ -10,6 +10,9 @@ struct DevicePicker: View {
     @ScaledMetric var circleIconSize = globalCircleIconSize
 
     @Environment(\.openURL) private var openURL
+#if !os(macOS)
+    @EnvironmentObject private var appDelegate: RoamAppDelegate
+#endif
 #if os(macOS)
     @Environment(\.openSettings) private var openSettings
     @Environment(\.openWindow) private var openWindow
@@ -118,7 +121,9 @@ struct DevicePicker: View {
                 .buttonStyle(PaddedBorderlessButtonStyle())
                 .accessibilityIdentifier("SettingsButton")
             #else
-                NavigationLink(value: NavigationDestination.settingsDestination(.global)) {
+                Button {
+                    appDelegate.navigationPath.append(.settingsDestination(.global))
+                } label: {
                     Label("Settings", systemImage: "gear")
                 }
                 .labelStyle(.iconOnly)

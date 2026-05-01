@@ -1474,7 +1474,7 @@
       "comment" : "Label for accent color picker"
     },
     "Add a device manually" : {
-      "comment" : "Label on a button to add a device\nLabel on a button to open the device setup page",
+      "comment" : "Label on a button to add a device",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1555,6 +1555,9 @@
           }
         }
       }
+    },
+    "Add a new device" : {
+      "comment" : "Menu item to add another device"
     },
     "Add Attachment" : {
       "localizations" : {
@@ -1891,6 +1894,9 @@
     },
     "AI response" : {
 
+    },
+    "All devices" : {
+      "comment" : "Menu item to show all configured devices\nTitle for the sheet listing all configured devices"
     },
     "An unknown error occurred: %@" : {
       "comment" : "Unknown error with message",
@@ -2476,7 +2482,7 @@
 
     },
     "App Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3396,7 +3402,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6467,7 +6473,7 @@
       }
     },
     "Done" : {
-
+      "comment" : "Button to dismiss a sheet"
     },
     "Down" : {
       "comment" : "Keyboard shortcut to move down\nRemote button to move down",
@@ -10834,6 +10840,9 @@
     "Loading devices" : {
 
     },
+    "Loading devices…" : {
+      "comment" : "Status while initial device list is being loaded"
+    },
     "Loading..." : {
       "localizations" : {
         "ar" : {
@@ -10915,6 +10924,9 @@
           }
         }
       }
+    },
+    "Loading…" : {
+      "comment" : "Device list row fallback before the device record loads\nDevice tab label fallback before the device record loads"
     },
     "Local network permission may not be granted. Please navigate to System Settings -> Apps -> Roam and enable Local Network" : {
       "comment" : "Warning indicator message that there is no local network permission",
@@ -12434,6 +12446,9 @@
           }
         }
       }
+    },
+    "More" : {
+      "comment" : "Toolbar button label for additional device actions"
     },
     "Mute" : {
       "comment" : "Keyboard shortcut to mute/unmute the TV",
@@ -17671,7 +17686,7 @@
 
     },
     "Roku Apps" : {
-      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
+      "comment" : "Siri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -17754,7 +17769,7 @@
       }
     },
     "Roku Controls" : {
-      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
+      "comment" : "Siri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -18332,6 +18347,9 @@
           }
         }
       }
+    },
+    "Scanning for devices…" : {
+      "comment" : "Empty-state heading shown when no devices have been discovered yet"
     },
     "Scott" : {
 

@@ -14,7 +14,6 @@ use axum::{
     Json,
 };
 use axum::{routing::get, serve::ListenerExt, Router};
-use base64::{prelude::BASE64_STANDARD, Engine};
 pub use error::ApiError;
 use futures::{stream, StreamExt};
 use opentelemetry::trace::{SpanKind, TraceContextExt};
@@ -448,24 +447,72 @@ async fn upload_metric_diagnostics(
         )
         .await?;
 
-    for (idx, payload_b64) in metrics_payloads.iter().enumerate() {
-        let payload = match BASE64_STANDARD.decode(payload_b64) {
-            Ok(data) => data,
-            Err(e) => {
-                tracing::error!(?payload_b64, "Error decoding base64 payload: {}", e);
-                continue;
-            }
-        };
+    // Symbolication can take seconds-to-minutes (downloading a dyld_shared_cache
+    // from ipsw.me/appledb on a cold cache, parsing a fat dSYM, etc.) — longer
+    // than the iOS client's URLSession timeout. Spawn it so the upload returns
+    // now; the symbolicated reports get posted to Discord when ready.
+    let bg_app_context = app_context.clone();
+    let bg_device_id = device_id;
+    let bg_thread_id = user.thread_id;
+    let spawn_result = tokio::task::Builder::new()
+        .name("metric-symbolication")
+        .spawn(async move {
+            run_metric_symbolication(
+                bg_app_context,
+                bg_device_id,
+                bg_thread_id,
+                installation_info,
+                diagnostics,
+                metrics_payloads,
+            )
+            .await;
+        });
+    if let Err(err) = spawn_result {
+        tracing::error!(?err, "Failed to spawn background symbolication task");
+    }
+
+    Ok(())
+}
+
+async fn run_metric_symbolication(
+    app_context: AppContext,
+    device_id: String,
+    thread_id: i64,
+    installation_info: DeviceInfo,
+    diagnostics: crate::symbolicate::RoamDebugInfo,
+    metrics_payloads: Vec<String>,
+) {
+    let total_payloads = metrics_payloads.len();
+    tracing::info!(
+        user_id = %device_id,
+        total = total_payloads,
+        "Starting background MetricKit symbolication"
+    );
+
+    for (idx, payload_json) in metrics_payloads.iter().enumerate() {
+        // The iOS client sends each MetricKit payload as a raw JSON string
+        // (see MetricManager.saveMetricKitDiagnostics).
+        let payload = payload_json.as_bytes();
+
+        tracing::info!(
+            idx,
+            total = total_payloads,
+            user_id = %device_id,
+            payload_bytes = payload.len(),
+            "Processing MetricKit payload"
+        );
 
         let symbolication_dir = app_context.data_dir.join("symbolication").join(&device_id);
+        if let Err(e) = tokio::fs::create_dir_all(&symbolication_dir).await {
+            tracing::error!(?e, "Error creating symbolication dir");
+            continue;
+        }
         let metric_uuid = Uuid::new_v4();
-        tokio::fs::create_dir_all(&symbolication_dir)
-            .await
-            .map_err(|e| ApiError::BadRequest(format!("Error creating symbolication dir: {e}")))?;
         let metric_file_path = symbolication_dir.join(format!("{metric_uuid}.json"));
-        tokio::fs::write(&metric_file_path, payload)
-            .await
-            .map_err(|e| ApiError::BadRequest(format!("Error writing metric file: {e}")))?;
+        if let Err(e) = tokio::fs::write(&metric_file_path, payload).await {
+            tracing::error!(?e, "Error writing metric file");
+            continue;
+        }
 
         let symbolicated = match app_context
             .symbolicate_diagnostics(&diagnostics, &installation_info, &metric_file_path)
@@ -478,10 +525,7 @@ async fn upload_metric_diagnostics(
             }
         };
 
-        let report = match tokio::fs::read_to_string(&symbolicated)
-            .await
-            .map_err(|e| ApiError::SymbolicationError(anyhow::anyhow!(e)))
-        {
+        let report = match tokio::fs::read_to_string(&symbolicated).await {
             Ok(report) => report,
             Err(e) => {
                 tracing::error!(?e, "Error reading symbolicated diagnostics");
@@ -489,10 +533,10 @@ async fn upload_metric_diagnostics(
             }
         };
 
-        app_context
+        if let Err(e) = app_context
             .discord_client()
             .send_message(
-                user.thread_id,
+                thread_id,
                 &format!(
                     ":ninja: MK Diagnostics {} Symbolicated at {}",
                     idx,
@@ -506,10 +550,17 @@ async fn upload_metric_diagnostics(
                 }),
                 Some(&DiscordMessageOptions::default()),
             )
-            .await?;
+            .await
+        {
+            tracing::error!(?e, "Error sending symbolicated diagnostics to Discord");
+        }
     }
 
-    Ok(())
+    tracing::info!(
+        user_id = %device_id,
+        total = total_payloads,
+        "Finished background MetricKit symbolication"
+    );
 }
 
 #[derive(Deserialize)]

@@ -529,6 +529,7 @@ impl SymbolicationClient {
 
     async fn ensure_system_symbols_cached(&self, payload: &MetricKitPayload) -> Result<()> {
         let Some(requirement) = payload.system_symbol_requirement() else {
+            tracing::info!("Payload has no deviceType/osVersion metadata; skipping system symbol fetch");
             return Ok(());
         };
 
@@ -539,20 +540,42 @@ impl SymbolicationClient {
             .join(&requirement.build_id)
             .join("dyld");
         if dyld_cache_exists(&dyld_dir, requirement.arch.as_deref()).await? {
+            tracing::info!(
+                device_type = %requirement.device_type,
+                build_id = %requirement.build_id,
+                arch = requirement.arch.as_deref().unwrap_or("--"),
+                "System dyld_shared_cache already cached"
+            );
             return Ok(());
         }
+
+        tracing::info!(
+            device_type = %requirement.device_type,
+            build_id = %requirement.build_id,
+            arch = requirement.arch.as_deref().unwrap_or("--"),
+            os_family = requirement.os_family.as_deref().unwrap_or("--"),
+            "Downloading system dyld_shared_cache via ipsw"
+        );
 
         tokio::fs::create_dir_all(&dyld_dir)
             .await
             .with_context(|| format!("creating dyld cache directory {}", dyld_dir.display()))?;
 
+        let started = std::time::Instant::now();
         extract_dyld_shared_cache(
             &requirement.device_type,
             &requirement.build_id,
             &dyld_dir,
             requirement.arch.as_deref(),
+            requirement.os_family.as_deref(),
         )
         .await?;
+        tracing::info!(
+            device_type = %requirement.device_type,
+            build_id = %requirement.build_id,
+            elapsed_ms = started.elapsed().as_millis() as u64,
+            "Downloaded system dyld_shared_cache"
+        );
         Ok(())
     }
 }
@@ -587,6 +610,9 @@ impl SymbolicationClient {
         installation_info: &DeviceInfo,
         metrics_payload: &Path,
     ) -> Result<PathBuf, anyhow::Error> {
+        let started = std::time::Instant::now();
+        tracing::info!(payload = %metrics_payload.display(), "Starting symbolication");
+
         let mut report_path = PathBuf::from(metrics_payload);
         let mut new_filename = report_path
             .file_name()
@@ -600,6 +626,11 @@ impl SymbolicationClient {
             .with_context(|| format!("reading MetricKit payload {}", metrics_payload.display()))?;
         let payload: MetricKitPayload = serde_json::from_slice(&payload_bytes)
             .with_context(|| format!("parsing MetricKit payload {}", metrics_payload.display()))?;
+        tracing::info!(
+            payload_bytes = payload_bytes.len(),
+            crash_diagnostics = payload.crash_diagnostics.len(),
+            "Parsed MetricKit payload"
+        );
 
         if let Err(error) = self.ensure_system_symbols_cached(&payload).await {
             tracing::warn!(?error, "Could not prepare IPSW/dyld shared cache symbols");
@@ -613,6 +644,12 @@ impl SymbolicationClient {
                 }
             }
         }
+        let total_addresses: usize = requests.values().map(|r| r.addresses.len()).sum();
+        tracing::info!(
+            unique_binaries = requests.len(),
+            total_addresses,
+            "Collected symbolication requests"
+        );
 
         let symbol_manager = samply_symbols::SymbolManager::with_helper(
             RoamFileAndPathHelper::new(self.symbolication_root.clone(), Uuid::nil()),
@@ -620,11 +657,38 @@ impl SymbolicationClient {
         let mut symbolicated_addresses = BTreeMap::new();
         let mut lookup_errors = BTreeMap::new();
         for (breakpad_id, request) in requests {
+            let address_count = request.addresses.len();
+            let binary_name = request
+                .binary_names
+                .iter()
+                .next()
+                .cloned()
+                .unwrap_or_default();
+            tracing::info!(
+                %breakpad_id,
+                binary_name = %binary_name,
+                address_count,
+                "Looking up symbols for binary"
+            );
+            let lib_started = std::time::Instant::now();
             match self
                 .symbolicate_requested_addresses_for_lib(&breakpad_id, request, &symbol_manager)
                 .await
             {
                 Ok(result) => {
+                    let resolved = result
+                        .address_results
+                        .values()
+                        .filter(|v| v.is_some())
+                        .count();
+                    tracing::info!(
+                        %breakpad_id,
+                        resolved,
+                        total = address_count,
+                        symbol_count = result.symbol_count,
+                        elapsed_ms = lib_started.elapsed().as_millis() as u64,
+                        "Symbolicated binary"
+                    );
                     symbolicated_addresses.insert(breakpad_id, result);
                 }
                 Err(err) => {
@@ -641,9 +705,17 @@ impl SymbolicationClient {
             &symbolicated_addresses,
             &lookup_errors,
         )?;
-        tokio::fs::write(&report_path, report)
+        tokio::fs::write(&report_path, &report)
             .await
             .with_context(|| format!("writing symbolicated report {}", report_path.display()))?;
+        tracing::info!(
+            report = %report_path.display(),
+            report_bytes = report.len(),
+            resolved_binaries = symbolicated_addresses.len(),
+            unresolved_binaries = lookup_errors.len(),
+            elapsed_ms = started.elapsed().as_millis() as u64,
+            "Wrote symbolicated report"
+        );
         Ok(report_path)
     }
 }
@@ -689,7 +761,9 @@ struct MetricKitCallStack {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct MetricKitCallStackFrame {
-    #[serde(default)]
+    // MetricKit emits this key as `binaryUUID` (all caps), which the
+    // camelCase rule would otherwise convert to `binaryUuid`.
+    #[serde(default, rename = "binaryUUID")]
     binary_uuid: Option<String>,
     #[serde(default)]
     binary_name: Option<String>,
@@ -706,6 +780,7 @@ struct SystemSymbolRequirement {
     device_type: String,
     build_id: String,
     arch: Option<String>,
+    os_family: Option<String>,
 }
 
 impl MetricKitPayload {
@@ -722,10 +797,12 @@ impl MetricKitCrashDiagnostic {
         let os_version = metadata_string(&self.diagnostic_meta_data, "osVersion")?;
         let build_id = parse_os_build_id(&os_version)?;
         let arch = metadata_string(&self.diagnostic_meta_data, "platformArchitecture");
+        let os_family = parse_os_family(&os_version);
         Some(SystemSymbolRequirement {
             device_type,
             build_id,
             arch,
+            os_family,
         })
     }
 }
@@ -735,36 +812,179 @@ async fn extract_dyld_shared_cache(
     build_id: &str,
     output_dir: &Path,
     arch: Option<&str>,
+    os_family: Option<&str>,
 ) -> Result<()> {
-    let mut command = Command::new("ipsw");
-    command
-        .arg("download")
-        .arg("ipsw")
-        .arg("--device")
-        .arg(device_type)
-        .arg("--build")
-        .arg(build_id)
-        .arg("--dyld")
-        .arg("--confirm")
-        .arg("--output")
-        .arg(output_dir);
-    if let Some(arch) = arch {
-        command.arg("--dyld-arch").arg(arch);
+    let mut failures: Vec<String> = Vec::new();
+
+    // ipsw.me is the fastest source but lags for very new builds and doesn't
+    // index Rapid Security Response variants separately. Try it first.
+    match run_ipsw_dyld_download(
+        "ipsw.me",
+        ipsw_me_args(device_type, build_id, output_dir, arch),
+    )
+    .await
+    {
+        Ok(()) => return Ok(()),
+        Err(e) => failures.push(format!("ipsw.me: {e:#}")),
     }
 
-    let output = command
-        .output()
+    // appledb has a broader catalog (community-maintained), often picks up
+    // newer builds before ipsw.me does. Requires the OS family.
+    if let Some(os) = os_family {
+        match run_ipsw_dyld_download(
+            "appledb",
+            appledb_args(os, device_type, build_id, output_dir, arch),
+        )
         .await
-        .context("running `ipsw download ipsw --dyld`; install https://github.com/blacktop/ipsw to enable automatic system-symbol extraction")?;
-    if !output.status.success() {
-        anyhow::bail!(
-            "`ipsw download ipsw --dyld` failed with status {}: {}{}",
-            output.status,
-            String::from_utf8_lossy(&output.stdout),
-            String::from_utf8_lossy(&output.stderr)
-        );
+        {
+            Ok(()) => return Ok(()),
+            Err(e) => failures.push(format!("appledb: {e:#}")),
+        }
+    } else {
+        failures.push("appledb: skipped (no osVersion family in payload)".to_string());
     }
+
+    anyhow::bail!(
+        "no dyld_shared_cache source had build {build_id} for {device_type} ({})",
+        failures.join("; ")
+    );
+}
+
+fn ipsw_me_args(
+    device_type: &str,
+    build_id: &str,
+    output_dir: &Path,
+    arch: Option<&str>,
+) -> Vec<std::ffi::OsString> {
+    let mut args: Vec<std::ffi::OsString> = vec![
+        "download".into(),
+        "ipsw".into(),
+        "--device".into(),
+        device_type.into(),
+        "--build".into(),
+        build_id.into(),
+        "--dyld".into(),
+        "--confirm".into(),
+        "--output".into(),
+        output_dir.as_os_str().to_owned(),
+    ];
+    if let Some(arch) = arch {
+        args.push("--dyld-arch".into());
+        args.push(arch.into());
+    }
+    args
+}
+
+fn appledb_args(
+    os_family: &str,
+    device_type: &str,
+    build_id: &str,
+    output_dir: &Path,
+    arch: Option<&str>,
+) -> Vec<std::ffi::OsString> {
+    // appledb doesn't expose --dyld-arch, but the --dyld extractor still
+    // honors arch via the payload's arch tag in the cache filename.
+    let _ = arch;
+    // --api forces use of the GitHub API instead of a full local clone of
+    // appledb (~250 MB). The clone often hangs the first run on stateless
+    // containers; the API path is a few HTTP calls.
+    vec![
+        "download".into(),
+        "appledb".into(),
+        "--api".into(),
+        "--os".into(),
+        os_family.into(),
+        "--device".into(),
+        device_type.into(),
+        "--build".into(),
+        build_id.into(),
+        "--dyld".into(),
+        "--confirm".into(),
+        "--output".into(),
+        output_dir.as_os_str().to_owned(),
+    ]
+}
+
+/// Upper bound for any single ipsw download attempt. Real macOS dyld
+/// caches embedded in IPSWs are several hundred MB, so this is generous,
+/// but bounded so a hung subprocess can't pin the worker forever.
+const IPSW_DOWNLOAD_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10 * 60);
+
+async fn run_ipsw_dyld_download(label: &str, args: Vec<std::ffi::OsString>) -> Result<()> {
+    tracing::info!(strategy = label, "Trying ipsw dyld download");
+    let started = std::time::Instant::now();
+
+    let child = Command::new("ipsw")
+        .args(&args)
+        .kill_on_drop(true)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .with_context(|| {
+            format!(
+                "spawning `ipsw download {label} --dyld`; install https://github.com/blacktop/ipsw to enable automatic system-symbol extraction"
+            )
+        })?;
+
+    let output = match tokio::time::timeout(IPSW_DOWNLOAD_TIMEOUT, child.wait_with_output()).await {
+        Ok(result) => result.with_context(|| {
+            format!("waiting on `ipsw download {label} --dyld` to finish")
+        })?,
+        Err(_) => {
+            let elapsed_ms = started.elapsed().as_millis() as u64;
+            tracing::warn!(
+                strategy = label,
+                elapsed_ms,
+                timeout_secs = IPSW_DOWNLOAD_TIMEOUT.as_secs(),
+                "ipsw dyld download timed out; killed"
+            );
+            anyhow::bail!(
+                "timed out after {}s",
+                IPSW_DOWNLOAD_TIMEOUT.as_secs()
+            );
+        }
+    };
+
+    let elapsed_ms = started.elapsed().as_millis() as u64;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let summary = extract_ipsw_error_message(&stderr, &stdout);
+        tracing::info!(
+            strategy = label,
+            elapsed_ms,
+            error = %summary,
+            "ipsw dyld download did not succeed"
+        );
+        anyhow::bail!("exit {}: {}", output.status, summary);
+    }
+    tracing::info!(strategy = label, elapsed_ms, "ipsw dyld download succeeded");
     Ok(())
+}
+
+/// `ipsw` dumps full --help output to stdout on cobra-level argument or
+/// lookup failures. Pull just the lines that look like real diagnostics so
+/// we don't flood the log with the help text.
+fn extract_ipsw_error_message(stderr: &str, stdout: &str) -> String {
+    let mut interesting = stderr
+        .lines()
+        .chain(stdout.lines())
+        .map(str::trim)
+        .filter(|line| {
+            !line.is_empty()
+                && (line.starts_with('⨯')
+                    || line.contains("Error:")
+                    || line.contains("error:")
+                    || line.contains("not found")
+                    || line.contains("did not match"))
+        })
+        .collect::<Vec<_>>();
+    interesting.dedup();
+    if interesting.is_empty() {
+        "(no error output from ipsw)".to_string()
+    } else {
+        interesting.join(" | ")
+    }
 }
 
 async fn dyld_cache_exists(dyld_dir: &Path, arch: Option<&str>) -> Result<bool> {
@@ -794,6 +1014,15 @@ fn parse_os_build_id(os_version: &str) -> Option<String> {
     let start = os_version.rfind('(')? + 1;
     let end = os_version[start..].find(')')? + start;
     Some(os_version[start..end].to_string())
+}
+
+fn parse_os_family(os_version: &str) -> Option<String> {
+    let candidate = os_version.split_whitespace().next()?.to_string();
+    if candidate.is_empty() {
+        None
+    } else {
+        Some(candidate)
+    }
 }
 
 fn likely_dylib_paths(library_info: &LibraryInfo) -> Vec<String> {
@@ -1199,6 +1428,29 @@ mod tests {
             Some("22E252")
         );
         assert_eq!(parse_os_build_id("iOS 18.4.1"), None);
+    }
+
+    #[test]
+    fn parses_os_family_from_metri_kit_os_version() {
+        assert_eq!(
+            parse_os_family("macOS 15.5 (24F74)").as_deref(),
+            Some("macOS")
+        );
+        assert_eq!(
+            parse_os_family("iOS 18.4.1 (22E252)").as_deref(),
+            Some("iOS")
+        );
+        assert_eq!(parse_os_family(""), None);
+    }
+
+    #[test]
+    fn extract_ipsw_error_message_keeps_only_diagnostics() {
+        let stderr =
+            "⨯ failed to query ipsw.me api for buildID 25D77128 => version: build did not match";
+        let stdout = "Usage:\n  ipsw download ipsw [flags]\n\nAliases:\n  ipsw, i\n";
+        let summary = extract_ipsw_error_message(stderr, stdout);
+        assert!(summary.starts_with("⨯ failed to query ipsw.me"));
+        assert!(!summary.contains("Usage"));
     }
 
     #[test]

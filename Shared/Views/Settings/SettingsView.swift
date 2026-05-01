@@ -172,11 +172,6 @@ struct SettingsView: View {
                     Log.scanning.notice("SettingsView automatic continual SSDP scan returned")
                 }
 #endif
-#if !os(watchOS) && !os(macOS)
-                .onAppear {
-                    appDelegate.navigationPath.focusedWindow = .settings
-                }
-#endif
 #if os(macOS)
                 .onWindowFocused {
                     Log.lifecycle.notice("\(#fileID, privacy: .public) becoming key window")
@@ -426,11 +421,12 @@ struct SettingsView: View {
                 AddDeviceFlow()
             }
         }
-#else
+#elseif os(macOS)
         .sheet(isPresented: appDelegate.navigationPath.showingAddDevice(for: .settings)) {
             AddDeviceFlow()
         }
 #endif
+// On iOS / visionOS the Add Device sheet is hosted by RemoteRoot.
 #if !os(watchOS) && !os(macOS)
         .refreshable {
             initiateScan()

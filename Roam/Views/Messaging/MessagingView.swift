@@ -147,10 +147,6 @@ struct MessageView: View {
 
                     appDelegate.navigationPath.focusedWindow = .messages
                 }
-#elseif !os(watchOS)
-                .onAppear {
-                    appDelegate.navigationPath.focusedWindow = .messages
-                }
 #endif
                 .onAppear {
                     Log.lifecycle.notice("Showing \(#fileID, privacy: .public) view")

@@ -255,6 +255,7 @@
 		AFD9C4ED2AE980C300C4079C /* DataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA222AE455B400A42DFF /* DataHelpers.swift */; };
 		AFD9C4F22AE9828600C4079C /* SmallRemoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD9C4E02AE9802200C4079C /* SmallRemoteView.swift */; };
 		AFD9C4F32AE982E400C4079C /* DiscoveryActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF95B7532ADF4435005FC338 /* DiscoveryActor.swift */; };
+		DC0001D15C0FE2D8000000F2 /* DiscoveryCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0001D15C0FE2D8000000F1 /* DiscoveryCoordinator.swift */; };
 		AFD9C4F82AE983A800C4079C /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */; };
 		AFD9C4F92AE983AE00C4079C /* SSDPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA272AE54ABC00A42DFF /* SSDPService.swift */; };
 		AFD9C4FA2AE983B300C4079C /* SSDPDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA2A2AE54AD100A42DFF /* SSDPDiscovery.swift */; };
@@ -303,6 +304,7 @@
 		AFF6DE0E2BCF0326002C13FC /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF6DE0C2BCF0326002C13FC /* Message.swift */; };
 		AFF6DE142BCF0A14002C13FC /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF6DE0C2BCF0326002C13FC /* Message.swift */; };
 		AFFC71E62AD1212100EE8EA0 /* RemoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFC71E52AD1212100EE8EA0 /* RemoteView.swift */; };
+		DC0001D15C0FE2D8000000F4 /* RemoteRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0001D15C0FE2D8000000F3 /* RemoteRoot.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -505,6 +507,7 @@
 		AF95B71D2ADF3BA7005FC338 /* MediumRemoteWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediumRemoteWidget.swift; sourceTree = "<group>"; };
 		AF95B74F2ADF43FD005FC338 /* NetworkHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkHelpers.swift; sourceTree = "<group>"; };
 		AF95B7532ADF4435005FC338 /* DiscoveryActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryActor.swift; sourceTree = "<group>"; };
+		DC0001D15C0FE2D8000000F1 /* DiscoveryCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryCoordinator.swift; sourceTree = "<group>"; };
 		AF9A00602DFF4705000F764F /* ErrorAlertingModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorAlertingModifier.swift; sourceTree = "<group>"; };
 		AF9A00642DFF5224000F764F /* AsyncQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncQueue.swift; sourceTree = "<group>"; };
 		AF9DE5662D553DDE00C50894 /* SelectedAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedAttachment.swift; sourceTree = "<group>"; };
@@ -576,6 +579,7 @@
 		AFF607892AE0037900A7D657 /* WidgetIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetIntents.swift; sourceTree = "<group>"; };
 		AFF6DE0C2BCF0326002C13FC /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		AFFC71E52AD1212100EE8EA0 /* RemoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteView.swift; sourceTree = "<group>"; };
+		DC0001D15C0FE2D8000000F3 /* RemoteRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteRoot.swift; sourceTree = "<group>"; };
 		AFFED2502AD75EAF00357FA4 /* BinaryHeap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryHeap.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -663,6 +667,7 @@
 				AFBBE16D2C76455E002B7F68 /* RemoteViewContained.swift */,
 				AFD100212F00000100000001 /* RemoteViewContainedMacOS.swift */,
 				AFFC71E52AD1212100EE8EA0 /* RemoteView.swift */,
+				DC0001D15C0FE2D8000000F3 /* RemoteRoot.swift */,
 				AF3AD5522AE28F7400E2D780 /* ButtonGrid.swift */,
 				AF3AD5542AE2910B00E2D780 /* CenterController.swift */,
 				AF3AD5562AE2928600E2D780 /* TopBar.swift */,
@@ -693,6 +698,7 @@
 			isa = PBXGroup;
 			children = (
 				AF95B7532ADF4435005FC338 /* DiscoveryActor.swift */,
+				DC0001D15C0FE2D8000000F1 /* DiscoveryCoordinator.swift */,
 				AF19CA262AE54AB000A42DFF /* SSDP */,
 			);
 			path = Discovery;
@@ -1553,6 +1559,7 @@
 				AF736A822DCD57DD0028A2B4 /* Attachment.swift in Sources */,
 				AFA079DF2AE0263F003E2754 /* Shortcuts.swift in Sources */,
 				AFF607812ADFACBA00A7D657 /* DiscoveryActor.swift in Sources */,
+				DC0001D15C0FE2D8000000F2 /* DiscoveryCoordinator.swift in Sources */,
 				AF0C828C2AEB494D00CBE7F8 /* VolumeSliderView.swift in Sources */,
 				AF19CA142AE4471200A42DFF /* AsyncHelpers.swift in Sources */,
 				AF0D09F22CDE5C410098122E /* Helpers.swift in Sources */,
@@ -1564,6 +1571,7 @@
 				AF19CA1E2AE4517600A42DFF /* RTCP.swift in Sources */,
 				AF468D372D333A9E00DF0F2E /* QSocket.swift in Sources */,
 				AFFC71E62AD1212100EE8EA0 /* RemoteView.swift in Sources */,
+				DC0001D15C0FE2D8000000F4 /* RemoteRoot.swift in Sources */,
 				AFCF22E02B2A6A720048FFD9 /* NetworkMonitor.swift in Sources */,
 				AF3F350A2D3E9234009AF2F8 /* ImageDecoder.swift in Sources */,
 				AFA9F8992B1D29E000829B7C /* KeyboardShortcutPanel.swift in Sources */,
