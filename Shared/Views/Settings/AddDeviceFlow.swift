@@ -228,7 +228,7 @@ struct AddDeviceFlow: View {
 
             if case .permissionFailed = status {
                 // swiftlint:disable:next line_length
-                Text("Your need to enable \"Control by mobile apps\" in your TV's settings. You can update this setting by going to **Settings > System > Advanced system settings > Control by mobile apps > Network access** and make sure it's set to 'Permissive' or 'Enabled'")
+                Text("You need to enable \"Control by mobile apps\" in your TV's settings. You can update this setting by going to **Settings > System > Advanced system settings > Control by mobile apps > Network access** and make sure it's set to 'Permissive' or 'Enabled'")
             }
 
             if case .failure(let error) = status {

@@ -1,6 +1,6 @@
 import Foundation
-import os
 import SwiftUI
+import os
 
 let globalBaselineOffset: CGFloat = 2
 let globalCircleIconSize: CGFloat = 10
@@ -10,13 +10,13 @@ struct DevicePicker: View {
     @ScaledMetric var circleIconSize = globalCircleIconSize
 
     @Environment(\.openURL) private var openURL
-#if !os(macOS)
-    @EnvironmentObject private var appDelegate: RoamAppDelegate
-#endif
-#if os(macOS)
-    @Environment(\.openSettings) private var openSettings
-    @Environment(\.openWindow) private var openWindow
-#endif
+    #if !os(macOS)
+        @EnvironmentObject private var appDelegate: RoamAppDelegate
+    #endif
+    #if os(macOS)
+        @Environment(\.openSettings) private var openSettings
+        @Environment(\.openWindow) private var openWindow
+    #endif
 
     var device: Device?
 
@@ -35,8 +35,8 @@ struct DevicePicker: View {
         return if let ecpSessionState {
             switch ecpSessionState.status {
             case .connected:
-                    .green
-            case let .disconnected(date):
+                .green
+            case .disconnected(let date):
                 if currentDate.timeIntervalSince(date) < 0.2 {
                     .green
                 } else {
@@ -55,7 +55,7 @@ struct DevicePicker: View {
             switch ecpSessionState.status {
             case .connected:
                 false
-            case let .connecting(date):
+            case .connecting(let date):
                 if currentDate.timeIntervalSince(date) < 5 {
                     true
                 } else {
@@ -78,23 +78,28 @@ struct DevicePicker: View {
     var body: some View {
         HStack(spacing: 8) {
             if !(deviceListLoader.devices ?? []).isEmpty {
-                Picker("Device", selection: Binding<String?>(
-                    get: {
-                        device?.id
-                    },
-                    set: {
-                        if let pid = $0 {
-                            Task {
-                                do {
-                                    try await RoamDataHandler.shared.makePrimaryDevice(id: pid)
-                                } catch {
-                                    Log.userInteraction.error("Error setting selected device \(error, privacy: .public)")
-                                    deviceError = error
+                Picker(
+                    "Device",
+                    selection: Binding<String?>(
+                        get: {
+                            device?.id
+                        },
+                        set: {
+                            if let pid = $0 {
+                                Task {
+                                    do {
+                                        try await RoamDataHandler.shared.makePrimaryDevice(id: pid)
+                                    } catch {
+                                        Log.userInteraction.error(
+                                            "Error setting selected device \(error, privacy: .public)"
+                                        )
+                                        deviceError = error
+                                    }
                                 }
                             }
                         }
-                    }
-                )) {
+                    )
+                ) {
                     ForEach(deviceListLoader.devices ?? [], id: \.self) { device in
                         DevicePickerItem(id: device)
                     }
@@ -109,15 +114,18 @@ struct DevicePicker: View {
             }
 
             #if os(macOS)
-                Button(action: {
-                    openSettings()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        NSApp.forceFront("com_apple_SwiftUI_Settings_window")
+                Button(
+                    action: {
+                        openSettings()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            NSApp.forceFront("com_apple_SwiftUI_Settings_window")
+                        }
+                    },
+                    label: {
+                        Label("Settings", systemImage: "gear")
+                            .labelStyle(.iconOnly)
                     }
-                }, label: {
-                    Label("Settings", systemImage: "gear")
-                        .labelStyle(.iconOnly)
-                })
+                )
                 .buttonStyle(PaddedBorderlessButtonStyle())
                 .accessibilityIdentifier("SettingsButton")
             #else
@@ -132,66 +140,66 @@ struct DevicePicker: View {
             #endif
         }
         .fixedSize(horizontal: false, vertical: true)
-//        Menu {
-//        } label: {
-//            Group {
-//                if let device = device {
-//                    if showSpinning {
-//                        Label(device.name, systemImage: "rays")
-//                            .labelStyle(DevicePickerLabelStyle(circleIconSize: circleIconSize))
-//                            .foregroundColor(deviceStatusColor)
-//                            .symbolEffect(.variableColor)
-//                    } else {
-//                        Label(device.name, systemImage: "circle.fill")
-//                            .labelStyle(DevicePickerLabelStyle(circleIconSize: circleIconSize))
-//                            .foregroundColor(deviceStatusColor)
-//                    }
-//                } else {
-//                    if showScanning {
-//                        Label("Scanning for devices", systemImage: "rays")
-//                            .labelStyle(.titleAndIcon)
-//                            .symbolEffect(.variableColor)
-//                    } else {
-//                        Text("No devices")
-//                    }
-//                }
-//            }
-//            #if os(macOS)
-//                .multilineTextAlignment(.center)
-//            #else
-//                .multilineTextAlignment(.trailing)
-//            #endif
-//                .lineLimit(1)
-//                .truncationMode(.tail)
-//            #if os(iOS)
-//                .frame(maxWidth: 300)
-//                .fixedSize()
-//            #elseif os(visionOS)
-//                .frame(maxWidth: 250)
-//                .fixedSize()
-//            #endif
-//            #if os(visionOS)
-//                .font(.headline)
-//            #else
-//                .font(.body)
-//            #endif
-//        }
-//        #if os(iOS)
-//        .menuStyle(.button)
-//        #endif
-//        .accessibilityIdentifier("DevicePicker")
-//        .animation(nil, value: UUID())
-//        .onReceive(timer) { _ in
-//            currentDate = .now
-//        }
-//        .alertingError(message: "Failed to Select Device", error: $deviceError)
+        //        Menu {
+        //        } label: {
+        //            Group {
+        //                if let device = device {
+        //                    if showSpinning {
+        //                        Label(device.name, systemImage: "rays")
+        //                            .labelStyle(DevicePickerLabelStyle(circleIconSize: circleIconSize))
+        //                            .foregroundColor(deviceStatusColor)
+        //                            .symbolEffect(.variableColor)
+        //                    } else {
+        //                        Label(device.name, systemImage: "circle.fill")
+        //                            .labelStyle(DevicePickerLabelStyle(circleIconSize: circleIconSize))
+        //                            .foregroundColor(deviceStatusColor)
+        //                    }
+        //                } else {
+        //                    if showScanning {
+        //                        Label("Scanning for devices", systemImage: "rays")
+        //                            .labelStyle(.titleAndIcon)
+        //                            .symbolEffect(.variableColor)
+        //                    } else {
+        //                        Text("No devices")
+        //                    }
+        //                }
+        //            }
+        //            #if os(macOS)
+        //                .multilineTextAlignment(.center)
+        //            #else
+        //                .multilineTextAlignment(.trailing)
+        //            #endif
+        //                .lineLimit(1)
+        //                .truncationMode(.tail)
+        //            #if os(iOS)
+        //                .frame(maxWidth: 300)
+        //                .fixedSize()
+        //            #elseif os(visionOS)
+        //                .frame(maxWidth: 250)
+        //                .fixedSize()
+        //            #endif
+        //            #if os(visionOS)
+        //                .font(.headline)
+        //            #else
+        //                .font(.body)
+        //            #endif
+        //        }
+        //        #if os(iOS)
+        //        .menuStyle(.button)
+        //        #endif
+        //        .accessibilityIdentifier("DevicePicker")
+        //        .animation(nil, value: UUID())
+        //        .onReceive(timer) { _ in
+        //            currentDate = .now
+        //        }
+        //        .alertingError(message: "Failed to Select Device", error: $deviceError)
     }
 
     private var devicePickerMaxWidth: CGFloat {
         #if os(macOS)
-        return 185
+            return 185
         #else
-        return .infinity
+            return .infinity
         #endif
     }
 }
@@ -207,11 +215,11 @@ struct DevicePickerLabelStyle: LabelStyle {
             configuration.title
                 .font(.body)
                 .padding(.trailing, 4)
-            #if !os(macOS) && !os(visionOS)
-                .foregroundColor(.accentColor)
-            #else
-                .foregroundColor(.primary)
-            #endif
+                #if !os(macOS) && !os(visionOS)
+                    .foregroundColor(.accentColor)
+                #else
+                    .foregroundColor(.primary)
+                #endif
         }
     }
 }
@@ -223,7 +231,8 @@ private struct DevicePickerItem: View {
 
     init(id: String) {
         self.id = id
-        self.deviceLoader = DeviceLoader(deviceId: self.id, dataHandler: .shared)
+        self._deviceLoader = State(
+            initialValue: DeviceLoader(deviceId: self.id, dataHandler: .shared))
     }
 
     var name: String {

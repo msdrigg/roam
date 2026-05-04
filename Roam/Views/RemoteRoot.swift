@@ -131,7 +131,9 @@ struct RemoteRoot: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
             Spacer()
+            NetworkConnectivityBanner()
         }
+        .padding(.horizontal)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -158,6 +160,7 @@ struct RemoteRoot: View {
             .buttonStyle(.glassIfSupported(isProminent: true))
             .controlSize(.large)
             Spacer()
+            NetworkConnectivityBanner()
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)

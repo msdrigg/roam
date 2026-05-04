@@ -59,7 +59,11 @@ sqlx = { version = "^0.8", default-features = false, features = [
 
 
 memmap2 = { version = "^0.9" }
+tokio-util = { version = "^0.7", features = ["io"] }
+portable-pty = "^0.9"
 samply-symbols = { version = "^0.24.1", features = ["send_futures"] }
+symbolic-common = "^12"
+symbolic-demangle = { version = "^12", features = ["swift", "cpp"] }
 
 tracing = { version = "^0.1", features = ["attributes"] }
 tracing-subscriber = { version = "^0.3", features = ["env-filter"] }
@@ -82,3 +86,6 @@ tower-http = { version = "^0.6", features = [
     "util",
     "validate-request",
 ] }
+
+[dev-dependencies]
+tempfile = "^3"

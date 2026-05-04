@@ -30,31 +30,56 @@ func listenContinually(ecpSession: ECPWebsocketClient, location: String, rtcpPor
             }
 
             taskGroup.addTask {
+                // Wait for Roku to ACK `set-audio-output` BEFORE starting
+                // any RTCP traffic. If VDLY/RR arrive before Roku has
+                // registered the session, Roku silently drops them — and
+                // because it also kills RTP after a few seconds without
+                // RRs, racing the ACK destroys the whole stream.
                 do {
                     try await ecpSession.requestHeadphonesMode()
-                    await Task.sleepUntilCancelled()
                 } catch {
                     if !(error is CancellationError) {
                         Log.headphones.error("Error requesting headphones mode \(error, privacy: .public)")
                     }
                     throw error
                 }
-            }
 
-            taskGroup.addTask {
-                do {
-                    try await withTimeout(delay: 6.0) {
-                        try await rtpSession.performRTCPHandshake()
+                try await withThrowingDiscardingTaskGroup { rtcpGroup in
+                    rtcpGroup.addTask {
+                        // Audio playback is intentionally NOT coupled to the
+                        // RTCP handshake. Roku is forgiving about a missing
+                        // VDLY/NCLI exchange and will keep streaming audio. A
+                        // failed handshake here only means we never confirmed
+                        // the requested buffer delay — it must not bring down
+                        // the audio task.
+                        do {
+                            try await withTimeout(delay: 6.0) {
+                                try await rtpSession.performRTCPHandshake()
+                            }
+                        } catch is CancellationError {
+                            return
+                        } catch {
+                            Log.headphones
+                                .warning("RTCP handshake did not complete: \(error, privacy: .public). Continuing without it.")
+                        }
                     }
-                } catch {
-                    Log.headphones.error("Error performing handshake: \(error, privacy: .public)")
-                    throw error
-                }
-                do {
-                    try await rtpSession.sendRTCPReceiverReports()
-                } catch {
-                    Log.headphones.error("Error sending receiver reports: \(error, privacy: .public)")
-                    throw error
+
+                    rtcpGroup.addTask {
+                        // Roku stops sending RTP audio after a few seconds
+                        // if it doesn't see periodic RRs from us.
+                        do {
+                            try await rtpSession.sendRTCPReceiverReports()
+                        } catch is CancellationError {
+                            return
+                        } catch {
+                            Log.headphones.error("Error sending receiver reports: \(error, privacy: .public)")
+                        }
+                    }
+
+                    // Keep the headphones session open until cancellation.
+                    rtcpGroup.addTask {
+                        await Task.sleepUntilCancelled()
+                    }
                 }
             }
         }
@@ -72,8 +97,7 @@ actor RTPSession {
         videoBufferMs + baseAudioTransitMs
     }
 
-    let rtcpStream: AsyncStream<RtcpPacket>
-    let rtcpStreamContinuation: AsyncStream<RtcpPacket>.Continuation
+    let rtcpInbox = RtcpInbox()
     let rtpStream: AsyncStream<RtpPacket>
     let rtpStreamContinuation: AsyncStream<RtpPacket>.Continuation
     let rtpListener: NWListener
@@ -91,34 +115,89 @@ actor RTPSession {
             port: NWEndpoint.Port(rawValue: remoteRTCPPort)!
         )
 
-        let rtcpParameters = NWParameters.udp
-        let localEndpoint = NWEndpoint.hostPort(
+        // Bind outbound RTCP to the local RTP port (6970), NOT 6971.
+        // Roku validates incoming RTCP against the source IP+port it
+        // recorded from `set-audio-output`'s devname — which advertises
+        // <ip>:6970. Packets arriving from any other source port (an
+        // ephemeral port, or even 6971 per the RTP+1 convention) fail
+        // that check and Roku silently drops them, including the empty
+        // RR that keeps RTP alive — so the audio stream dies after a
+        // few seconds. Sharing port 6970 with `rtpListener` is fine
+        // because both sockets set `allowLocalEndpointReuse` and the
+        // kernel demuxes by 4-tuple: RTP from Roku:<ephemeral> goes to
+        // the listener (no remote set, less specific), RTCP from
+        // Roku:5150 goes to this connection (specific remote match).
+        let outboundRtcpParams = NWParameters.udp
+        outboundRtcpParams.allowLocalEndpointReuse = true
+        outboundRtcpParams.requiredLocalEndpoint = NWEndpoint.hostPort(
             host: NWEndpoint.Host("0.0.0.0"),
             port: NWEndpoint.Port(rawValue: localRTPPort)!
         )
         Log.headphones
             .notice(
-                "Starting rtcp with local port \(localRTPPort, privacy: .public), remote address \(remoteRTCPAddress, privacy: .public), endpoint \(String(describing: localEndpoint), privacy: .public)"
+                "Starting rtcp with outbound source port \(localRTPPort, privacy: .public), listener port \(localRTCPPort, privacy: .public), remote address \(remoteRTCPAddress, privacy: .public)"
             )
-        rtcpParameters.requiredLocalEndpoint = localEndpoint
-        rtcpParameters.allowLocalEndpointReuse = true
-
-        remoteRtcpConnection = NWConnection(to: remoteRtcpEndpoint, using: rtcpParameters)
+        remoteRtcpConnection = NWConnection(to: remoteRtcpEndpoint, using: outboundRtcpParams)
 
         let rtpParams = NWParameters.udp
         rtpParams.allowLocalEndpointReuse = true
+        let rtcpListenerParams = NWParameters.udp
+        rtcpListenerParams.allowLocalEndpointReuse = true
 
         rtpListener = try NWListener(using: rtpParams, on: NWEndpoint.Port(rawValue: localRTPPort)!)
-        rtcpListener = try NWListener(using: .udp, on: NWEndpoint.Port(rawValue: localRTCPPort)!)
+        rtcpListener = try NWListener(using: rtcpListenerParams, on: NWEndpoint.Port(rawValue: localRTCPPort)!)
 
+        remoteRtcpConnection.stateUpdateHandler = { state in
+            switch state {
+            case let .failed(err):
+                Log.headphones.notice("remoteRtcpConnection failed with error \(err, privacy: .public)")
+            case .cancelled:
+                Log.headphones.notice("remoteRtcpConnection cancelled")
+            case .ready:
+                Log.headphones.notice("remoteRtcpConnection ready")
+            case let .waiting(err):
+                Log.headphones.notice("remoteRtcpConnection waiting \(err, privacy: .public)")
+            default:
+                Log.headphones.notice("remoteRtcpConnection state \(String(describing: state), privacy: .public)")
+            }
+        }
         remoteRtcpConnection.start(queue: .global())
+
+        // Defensive: also drain any RTCP that the kernel routes to this
+        // connection. In practice Roku addresses replies to local 6971,
+        // which `rtcpListener` catches — but if a firmware variant sends
+        // them to 6970 instead, the 4-tuple match against this connection
+        // wins and the listener never sees them. Reading here makes both
+        // paths feed the same inbox.
+        let inbox = rtcpInbox
+        let outboundConnection = remoteRtcpConnection
+        @Sendable func receiveOutboundRtcp(
+            _ data: Data?,
+            _: NWConnection.ContentContext?,
+            _: Bool,
+            _ error: NWError?
+        ) {
+            // Stop the loop on connection close / cancel — otherwise the
+            // recursion spins forever firing ECANCELED into the log.
+            guard let data else {
+                if let error {
+                    Log.headphones
+                        .notice("Outbound rtcp receive loop ending: \(error, privacy: .public)")
+                }
+                return
+            }
+            if let packet = RtcpPacket(data: data) {
+                Task { await inbox.deliver(packet) }
+            } else {
+                Log.headphones.error("Error parsing rtcp packet on outbound connection")
+            }
+            outboundConnection.receiveMessage(completion: receiveOutboundRtcp)
+        }
+        remoteRtcpConnection.receiveMessage(completion: receiveOutboundRtcp)
 
         let (rtpStream, rtpContuation) = AsyncStream<RtpPacket>.makeStream(of: RtpPacket.self, bufferingPolicy: .bufferingNewest(512))
         self.rtpStream = rtpStream
         rtpStreamContinuation = rtpContuation
-        let (rtcpStream, rtcpContuation) = AsyncStream<RtcpPacket>.makeStream(of: RtcpPacket.self, bufferingPolicy: .bufferingNewest(512))
-        self.rtcpStream = rtcpStream
-        self.rtcpStreamContinuation = rtcpContuation
         Task {
             await startRtcpStream()
             await startRtpStream()
@@ -133,24 +212,22 @@ actor RTPSession {
     }
 
     func startRtcpStream() {
-        rtcpListener.stateUpdateHandler = { [weak self] state in
+        rtcpListener.stateUpdateHandler = { state in
             switch state {
             case let .failed(err):
-                Log.headphones.notice("rtcpConnection failed with error \(err, privacy: .public)")
-                self?.rtcpStreamContinuation.finish()
+                Log.headphones.notice("rtcpListener failed with error \(err, privacy: .public)")
             case .cancelled:
-                Log.headphones.notice("rtcpConnection cancelled")
-                self?.rtcpStreamContinuation.finish()
+                Log.headphones.notice("rtcpListener cancelled")
             case .ready:
-                Log.headphones.notice("rtcpConnection ready")
+                Log.headphones.notice("rtcpListener ready")
             default:
                 Log.headphones.notice("Getting new rtcp state \(String(describing: state), privacy: .public)")
             }
         }
 
         rtcpListener.newConnectionHandler = { [weak self] rtcpConnection in
-            guard let rtcpStreamContinuation = self?.rtcpStreamContinuation else {
-                Log.headphones.warning("No rtcp stream continuation when getting new connection")
+            guard let inbox = self?.rtcpInbox else {
+                Log.headphones.warning("No rtcp inbox when getting new connection")
                 return
             }
             Log.headphones.notice("Got new rtcp connection \(String(describing: rtcpConnection), privacy: .public)")
@@ -160,9 +237,7 @@ actor RTPSession {
                     return
                 }
                 if let packet = RtcpPacket(data: data) {
-                    if case .terminated = rtcpStreamContinuation.yield(packet) {
-                        Log.headphones.warning("Error sending packet to closed channel rtcp")
-                    }
+                    Task { await inbox.deliver(packet) }
                 } else {
                     Log.headphones.error("Error parsing rtcp packet")
                 }
@@ -171,43 +246,18 @@ actor RTPSession {
 
             rtcpConnection.receiveMessage(completion: closure)
 
-            self?.rtcpListener.stateUpdateHandler = { state in
-                switch state {
-                case let .failed(err):
-                    Log.headphones.notice("rtcpConnection failed with error \(err, privacy: .public)")
-                    rtcpConnection.send(
-                        content: RtcpPacket.bye(.init(ssrc: 0)).packet(),
-                        completion: .contentProcessed { error in
-                            Log.headphones.notice("Sent RTCP Bye with error \(error, privacy: .public)")
-                            rtcpConnection.cancel()
-                        }
-                    )
-                    rtcpStreamContinuation.finish()
-                case .cancelled:
-                    Log.headphones.notice("rtcpConnection cancelled")
-                    rtcpConnection.send(
-                        content: RtcpPacket.bye(.init(ssrc: 0)).packet(),
-                        completion: .contentProcessed { error in
-                            Log.headphones.notice("Sent RTCP Bye with error \(error, privacy: .public)")
-                            rtcpConnection.cancel()
-                        }
-                    )
-                    rtcpStreamContinuation.finish()
-                case .ready:
-                    Log.headphones.notice("rtcpConnection ready")
-                default:
-                    Log.headphones.notice("Getting new rtcp state \(String(describing: state), privacy: .public)")
-                }
-            }
-
             rtcpConnection.stateUpdateHandler = { state in
                 switch state {
                 case let .failed(err):
                     Log.headphones.notice("rtcpConnection connection failed with error \(err, privacy: .public)")
-                    rtcpStreamContinuation.finish()
                 case .cancelled:
                     Log.headphones.notice("rtcpConnection connection cancelled")
-                    rtcpStreamContinuation.finish()
+                    rtcpConnection.send(
+                        content: RtcpPacket.bye(.init(ssrc: 0)).packet(),
+                        completion: .contentProcessed { error in
+                            Log.headphones.notice("Sent RTCP Bye with error \(error, privacy: .public)")
+                        }
+                    )
                 case .ready:
                     Log.headphones.notice("rtcpConnection connection ready")
                 default:
@@ -300,9 +350,19 @@ actor RTPSession {
     }
 
     func performVDLYHandshake() async throws {
-        // Send VDLY rtcp packet using rtcpConnection
-        // Wait for response XDLY using rtcpStream
         Log.headphones.notice("Performing VDLY handshake")
+
+        // Register the waiter BEFORE sending so we never miss the response.
+        // If sendVDLY throws, the implicit cancellation of `response` invokes
+        // RtcpInbox.cancelWaiter, which removes the waiter and resumes it
+        // with CancellationError.
+        async let response: RtcpPacket = rtcpInbox.waitFor { packet in
+            if case let .appSpecific(.xdly(xdly)) = packet,
+               xdly.delayMicroseconds == globalHugeFixedVDLYMS * 1000 {
+                return true
+            }
+            return false
+        }
 
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             remoteRtcpConnection.send(
@@ -319,24 +379,18 @@ actor RTPSession {
             )
         }
 
-        for await packet in rtcpStream {
-            switch packet {
-            case let .appSpecific(.xdly(xdly)):
-                if xdly.delayMicroseconds == globalHugeFixedVDLYMS * 1000 {
-                    Log.headphones.notice("Got good xdly packet from rtcp as expected")
-                    return
-                }
-                Log.headphones.warning("Got bad xdly microseconds. Expecting \(globalHugeFixedVDLYMS * 1000, privacy: .public)")
-            default:
-                Log.headphones.warning("Got bad packet from rtcp. Expecting App.XDLY. Got \(String(describing: packet), privacy: .public)")
-            }
-        }
+        _ = try await response
+        Log.headphones.notice("Got good xdly packet from rtcp as expected")
     }
 
     func performNewClientHandshake() async throws {
-        // Send CVER rtcp packet using rtcpConnection
-        // Wait for response NCLI packet using rtcpStream
         Log.headphones.notice("Performing NCLI handshake")
+
+        async let response: RtcpPacket = rtcpInbox.waitFor { packet in
+            if case .appSpecific(.ncli) = packet { return true }
+            return false
+        }
+
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             remoteRtcpConnection.send(
                 content: RtcpPacket.cver(clientVersion: 2).packet(),
@@ -352,15 +406,8 @@ actor RTPSession {
             )
         }
 
-        for await packet in rtcpStream {
-            switch packet {
-            case .appSpecific(.ncli):
-                Log.headphones.notice("Got ncli packet from rtcp as expected")
-                return
-            default:
-                Log.headphones.warning("Got bad packet from rtcp. Expecting App.NCLI. Got \(String(describing: packet), privacy: .public)")
-            }
-        }
+        _ = try await response
+        Log.headphones.notice("Got ncli packet from rtcp as expected")
     }
 
     func performRTCPHandshake() async throws {
@@ -377,6 +424,10 @@ actor RTPSession {
                 _ = await timerStream.next()
             }
         }
+        // The retry loop also exits when the surrounding task is cancelled
+        // — without this, a cancellation mid-loop would fall through and
+        // we'd falsely log "Performed RTCP handshake successfully".
+        try Task.checkCancellation()
 
         while !Task.isCancelled {
             do {
@@ -388,6 +439,8 @@ actor RTPSession {
                 Log.headphones.error("Error performing NCLI handshake \(error, privacy: .public)")
             }
         }
+        try Task.checkCancellation()
+
         Log.headphones.notice("Performed RTCP handshake successfully")
     }
 
@@ -441,7 +494,9 @@ actor RTPSession {
 
                 for await rtpPacket in self.rtpStream {
                     let seqNo = rtpPacket.sequenceNumber
-                    Log.headphones.debug("Received packet in stream: \(seqNo, privacy: .public)")
+                    if seqNo % 1000 == 0 {
+                        Log.headphones.debug("Received packet in stream (every 1000 packets): \(seqNo, privacy: .public)")
+                    }
                     // Drop first 5 packets because we want to have a reasonable sync packet and sometimes the first
                     // packet or two isn't valid
                     count += 1
@@ -533,4 +588,78 @@ actor RTPSession {
             }
         }
     #endif
+}
+
+/// Inbox actor for incoming RTCP packets.
+///
+/// Each call to `waitFor(_:)` registers a waiter (predicate + continuation)
+/// and suspends. `deliver(_:)` resumes the first waiter whose predicate
+/// matches and removes it. Packets that match no waiter are silently dropped.
+///
+/// Cancellation safety: if the awaiting task is cancelled, the cancellation
+/// handler removes the waiter from the registry before resuming with
+/// CancellationError. Because both `deliver` and the cancellation path are
+/// actor-isolated, they serialize, so the continuation is resumed exactly
+/// once. A late delivery for a cancelled waiter cannot find a matching
+/// predicate (the waiter is gone), so the late packet is just dropped.
+actor RtcpInbox {
+    typealias Predicate = @Sendable (RtcpPacket) -> Bool
+
+    private struct Waiter {
+        let id: UInt64
+        let predicate: Predicate
+        let continuation: CheckedContinuation<RtcpPacket, Error>
+    }
+
+    private var waiters: [Waiter] = []
+    private var nextID: UInt64 = 0
+
+    /// Resume the first waiter whose predicate matches, removing it from
+    /// the registry. Late or unmatched packets are silently dropped.
+    func deliver(_ packet: RtcpPacket) {
+        guard let idx = waiters.firstIndex(where: { $0.predicate(packet) }) else {
+            return
+        }
+        let waiter = waiters.remove(at: idx)
+        waiter.continuation.resume(returning: packet)
+    }
+
+    /// Wait for the next packet matching `predicate`. Cancellation removes
+    /// the waiter and resumes with `CancellationError` — never a late
+    /// packet — so subsequent uses of the inbox are unaffected.
+    func waitFor(_ predicate: @escaping Predicate) async throws -> RtcpPacket {
+        nextID &+= 1
+        let id = nextID
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (cont: CheckedContinuation<RtcpPacket, Error>) in
+                // We are already on the actor; the body runs synchronously
+                // here and finishes registering before we suspend, so any
+                // cancellation Task scheduled below will see the waiter.
+                self.waiters.append(Waiter(id: id, predicate: predicate, continuation: cont))
+            }
+        } onCancel: {
+            Task { await self.cancelWaiter(id: id) }
+        }
+    }
+
+    /// Resume every pending waiter with `error`. Useful for explicit
+    /// shutdown so callers don't hang waiting on responses that will
+    /// never arrive.
+    func cancelAll(error: Error = CancellationError()) {
+        let pending = waiters
+        waiters.removeAll()
+        for waiter in pending {
+            waiter.continuation.resume(throwing: error)
+        }
+    }
+
+    private func cancelWaiter(id: UInt64) {
+        guard let idx = waiters.firstIndex(where: { $0.id == id }) else {
+            // Already removed by deliver() — its continuation has been
+            // resumed with the matching packet, nothing to do here.
+            return
+        }
+        let waiter = waiters.remove(at: idx)
+        waiter.continuation.resume(throwing: CancellationError())
+    }
 }

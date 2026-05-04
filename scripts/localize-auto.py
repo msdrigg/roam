@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import json
 import os
@@ -33,7 +33,7 @@ def translate_text(text, language, context=None):
                 "content": get_text_message(text, language, context),
             },
         ],
-        model="gpt-4.1",
+        model="gpt-5.5",
     )
 
     return response.choices[0].message.content

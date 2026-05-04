@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            INSERT INTO pending_symbolications (\n                id, device_id, thread_id, payload_path, diagnostics_json,\n                installation_info_json, binary_uuids_json, payload_index,\n                received_at_ms, leased_at_ms, completed_at_ms, failed_at_ms,\n                attempts, last_error\n            )\n            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 14
+    },
+    "nullable": []
+  },
+  "hash": "bf5a4ed47abafacb4a136f35a1f10d49cfa6524f50e459f6a17dc45d9a60f280"
+}

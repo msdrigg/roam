@@ -23,7 +23,8 @@ struct DeviceDetailView: View {
     init(deviceId: String, dismiss: @escaping () -> Void) {
         self.dismiss = dismiss
         self.deviceId = deviceId
-        self.deviceLoader = DeviceLoader(deviceId: deviceId, dataHandler: .shared)
+        self._deviceLoader = State(
+            initialValue: DeviceLoader(deviceId: deviceId, dataHandler: .shared))
     }
 
     var device: Device? {
@@ -65,7 +66,8 @@ struct DeviceDetailView: View {
                 .onChange(of: device?.location) { _, new in
                     if let new = new {
                         let host = getHostPortDisplay(from: new)
-                        Log.userInteraction.notice("Seeing host \(host, privacy: .public) in change")
+                        Log.userInteraction.notice(
+                            "Seeing host \(host, privacy: .public) in change")
                         deviceIP = host
                         lastSyncedFormSignature = currentFormSignature
                     }
@@ -102,10 +104,18 @@ struct DeviceDetailView: View {
             } footer: {
                 deviceHeader
             }
-            Section(String(localized: "Parameters", comment: "Settings section title indicating device parameters")) {
+            Section(
+                String(
+                    localized: "Parameters",
+                    comment: "Settings section title indicating device parameters")
+            ) {
                 VStack(alignment: .leading, spacing: 4) {
-                    TextField(String(localized: "Name", comment: "Settings field label for the device name"), text: $deviceName)
-                        .frame(maxWidth: .infinity)
+                    TextField(
+                        String(
+                            localized: "Name", comment: "Settings field label for the device name"),
+                        text: $deviceName
+                    )
+                    .frame(maxWidth: .infinity)
                     if let nameValidation {
                         Text(nameValidation)
                             .foregroundStyle(.red)
@@ -114,23 +124,32 @@ struct DeviceDetailView: View {
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        TextField(String(localized: "IP Address", comment: "Settings field label for the device's IP address"), text: $deviceIP)
-                            .frame(maxWidth: .infinity)
-#if os(watchOS)
+                        TextField(
+                            String(
+                                localized: "IP Address",
+                                comment: "Settings field label for the device's IP address"),
+                            text: $deviceIP
+                        )
+                        .frame(maxWidth: .infinity)
+                        #if os(watchOS)
                             .textContentType(.URL)
-#elseif !os(macOS)
+                        #elseif !os(macOS)
                             .keyboardType(.numbersAndPunctuation)
-#endif
-#if !os(watchOS)
-                        Spacer()
-                            .frame(maxWidth: 10)
+                        #endif
+                        #if !os(watchOS)
+                            Spacer()
+                                .frame(maxWidth: 10)
 
-                        Link(destination: URL(string: String(localized: "https://roam.msd3.io/manually-add-tv"))!) {
-                            Label("Info", systemImage: "info.circle")
-                                .labelStyle(.iconOnly)
-                        }
-                        .foregroundStyle(Color.secondary)
-#endif
+                            Link(
+                                destination: URL(
+                                    string: String(
+                                        localized: "https://roam.msd3.io/manually-add-tv"))!
+                            ) {
+                                Label("Info", systemImage: "info.circle")
+                                    .labelStyle(.iconOnly)
+                            }
+                            .foregroundStyle(Color.secondary)
+                        #endif
                     }
 
                     if let addressValidation {
@@ -141,87 +160,121 @@ struct DeviceDetailView: View {
                 }
             }
 
-#if !os(watchOS)
-            Section(String(localized: "Capabilities", comment: "Settings section label for device ")) {
-                Button(action: {
-                    withAnimation {
-                        showHeadphonesModeDescription = !showHeadphonesModeDescription
-                    }
-                }, label: {
-                    LabeledContent(String(localized: "Headphones mode", comment: "Settings label for headphones mode support")) {
-                        HStack(spacing: 8) {
-                            if device?.supportsDatagram == true {
-                                Label(String(localized: "Supported", comment: "Label indicating headphones mode is supported"), systemImage: "headphones").labelStyle(.badge(.green))
-                            } else if device?.supportsDatagram == false {
-                                Label(String(localized: "Not Supported", comment: "Label indicating headphones mode is not supported"), systemImage: "headphones").labelStyle(.badge(.red))
-                            } else {
-                                // swiftlint:disable:next line_length
-                                Label(String(localized: "Support Unknown", comment: "Label indicating headphones mode support is possible but not indicated"), systemImage: "headphones").labelStyle(.badge(.yellow))
+            #if !os(watchOS)
+                Section(
+                    String(localized: "Capabilities", comment: "Settings section label for device ")
+                ) {
+                    Button(
+                        action: {
+                            withAnimation {
+                                showHeadphonesModeDescription = !showHeadphonesModeDescription
                             }
+                        },
+                        label: {
+                            LabeledContent(
+                                String(
+                                    localized: "Headphones mode",
+                                    comment: "Settings label for headphones mode support")
+                            ) {
+                                HStack(spacing: 8) {
+                                    if device?.supportsDatagram == true {
+                                        Label(
+                                            String(
+                                                localized: "Supported",
+                                                comment:
+                                                    "Label indicating headphones mode is supported"),
+                                            systemImage: "headphones"
+                                        ).labelStyle(.badge(.green))
+                                    } else if device?.supportsDatagram == false {
+                                        Label(
+                                            String(
+                                                localized: "Not Supported",
+                                                comment:
+                                                    "Label indicating headphones mode is not supported"
+                                            ), systemImage: "headphones"
+                                        ).labelStyle(.badge(.red))
+                                    } else {
+                                        // swiftlint:disable:next line_length
+                                        Label(
+                                            String(
+                                                localized: "Support Unknown",
+                                                comment:
+                                                    "Label indicating headphones mode support is possible but not indicated"
+                                            ), systemImage: "headphones"
+                                        ).labelStyle(.badge(.yellow))
+                                    }
 
-                            Image(systemName: "info.circle")
+                                    Image(systemName: "info.circle")
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                    )
+                    .buttonStyle(.plain)
+
+                    if showHeadphonesModeDescription {
+                        if device?.supportsDatagram == true {
+                            Text(
+                                "Your Roku device supports streaming audio directly to Roam. Click the headphones button in the main view to see it in action!",
+                                comment: "Descriptive caption in a device settings page"
+                            )
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                        } else if device?.supportsDatagram == false {
+                            Text(
+                                // swiftlint:disable:next line_length
+                                "Some Roku devices support streaming audio directly to Roam. Unfortunately yours does not support this. To see which devices support this check out https://www.roku.com/products/compare",
+                                comment: "Descriptive caption in a device settings page"
+                            )
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                        } else {
+                            Text(
+                                // swiftlint:disable:next line_length
+                                "Some Roku devices support streaming audio directly to Roam. Roam hasn't been able to check for support on this device. Click the headphones button in the main view to see if it works for you or visit https://www.roku.com/products/compare to see which devices do support this feature.",
+                                comment: "Descriptive caption in a device settings page"
+                            )
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
                         }
                     }
-                    .contentShape(Rectangle())
-                })
-                .buttonStyle(.plain)
-
-                if showHeadphonesModeDescription {
-                    if device?.supportsDatagram == true {
-                        Text(
-                            "Your Roku device supports streaming audio directly to Roam. Click the headphones button in the main view to see it in action!",
-                            comment: "Descriptive caption in a device settings page"
-                        )
-                        .foregroundStyle(.secondary)
-                        .font(.caption)
-                    } else if device?.supportsDatagram == false {
-                        Text(
-                            // swiftlint:disable:next line_length
-                            "Some Roku devices support streaming audio directly to Roam. Unfortunately yours does not support this. To see which devices support this check out https://www.roku.com/products/compare",
-                            comment: "Descriptive caption in a device settings page"
-                        )
-                        .foregroundStyle(.secondary)
-                        .font(.caption)
-                    } else {
-                        Text(
-                            // swiftlint:disable:next line_length
-                            "Some Roku devices support streaming audio directly to Roam. Roam hasn't been able to check for support on this device. Click the headphones button in the main view to see if it works for you or visit https://www.roku.com/products/compare to see which devices do support this feature.",
-                            comment: "Descriptive caption in a device settings page"
-                        )
-                        .foregroundStyle(.secondary)
-                        .font(.caption)
-                    }
                 }
-            }
-#endif
-#if !os(watchOS)
-            Toggle(
-                "Hide Device",
-                isOn: $hidden
+            #endif
+            #if !os(watchOS)
+                Toggle(
+                    "Hide Device",
+                    isOn: $hidden
+                )
+            #endif
+
+            Button(
+                role: .destructive,
+                action: {
+                    Log.userInteraction.notice("Deleting \("device", privacy: .public)")
+                    let deviceId = deviceId
+                    Task {
+                        // Don't block the dismiss waiting for save
+                        DispatchQueue.main.async {
+                            dismiss()
+                        }
+                        do {
+                            try await RoamDataHandler.shared.deleteDevice(id: deviceId)
+
+                            Log.userInteraction.notice(
+                                "Deleted device with id \(String(describing: deviceId), privacy: .public)"
+                            )
+                        } catch let error as DataHandlerError {
+                            Log.userInteraction.error(
+                                "Error deleting device \(error, privacy: .public)")
+                            errorMessage = "Failed to Delete Device"
+                            deviceError = error
+                        }
+                    }
+                },
+                label: {
+                    Text("Delete Device", comment: "Text on a button to delete the device")
+                }
             )
-#endif
-
-            Button(role: .destructive, action: {
-                Log.userInteraction.notice("Deleting \("device", privacy: .public)")
-                let deviceId = deviceId
-                Task {
-                    // Don't block the dismiss waiting for save
-                    DispatchQueue.main.async {
-                        dismiss()
-                    }
-                    do {
-                        try await RoamDataHandler.shared.deleteDevice(id: deviceId)
-
-                        Log.userInteraction.notice("Deleted device with id \(String(describing: deviceId), privacy: .public)")
-                    } catch let error as DataHandlerError {
-                        Log.userInteraction.error("Error deleting device \(error, privacy: .public)")
-                        errorMessage = "Failed to Delete Device"
-                        deviceError = error
-                    }
-                }
-            }, label: {
-                Text("Delete Device", comment: "Text on a button to delete the device")
-            })
             .frame(maxWidth: .infinity)
             .buttonStyle(.borderless)
             .foregroundStyle(Color.red)
@@ -231,7 +284,8 @@ struct DeviceDetailView: View {
                 return
             }
 
-            Log.userInteraction.notice("Saving device settings due to submit--\(deviceIP)-\(hidden)-\(deviceName)")
+            Log.userInteraction.notice(
+                "Saving device settings due to submit--\(deviceIP)-\(hidden)-\(deviceName)")
             save()
         }
         .onChange(of: currentFormSignature, initial: false) { _, newSignature in
@@ -248,35 +302,35 @@ struct DeviceDetailView: View {
 
     @ViewBuilder
     private var deviceHeader: some View {
-#if os(macOS)
-        VStack(alignment: .center, spacing: 6) {
-            FallibleImage(from: device?.iconURL, fallback: "tv", maxSize: 120)
-                .frame(maxWidth: 120, maxHeight: 36, alignment: .center)
-
-            Text(device?.name ?? getGlobalNewDeviceName())
-                .font(.title3.bold())
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-        }
-        .padding(.horizontal)
-        .padding(.top, 6)
-        .padding(.bottom, 4)
-        .frame(maxWidth: .infinity, alignment: .center)
-#else
-        VStack {
-            HStack(alignment: .center) {
+        #if os(macOS)
+            VStack(alignment: .center, spacing: 6) {
                 FallibleImage(from: device?.iconURL, fallback: "tv", maxSize: 120)
-                    .frame(maxWidth: 120, maxHeight: 85)
-                    .padding(.horizontal, 12)
-                    .padding(4)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 8)
+                    .frame(maxWidth: 120, maxHeight: 36, alignment: .center)
 
-            Text(device?.name ?? getGlobalNewDeviceName())
-                .font(.headline)
-        }
-#endif
+                Text(device?.name ?? getGlobalNewDeviceName())
+                    .font(.title3.bold())
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+            }
+            .padding(.horizontal)
+            .padding(.top, 6)
+            .padding(.bottom, 4)
+            .frame(maxWidth: .infinity, alignment: .center)
+        #else
+            VStack {
+                HStack(alignment: .center) {
+                    FallibleImage(from: device?.iconURL, fallback: "tv", maxSize: 120)
+                        .frame(maxWidth: 120, maxHeight: 85)
+                        .padding(.horizontal, 12)
+                        .padding(4)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 8)
+
+                Text(device?.name ?? getGlobalNewDeviceName())
+                    .font(.headline)
+            }
+        #endif
     }
 
     func formSignature(deviceName: String, deviceIP: String, hidden: Bool) -> String {
@@ -310,10 +364,10 @@ struct DeviceDetailView: View {
 }
 
 #if DEBUG
-#Preview(
-    "Device Detail View",
-    traits: .fixedLayout(width: 400, height: 300)
-) {
-    DeviceDetailView(deviceId: getTestingDevices()[0].id, dismiss: {})
-}
+    #Preview(
+        "Device Detail View",
+        traits: .fixedLayout(width: 400, height: 300)
+    ) {
+        DeviceDetailView(deviceId: getTestingDevices()[0].id, dismiss: {})
+    }
 #endif

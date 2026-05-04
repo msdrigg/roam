@@ -20,9 +20,14 @@ actor OpusDecoderWithJitterBuffer {
     var lastSampleTime: AVAudioTime?
     let audioBufferDuration: TimeInterval
     var rollingSequenceNumber: Int64?
+    var decodedRealPackets: Int64 = 0
+    var concealedPackets: Int64 = 0
+    var bufferFillConcealedPackets: Int64 = 0
 
     init(audioBuffer: TimeInterval) throws {
-        guard let opusFormat = AVAudioFormat(opusPCMFormat: .float32, sampleRate: Double(globalClockRate), channels: 2)
+        guard
+            let opusFormat = AVAudioFormat(
+                opusPCMFormat: .float32, sampleRate: Double(globalClockRate), channels: 2)
         else {
             loggedFatalError("Error initializing opus av format. This is a bug")
         }
@@ -40,15 +45,22 @@ actor OpusDecoderWithJitterBuffer {
             Log.headphones.notice("Not synced packet yet. Can't sync audio yet")
             return false
         }
-        Log.headphones.notice("Syncing time with additional audio delay \(additionalAudioDelay, privacy: .public) buffer \(self.audioBufferDuration, privacy: .public)")
+        Log.headphones.notice(
+            "Syncing time with additional audio delay \(additionalAudioDelay, privacy: .public) buffer \(self.audioBufferDuration, privacy: .public)"
+        )
 
         let packetsInBuffer = Int64(audioBufferDuration * Double(packetsPerSec))
 
         // Estimating getting 100 packets per second
         let currentEstimatedPacketNumber =
-            Int64((machTimeToSeconds(time.hostTime) - machTimeToSeconds(syncPacket.receivedAt)) *
-                Double(packetsPerSec)) + Int64(syncPacket.sequenceNumber)
-        lastPacketNumber = (currentEstimatedPacketNumber - packetsInBuffer + Int64(UInt16.max)) % Int64(UInt16.max)
+            Int64(
+                (machTimeToSeconds(time.hostTime) - machTimeToSeconds(syncPacket.receivedAt))
+                    * Double(packetsPerSec)) + Int64(syncPacket.sequenceNumber)
+        // Don't wrap into UInt16 — rolling sequence numbers live in Int64
+        // space, and a "negative" lastPacketNumber is the correct way to
+        // express "we haven't filled the buffer yet, hold packets until
+        // playback catches up".
+        lastPacketNumber = currentEstimatedPacketNumber - packetsInBuffer
         lastSampleTime = AVAudioTime(
             hostTime: time.hostTime + secondsToMachTime(additionalAudioDelay),
             sampleTime: time.sampleTime + Int64(time.sampleRate * additionalAudioDelay),
@@ -69,11 +81,13 @@ actor OpusDecoderWithJitterBuffer {
         // Check payload type
         if packet.payloadType != PayloadType(97) || packet.ssrc != 0 {
             // Invalid payload
-            Log.headphones.error("Error bad packet ssrc (\(packet.ssrc, privacy: .public) or payload type (\(packet.payloadType.rawValue, privacy: .public))")
+            Log.headphones.error(
+                "Error bad packet ssrc (\(packet.ssrc, privacy: .public) or payload type (\(packet.payloadType.rawValue, privacy: .public))"
+            )
         }
         if lastPacketNumber < packet.sequenceNumber {
-//            Log.headphones.debug("Adding packet with seqNo \(packet.packet.sequenceNumber) when current seqNo is
-//            \(self.lastPacketNumber)")
+            //            Log.headphones.debug("Adding packet with seqNo \(packet.packet.sequenceNumber) when current seqNo is
+            //            \(self.lastPacketNumber)")
             jitterBuffer.insert(packet)
         } else {
             Log.headphones
@@ -85,7 +99,6 @@ actor OpusDecoderWithJitterBuffer {
 
     func nextPacket(atTime _: sending AVAudioTime) -> sending (AVAudioPCMBuffer, AVAudioTime)? {
         guard let lastSampleTime else {
-            Log.headphones.notice("Not returning packet because not synced yet")
             return nil
         }
 
@@ -93,7 +106,7 @@ actor OpusDecoderWithJitterBuffer {
         var nextPacket: RtpPacket?
         while true {
             if let np = jitterBuffer.peek(),
-               np.sequenceNumber <= lastPacketNumber + 1
+                np.sequenceNumber <= lastPacketNumber + 1
             {
                 if let destroyed = nextPacket {
                     Log.headphones
@@ -107,15 +120,25 @@ actor OpusDecoderWithJitterBuffer {
             }
         }
 
-        if nextPacket == nil {
+        // During the initial buffer-fill window (before any real packet
+        // has been decoded), `nextPacket == nil` is *expected*: lpn is
+        // intentionally seeded negative by `syncAudio` so PLC silence
+        // covers the gap until the buffer reaches its target depth. Only
+        // log/count concealments as real losses once playback has begun.
+        let inBufferFill = decodedRealPackets == 0
+        if nextPacket == nil, !inBufferFill {
             Log.headphones
-                .error("Missing packet \(String(describing: self.jitterBuffer.peek()), privacy: .public), lpn \(self.lastPacketNumber)")
+                .error(
+                    "Missing packet \(String(describing: self.jitterBuffer.peek()), privacy: .public), lpn \(self.lastPacketNumber)"
+                )
         }
 
         // Need to get schedule time for when to schedule the packet
         let sampleTime = AVAudioTime(
-            hostTime: secondsToMachTime(Double(globalPacketSizeMS) / 1000) + lastSampleTime.hostTime,
-            sampleTime: lastSampleTime.sampleTime + Int64(lastSampleTime.sampleRate) / packetsPerSec,
+            hostTime: secondsToMachTime(Double(globalPacketSizeMS) / 1000)
+                + lastSampleTime.hostTime,
+            sampleTime: lastSampleTime.sampleTime + Int64(lastSampleTime.sampleRate)
+                / packetsPerSec,
             atRate: lastSampleTime.sampleRate
         )
 
@@ -126,9 +149,30 @@ actor OpusDecoderWithJitterBuffer {
         do {
             if let np = nextPacket {
                 nextPcm = try opusDecoder.decode(np.payload)
+                decodedRealPackets += 1
+                if decodedRealPackets == 1 {
+                    Log.headphones
+                        .notice(
+                            "Buffer fill complete: emitted \(self.bufferFillConcealedPackets, privacy: .public) concealment frames before first real packet at seqNo \(np.sequenceNumber, privacy: .public)"
+                        )
+                }
+                if decodedRealPackets % 100 == 0 {
+                    Log.headphones
+                        .notice(
+                            "Decoded \(self.decodedRealPackets, privacy: .public) real packets, concealed \(self.concealedPackets, privacy: .public) (+\(self.bufferFillConcealedPackets, privacy: .public) buffer-fill), lpn \(self.lastPacketNumber, privacy: .public)"
+                        )
+                }
             } else {
-                nextPcm = try opusDecoder.decode_loss_concealment(sampleCount: Int64(globalClockRate) / packetsPerSec)
-                Log.headphones.error("Getting loss concealment packet for sqNo \(self.lastPacketNumber, privacy: .public)")
+                nextPcm = try opusDecoder.decode_loss_concealment(
+                    sampleCount: Int64(globalClockRate) / packetsPerSec)
+                if inBufferFill {
+                    bufferFillConcealedPackets += 1
+                } else {
+                    concealedPackets += 1
+                    Log.headphones.error(
+                        "Getting loss concealment packet for sqNo \(self.lastPacketNumber, privacy: .public)"
+                    )
+                }
             }
         } catch {
             Log.headphones.error("Error decoding packet \(error, privacy: .public)")
@@ -139,11 +183,16 @@ actor OpusDecoderWithJitterBuffer {
             return nil
         }
 
-        return (nextPcm, AVAudioTime(
-            hostTime: secondsToMachTime(Double(globalPacketSizeMS) / 1000) + lastSampleTime.hostTime,
-            sampleTime: lastSampleTime.sampleTime + Int64(lastSampleTime.sampleRate) / packetsPerSec,
-            atRate: lastSampleTime.sampleRate
-        ))
+        return (
+            nextPcm,
+            AVAudioTime(
+                hostTime: secondsToMachTime(Double(globalPacketSizeMS) / 1000)
+                    + lastSampleTime.hostTime,
+                sampleTime: lastSampleTime.sampleTime + Int64(lastSampleTime.sampleRate)
+                    / packetsPerSec,
+                atRate: lastSampleTime.sampleRate
+            )
+        )
     }
 }
 
@@ -171,96 +220,102 @@ actor AudioPlayer {
         )!
     }
 
-#if !os(macOS)
-    func makeInactive() {
-        do {
-            try AVAudioSession.sharedInstance().setActive(false)
-        } catch {
-            Log.headphones.error("Failed to disable audio session active: \(error, privacy: .public)")
-        }
-    }
-    func configureAudioSession() {
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .default, options: [])
-        try? session.setActive(true)
-        self.setupNotifications()
-    }
-
-    private func setupNotifications() {
-        NotificationCenter.default.addObserver(
-            forName: AVAudioSession.interruptionNotification,
-            object: nil,
-            queue: nil
-        ) { [weak self] notification in
-            guard
-                let info = notification.userInfo,
-                let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
-                let type = AVAudioSession.InterruptionType(rawValue: typeValue)
-            else { return }
-
-            let reasonValue = info[AVAudioSessionInterruptionReasonKey] as? UInt ?? 0
-            let reason = AVAudioSession.InterruptionReason(rawValue: reasonValue)
-
-            let optionsValue = info[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
-            let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
-            Task { await self?.handleInterruption(reason: reason, options: options, type: type) }
-        }
-
-        NotificationCenter.default.addObserver(
-            forName: AVAudioSession.routeChangeNotification,
-            object: nil,
-            queue: nil
-        ) { [weak self] notification in
-            guard
-                let info = notification.userInfo,
-                let reasonValue = info[AVAudioSessionRouteChangeReasonKey] as? UInt,
-                let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue)
-            else { return }
-            Task { await self?.handleRouteChange(reason: reason) }
-        }
-
-        NotificationCenter.default.addObserver(
-            forName: AVAudioSession.mediaServicesWereResetNotification,
-            object: nil,
-            queue: nil
-        ) { [weak self] _ in
-            Task { await self?.handleMediaServicesReset() }
-        }
-    }
-
-    private func handleInterruption(reason: AVAudioSession.InterruptionReason?, options: AVAudioSession.InterruptionOptions, type: AVAudioSession.InterruptionType) {
-        switch type {
-        case .began:
-            stop()
-        case .ended:
-            if options.contains(.shouldResume) {
-                restartAudio()
+    #if !os(macOS)
+        func makeInactive() {
+            do {
+                try AVAudioSession.sharedInstance().setActive(false)
+            } catch {
+                Log.headphones.error(
+                    "Failed to disable audio session active: \(error, privacy: .public)")
             }
-        @unknown default:
-            break
         }
-    }
+        func configureAudioSession() {
+            let session = AVAudioSession.sharedInstance()
+            try? session.setCategory(.playback, mode: .default, options: [])
+            try? session.setActive(true)
+            self.setupNotifications()
+        }
 
-    private func handleRouteChange(reason: AVAudioSession.RouteChangeReason) {
-        switch reason {
-        case .oldDeviceUnavailable:
+        private func setupNotifications() {
+            NotificationCenter.default.addObserver(
+                forName: AVAudioSession.interruptionNotification,
+                object: nil,
+                queue: nil
+            ) { [weak self] notification in
+                guard
+                    let info = notification.userInfo,
+                    let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+                    let type = AVAudioSession.InterruptionType(rawValue: typeValue)
+                else { return }
+
+                let reasonValue = info[AVAudioSessionInterruptionReasonKey] as? UInt ?? 0
+                let reason = AVAudioSession.InterruptionReason(rawValue: reasonValue)
+
+                let optionsValue = info[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
+                let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+                Task {
+                    await self?.handleInterruption(reason: reason, options: options, type: type)
+                }
+            }
+
+            NotificationCenter.default.addObserver(
+                forName: AVAudioSession.routeChangeNotification,
+                object: nil,
+                queue: nil
+            ) { [weak self] notification in
+                guard
+                    let info = notification.userInfo,
+                    let reasonValue = info[AVAudioSessionRouteChangeReasonKey] as? UInt,
+                    let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue)
+                else { return }
+                Task { await self?.handleRouteChange(reason: reason) }
+            }
+
+            NotificationCenter.default.addObserver(
+                forName: AVAudioSession.mediaServicesWereResetNotification,
+                object: nil,
+                queue: nil
+            ) { [weak self] _ in
+                Task { await self?.handleMediaServicesReset() }
+            }
+        }
+
+        private func handleInterruption(
+            reason: AVAudioSession.InterruptionReason?, options: AVAudioSession.InterruptionOptions,
+            type: AVAudioSession.InterruptionType
+        ) {
+            switch type {
+            case .began:
+                stop()
+            case .ended:
+                if options.contains(.shouldResume) {
+                    restartAudio()
+                }
+            @unknown default:
+                break
+            }
+        }
+
+        private func handleRouteChange(reason: AVAudioSession.RouteChangeReason) {
+            switch reason {
+            case .oldDeviceUnavailable:
+                stop()
+            case .newDeviceAvailable, .routeConfigurationChange:
+                restartAudio()
+            default:
+                break
+            }
+        }
+
+        private func handleMediaServicesReset() {
             stop()
-        case .newDeviceAvailable, .routeConfigurationChange:
+            engine.reset()
+            engine.attach(streamAudioNode)
+            engine.connect(streamAudioNode, to: engine.mainMixerNode, format: nil)
+            engine.connect(engine.mainMixerNode, to: engine.outputNode, format: nil)
             restartAudio()
-        default:
-            break
         }
-    }
-
-    private func handleMediaServicesReset() {
-        stop()
-        engine.reset()
-        engine.attach(streamAudioNode)
-        engine.connect(streamAudioNode, to: engine.mainMixerNode, format: nil)
-        engine.connect(engine.mainMixerNode, to: engine.outputNode, format: nil)
-        restartAudio()
-    }
-#endif
+    #endif
 
     public func start() throws {
         try engine.start()
@@ -268,17 +323,27 @@ actor AudioPlayer {
             throw AudioPlayerError.engineNotRunningOnPlay
         }
         streamAudioNode.play()
+        Log.headphones
+            .notice(
+                "AudioPlayer started — engine running=\(self.engine.isRunning, privacy: .public), player playing=\(self.streamAudioNode.isPlaying, privacy: .public), output format=\(String(describing: self.engine.mainMixerNode.outputFormat(forBus: 0)), privacy: .public)"
+            )
+    }
+
+    public func isHealthy() -> Bool {
+        engine.isRunning && streamAudioNode.isPlaying
     }
 
     #if os(macOS)
-    func getOutputLatency() -> TimeInterval {
-        engine.outputNode.presentationLatency
-    }
+        func getOutputLatency() -> TimeInterval {
+            engine.outputNode.presentationLatency
+        }
     #else
-    func getOutputLatency() -> TimeInterval {
-        AVAudioSession.sharedInstance().outputLatency
-    }
+        func getOutputLatency() -> TimeInterval {
+            AVAudioSession.sharedInstance().outputLatency
+        }
     #endif
+
+    private var scheduledCount: Int64 = 0
 
     public func scheduleAudioBytes(
         buffer: sending AVAudioPCMBuffer,
@@ -299,14 +364,22 @@ actor AudioPlayer {
 
         if let error {
             Log.headphones.error("Error converting buffers \(error, privacy: .public)")
-        } else {
-            await streamAudioNode.scheduleBuffer(outputBuffer, at: atTime)
+            return
         }
+
+        scheduledCount += 1
+        if scheduledCount % 100 == 1 {
+            Log.headphones
+                .notice(
+                    "Scheduling buffer #\(self.scheduledCount, privacy: .public) at sampleTime=\(atTime.sampleTime, privacy: .public) (engine running=\(self.engine.isRunning, privacy: .public), player playing=\(self.streamAudioNode.isPlaying, privacy: .public))"
+                )
+        }
+        await streamAudioNode.scheduleBuffer(outputBuffer, at: atTime)
     }
 
     public func lastRender() throws -> AVAudioTime? {
         if let lrt = streamAudioNode.lastRenderTime {
-            streamAudioNode.playerTime(forNodeTime: lrt)
+            return streamAudioNode.playerTime(forNodeTime: lrt)
         }
         return nil
     }
@@ -326,7 +399,8 @@ actor AudioPlayer {
 func machTimeToSeconds(_ machTime: UInt64) -> Double {
     var timebaseInfo = mach_timebase_info()
     mach_timebase_info(&timebaseInfo)
-    let machTimeInNanoseconds = Double(machTime) * Double(timebaseInfo.numer) / Double(timebaseInfo.denom)
+    let machTimeInNanoseconds =
+        Double(machTime) * Double(timebaseInfo.numer) / Double(timebaseInfo.denom)
     let machTimeInSeconds = machTimeInNanoseconds / 1_000_000_000.0
     return machTimeInSeconds
 }
@@ -335,7 +409,8 @@ func secondsToMachTime(_ seconds: Double) -> UInt64 {
     var timebaseInfo = mach_timebase_info()
     mach_timebase_info(&timebaseInfo)
     let machTimeInNanoseconds = max(seconds * 1_000_000_000.0, 0.0)
-    let machTime = UInt64(machTimeInNanoseconds) * UInt64(timebaseInfo.denom) / UInt64(timebaseInfo.numer)
+    let machTime =
+        UInt64(machTimeInNanoseconds) * UInt64(timebaseInfo.denom) / UInt64(timebaseInfo.numer)
     return machTime
 }
 
@@ -346,7 +421,8 @@ extension AVAudioTime {
 
         var timebaseInfo = mach_timebase_info()
         mach_timebase_info(&timebaseInfo)
-        let machTimeInNanoseconds = Double(machTime) * Double(timebaseInfo.numer) / Double(timebaseInfo.denom)
+        let machTimeInNanoseconds =
+            Double(machTime) * Double(timebaseInfo.numer) / Double(timebaseInfo.denom)
         let machTimeInSeconds = machTimeInNanoseconds / 1_000_000_000.0
         return machTimeInSeconds
     }

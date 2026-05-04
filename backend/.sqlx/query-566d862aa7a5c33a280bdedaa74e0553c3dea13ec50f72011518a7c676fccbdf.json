@@ -1,0 +1,98 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            UPDATE pending_symbolications\n            SET leased_at_ms = NULL, last_error = ?\n            WHERE id = ? AND completed_at_ms IS NULL AND failed_at_ms IS NULL\n            RETURNING\n                id as \"id!: String\",\n                device_id as \"device_id!: String\",\n                thread_id as \"thread_id!\",\n                payload_path as \"payload_path!: String\",\n                diagnostics_json as \"diagnostics_json!: String\",\n                installation_info_json as \"installation_info_json!: String\",\n                binary_uuids_json as \"binary_uuids_json!: String\",\n                payload_index as \"payload_index!\",\n                received_at_ms as \"received_at_ms!\",\n                leased_at_ms,\n                completed_at_ms,\n                failed_at_ms,\n                attempts as \"attempts!\",\n                last_error\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: String",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "device_id!: String",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "thread_id!",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "payload_path!: String",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "diagnostics_json!: String",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "installation_info_json!: String",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "binary_uuids_json!: String",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "payload_index!",
+        "ordinal": 7,
+        "type_info": "Integer"
+      },
+      {
+        "name": "received_at_ms!",
+        "ordinal": 8,
+        "type_info": "Integer"
+      },
+      {
+        "name": "leased_at_ms",
+        "ordinal": 9,
+        "type_info": "Integer"
+      },
+      {
+        "name": "completed_at_ms",
+        "ordinal": 10,
+        "type_info": "Integer"
+      },
+      {
+        "name": "failed_at_ms",
+        "ordinal": 11,
+        "type_info": "Integer"
+      },
+      {
+        "name": "attempts!",
+        "ordinal": 12,
+        "type_info": "Integer"
+      },
+      {
+        "name": "last_error",
+        "ordinal": 13,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "566d862aa7a5c33a280bdedaa74e0553c3dea13ec50f72011518a7c676fccbdf"
+}

@@ -1,4 +1,4 @@
-use std::{path::PathBuf, str::FromStr};
+use std::{path::PathBuf, str::FromStr, time::Duration};
 
 use crate::{utils::i64_to_string, UserId};
 use anyhow::Context;
@@ -211,6 +211,202 @@ impl DatabaseClient {
         .await
         .context("Error creating user")
     }
+
+    pub async fn insert_pending_symbolication(
+        &self,
+        row: &PendingSymbolication,
+    ) -> Result<(), anyhow::Error> {
+        sqlx::query!(
+            r#"
+            INSERT INTO pending_symbolications (
+                id, device_id, thread_id, payload_path, diagnostics_json,
+                installation_info_json, binary_uuids_json, payload_index,
+                received_at_ms, leased_at_ms, completed_at_ms, failed_at_ms,
+                attempts, last_error
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            "#,
+            row.id,
+            row.device_id,
+            row.thread_id,
+            row.payload_path,
+            row.diagnostics_json,
+            row.installation_info_json,
+            row.binary_uuids_json,
+            row.payload_index,
+            row.received_at_ms,
+            row.leased_at_ms,
+            row.completed_at_ms,
+            row.failed_at_ms,
+            row.attempts,
+            row.last_error,
+        )
+        .execute(&self.writer_pool)
+        .await
+        .context("Error inserting pending_symbolication")?;
+        Ok(())
+    }
+
+    /// Atomically (a) flips rows whose `attempts >= 3 AND leased_at_ms < now - lease_ttl`
+    /// to `failed_at_ms = now` and returns them so the caller can notify Discord, and
+    /// (b) leases up to `n` eligible rows by setting `leased_at_ms = now` and incrementing
+    /// `attempts`. Returns `(newly_failed, leased)`.
+    pub async fn lease_pending_symbolications(
+        &self,
+        n: i64,
+        lease_ttl: Duration,
+    ) -> Result<(Vec<PendingSymbolication>, Vec<PendingSymbolication>), anyhow::Error> {
+        let now_ms = chrono::Utc::now().timestamp_millis();
+        let lease_cutoff_ms = now_ms - (lease_ttl.as_millis() as i64);
+
+        let newly_failed = sqlx::query_as!(
+            PendingSymbolication,
+            r#"
+            UPDATE pending_symbolications
+            SET failed_at_ms = ?
+            WHERE completed_at_ms IS NULL
+              AND failed_at_ms IS NULL
+              AND attempts >= 3
+              AND leased_at_ms IS NOT NULL
+              AND leased_at_ms < ?
+            RETURNING
+                id as "id!: String",
+                device_id as "device_id!: String",
+                thread_id as "thread_id!",
+                payload_path as "payload_path!: String",
+                diagnostics_json as "diagnostics_json!: String",
+                installation_info_json as "installation_info_json!: String",
+                binary_uuids_json as "binary_uuids_json!: String",
+                payload_index as "payload_index!",
+                received_at_ms as "received_at_ms!",
+                leased_at_ms,
+                completed_at_ms,
+                failed_at_ms,
+                attempts as "attempts!",
+                last_error
+            "#,
+            now_ms,
+            lease_cutoff_ms,
+        )
+        .fetch_all(&self.writer_pool)
+        .await
+        .context("Error marking exhausted leases as failed")?;
+
+        let leased = sqlx::query_as!(
+            PendingSymbolication,
+            r#"
+            UPDATE pending_symbolications
+            SET leased_at_ms = ?, attempts = attempts + 1
+            WHERE id IN (
+                SELECT id FROM pending_symbolications
+                WHERE completed_at_ms IS NULL
+                  AND failed_at_ms IS NULL
+                  AND attempts < 3
+                  AND (leased_at_ms IS NULL OR leased_at_ms < ?)
+                ORDER BY received_at_ms
+                LIMIT ?
+            )
+            RETURNING
+                id as "id!: String",
+                device_id as "device_id!: String",
+                thread_id as "thread_id!",
+                payload_path as "payload_path!: String",
+                diagnostics_json as "diagnostics_json!: String",
+                installation_info_json as "installation_info_json!: String",
+                binary_uuids_json as "binary_uuids_json!: String",
+                payload_index as "payload_index!",
+                received_at_ms as "received_at_ms!",
+                leased_at_ms,
+                completed_at_ms,
+                failed_at_ms,
+                attempts as "attempts!",
+                last_error
+            "#,
+            now_ms,
+            lease_cutoff_ms,
+            n,
+        )
+        .fetch_all(&self.writer_pool)
+        .await
+        .context("Error leasing pending_symbolications")?;
+
+        Ok((newly_failed, leased))
+    }
+
+    pub async fn complete_pending_symbolication(
+        &self,
+        id: &str,
+    ) -> Result<Option<PendingSymbolication>, anyhow::Error> {
+        let now_ms = chrono::Utc::now().timestamp_millis();
+        let row = sqlx::query_as!(
+            PendingSymbolication,
+            r#"
+            UPDATE pending_symbolications
+            SET completed_at_ms = ?, last_error = NULL
+            WHERE id = ? AND completed_at_ms IS NULL
+            RETURNING
+                id as "id!: String",
+                device_id as "device_id!: String",
+                thread_id as "thread_id!",
+                payload_path as "payload_path!: String",
+                diagnostics_json as "diagnostics_json!: String",
+                installation_info_json as "installation_info_json!: String",
+                binary_uuids_json as "binary_uuids_json!: String",
+                payload_index as "payload_index!",
+                received_at_ms as "received_at_ms!",
+                leased_at_ms,
+                completed_at_ms,
+                failed_at_ms,
+                attempts as "attempts!",
+                last_error
+            "#,
+            now_ms,
+            id,
+        )
+        .fetch_optional(&self.writer_pool)
+        .await
+        .context("Error completing pending_symbolication")?;
+        Ok(row)
+    }
+
+    /// Records a worker-reported failure on the given lease. Clears `leased_at_ms`
+    /// so the row is re-leasable, but keeps the incremented `attempts` from the
+    /// lease call, which is what caps retries via the `attempts < 3` filter.
+    pub async fn release_lease_with_error(
+        &self,
+        id: &str,
+        error: &str,
+    ) -> Result<Option<PendingSymbolication>, anyhow::Error> {
+        let row = sqlx::query_as!(
+            PendingSymbolication,
+            r#"
+            UPDATE pending_symbolications
+            SET leased_at_ms = NULL, last_error = ?
+            WHERE id = ? AND completed_at_ms IS NULL AND failed_at_ms IS NULL
+            RETURNING
+                id as "id!: String",
+                device_id as "device_id!: String",
+                thread_id as "thread_id!",
+                payload_path as "payload_path!: String",
+                diagnostics_json as "diagnostics_json!: String",
+                installation_info_json as "installation_info_json!: String",
+                binary_uuids_json as "binary_uuids_json!: String",
+                payload_index as "payload_index!",
+                received_at_ms as "received_at_ms!",
+                leased_at_ms,
+                completed_at_ms,
+                failed_at_ms,
+                attempts as "attempts!",
+                last_error
+            "#,
+            error,
+            id,
+        )
+        .fetch_optional(&self.writer_pool)
+        .await
+        .context("Error releasing pending_symbolication lease")?;
+        Ok(row)
+    }
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -238,4 +434,22 @@ pub struct DeviceInfo {
     pub os_platform: Option<String>,
     pub os_version: Option<String>,
     pub user_locale: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PendingSymbolication {
+    pub id: String,
+    pub device_id: String,
+    pub thread_id: i64,
+    pub payload_path: String,
+    pub diagnostics_json: String,
+    pub installation_info_json: String,
+    pub binary_uuids_json: String,
+    pub payload_index: i64,
+    pub received_at_ms: i64,
+    pub leased_at_ms: Option<i64>,
+    pub completed_at_ms: Option<i64>,
+    pub failed_at_ms: Option<i64>,
+    pub attempts: i64,
+    pub last_error: Option<String>,
 }

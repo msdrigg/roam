@@ -1128,17 +1128,20 @@ fn thread_title_prompt() -> &'static str {
 Output only the title, with no quotes or explanation.
 
 Use this format:
-[Bug|Feature|Question] [iOS | macOS | visionOS | watchOS | Apple TV | <platform>] [Optional, only if non-English: <language>] <short description>
+[Bug|Feature|Question|Friendly] [iOS | macOS | visionOS | watchOS | Apple TV | <platform>] [Optional, only if non-English: <language>] <short description>
 
 For non-English chats, insert a bracketed English language name after the platform, such as [Spanish]. Do not include a language tag for English chats.
 
-If the chat has no user issue, no useful user text, or only accidental/no-context messages, output exactly:
+If the chat is only casual chitchat, greetings, thanks, or other friendly messages without any support issue (e.g. "hi", "hello", "thanks!", "love the app"), output:
+[Friendly] <short description>
+
+If the chat has no user issue, no useful user text, or only accidental/no-context messages (truly empty or unintelligible), output exactly:
 [Dead]
 
 If the chat contains only diagnostics or diagnostic sharing without a clear user issue, output exactly:
 [Dead] Diagnostics
 
-Choose Bug for broken behavior, Feature for requests or suggestions, and Question for setup/how-to/general support. Use support-only device info to identify the platform when available. Keep the description short, specific, and under the Discord title limit."#
+Choose Bug for broken behavior, Feature for requests or suggestions, Question for setup/how-to/general support, and Friendly for casual non-support messages. Prefer Friendly over Dead whenever the user wrote a real (even if trivial) message. Use support-only device info to identify the platform when available; for Friendly chats the platform tag is optional. Keep the description short, specific, and under the Discord title limit."#
 }
 
 fn translation_to_english_prompt() -> &'static str {
@@ -1423,7 +1426,7 @@ fn title_eligibility_datetime(
         .iter()
         .rev()
         .find(|message| {
-            (message.author_id() == ctx.discord_bot_id() && !message.is_hidden())
+            (Some(message.author_id()) != ctx.ai_responder_discord_bot_id() && !message.is_hidden())
                 || is_diagnostics_submission_message(message)
         })
         .and_then(|message| discord_snowflake_datetime(message.id))
@@ -1477,7 +1480,7 @@ fn is_no_response_evaluation_message(content: &str) -> bool {
 
 fn thread_name_has_ai_tag(name: &str) -> bool {
     let name = name.trim();
-    ["[Bug]", "[Feature]", "[Question]", "[Dead]"]
+    ["[Bug]", "[Feature]", "[Question]", "[Friendly]", "[Dead]"]
         .iter()
         .any(|tag| name.starts_with(tag))
 }
@@ -1794,7 +1797,7 @@ async fn translate_and_send_human_support_message(
     messages.retain(|message| !message.is_hidden());
 
     let translated = AiResponder::new(ctx.clone())
-        .translate_for_user_language(&messages, &text)
+        .translate_for_user_language(&messages, text)
         .await?;
     if translated.trim().is_empty() {
         return Ok(false);

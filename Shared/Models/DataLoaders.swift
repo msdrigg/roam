@@ -40,13 +40,13 @@ class MessageListLoader: RegistrationListener {
         self.isLoading = false
     }
 
-    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String)  { }
-    func deviceDetailUpdated(for deviceId: String, device: Device?)  { }
-    func deviceListUpdated(devices: [String])  { }
-    func hiddenDeviceListUpdated(devices: [String])  { }
-    func primaryDeviceUpdated(device: Device?)  { }
-    func primaryAppsUpdated(apps: [AppLink]?)  { }
-    func deviceAppsUpdated(for deviceId: String, apps: [AppLink])  { }
+    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String) {}
+    func deviceDetailUpdated(for deviceId: String, device: Device?) {}
+    func deviceListUpdated(devices: [String]) {}
+    func hiddenDeviceListUpdated(devices: [String]) {}
+    func primaryDeviceUpdated(device: Device?) {}
+    func primaryAppsUpdated(apps: [AppLink]?) {}
+    func deviceAppsUpdated(for deviceId: String, apps: [AppLink]) {}
 }
 
 // MARK: - Device List Loader
@@ -80,18 +80,18 @@ class DeviceListLoader: RegistrationListener {
     }
 
     // MARK: - RegistrationListener Implementation
-    func deviceListUpdated(devices: [String])  {
+    func deviceListUpdated(devices: [String]) {
         self.devices = devices
         self.revision += 1
         self.isLoading = false
     }
 
-    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String)  { }
-    func deviceDetailUpdated(for deviceId: String, device: Device?)  { }
-    func hiddenDeviceListUpdated(devices: [String])  { }
-    func primaryDeviceUpdated(device: Device?)  { }
-    func primaryAppsUpdated(apps: [AppLink]?)  { }
-    func deviceAppsUpdated(for deviceId: String, apps: [AppLink])  { }
+    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String) {}
+    func deviceDetailUpdated(for deviceId: String, device: Device?) {}
+    func hiddenDeviceListUpdated(devices: [String]) {}
+    func primaryDeviceUpdated(device: Device?) {}
+    func primaryAppsUpdated(apps: [AppLink]?) {}
+    func deviceAppsUpdated(for deviceId: String, apps: [AppLink]) {}
 }
 
 // MARK: - Hidden Device List Loader
@@ -125,18 +125,18 @@ class HiddenDeviceListLoader: RegistrationListener {
     }
 
     // MARK: - RegistrationListener Implementation
-    func hiddenDeviceListUpdated(devices: [String])  {
+    func hiddenDeviceListUpdated(devices: [String]) {
         self.devices = devices
         self.revision += 1
         self.isLoading = false
     }
 
-    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String)  { }
-    func deviceDetailUpdated(for deviceId: String, device: Device?)  { }
-    func deviceListUpdated(devices: [String])  { }
-    func primaryDeviceUpdated(device: Device?)  { }
-    func primaryAppsUpdated(apps: [AppLink]?)  { }
-    func deviceAppsUpdated(for deviceId: String, apps: [AppLink])  { }
+    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String) {}
+    func deviceDetailUpdated(for deviceId: String, device: Device?) {}
+    func deviceListUpdated(devices: [String]) {}
+    func primaryDeviceUpdated(device: Device?) {}
+    func primaryAppsUpdated(apps: [AppLink]?) {}
+    func deviceAppsUpdated(for deviceId: String, apps: [AppLink]) {}
 }
 
 // MARK: - Device Loader
@@ -157,7 +157,8 @@ class DeviceLoader: RegistrationListener {
 
         Task {
             await dataHandler.register(self.registrationToken, self)
-            await dataHandler.registerForChange(registrationToken, change: .updateDevice(deviceId: deviceId))
+            await dataHandler.registerForChange(
+                registrationToken, change: .updateDevice(deviceId: deviceId))
             if let device = await dataHandler.requestDevice(id: deviceId) {
                 self.deviceDetailUpdated(for: deviceId, device: device)
             }
@@ -182,19 +183,23 @@ class DeviceLoader: RegistrationListener {
     }
 
     // MARK: - RegistrationListener Implementation
-    func deviceDetailUpdated(for deviceId: String, device: Device?)  {
-        Log.data.notice("Loading data for device \(deviceId, privacy: .public) with device \(device.debugDescription)")
-        guard deviceId == self.deviceId else { return }
+    func deviceDetailUpdated(for deviceId: String, device: Device?) {
+        guard deviceId == self.deviceId else {
+            Log.data.error(
+                "Received device update for device \(deviceId, privacy: .public) but expected \(self.deviceId, privacy: .public)"
+            )
+            return
+        }
         self.device = device
         self.isLoading = false
     }
 
-    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String)  { }
-    func deviceListUpdated(devices: [String])  { }
-    func hiddenDeviceListUpdated(devices: [String])  { }
-    func primaryDeviceUpdated(device: Device?)  { }
-    func primaryAppsUpdated(apps: [AppLink]?)  { }
-    func deviceAppsUpdated(for deviceId: String, apps: [AppLink])  { }
+    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String) {}
+    func deviceListUpdated(devices: [String]) {}
+    func hiddenDeviceListUpdated(devices: [String]) {}
+    func primaryDeviceUpdated(device: Device?) {}
+    func primaryAppsUpdated(apps: [AppLink]?) {}
+    func deviceAppsUpdated(for deviceId: String, apps: [AppLink]) {}
 }
 
 // MARK: - Device Apps Loader
@@ -215,8 +220,10 @@ class DeviceAppsLoader: RegistrationListener {
 
         Task {
             await dataHandler.register(self.registrationToken, self)
-            await dataHandler.registerForChange(registrationToken, change: .updateDeviceApps(deviceId: deviceId))
-            await self.deviceAppsUpdated(for: deviceId, apps: dataHandler.requestDeviceApps(deviceId: deviceId))
+            await dataHandler.registerForChange(
+                registrationToken, change: .updateDeviceApps(deviceId: deviceId))
+            await self.deviceAppsUpdated(
+                for: deviceId, apps: dataHandler.requestDeviceApps(deviceId: deviceId))
         }
     }
 
@@ -234,18 +241,18 @@ class DeviceAppsLoader: RegistrationListener {
     }
 
     // MARK: - RegistrationListener Implementation
-    func deviceAppsUpdated(for deviceId: String, apps: [AppLink])  {
+    func deviceAppsUpdated(for deviceId: String, apps: [AppLink]) {
         guard deviceId == self.deviceId else { return }
         self.apps = apps
         self.isLoading = false
     }
 
-    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String)  { }
-    func deviceDetailUpdated(for deviceId: String, device: Device?)  { }
-    func deviceListUpdated(devices: [String])  { }
-    func hiddenDeviceListUpdated(devices: [String])  { }
-    func primaryDeviceUpdated(device: Device?)  { }
-    func primaryAppsUpdated(apps: [AppLink]?)  { }
+    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String) {}
+    func deviceDetailUpdated(for deviceId: String, device: Device?) {}
+    func deviceListUpdated(devices: [String]) {}
+    func hiddenDeviceListUpdated(devices: [String]) {}
+    func primaryDeviceUpdated(device: Device?) {}
+    func primaryAppsUpdated(apps: [AppLink]?) {}
 }
 
 // MARK: - Device App Icon Loader
@@ -258,8 +265,10 @@ class DeviceAppIconLoader: RegistrationListener {
         guard let iconDataHash = iconDataHash else { return nil }
         // Load icon data from disk using hash
         do {
-            let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup)!
-            let iconURL = containerURL.appendingPathComponent("roku-icons", isDirectory: true).appendingPathComponent(iconDataHash)
+            let containerURL = FileManager.default.containerURL(
+                forSecurityApplicationGroupIdentifier: mainAppGroup)!
+            let iconURL = containerURL.appendingPathComponent("roku-icons", isDirectory: true)
+                .appendingPathComponent(iconDataHash)
             return try Data(contentsOf: iconURL)
         } catch {
             Log.data.error("Failed to load icon data for hash \(iconDataHash): \(error)")
@@ -281,7 +290,8 @@ class DeviceAppIconLoader: RegistrationListener {
 
         Task {
             await dataHandler.register(self.registrationToken, self)
-            await dataHandler.registerForChange(registrationToken, change: .updateAppIcon(deviceId: deviceId, appId: appId))
+            await dataHandler.registerForChange(
+                registrationToken, change: .updateAppIcon(deviceId: deviceId, appId: appId))
         }
     }
 
@@ -294,18 +304,18 @@ class DeviceAppIconLoader: RegistrationListener {
     }
 
     // MARK: - RegistrationListener Implementation
-    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String)  {
+    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String) {
         guard deviceId == self.deviceId && appId == self.appId else { return }
         self.iconDataHash = iconDataHash
         self.isLoading = false
     }
 
-    func deviceDetailUpdated(for deviceId: String, device: Device?)  { }
-    func deviceListUpdated(devices: [String])  { }
-    func hiddenDeviceListUpdated(devices: [String])  { }
-    func primaryDeviceUpdated(device: Device?)  { }
-    func primaryAppsUpdated(apps: [AppLink]?)  { }
-    func deviceAppsUpdated(for deviceId: String, apps: [AppLink])  { }
+    func deviceDetailUpdated(for deviceId: String, device: Device?) {}
+    func deviceListUpdated(devices: [String]) {}
+    func hiddenDeviceListUpdated(devices: [String]) {}
+    func primaryDeviceUpdated(device: Device?) {}
+    func primaryAppsUpdated(apps: [AppLink]?) {}
+    func deviceAppsUpdated(for deviceId: String, apps: [AppLink]) {}
 }
 
 // MARK: - Primary Device Loader
@@ -349,15 +359,15 @@ class PrimaryDeviceLoader: RegistrationListener {
     }
 
     // MARK: - RegistrationListener Implementation
-    func primaryDeviceUpdated(device: Device?)  {
+    func primaryDeviceUpdated(device: Device?) {
         self.device = device
         self.isLoading = false
     }
 
-    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String)  { }
-    func deviceDetailUpdated(for deviceId: String, device: Device?)  { }
-    func deviceListUpdated(devices: [String])  { }
-    func hiddenDeviceListUpdated(devices: [String])  { }
-    func primaryAppsUpdated(apps: [AppLink]?)  { }
-    func deviceAppsUpdated(for deviceId: String, apps: [AppLink])  { }
+    func appIconUpdated(for deviceId: String, appId: String, iconDataHash: String) {}
+    func deviceDetailUpdated(for deviceId: String, device: Device?) {}
+    func deviceListUpdated(devices: [String]) {}
+    func hiddenDeviceListUpdated(devices: [String]) {}
+    func primaryAppsUpdated(apps: [AppLink]?) {}
+    func deviceAppsUpdated(for deviceId: String, apps: [AppLink]) {}
 }

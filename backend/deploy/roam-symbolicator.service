@@ -1,0 +1,26 @@
+[Unit]
+Description=Roam MetricKit symbolicator worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=roam
+Group=roam
+WorkingDirectory=/var/lib/roam-symbolicator
+EnvironmentFile=/etc/roam-symbolicator/env
+ExecStart=/usr/local/bin/roam-backend --symbolicate
+Restart=on-failure
+RestartSec=30s
+
+# Symbolication mmaps large dSYMs; raise the open-files cap.
+LimitNOFILE=65536
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

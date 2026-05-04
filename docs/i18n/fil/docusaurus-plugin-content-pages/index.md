@@ -8,48 +8,63 @@ hide_table_of_contents: true
 
 ## Tungkol sa Roam
 
-Binibigay ng Roam ang lahat ng gusto mo at wala ang hindi mo kailangan
+Ang Roam ay nag-aalok ng lahat ng gusto mo at wala ang hindi mo kailangan
 
--   Gumagana sa Mac, iPhone, iPad, Apple Watch, Vision Pro o Apple TV!
--   Matalinong integrasyon sa platform gamit ang keyboard shortcuts sa Mac, at paggamit ng hardware volume buttons para kontrolin ang TV Volume sa iOS
--   Gamitin ang mga shortcuts at widgets para kontrolin ang iyong TV kahit hindi mo buksan ang app!
--   Suporta para sa headphones mode (a.k.a. private listening) sa Mac, iPad, iPhone, VisionOS, at Apple TV (patugtugin ang audio ng TV sa iyong device)
--   Tuklasin agad ang mga device sa iyong local network kapag binuksan ang app
+-   Gumagana sa Mac, iPhone, iPad, Apple Watch, Vision Pro, o Apple TV!
+-   Matalinong integrasyon ng platform: may mga keyboard shortcut sa Mac, at maaaring gamitin ang hardware volume buttons para kontrolin ang TV Volume sa iOS
+-   Gumamit ng shortcuts at widgets para kontrolin ang TV mo kahit hindi mo buksan ang app!
+-   Sinusuportahan ang headphones mode (kilala rin bilang private listening) sa Mac, iPad, iPhone, VisionOS, at Apple TV (pakinggan ang audio ng TV sa iyong device)
+-   Nadidiskubre agad ang mga device sa iyong lokal na network sa pagbukas ng app
 -   Intuwitibong disenyo gamit ang native SwiftUI design system ng Apple
--   Mabilis at magaan, hindi lalampas ng 8 MB sa lahat ng device at nagbubukas nang wala pang kalahating segundo!
--   Bukas na mapagkukunan (https://github.com/msdrigg/roam)
+-   Mabilis at magaan—mas mababa sa 8 MB sa lahat ng device, at bumubukas sa loob ng kalahating segundo!
+-   Open source (https://github.com/msdrigg/roam)
 
-## Karaniwang mga Isyu
+## Mga Tampok
 
--   Ano ang gagawin ko kung hindi awtomatikong matuklasan ng Roam ang aking TV
+-   Remote controls
+    -   May kasamang mga normal na Roku remote control ang Roam: mga directional button, select, back, home, play/pause, at iba pang kaugnay na TV control depende sa suportang ibinibigay ng Roku.
+    -   Ang volume control ay maaaring hindi gumana sa Roku Sticks dahil HDMI-only ang mga ito at hindi kayang kontrolin ang volume ng TV sa pamamagitan ng Roku network commands ni Roam.
+-   Keyboard input
+    -   Sa macOS, walang keyboard button. Kapag naka-focus ang Roam na window, awtomatikong gumagana ang Mac keyboard para sa TV.
+    -   Sa iOS at iPadOS, may keyboard button sa itaas ng remote.
+    -   Sa watchOS, wala pang keyboard functionality sa ngayon.
+    -   May ilang mga Roku app na hindi tumatanggap ng keyboard input mula sa remote app. Halimbawa, ang Prime Video ay kilalang hindi tumatanggap ng keyboard entry dahil hindi ito sinusuportahan ng Roku app.
+-   Headphones mode / private listening
+    -   Pinapatugtog ng private listening ang audio ng TV sa iyong device para sa mga sinusuportahang Roku.
+    -   Sinusuportahan ng Roam ang private listening sa Mac, iPad, iPhone, VisionOS, at Apple TV, ngunit hindi ito gumagana sa lahat ng Roku TV.
+
+## Mga Karaniwang Isyu
+
+-   Ano ang gagawin kapag hindi nade-detect ng Roam ang TV ko?
     -   [Tingnan dito](/manually-add-tv)
--   Hindi maayos na gumagana ang Roam sa aking Apple Watch
-    -   Pakitiyak na pumunta sa **Settings -> System -> Advanced System Settings -> Control by mobile apps** at siguraduhing naka-set sa **Permissive**
--   Bakit hindi gumagana ang headphones mode (a.k.a. private listening) sa aking TV?
-    -   Sa kasalukuyan, hindi gumagana ang headphones mode sa ilang TV. Kung hindi gumagana ang headphones mode sa Roam, pero gumagana sa official Roku app, mangyaring ibahagi ang modelo ng iyong Roku at anumang kaugnay na impormasyon sa email na ito: [roam-support@msd3.io](mailto:roam-support@msd3.io). Makakatulong ang iyong ulat para matukoy ko ang sanhi ng bug na ito.
--   Paano kung may iba pa akong problema o gusto kong magbigay ng feedback?
-    -   Kung bug ito, pinakamainam na magsumite ng feedback mula mismo sa application
+-   Hindi gumagana nang tama ang Roam sa Apple Watch ko
+    -   Pumunta sa **Settings -> System -> Advanced System Settings -> Control by mobile apps** at tiyaking naka-set sa **Permissive**
+-   Bakit hindi gumagana ang headphones mode (private listening) sa TV ko?
+    -   Sa ngayon, hindi gumagana ang headphones mode sa ilang TV. Kung hindi gumagana ang headphones mode sa Roam, ngunit gumagana sa opisyal na Roku app, mangyaring ibahagi ang model name ng Roku mo at iba pang mahalagang impormasyon sa [roam-support@msd3.io](mailto:roam-support@msd3.io). Ang iyong report ay makakatulong upang malaman kung saan magsisimula ng pagtukoy para sa bug na ito.
+-   Paano kung may iba pa akong problema o gusto lang magbigay ng feedback?
+    -   Kung ito ay bug, pinakamainam na magsimula ng feedback report mula sa app
         -   Buksan ang Roam app at pumunta sa settings page
-        -   I-tap ang "Send feedback". Ito ay lilikha ng diagnostic report na maaaring ibahagi sa roam support (roam-support@msd3.io)
-        -   Kung nagka-crash ang iyong app, tiyakin ding naka-on ang analytics mo sa Settings -> Privacy & Security -> Analytics & Improvments
-            -   I-on ang "Share iPhone & Watch Analytics" at pagkatapos ay i-on ang "Share With App Developers" para malaman ko kapag nagka-crash ang app mo
-    -   Para sa mga hiling na bagong feature, maaaring mag-email (roam-support@msd3.io), i-chat ako mismo sa Roam app (Settings -> Chat with the Developer) o sumali sa [Roam Discord](https://discord.gg/FqaTNRccbG).
--   Bakit minsan hindi gumagana ang arrow keys sa iPad?
-    -   Nangyayari ito dahil minsan ay kontrolado ng iPadOS ang arrow keys at ginagamit ang mga ito para mag-navigate sa screen buttons bago ito ma-detect ng app
-    -   Maaaring gawing alternatibo ang pagpunta sa Settings -> Accessibility -> Keyboards at i-disable ang "Full Keyboard Access" o pumunta sa Settings -> Accessibility -> Keyboards -> Full Keyboard Access -> Commands -> Basic at i-disable ang mga "Move Up", "Move Down", "Move Left" at "Move Right" na commands
--   Bakit hindi lumalabas ang tinatype ko sa keyboard sa TV
-    -   Sa ilang Roku Apps, hindi tinatanggap ng app ang hardware keyboard entry. Maaari mong subukin kung bug ito ng Roam o bug ng mismong app sa pamamagitan ng paggamit ng keyboard entry feature ng official Roku App at tingnan kung gumagana ito
-    -   Mga App na may alam nang bug
+        -   I-tap ang "Send feedback". Magkakaroon ito ng diagnostic report na maari mong ipadala sa Roam support (roam-support@msd3.io)
+        -   Kung crash ang app mo, siguraduhing naka-on ang analytics sa Settings -> Privacy & Security -> Analytics & Improvements
+            -   I-on ang "Share iPhone & Watch Analytics" at pagkatapos i-on ang "Share With App Developers" para malaman ko kapag nagka-crash ang iyong app, mula mismo sa Apple
+    -   Kung request ito para sa bagong feature, maaari kang magpadala ng email (roam-support@msd3.io), makipag-chat sa Roam app mismo (Settings -> Chat with the Developer) o sumali sa [Roam Discord](https://discord.gg/FqaTNRccbG).
+-   Bakit hindi minsan gumagana ang arrow keys sa iPad?
+    -   Dahil paminsan-minsan, kinukuha ng iPadOS ang kontrol ng arrow keys at ginagamit ito para i-navigate ang mga screen button bago pa ito ma-detect ng Roam
+    -   Pwedeng solusyon dito ay pumunta sa Settings -> Accessibility -> Keyboards at i-disable ang "Full Keyboard Access" o pumunta sa Settings -> Accessibility -> Keyboards -> Full Keyboard Access -> Commands -> Basic at i-off ang "Move Up", "Move Down", "Move Left" at "Move Right" commands
+-   Bakit hindi lumalabas sa TV ang tina-type ko sa keyboard?
+    -   Sa ilang Roku app, hindi pinapansin ang hardware keyboard entry. Para malaman kung bug ba ito sa Roam o bug sa app, subukan mong gamitin ang keyboard entry feature sa official Roku App at tingnan kung gumagana iyon.
+    -   Sa macOS, walang keyboard button dahil awtomatikong gumagana ang Mac keyboard kapag naka-focus ang Roam window sa TV. Sa iOS at iPadOS, gamitin ang keyboard button sa taas ng remote. Walang keyboard support ang watchOS ngayon.
+    -   Mga app na may kilalang isyu:
         -   Prime Video
--   Bakit gumagana ang Roam sa aking iPhone at Mac app ngunit hindi sa Apple Watch?
-    -   Kumokonekta ang WatchOS app sa TV gamit ang ECP API ng TV, na kailangang i-enable sa ilang Roku TV. Para i-enable, pumunta sa **Settings -> System -> Advanced System Settings -> Control by mobile apps** at tiyaking naka-set sa "Network Access" ang "Permissive"
+-   Bakit gumagana ang Roam sa iPhone at Mac app ko pero hindi sa Apple Watch?
+    -   Kumokonekta ang WatchOS app sa TV gamit ang TV's ECP API, na kailangang i-enable sa ilang Roku TV. Para i-on ito, pumunta sa **Settings -> System -> Advanced System Settings -> Control by mobile apps** at siguraduhing naka-set sa "Permissive" ang "Network Access"
 
-## Iba Pang Mga Pinagkukunan
+## Iba pang Mga Mapagkukunan
 
-Kung may karagdagang mga tanong o isyu, mangyaring makipag-ugnayan sa akin sa: [roam-support@msd3.io](mailto:roam-support@msd3.io). Maaari mo rin akong i-chat nang direkta sa Roam app (Settings -> Chat with the Developer) o sumali sa [Roam Discord](https://discord.gg/FqaTNRccbG).
+Kung may mga tanong o isyu ka pa, makipag-ugnayan sa akin sa [roam-support@msd3.io](mailto:roam-support@msd3.io). Maaari ka ring makipag-chat sa akin direkta sa Roam app (Settings -> Chat with the Developer) o sumali sa [Roam Discord](https://discord.gg/FqaTNRccbG).
 
 -   [Privacy Policy](/privacy)
--   [Core Repository sa GitHub](https://github.com/msdrigg/roam)
+-   [Core Repository on GitHub](https://github.com/msdrigg/roam)
 -   [Roam Discord](https://discord.gg/FqaTNRccbG)
 -   [I-download sa app store](https://apps.apple.com/us/app/roam/6469834197)
 -   [Roadmap](/upcoming-work)

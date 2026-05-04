@@ -8,50 +8,65 @@ hide_table_of_contents: true
 
 ## Giới thiệu về Roam
 
-Roam cung cấp mọi thứ bạn cần và không có những thứ không cần thiết
+Roam mang đến mọi thứ bạn cần và không có những điều bạn không muốn
 
--   Chạy trên Mac, iPhone, iPad, Apple Watch, Vision Pro hoặc Apple TV!
--   Tích hợp nền tảng thông minh với phím tắt trên Mac, sử dụng các nút âm lượng phần cứng để điều khiển âm lượng TV trên iOS
--   Sử dụng phím tắt và widget để điều khiển TV mà không cần mở ứng dụng!
--   Hỗ trợ chế độ tai nghe (hay nghe riêng tư) trên Mac, iPad, iPhone, VisionOS và Apple TV (phát âm thanh của TV qua thiết bị của bạn)
--   Phát hiện thiết bị trong mạng cục bộ ngay khi mở ứng dụng
--   Thiết kế trực quan với hệ thống thiết kế SwiftUI gốc của Apple
--   Nhanh và nhẹ, dưới 8 MB trên mọi thiết bị và mở trong chưa đến nửa giây!
+-   Hoạt động trên Mac, iPhone, iPad, Apple Watch, Vision Pro hoặc Apple TV!
+-   Tích hợp thông minh với nền tảng Apple: sử dụng phím tắt trên Mac, nút tăng/giảm âm lượng cứng để điều khiển âm lượng TV trên iOS
+-   Dùng phím tắt và widget để điều khiển TV mà không cần mở ứng dụng!
+-   Hỗ trợ chế độ tai nghe (hay còn gọi là nghe riêng tư) trên Mac, iPad, iPhone, VisionOS và Apple TV (phát âm thanh từ TV qua thiết bị của bạn)
+-   Tự động phát hiện thiết bị trong mạng cục bộ ngay khi mở ứng dụng
+-   Thiết kế trực quan với SwiftUI theo thiết kế gốc của Apple
+-   Nhanh và nhẹ, dung lượng chưa tới 8 MB trên mọi thiết bị, khởi động chưa tới nửa giây!
 -   Mã nguồn mở (https://github.com/msdrigg/roam)
 
-## Các vấn đề thường gặp
+## Tính năng
 
--   Tôi nên làm gì nếu Roam không tự động phát hiện TV của tôi
+-   Điều khiển từ xa
+    -   Roam bao gồm các nút điều khiển từ xa Roku tiêu chuẩn như các nút di chuyển, chọn, quay lại, về trang chủ, phát/tạm dừng, kèm các điều khiển TV liên quan khi Roku hỗ trợ.
+    -   Điều khiển âm lượng có thể không hoạt động trên Roku Stick do chỉ hỗ trợ HDMI, không thể điều chỉnh âm lượng TV thông qua lệnh mạng Roku của Roam.
+-   Nhập liệu bàn phím
+    -   Trên macOS, không có nút bàn phím. Khi cửa sổ Roam được chọn, bàn phím Mac sẽ tự động nhập trên TV.
+    -   Trên iOS và iPadOS, có nút bàn phím ở phía trên của bàn điều khiển.
+    -   watchOS vẫn chưa hỗ trợ chức năng bàn phím.
+    -   Một số ứng dụng Roku bỏ qua nhập liệu bàn phím từ ứng dụng điều khiển. Prime Video là ví dụ đã biết khi nhập bàn phím có thể không hoạt động do ứng dụng Roku không hỗ trợ.
+-   Chế độ tai nghe / nghe riêng tư
+    -   Chế độ nghe riêng tư phát âm thanh TV qua thiết bị của bạn trên các thiết bị Roku được hỗ trợ.
+    -   Chế độ này được Roam hỗ trợ trên Mac, iPad, iPhone, VisionOS và Apple TV, tuy nhiên không phải TV Roku nào cũng hoạt động.
+
+## Vấn đề thường gặp
+
+-   Tôi phải làm gì nếu Roam không tự phát hiện được TV của tôi
     -   [Xem tại đây](/manually-add-tv)
--   Roam không hoạt động chính xác trên Apple Watch của tôi
-    -   Vui lòng vào **Cài đặt -> Hệ thống -> Cài đặt hệ thống nâng cao -> Điều khiển qua ứng dụng di động** và đảm bảo tùy chọn này được đặt thành **Cho phép**
+-   Roam không hoạt động đúng trên Apple Watch của tôi
+    -   Vui lòng vào **Cài đặt -> Hệ thống -> Cài đặt hệ thống nâng cao -> Điều khiển bằng ứng dụng di động** và đảm bảo nó đang ở chế độ **Permissive**
 -   Tại sao chế độ tai nghe (nghe riêng tư) không hoạt động trên TV của tôi?
-    -   Chế độ tai nghe hiện không hoạt động trên một số loại TV. Nếu chế độ này không hoạt động với Roam nhưng vẫn hoạt động với ứng dụng Roku chính thức, vui lòng gửi tên model Roku và các thông tin liên quan tới [roam-support@msd3.io](mailto:roam-support@msd3.io). Báo cáo của bạn sẽ giúp tôi xác định nguyên nhân và khắc phục lỗi này.
+    -   Hiện tại chế độ này không hoạt động trên một số dòng TV. Nếu chế độ nghe riêng tư không hoạt động với Roam, nhưng hoạt động với ứng dụng Roku chính thức, vui lòng gửi email kèm tên mẫu Roku và thông tin liên quan về [roam-support@msd3.io](mailto:roam-support@msd3.io). Báo cáo của bạn sẽ giúp tôi xác định hướng xử lý cho lỗi này.
 -   Nếu tôi có vấn đề khác hoặc muốn góp ý thì sao?
-    -   Nếu là lỗi, bạn nên gửi phản hồi trực tiếp từ ứng dụng
-        -   Vào ứng dụng Roam và mở trang cài đặt
-        -   Nhấp "Gửi phản hồi". Hành động này sẽ tạo báo cáo chẩn đoán có thể được chia sẻ tới nhóm hỗ trợ roam (roam-support@msd3.io)
-        -   Nếu ứng dụng bị crash, nhớ bật phân tích số liệu tại Cài đặt -> Quyền riêng tư & Bảo mật -> Phân tích & Cải thiện
-            -   Bật "Chia sẻ phân tích iPhone & Watch" và "Chia sẻ cho Nhà phát triển Ứng dụng" để Apple báo cáo tới tôi khi ứng dụng của bạn bị crash
-    -   Nếu là yêu cầu tính năng mới, bạn có thể gửi email (roam-support@msd3.io), chat trực tiếp với tôi trong ứng dụng Roam (Cài đặt -> Chat với Nhà Phát triển) hoặc tham gia [Roam Discord](https://discord.gg/FqaTNRccbG).
--   Vì sao đôi lúc phím mũi tên không hoạt động trên iPad?
-    -   Nguyên nhân do iPadOS đôi khi kiểm soát các phím mũi tên và dùng chúng để di chuyển giữa các nút giao diện trước khi ứng dụng có thể nhận diện
-    -   Bạn có thể khắc phục bằng cách vào Cài đặt -> Trợ năng -> Bàn phím và tắt "Truy cập bàn phím đầy đủ" hoặc vào Cài đặt -> Trợ năng -> Bàn phím -> Truy cập bàn phím đầy đủ -> Lệnh -> Cơ bản và tắt các lệnh "Di chuyển lên", "Di chuyển xuống", "Di chuyển qua trái" và "Di chuyển qua phải"
--   Tại sao tôi gõ bàn phím mà không hiện lên TV?
-    -   Một số ứng dụng Roku có thể bỏ qua đầu vào từ bàn phím phần cứng. Bạn có thể kiểm tra đây là lỗi của Roam hay lỗi của ứng dụng bằng cách thử nhập bằng bàn phím trên ứng dụng Roku chính thức và xem nó có hoạt động không
-    -   Các ứng dụng đã biết có lỗi này:
+    -   Nếu là lỗi phần mềm, tốt nhất bạn nên gửi báo cáo phản hồi từ ứng dụng
+        -   Vào ứng dụng Roam, mở trang cài đặt
+        -   Chọn "Gửi phản hồi". Việc này sẽ tạo một báo cáo chuẩn đoán gửi kèm đến đội ngũ hỗ trợ Roam (roam-support@msd3.io)
+        -   Nếu ứng dụng bị crash, hãy đảm bảo bật tính năng phân tích trong Cài đặt -> Quyền riêng tư & Bảo mật -> Phân tích & Cải tiến
+            -   Bật "Chia sẻ phân tích iPhone & Watch" và "Chia sẻ với nhà phát triển" để Apple báo cáo khi ứng dụng bị crash
+    -   Nếu muốn đề xuất tính năng mới, bạn có thể gửi email (roam-support@msd3.io), trò chuyện trực tiếp trong ứng dụng Roam (Cài đặt -> Trò chuyện với Nhà phát triển) hoặc tham gia [Roam Discord](https://discord.gg/FqaTNRccbG).
+-   Tại sao phím điều hướng đôi lúc không hoạt động trên iPad?
+    -   Do iPadOS đôi khi chiếm quyền điều khiển phím mũi tên để điều hướng giao diện trước khi ứng dụng phát hiện được tín hiệu
+    -   Bạn có thể khắc phục bằng cách vào Cài đặt -> Hỗ trợ tiếp cận -> Bàn phím và tắt "Truy cập Bàn phím đầy đủ" hoặc vào Cài đặt -> Hỗ trợ tiếp cận -> Bàn phím -> Truy cập Bàn phím đầy đủ -> Lệnh -> Cơ bản và tắt các lệnh "Di chuyển lên", "Di chuyển xuống", "Di chuyển trái", "Di chuyển phải"
+-   Tại sao khi gõ bàn phím không hiển thị trên TV
+    -   Một số ứng dụng Roku sẽ bỏ qua nhập liệu bàn phím ngoài. Bạn có thể kiểm tra xem đây là lỗi của Roam hay ứng dụng bằng cách thử nhập bàn phím trên ứng dụng Roku chính thức.
+    -   Trên macOS không có nút bàn phím vì khi cửa sổ Roam được chọn, bàn phím Mac tự động hoạt động với TV. Trên iOS và iPadOS hãy sử dụng nút bàn phím ở đầu điều khiển từ xa. watchOS hiện chưa hỗ trợ nhập liệu bàn phím.
+    -   Ứng dụng đã biết có lỗi
         -   Prime Video
--   Tại sao Roam chạy trên iPhone và Mac nhưng lại không hoạt động trên Apple Watch của tôi?
-    -   Ứng dụng WatchOS kết nối tới TV qua API ECP của TV, phải được bật trên một số dòng Roku TV. Để bật, vào **Cài đặt -> Hệ thống -> Cài đặt hệ thống nâng cao -> Điều khiển qua ứng dụng di động** và đảm bảo "Truy cập mạng" được đặt thành "Cho phép"
+-   Tại sao Roam trên iPhone và Mac hoạt động tốt nhưng không trên Apple Watch?
+    -   Ứng dụng watchOS kết nối tới TV thông qua ECP API của TV, cần phải được bật ở một số dòng TV Roku. Để bật, vào **Cài đặt -> Hệ thống -> Cài đặt hệ thống nâng cao -> Điều khiển bằng ứng dụng di động** và đảm bảo "Truy cập mạng" được đặt là "Permissive"
 
-## Tài nguyên khác
+## Nguồn tham khảo khác
 
-Nếu bạn có bất kỳ câu hỏi hoặc sự cố nào, vui lòng liên hệ tôi tại: [roam-support@msd3.io](mailto:roam-support@msd3.io). Bạn cũng có thể chat trực tiếp với tôi trong ứng dụng Roam (Cài đặt -> Chat với Nhà Phát triển) hoặc tham gia [Roam Discord](https://discord.gg/FqaTNRccbG).
+Nếu bạn có bất cứ câu hỏi hay vấn đề gì, vui lòng liên hệ: [roam-support@msd3.io](mailto:roam-support@msd3.io). Bạn cũng có thể trò chuyện trực tiếp với tôi trong ứng dụng Roam (Cài đặt -> Trò chuyện với Nhà phát triển) hoặc tham gia [Roam Discord](https://discord.gg/FqaTNRccbG).
 
 -   [Chính sách quyền riêng tư](/privacy)
 -   [Kho mã nguồn trên GitHub](https://github.com/msdrigg/roam)
 -   [Roam Discord](https://discord.gg/FqaTNRccbG)
 -   [Tải trên App Store](https://apps.apple.com/us/app/roam/6469834197)
--   [Lộ trình cập nhật](/upcoming-work)
--   [Nhật ký thay đổi](/changes)
--   [Các thiết bị Roku đã được kiểm tra](/tested-tvs)
+-   [Lộ trình phát triển](/upcoming-work)
+-   [Lịch sử cập nhật](/changes)
+-   [Các thiết bị Roku đã kiểm tra](/tested-tvs)

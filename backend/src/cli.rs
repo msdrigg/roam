@@ -7,19 +7,19 @@ use clap::Parser;
 #[command(author = "Your Name", version = "1.0", about = "Configuration Manager", long_about = None)]
 pub struct RoamCli {
     /// Discord Help Channel ID
-    #[arg(long, env)]
+    #[arg(long, env, default_value_t = 0)]
     pub discord_help_channel: i64,
 
     /// Discord Bot ID
-    #[arg(long, env)]
+    #[arg(long, env, default_value_t = 0)]
     pub discord_bot_id: i64,
 
     /// Discord Guild ID
-    #[arg(long, env)]
+    #[arg(long, env, default_value_t = 0)]
     pub discord_guild_id: i64,
 
     /// Discord Token
-    #[arg(long, env)]
+    #[arg(long, env, default_value = "")]
     pub discord_token: String,
 
     /// Backend URL
@@ -31,19 +31,19 @@ pub struct RoamCli {
     pub backend_api_key: String,
 
     /// APNS Key ID
-    #[arg(long, env)]
+    #[arg(long, env, default_value = "")]
     pub apns_key_id: String,
 
     /// APNS Team ID
-    #[arg(long, env)]
+    #[arg(long, env, default_value = "")]
     pub apns_team_id: String,
 
     /// APNS Private Key
-    #[arg(long, env)]
+    #[arg(long, env, default_value = "")]
     pub apns_private_key: String,
 
     /// APNS Bundle ID
-    #[arg(long, env)]
+    #[arg(long, env, default_value = "")]
     pub apns_bundle_id: String,
 
     /// Database Path
@@ -62,6 +62,20 @@ pub struct RoamCli {
     /// Disable APNS
     #[arg(long, env)]
     pub apns_disabled: bool,
+
+    /// Run as a symbolication worker instead of starting the HTTP server.
+    /// The worker leases pending payloads from `backend_url`, symbolicates them
+    /// (downloading dyld_shared_cache via ipsw/appledb), and POSTs results back.
+    #[arg(long, env, default_value_t = false)]
+    pub symbolicate: bool,
+
+    /// Number of payloads the worker leases per loop iteration.
+    #[arg(long, env, default_value_t = 5)]
+    pub symbolicate_batch_size: usize,
+
+    /// Seconds the worker sleeps when a lease returns zero payloads.
+    #[arg(long, env, default_value_t = 600)]
+    pub symbolicate_idle_seconds: u64,
 
     /// Enable the AI responder Discord bot
     #[arg(long, env, default_value = "false")]

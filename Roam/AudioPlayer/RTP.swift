@@ -22,17 +22,24 @@ struct RtpPacket: Comparable, Sendable {
     mutating func updateWithRollingSequenceNumber(_ rollingSequenceNumber: Int64?) -> Int64 {
         var rls = rollingSequenceNumber ?? Int64(packet.sequenceNumber)
         let wrappedSeq = Int64(packet.sequenceNumber)
-        let wrappedMax = Int64(UInt16.max)
-        let diff = wrappedSeq - (rls % (wrappedMax + 1))
+        // 16-bit RTP sequence numbers cycle through 65536 distinct values,
+        // not 65535. The previous `% UInt16.max` produced an off-by-one
+        // every wrap, drifting unwrapped sequence numbers by 1 each lap.
+        let wrappedRange = Int64(UInt16.max) + 1
+        let halfRange = wrappedRange / 2
+        let diff = wrappedSeq - (rls % wrappedRange)
 
-        if diff < -wrappedMax / 2 {
-            rls = rls + diff + wrappedMax + 1
-        } else if diff >= -wrappedMax / 2, diff <= wrappedMax / 2 {
+        if diff < -halfRange {
+            // Packet wrapped forward (rls % range was high, packet seq is low).
+            rls += diff + wrappedRange
+        } else if diff > halfRange {
+            // Heavily out-of-order: packet is from before the previous wrap.
+            rls += diff - wrappedRange
+        } else {
             rls += diff
         }
 
-        sequenceNumber = Int64(packet.sequenceNumber) + rls - (rls % Int64(UInt16.max))
-
+        sequenceNumber = rls
         return rls
     }
 

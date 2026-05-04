@@ -11,7 +11,7 @@ use discord::{DiscordClient, DiscordMessage, DiscordMessageOptions};
 use presence::{PresenceClient, UserPresenceInfo};
 use server::ApiError;
 
-use crate::symbolicate::{DsymUploadMetadata, RoamDebugInfo, StoredDsymArchive};
+use crate::symbolicate::{DsymUploadMetadata, StoredDsymArchive, SymbolicationClient};
 
 pub mod ai_responder;
 pub mod apns;
@@ -22,7 +22,7 @@ pub mod gateway;
 pub mod logging;
 pub mod presence;
 pub mod server;
-mod symbolicate;
+pub mod symbolicate;
 pub mod tasks;
 mod utils;
 
@@ -120,6 +120,14 @@ impl AppContext {
         &self.db_client
     }
 
+    pub fn symbolicate_client(&self) -> &SymbolicationClient {
+        &self.symbolicate_client
+    }
+
+    pub fn data_dir(&self) -> &Path {
+        &self.data_dir
+    }
+
     pub fn discord_client(&self) -> &DiscordClient {
         &self.discord_client
     }
@@ -193,18 +201,6 @@ impl AppContext {
             .store_dsym_zip_with_metadata(Some(metadata), dsym_zip)
             .await
             .map_err(ApiError::SymbolicationError)
-    }
-
-    async fn symbolicate_diagnostics(
-        &self,
-        diagnostics: &RoamDebugInfo,
-        installation_info: &DeviceInfo,
-        metrics_payload: &Path,
-    ) -> anyhow::Result<PathBuf> {
-        return self
-            .symbolicate_client
-            .symbolicate_diagnostics(diagnostics, installation_info, metrics_payload)
-            .await;
     }
 }
 

@@ -81,6 +81,7 @@ actor RoamDataHandler {
     private let legacyRootPath: String?
     private var shouldRetryPersistentOpen: Bool
     private var persistentRetryTask: Task<Void, Never>?
+    private var initializationTask: Task<Void, Never>?
     private var updateListeners: [RegistrationToken: RegistrationListenerRef] = [:]
     private var updateRegistrations: [ChangeOperation: Set<RegistrationToken>] = [:]
 
@@ -96,22 +97,16 @@ actor RoamDataHandler {
     private var isSendingPendingMessages = false
 
     @MainActor
-    private static let _shared: RoamDataHandler? = getForShared()
+    private static let _shared: RoamDataHandler = getForShared()
 
     @MainActor
     static func sharedChecked() throws -> RoamDataHandler {
-        guard let shared = _shared else {
-            throw DataHandlerError.noContainerURL
-        }
-        return shared
+        return _shared
     }
 
     @MainActor
     static var shared: RoamDataHandler {
-        guard let shared = _shared else {
-            loggedFatalError("No container url for main app group \(mainAppGroup)")
-        }
-        return shared
+        return _shared
     }
 
     private init(
@@ -131,20 +126,14 @@ actor RoamDataHandler {
                 await self?.handleExternalDatabaseChange()
             }
         }
-        Task {
-            await self.preloadDeviceList()
-            await self.preloadPrimaryDevice()
-            await self.preloadPrimaryApps()
-            await self.preloadMessages()
-            await self.startPersistentRetryLoopIfNeeded()
-        }
     }
 
     deinit {
         persistentRetryTask?.cancel()
     }
 
-    private static func getForShared() -> Self? {
+    @MainActor
+    private static func getForShared() -> Self {
         let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: mainAppGroup)
         guard let containerURL else {
             Log.backend.error("Failed to get app group container URL")
@@ -197,13 +186,14 @@ actor RoamDataHandler {
         }
     }
 
+    @MainActor
     private static func makeVolatileShared(
         persistentDatabaseURL: URL?,
         persistentLockURL: URL?,
         legacyRootPath: String?,
         error: DataHandlerError,
         debugVolatileStartupError: DataHandlerError? = nil
-    ) -> Self? {
+    ) -> Self {
         do {
 #if DEBUG
             if let debugVolatileStartupError {
@@ -215,9 +205,7 @@ actor RoamDataHandler {
 #endif
             let database = try RoamDatabase.openVolatile()
             let issue = DatabaseStatusIssue(error: error, isVolatile: true, operation: .open)
-            Task { @MainActor in
-                DatabaseStatusMonitor.shared.setIssue(issue)
-            }
+            DatabaseStatusMonitor.shared.setIssue(issue)
             return self.init(
                 database: database,
                 persistentDatabaseURL: persistentDatabaseURL,
@@ -225,14 +213,23 @@ actor RoamDataHandler {
                 legacyRootPath: legacyRootPath,
                 shouldRetryPersistentOpen: issue.isRetryable)
         } catch {
-            Log.backend.error("Failed to open volatile Roam database: \(error, privacy: .public)")
-            Task { @MainActor in
-                DatabaseStatusMonitor.shared.setIssue(DatabaseStatusIssue(
-                    error: DataHandlerError.from(error: error),
-                    isVolatile: false,
-                    operation: .open))
+            let dataError = DataHandlerError.from(error: error)
+            Log.backend.error("Failed to open volatile Roam database; falling back to bare in-memory store: \(dataError, privacy: .public)")
+            DatabaseStatusMonitor.shared.setIssue(DatabaseStatusIssue(
+                error: dataError,
+                isVolatile: false,
+                operation: .open))
+            do {
+                let database = try RoamDatabase.openVolatile()
+                return self.init(
+                    database: database,
+                    persistentDatabaseURL: persistentDatabaseURL,
+                    persistentLockURL: persistentLockURL,
+                    legacyRootPath: legacyRootPath,
+                    shouldRetryPersistentOpen: false)
+            } catch {
+                loggedFatalError("Failed to open even a fallback in-memory Roam database: \(error)")
             }
-            return nil
         }
     }
 
@@ -1708,6 +1705,31 @@ public let mainAppGroup = "group.com.msdrigg.roam"
 // MARK: - Testing Support
 extension RoamDataHandler {
     func initialize() async {
+        if let task = initializationTask {
+            await task.value
+            return
+        }
+
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await self.performInitialization()
+        }
+        initializationTask = task
+        await task.value
+    }
+
+    @MainActor
+    static func initializeSharedBlocking() {
+        let handler = _shared
+        let semaphore = DispatchSemaphore(value: 0)
+        Task.detached(priority: .userInitiated) {
+            await handler.initialize()
+            semaphore.signal()
+        }
+        semaphore.wait()
+    }
+
+    private func performInitialization() async {
         if loadTestingData() {
             // swiftlint:disable:next force_try
             try! await self.loadTestData()
@@ -1715,6 +1737,12 @@ extension RoamDataHandler {
             // swiftlint:disable:next force_try
             try! await self.clearData()
         }
+
+        _ = self.requestDeviceList()
+        _ = self.requestPrimaryDevice()
+        _ = self.requestPrimaryApps()
+        _ = self.requestMessages()
+        self.startPersistentRetryLoopIfNeeded()
     }
 
     private func loadTestData() async throws {

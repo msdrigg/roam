@@ -1,11 +1,19 @@
 use clap::Parser;
-use roam_backend::{ai_responder, cli::RoamCli, gateway, logging, server, tasks};
+use roam_backend::{ai_responder, cli::RoamCli, gateway, logging, server, symbolicate, tasks};
 
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
     let cli = RoamCli::parse();
     logging::setup_logging(&cli);
+
+    if cli.symbolicate {
+        if let Err(err) = symbolicate::worker::run(cli).await {
+            tracing::error!(?err, "Symbolication worker exited with error");
+            std::process::exit(1);
+        }
+        return;
+    }
 
     let app_context = roam_backend::AppContext::new(cli)
         .await

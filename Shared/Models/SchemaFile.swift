@@ -643,6 +643,17 @@ public func migrateOffSwiftData() {
     }
     let fl = FileLock(fileName: ".roamSwiftData.lock", appGroupIdentifier: mainAppGroup)
 
+    struct DeviceMigration {
+        let device: Device
+        let appLinks: [AppLink]
+        let isHidden: Bool
+        let lastSelectedAt: Date?
+    }
+
+    var deviceMigrations: [DeviceMigration] = []
+    var messageMigrations: [Message] = []
+    var didReadAnything = false
+
     do {
         try fl.withLock(mode: .exclusive) {
             if UserDefaults.standard.bool(forKey: UserDefaultKeys.didMigrateOffSwiftData) {
@@ -673,102 +684,126 @@ public func migrateOffSwiftData() {
 
             Log.data.info("Starting migration: \(allDevices.count) devices, \(allApps.count) apps, \(allMessages.count) messages")
 
-            Task {
-                let dataHandler = RoamDataHandler.shared
-                var deviceIds: [String] = []
-                var hiddenDeviceIds: [String] = []
+            // Snapshot every SwiftData model property into plain types now.
+            // The `Task { }` below outlives this closure, and once we leave
+            // this scope the local `modelContainer` is deallocated and its
+            // `ModelContext` resets, invalidating every PersistentIdentifier.
+            // Touching a SwiftData property after that traps with
+            // "model instance was destroyed by ModelContext.reset".
+            deviceMigrations = allDevices.map { swiftDataDevice in
+                let newDevice = Device(
+                    name: swiftDataDevice.name,
+                    location: swiftDataDevice.location,
+                    udn: swiftDataDevice.udn,
+                    serial: swiftDataDevice.serial,
+                    lastSentToWatch: swiftDataDevice.lastSentToWatch,
+                    lastSelectedAt: swiftDataDevice.lastSelectedAt,
+                    lastOnlineAt: swiftDataDevice.lastOnlineAt,
+                    lastScannedAt: swiftDataDevice.lastScannedAt,
+                    hiddenAt: swiftDataDevice.hiddenAt,
+                    supportsDatagram: swiftDataDevice.supportsDatagram,
+                    iconHash: swiftDataDevice.deviceIconHash,
+                )
 
-                do {
-                    for swiftDataDevice in allDevices {
-                        let newDevice = Device(
-                            name: swiftDataDevice.name,
-                            location: swiftDataDevice.location,
-                            udn: swiftDataDevice.udn,
-                            serial: swiftDataDevice.serial,
-                            lastSentToWatch: swiftDataDevice.lastSentToWatch,
-                            lastSelectedAt: swiftDataDevice.lastSelectedAt,
-                            lastOnlineAt: swiftDataDevice.lastOnlineAt,
-                            lastScannedAt: swiftDataDevice.lastScannedAt,
-                            hiddenAt: swiftDataDevice.hiddenAt,
-                            supportsDatagram: swiftDataDevice.supportsDatagram,
-                            iconHash: swiftDataDevice.deviceIconHash,
-                        )
-
-                        try await dataHandler.setDeviceDetails(device: newDevice)
-
-                        if swiftDataDevice.hiddenAt != nil {
-                            hiddenDeviceIds.append(newDevice.id)
-                        } else {
-                            deviceIds.append(newDevice.id)
-                        }
-
-                        let deviceApps = allApps.filter { $0.deviceUid == swiftDataDevice.udn }
-                        let newApps = deviceApps.compactMap { swiftDataApp in
-                            guard let deviceId = swiftDataApp.deviceUid else {
-                                return Optional<AppLink>.none
-                            }
-                            return AppLink(
-                                name: swiftDataApp.name,
-                                deviceId: deviceId,
-                                id: swiftDataApp.id,
-                                type: swiftDataApp.type,
-                                iconHash: swiftDataApp.iconHash,
-                            )
-                        }
-
-                        try await dataHandler.setDeviceApps(deviceId: newDevice.id, apps: newApps)
-                        Log.data.debug("Migrated SwiftData device \(newDevice.name) with \(newApps.count) apps")
+                let deviceApps = allApps.filter { $0.deviceUid == swiftDataDevice.udn }
+                let newApps: [AppLink] = deviceApps.compactMap { swiftDataApp -> AppLink? in
+                    guard let deviceId = swiftDataApp.deviceUid else {
+                        return nil
                     }
-
-                    let primaryCandidates = allDevices.filter { $0.hiddenAt == nil }
-                    let primaryDevice = (primaryCandidates.isEmpty ? allDevices : primaryCandidates).max(by: {
-                        ($0.lastSelectedAt ?? Date.distantPast) < ($1.lastSelectedAt ?? Date.distantPast)
-                    })
-                    if let primaryDevice {
-                        try await dataHandler.makePrimaryDevice(id: primaryDevice.udn)
-                        Log.data.info("Set migrated SwiftData primary device: \(primaryDevice.name)")
-                    }
-
-                    for swiftDataMessage in allMessages {
-                        let attachments = swiftDataMessage.attachments.map {
-                            Message.SentAttachment(
-                                id: $0.id,
-                                dataHash: $0.dataHash,
-                                dataSize: $0.dataSize,
-                                filename: $0.filename,
-                                mimetype: $0.mimetype
-                            )
-                        }
-                        var message = Message(
-                            id: swiftDataMessage.id,
-                            message: swiftDataMessage.message,
-                            author: convertMessageAuthor(swiftDataMessage.author),
-                            fetchedBackend: swiftDataMessage.fetchedBackend,
-                            viewed: swiftDataMessage.viewed,
-                            attachments: attachments,
-                            unsentAttachment: swiftDataMessage.unsentAttachment,
-                            nonce: swiftDataMessage.nonce,
-                            messageTitle: swiftDataMessage.messageTitle,
-                            robotMessage: swiftDataMessage.robotMessage
-                        )
-                        message.hidden = swiftDataMessage.hidden
-                        message.lastSendAttempt = swiftDataMessage.lastSendAttempt
-                        try await dataHandler.saveMessageFromMigration(message)
-                    }
-
-                    Log.data.info("SwiftData to GRDB migration completed: \(deviceIds.count) visible devices, \(hiddenDeviceIds.count) hidden devices, \(allMessages.count) messages")
-                    UserDefaults.standard.setValue(true, forKey: UserDefaultKeys.didMigrateOffSwiftData)
-                } catch {
-                    Log.data.error("SwiftData to GRDB migration failed: \(error, privacy: .public)")
-                    UserDefaults.standard.setValue(false, forKey: UserDefaultKeys.didMigrateOffSwiftData)
+                    return AppLink(
+                        name: swiftDataApp.name,
+                        deviceId: deviceId,
+                        id: swiftDataApp.id,
+                        type: swiftDataApp.type,
+                        iconHash: swiftDataApp.iconHash,
+                    )
                 }
+
+                return DeviceMigration(
+                    device: newDevice,
+                    appLinks: newApps,
+                    isHidden: swiftDataDevice.hiddenAt != nil,
+                    lastSelectedAt: swiftDataDevice.lastSelectedAt
+                )
             }
 
+            messageMigrations = allMessages.map { swiftDataMessage in
+                let attachments = swiftDataMessage.attachments.map {
+                    Message.SentAttachment(
+                        id: $0.id,
+                        dataHash: $0.dataHash,
+                        dataSize: $0.dataSize,
+                        filename: $0.filename,
+                        mimetype: $0.mimetype
+                    )
+                }
+                var message = Message(
+                    id: swiftDataMessage.id,
+                    message: swiftDataMessage.message,
+                    author: convertMessageAuthor(swiftDataMessage.author),
+                    fetchedBackend: swiftDataMessage.fetchedBackend,
+                    viewed: swiftDataMessage.viewed,
+                    attachments: attachments,
+                    unsentAttachment: swiftDataMessage.unsentAttachment,
+                    nonce: swiftDataMessage.nonce,
+                    messageTitle: swiftDataMessage.messageTitle,
+                    robotMessage: swiftDataMessage.robotMessage
+                )
+                message.hidden = swiftDataMessage.hidden
+                message.lastSendAttempt = swiftDataMessage.lastSendAttempt
+                return message
+            }
+
+            didReadAnything = true
         }
     } catch {
         Log.data.error("Error doing swift data migration: \(error)")
         // Reset the migration flag on error so it can be retried
         UserDefaults.standard.setValue(false, forKey: UserDefaultKeys.didMigrateOffSwiftData)
+        return
+    }
+
+    guard didReadAnything else { return }
+
+    let primaryCandidates = deviceMigrations.filter { !$0.isHidden }
+    let primaryDeviceId: String? = (primaryCandidates.isEmpty ? deviceMigrations : primaryCandidates).max(by: {
+        ($0.lastSelectedAt ?? Date.distantPast) < ($1.lastSelectedAt ?? Date.distantPast)
+    })?.device.id
+
+    Task {
+        let dataHandler = RoamDataHandler.shared
+        var deviceIds: [String] = []
+        var hiddenDeviceIds: [String] = []
+
+        do {
+            for migration in deviceMigrations {
+                try await dataHandler.setDeviceDetails(device: migration.device)
+
+                if migration.isHidden {
+                    hiddenDeviceIds.append(migration.device.id)
+                } else {
+                    deviceIds.append(migration.device.id)
+                }
+
+                try await dataHandler.setDeviceApps(deviceId: migration.device.id, apps: migration.appLinks)
+                Log.data.debug("Migrated SwiftData device \(migration.device.name) with \(migration.appLinks.count) apps")
+            }
+
+            if let primaryDeviceId {
+                try await dataHandler.makePrimaryDevice(id: primaryDeviceId)
+                Log.data.info("Set migrated SwiftData primary device: \(primaryDeviceId)")
+            }
+
+            for message in messageMigrations {
+                try await dataHandler.saveMessageFromMigration(message)
+            }
+
+            Log.data.info("SwiftData to GRDB migration completed: \(deviceIds.count) visible devices, \(hiddenDeviceIds.count) hidden devices, \(messageMigrations.count) messages")
+            UserDefaults.standard.setValue(true, forKey: UserDefaultKeys.didMigrateOffSwiftData)
+        } catch {
+            Log.data.error("SwiftData to GRDB migration failed: \(error, privacy: .public)")
+            UserDefaults.standard.setValue(false, forKey: UserDefaultKeys.didMigrateOffSwiftData)
+        }
     }
 }
 

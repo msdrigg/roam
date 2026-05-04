@@ -48,6 +48,7 @@ struct RoamApp: App {
             .displayFrequency(.immediate),
             .datastoreLocation(.groupContainer(identifier: mainAppGroup)),
         ])
+        RoamDataHandler.initializeSharedBlocking()
         migrateOffSwiftData()
     }
 
@@ -292,6 +293,7 @@ struct RoamApp: App {
                 "Roam Menu Bar", systemImage: "appletvremote.gen3", isInserted: self.$showMenuBar
             ) {
                 RemoteViewContained(isInMenuBar: true)
+                    .environmentObject(appDelegate)
                     .environmentObject(appDelegate)
                     .onReceive(
                         NotificationCenter.default.publisher(

@@ -14,7 +14,8 @@ use std::fmt::{Display, Write as _};
 use std::fs::{self, File};
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
-use tokio::process::Command;
+use symbolic_common::Name;
+use symbolic_demangle::{Demangle, DemangleOptions};
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -380,6 +381,43 @@ impl SymbolicationClient {
         }
     }
 
+    /// Root directory holding `cache/by-uuid/`, `cache/by-debug-id/`, `system/`,
+    /// and `uploads/`. Exposed so HTTP handlers can stream dSYMs out of the
+    /// by-uuid cache directly.
+    pub fn root(&self) -> &Path {
+        &self.symbolication_root
+    }
+
+    /// Resolves the cached dSYM path for a given binary UUID (uppercase hex with
+    /// dashes). The path may be a symlink (Unix) created by `index_debug_file`.
+    /// Returns `None` if the UUID doesn't exist in the cache.
+    pub fn dsym_path_for_uuid(&self, uuid: &str) -> Option<PathBuf> {
+        let path = self
+            .symbolication_root
+            .join("cache")
+            .join("by-uuid")
+            .join(uuid.to_ascii_uppercase());
+        path.exists().then_some(path)
+    }
+
+    /// Adds a dSYM into both the `by-uuid` and `by-debug-id` caches, mirroring
+    /// the layout produced when uploading a dSYM zip via the server.
+    pub fn index_dsym_file(&self, uuid: &str, breakpad_id: &str, source: &Path) -> Result<()> {
+        let by_uuid = self
+            .symbolication_root
+            .join("cache")
+            .join("by-uuid")
+            .join(uuid.to_ascii_uppercase());
+        let by_debug_id = self
+            .symbolication_root
+            .join("cache")
+            .join("by-debug-id")
+            .join(breakpad_id);
+        link_or_copy_debug_file(source, &by_uuid)?;
+        link_or_copy_debug_file(source, &by_debug_id)?;
+        Ok(())
+    }
+
     async fn symbolicate_requested_addresses_for_lib(
         &self,
         breakpad_id: &str,
@@ -529,7 +567,9 @@ impl SymbolicationClient {
 
     async fn ensure_system_symbols_cached(&self, payload: &MetricKitPayload) -> Result<()> {
         let Some(requirement) = payload.system_symbol_requirement() else {
-            tracing::info!("Payload has no deviceType/osVersion metadata; skipping system symbol fetch");
+            tracing::info!(
+                "Payload has no deviceType/osVersion metadata; skipping system symbol fetch"
+            );
             return Ok(());
         };
 
@@ -722,49 +762,79 @@ impl SymbolicationClient {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct MetricKitPayload {
+pub(crate) struct MetricKitPayload {
     #[serde(default)]
-    time_stamp_begin: Option<String>,
+    pub(crate) time_stamp_begin: Option<String>,
     #[serde(default)]
-    time_stamp_end: Option<String>,
+    pub(crate) time_stamp_end: Option<String>,
     #[serde(default)]
-    crash_diagnostics: Vec<MetricKitCrashDiagnostic>,
+    pub(crate) crash_diagnostics: Vec<MetricKitCrashDiagnostic>,
+}
+
+impl MetricKitPayload {
+    /// Walk every call-stack frame and collect the binary UUIDs referenced.
+    /// Used by the upload handler to record which dSYMs the symbolicator will
+    /// need before the row gets handed to a worker.
+    pub(crate) fn binary_uuids(&self) -> BTreeSet<String> {
+        let mut out = BTreeSet::new();
+        for crash in &self.crash_diagnostics {
+            for stack in &crash.call_stack_tree.call_stacks {
+                for frame in &stack.call_stack_root_frames {
+                    collect_binary_uuids(frame, &mut out);
+                }
+            }
+        }
+        out
+    }
+}
+
+fn collect_binary_uuids(frame: &MetricKitCallStackFrame, out: &mut BTreeSet<String>) {
+    if let Some(uuid) = frame.binary_uuid.as_deref() {
+        if let Ok(parsed) = Uuid::parse_str(uuid) {
+            if !parsed.is_nil() {
+                out.insert(parsed.to_string().to_ascii_uppercase());
+            }
+        }
+    }
+    for sub in &frame.sub_frames {
+        collect_binary_uuids(sub, out);
+    }
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct MetricKitCrashDiagnostic {
+pub(crate) struct MetricKitCrashDiagnostic {
     #[serde(default)]
     version: Option<String>,
     #[serde(default)]
-    call_stack_tree: MetricKitCallStackTree,
+    pub(crate) call_stack_tree: MetricKitCallStackTree,
     #[serde(default)]
     diagnostic_meta_data: BTreeMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct MetricKitCallStackTree {
+pub(crate) struct MetricKitCallStackTree {
     #[serde(default)]
-    call_stacks: Vec<MetricKitCallStack>,
+    pub(crate) call_stacks: Vec<MetricKitCallStack>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct MetricKitCallStack {
+pub(crate) struct MetricKitCallStack {
     #[serde(default)]
     thread_attributed: bool,
     #[serde(default)]
-    call_stack_root_frames: Vec<MetricKitCallStackFrame>,
+    pub(crate) call_stack_root_frames: Vec<MetricKitCallStackFrame>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct MetricKitCallStackFrame {
+pub(crate) struct MetricKitCallStackFrame {
     // MetricKit emits this key as `binaryUUID` (all caps), which the
     // camelCase rule would otherwise convert to `binaryUuid`.
     #[serde(default, rename = "binaryUUID")]
-    binary_uuid: Option<String>,
+    pub(crate) binary_uuid: Option<String>,
     #[serde(default)]
     binary_name: Option<String>,
     #[serde(default)]
@@ -772,7 +842,7 @@ struct MetricKitCallStackFrame {
     #[serde(default)]
     sample_count: Option<u64>,
     #[serde(default)]
-    sub_frames: Vec<MetricKitCallStackFrame>,
+    pub(crate) sub_frames: Vec<MetricKitCallStackFrame>,
 }
 
 #[derive(Debug)]
@@ -867,6 +937,7 @@ fn ipsw_me_args(
         "--confirm".into(),
         "--output".into(),
         output_dir.as_os_str().to_owned(),
+        "--no-color".into(),
     ];
     if let Some(arch) = arch {
         args.push("--dyld-arch".into());
@@ -902,35 +973,100 @@ fn appledb_args(
         "--confirm".into(),
         "--output".into(),
         output_dir.as_os_str().to_owned(),
+        "--no-color".into(),
     ]
 }
 
 /// Upper bound for any single ipsw download attempt. Real macOS dyld
 /// caches embedded in IPSWs are several hundred MB, so this is generous,
 /// but bounded so a hung subprocess can't pin the worker forever.
-const IPSW_DOWNLOAD_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10 * 60);
+const IPSW_DOWNLOAD_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(90 * 60);
 
 async fn run_ipsw_dyld_download(label: &str, args: Vec<std::ffi::OsString>) -> Result<()> {
+    use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+    use std::io::Read;
+
     tracing::info!(strategy = label, "Trying ipsw dyld download");
     let started = std::time::Instant::now();
 
-    let child = Command::new("ipsw")
-        .args(&args)
-        .kill_on_drop(true)
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped())
-        .spawn()
-        .with_context(|| {
-            format!(
-                "spawning `ipsw download {label} --dyld`; install https://github.com/blacktop/ipsw to enable automatic system-symbol extraction"
-            )
-        })?;
+    tracing::info!(
+        "Running ipsw with args: {:?}",
+        args.iter().map(|s| s.to_string_lossy()).collect::<Vec<_>>()
+    );
 
-    let output = match tokio::time::timeout(IPSW_DOWNLOAD_TIMEOUT, child.wait_with_output()).await {
-        Ok(result) => result.with_context(|| {
-            format!("waiting on `ipsw download {label} --dyld` to finish")
-        })?,
+    // ipsw uses the `mpb` Go progress bar library, which checks `isatty` on its
+    // output and renders nothing when the fd isn't a terminal. Without a pty we
+    // get the bullet log lines but no download progress at all. Allocate a pty
+    // so ipsw believes it's on a terminal, then read its master end like any
+    // other pipe.
+    let pty_system = native_pty_system();
+    let pair = pty_system
+        .openpty(PtySize {
+            rows: 40,
+            cols: 120,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
+        .with_context(|| format!("opening pty for `ipsw download {label} --dyld`"))?;
+
+    let mut cmd = CommandBuilder::new("ipsw");
+    for arg in &args {
+        cmd.arg(arg);
+    }
+    if let Ok(cwd) = std::env::current_dir() {
+        cmd.cwd(cwd);
+    }
+    // mpb consults TERM as a sanity check before drawing; give it something
+    // unambiguously real so it doesn't fall back to the no-tty path.
+    cmd.env("TERM", "xterm-256color");
+
+    let mut child = pair.slave.spawn_command(cmd).with_context(|| {
+        format!(
+            "spawning `ipsw download {label} --dyld`; install https://github.com/blacktop/ipsw to enable automatic system-symbol extraction"
+        )
+    })?;
+
+    // Drop our copy of the slave so the master sees EOF once the child closes
+    // its end. Without this the read loop hangs forever after ipsw exits.
+    drop(pair.slave);
+
+    let mut reader = pair
+        .master
+        .try_clone_reader()
+        .with_context(|| "cloning pty master reader")?;
+    // Hold the master alive until reads complete; dropping it early can race
+    // the read task to EIO before the final bytes drain.
+    let _master = pair.master;
+
+    let mut killer = child.clone_killer();
+
+    let (tx, rx) = tokio::sync::mpsc::channel::<Vec<u8>>(64);
+    let read_handle = tokio::task::spawn_blocking(move || {
+        let mut buf = [0u8; 4096];
+        loop {
+            match reader.read(&mut buf) {
+                Ok(0) => break,
+                Ok(n) => {
+                    if tx.blocking_send(buf[..n].to_vec()).is_err() {
+                        break;
+                    }
+                }
+                // Linux returns EIO on a master pty after the slave fully
+                // closes; treat any error as end-of-stream.
+                Err(_) => break,
+            }
+        }
+    });
+
+    let proc_handle = tokio::spawn(process_ipsw_stream(rx, label.to_string()));
+    let wait_handle = tokio::task::spawn_blocking(move || child.wait());
+
+    let status = match tokio::time::timeout(IPSW_DOWNLOAD_TIMEOUT, wait_handle).await {
+        Ok(join_res) => join_res
+            .with_context(|| "ipsw wait task panicked")?
+            .with_context(|| format!("waiting on `ipsw download {label} --dyld` to finish"))?,
         Err(_) => {
+            let _ = killer.kill();
             let elapsed_ms = started.elapsed().as_millis() as u64;
             tracing::warn!(
                 strategy = label,
@@ -938,28 +1074,125 @@ async fn run_ipsw_dyld_download(label: &str, args: Vec<std::ffi::OsString>) -> R
                 timeout_secs = IPSW_DOWNLOAD_TIMEOUT.as_secs(),
                 "ipsw dyld download timed out; killed"
             );
-            anyhow::bail!(
-                "timed out after {}s",
-                IPSW_DOWNLOAD_TIMEOUT.as_secs()
-            );
+            anyhow::bail!("timed out after {}s", IPSW_DOWNLOAD_TIMEOUT.as_secs());
         }
     };
 
+    let _ = read_handle.await;
+    let captured = proc_handle.await.unwrap_or_default();
+
     let elapsed_ms = started.elapsed().as_millis() as u64;
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        let summary = extract_ipsw_error_message(&stderr, &stdout);
+    if !status.success() {
+        let summary = extract_ipsw_error_message(&captured, &captured);
         tracing::info!(
             strategy = label,
             elapsed_ms,
+            exit_code = status.exit_code(),
             error = %summary,
             "ipsw dyld download did not succeed"
         );
-        anyhow::bail!("exit {}: {}", output.status, summary);
+        anyhow::bail!("exit {}: {}", status.exit_code(), summary);
     }
     tracing::info!(strategy = label, elapsed_ms, "ipsw dyld download succeeded");
     Ok(())
+}
+
+/// Consumes raw pty bytes from the reader task, splitting on `\r` and `\n`
+/// (ipsw redraws its progress bar with `\r`), and emits records via tracing.
+///
+/// Two modes:
+/// - non-progress lines (`Parsing remote IPSW`, errors, etc.) are logged immediately;
+/// - the most recent progress line is logged at most every 15s.
+///
+/// Returns the full captured byte stream so the caller can pass it to
+/// `extract_ipsw_error_message` on failure.
+async fn process_ipsw_stream(
+    mut rx: tokio::sync::mpsc::Receiver<Vec<u8>>,
+    label: String,
+) -> String {
+    const PROGRESS_LOG_INTERVAL: std::time::Duration = std::time::Duration::from_secs(15);
+
+    let mut full: Vec<u8> = Vec::new();
+    let mut current: Vec<u8> = Vec::new();
+    let mut latest_progress: Option<String> = None;
+
+    // Delay the first tick so we don't fire before any progress has arrived.
+    let mut interval = tokio::time::interval_at(
+        tokio::time::Instant::now() + PROGRESS_LOG_INTERVAL,
+        PROGRESS_LOG_INTERVAL,
+    );
+
+    loop {
+        tokio::select! {
+            chunk = rx.recv() => {
+                let Some(chunk) = chunk else { break; };
+                full.extend_from_slice(&chunk);
+                for &byte in &chunk {
+                    match byte {
+                        b'\r' | b'\n' => {
+                            consume_ipsw_line(&current, &label, &mut latest_progress);
+                            current.clear();
+                        }
+                        _ => current.push(byte),
+                    }
+                }
+            }
+            _ = interval.tick() => {
+                if let Some(progress) = latest_progress.as_deref() {
+                    tracing::info!(strategy = %label, "ipsw progress: {progress}");
+                }
+            }
+        }
+    }
+
+    if !current.is_empty() {
+        consume_ipsw_line(&current, &label, &mut latest_progress);
+    }
+    if let Some(progress) = latest_progress {
+        tracing::info!(strategy = %label, "ipsw progress: {progress}");
+    }
+    String::from_utf8_lossy(&full).into_owned()
+}
+
+fn consume_ipsw_line(bytes: &[u8], label: &str, latest_progress: &mut Option<String>) {
+    let line = String::from_utf8_lossy(bytes);
+    // mpb leaves cursor-movement codes in the stream even with --no-color; strip
+    // them so the rendered progress text is readable in tracing.
+    let cleaned = strip_ansi_csi(&line);
+    let trimmed = cleaned.trim();
+    if trimmed.is_empty() {
+        return;
+    }
+    if looks_like_ipsw_progress(trimmed) {
+        *latest_progress = Some(trimmed.to_string());
+    } else {
+        tracing::info!(strategy = label, "ipsw: {trimmed}");
+    }
+}
+
+fn looks_like_ipsw_progress(line: &str) -> bool {
+    // Progress bar shape: "<size> / <size> [<bar>| <eta> ] <rate>".
+    line.contains(" / ") && line.contains('[') && line.contains(']')
+}
+
+/// Strips ANSI CSI escape sequences (`\x1b[...<final>`) from `s`. Doesn't try to
+/// handle other escape forms (OSC, charset selection, etc.) — mpb only emits CSI.
+fn strip_ansi_csi(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut chars = s.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '\x1b' && chars.peek() == Some(&'[') {
+            chars.next();
+            for next in chars.by_ref() {
+                if matches!(next as u32, 0x40..=0x7e) {
+                    break;
+                }
+            }
+        } else {
+            out.push(c);
+        }
+    }
+    out
 }
 
 /// `ipsw` dumps full --help output to stdout on cobra-level argument or
@@ -1219,7 +1452,7 @@ fn frame_symbol(
 
     if let Some(results) = symbolicated_addresses.get(&breakpad_id) {
         if let Some(Some(result)) = results.address_results.get(&offset) {
-            let mut symbol = result.symbol_name.clone();
+            let mut symbol = demangle_symbol(&result.symbol_name);
             if let Some(frames) = &result.inline_frames {
                 if let Some(frame) = frames.first() {
                     if let Some(location) = render_debug_frame_location(frame) {
@@ -1238,6 +1471,12 @@ fn frame_symbol(
     }
 
     format!("(unresolved {binary_uuid})")
+}
+
+fn demangle_symbol(symbol: &str) -> String {
+    Name::from(symbol)
+        .try_demangle(DemangleOptions::name_only())
+        .into_owned()
 }
 
 fn render_debug_frame_location(frame: &FrameDebugInfo) -> Option<String> {
@@ -1480,5 +1719,375 @@ mod tests {
                 .to_string()
         ));
         assert!(paths.contains(&"/usr/lib/CoreFoundation.dylib".to_string()));
+    }
+
+    // The .debug dSYM lives under backend/testing-support/dSYMs/Roam.app.debug.dSYM.
+    // It pairs the stripped Roam binary with a fat Roam.debug.dylib that holds
+    // the bulk of the Swift symbols, and was the one missing from the upload
+    // when symbolication of the production payload returned every frame as
+    // "(unresolved ...)". UUIDs verified with `dwarfdump --uuid`.
+    const ROAM_DEBUG_BINARY_BREAKPAD_ID: &str = "C634B9DAA08E3551A316BA831333CDCA0";
+    const ROAM_DEBUG_DYLIB_BREAKPAD_ID: &str = "F2DD80141670331C87EBC34428FBB75D0";
+    const ROAM_DEBUG_DYLIB_UUID: &str = "F2DD8014-1670-331C-87EB-C34428FBB75D";
+
+    fn testing_support_dir() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("testing-support")
+    }
+
+    fn zip_directory_to_bytes(root: &Path) -> Vec<u8> {
+        let mut buffer = Vec::new();
+        let cursor = Cursor::new(&mut buffer);
+        let mut writer = zip::ZipWriter::new(cursor);
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+        let parent = root.parent().expect("root must have parent");
+        write_dir_entries(&mut writer, options, parent, root);
+        writer.finish().expect("finalize zip");
+        buffer
+    }
+
+    fn write_dir_entries<W: std::io::Write + std::io::Seek>(
+        writer: &mut zip::ZipWriter<W>,
+        options: zip::write::SimpleFileOptions,
+        base: &Path,
+        path: &Path,
+    ) {
+        for entry in fs::read_dir(path).expect("read_dir") {
+            let entry = entry.expect("dir entry");
+            let path = entry.path();
+            // Skip macOS Finder metadata so it doesn't appear in the archive.
+            if path.file_name().and_then(|n| n.to_str()) == Some(".DS_Store") {
+                continue;
+            }
+            let rel = path
+                .strip_prefix(base)
+                .expect("path under base")
+                .to_string_lossy()
+                .into_owned();
+            if path.is_dir() {
+                writer.add_directory(&rel, options).expect("add_directory");
+                write_dir_entries(writer, options, base, &path);
+            } else {
+                writer.start_file(&rel, options).expect("start_file");
+                let bytes = fs::read(&path).expect("read file");
+                std::io::Write::write_all(writer, &bytes).expect("write file");
+            }
+        }
+    }
+
+    fn empty_diagnostics() -> RoamDebugInfo {
+        RoamDebugInfo {
+            installation_info: empty_device_info(),
+            user_defaults: Default::default(),
+            space_on_device: None,
+            devices: vec![],
+            app_links: vec![],
+            interfaces: vec![],
+            logs: vec![],
+            debug_errors: vec![],
+            language: super::super::diagnostics::DebugLanguage {
+                device_language_code: "en".to_string(),
+                translated_language_code: "en".to_string(),
+            },
+        }
+    }
+
+    fn empty_device_info() -> crate::database::DeviceInfo {
+        crate::database::DeviceInfo {
+            user_id: None,
+            build_version: None,
+            release_version: None,
+            os_platform: None,
+            os_version: None,
+            user_locale: None,
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn store_dsym_zip_indexes_uuids_from_debug_dsym() {
+        let symbolication_root = tempfile::tempdir().expect("tempdir");
+        let client = SymbolicationClient::new(symbolication_root.path().to_path_buf());
+
+        let debug_dsym = testing_support_dir()
+            .join("dSYMs")
+            .join("Roam.app.debug.dSYM");
+        assert!(
+            debug_dsym.is_dir(),
+            "fixture missing: {}",
+            debug_dsym.display()
+        );
+
+        let zipped = zip_directory_to_bytes(&debug_dsym);
+        let stored = client
+            .store_dsym_zip_with_metadata(None, zipped)
+            .await
+            .expect("store .debug dSYM zip");
+
+        // Both UUIDs in the .debug bundle must be indexed; if either is
+        // missing, the production crash payload's "Roam.debug.dylib" frames
+        // come back as "(unresolved ...)" — the failure mode that motivated
+        // this fixture in the first place.
+        assert!(
+            stored
+                .indexed_debug_ids
+                .contains(&ROAM_DEBUG_BINARY_BREAKPAD_ID.to_string()),
+            "missing Roam binary UUID in indexed list {:?}",
+            stored.indexed_debug_ids
+        );
+        assert!(
+            stored
+                .indexed_debug_ids
+                .contains(&ROAM_DEBUG_DYLIB_BREAKPAD_ID.to_string()),
+            "missing Roam.debug.dylib UUID in indexed list {:?}",
+            stored.indexed_debug_ids
+        );
+
+        // Both expected paths must be reachable through the by-debug-id and
+        // by-uuid caches that get_candidate_paths_for_debug_file consults.
+        for breakpad_id in [ROAM_DEBUG_BINARY_BREAKPAD_ID, ROAM_DEBUG_DYLIB_BREAKPAD_ID] {
+            let by_debug_id = symbolication_root
+                .path()
+                .join("cache")
+                .join("by-debug-id")
+                .join(breakpad_id);
+            assert!(
+                by_debug_id.exists(),
+                "by-debug-id symlink missing: {}",
+                by_debug_id.display()
+            );
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn symbolicate_diagnostics_resolves_indexed_debug_dylib() {
+        let symbolication_root = tempfile::tempdir().expect("tempdir");
+        let client = SymbolicationClient::new(symbolication_root.path().to_path_buf());
+
+        let debug_dsym = testing_support_dir()
+            .join("dSYMs")
+            .join("Roam.app.debug.dSYM");
+        let zipped = zip_directory_to_bytes(&debug_dsym);
+        client
+            .store_dsym_zip_with_metadata(None, zipped)
+            .await
+            .expect("store .debug dSYM");
+
+        // Synthetic MetricKit payload referencing a UUID we just indexed.
+        // Offset is arbitrary; symbol resolution at this exact offset isn't
+        // guaranteed (samply may report "no symbol for ..."), but the binary
+        // must still be locatable — which is what this regression guards.
+        let payload = serde_json::json!({
+            "timeStampBegin": "2026-05-04 08:30:00",
+            "timeStampEnd": "2026-05-04 08:30:00",
+            "crashDiagnostics": [{
+                "version": "1.0.0",
+                "callStackTree": {
+                    "callStacks": [{
+                        "threadAttributed": true,
+                        "callStackRootFrames": [{
+                            "binaryUUID": ROAM_DEBUG_DYLIB_UUID,
+                            "binaryName": "Roam.debug.dylib",
+                            "offsetIntoBinaryTextSegment": 0x69B454u64,
+                            "sampleCount": 1,
+                            "subFrames": []
+                        }],
+                    }],
+                    "callStackPerThread": true
+                },
+                "diagnosticMetaData": {
+                    "platformArchitecture": "arm64e",
+                    "bundleIdentifier": "com.msdrigg.roam",
+                }
+            }]
+        });
+
+        let payload_dir = symbolication_root.path().join("payload");
+        std::fs::create_dir_all(&payload_dir).unwrap();
+        let payload_path = payload_dir.join("metric.json");
+        tokio::fs::write(&payload_path, serde_json::to_vec(&payload).unwrap())
+            .await
+            .unwrap();
+
+        let report_path = client
+            .symbolicate_diagnostics(&empty_diagnostics(), &empty_device_info(), &payload_path)
+            .await
+            .expect("symbolicate_diagnostics succeeded");
+        let report = tokio::fs::read_to_string(&report_path).await.unwrap();
+
+        // The user's bug: every frame came back as "(unresolved ...)" because
+        // the .debug dSYM had not been uploaded. With the dSYM indexed, the
+        // looked-up binary's UUID must not appear in the unresolved section.
+        assert!(
+            !report.contains("Unresolved UUIDs"),
+            "expected no unresolved-UUIDs section, got report:\n{report}"
+        );
+        let unresolved_marker = format!("(unresolved {ROAM_DEBUG_DYLIB_UUID}");
+        assert!(
+            !report.contains(&unresolved_marker),
+            "frame still unresolved for {ROAM_DEBUG_DYLIB_UUID}; report:\n{report}"
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn symbolicate_diagnostics_resolves_production_payload_with_matching_dsym() {
+        // The Roam.debug.dylib in the production mkmetrickit-upload.json
+        // payload has UUID 7FF52BDA-EDB7-3091-827E-A6F67F3BA16C. The dSYM
+        // for that exact UUID lives at testing-support/dSYMs/Roam.debug.dylib.dSYM.
+        // With it indexed, the upload's frames for that binary must come
+        // back resolved (not "(unresolved ...)") — even though the rest of
+        // the system frameworks in the payload remain unresolved because we
+        // don't fetch dyld_shared_cache here.
+        let symbolication_root = tempfile::tempdir().expect("tempdir");
+        let client = SymbolicationClient::new(symbolication_root.path().to_path_buf());
+
+        let dylib_dsym = testing_support_dir()
+            .join("dSYMs")
+            .join("Roam.debug.dylib.dSYM");
+        assert!(
+            dylib_dsym.is_dir(),
+            "fixture missing: {}",
+            dylib_dsym.display()
+        );
+        let zipped = zip_directory_to_bytes(&dylib_dsym);
+        let stored = client
+            .store_dsym_zip_with_metadata(None, zipped)
+            .await
+            .expect("store Roam.debug.dylib.dSYM");
+        let upload_dylib_breakpad = "7FF52BDAEDB73091827EA6F67F3BA16C0";
+        assert!(
+            stored
+                .indexed_debug_ids
+                .contains(&upload_dylib_breakpad.to_string()),
+            "expected production-payload UUID to be indexed; got {:?}",
+            stored.indexed_debug_ids
+        );
+
+        // Real upload payload format: outer JSON is a Vec<String>, where
+        // each string is itself a MetricKit JSON document.
+        let upload_path = testing_support_dir().join("mkmetrickit-upload.json");
+        let payloads: Vec<String> =
+            serde_json::from_slice(&std::fs::read(&upload_path).expect("read upload"))
+                .expect("parse upload outer array");
+        let mut payload: serde_json::Value =
+            serde_json::from_str(&payloads[0]).expect("parse upload payload JSON");
+
+        // Strip osVersion/deviceType so ensure_system_symbols_cached won't
+        // shell out to `ipsw` to download a dyld_shared_cache (which can
+        // take minutes and shouldn't run in unit tests).
+        if let Some(diagnostics) = payload
+            .get_mut("crashDiagnostics")
+            .and_then(|v| v.as_array_mut())
+        {
+            for diag in diagnostics {
+                if let Some(meta) = diag
+                    .get_mut("diagnosticMetaData")
+                    .and_then(|v| v.as_object_mut())
+                {
+                    meta.remove("osVersion");
+                    meta.remove("deviceType");
+                }
+            }
+        }
+
+        let payload_dir = symbolication_root.path().join("payload");
+        std::fs::create_dir_all(&payload_dir).unwrap();
+        let payload_path = payload_dir.join("metric.json");
+        tokio::fs::write(&payload_path, serde_json::to_vec(&payload).unwrap())
+            .await
+            .unwrap();
+
+        let report_path = client
+            .symbolicate_diagnostics(&empty_diagnostics(), &empty_device_info(), &payload_path)
+            .await
+            .expect("symbolicate_diagnostics");
+        let report = tokio::fs::read_to_string(&report_path).await.unwrap();
+        // write to ./symbolication-test-report.txt so we can inspect the full report if assertions fail.
+        // tokio::fs::write("symbolication-test-report.txt", &report)
+        //     .await
+        //     .expect("write report for inspection");
+
+        // Roam.debug.dylib must no longer appear in the unresolved bucket
+        // and no per-frame "(unresolved 7FF52BDA…)" marker may remain.
+        let upload_dylib_uuid = "7FF52BDA-EDB7-3091-827E-A6F67F3BA16C";
+        let unresolved_marker = format!("(unresolved {upload_dylib_uuid}");
+        assert!(
+            !report.contains(&unresolved_marker),
+            "expected {upload_dylib_uuid} frames to resolve, but report contains \
+             {unresolved_marker:?}; report:\n{report}"
+        );
+        // System framework UUIDs (SwiftUI, AppKit, …) remain unindexed in
+        // this test, so the report should still have an Unresolved section
+        // — but it must not list the dylib UUID we just indexed.
+        if let Some(unresolved_section) = report.split_once("Unresolved UUIDs") {
+            let after = unresolved_section.1;
+            let next_section_end = after.find("\n\n").unwrap_or(after.len());
+            let unresolved_block = &after[..next_section_end];
+            assert!(
+                !unresolved_block.contains(upload_dylib_uuid),
+                "indexed {upload_dylib_uuid} should not be listed as unresolved; section:\n{unresolved_block}"
+            );
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn symbolicate_diagnostics_marks_uuids_unresolved_when_dsym_missing() {
+        // Reproduces the original failure: when no dSYM is indexed for a
+        // referenced binary, the report must surface that UUID under
+        // "Unresolved UUIDs" instead of erroring out or silently dropping it.
+        // diagnosticMetaData intentionally omits osVersion so this test does
+        // not trigger ensure_system_symbols_cached (which shells out to
+        // `ipsw` and is not appropriate for unit tests).
+        let symbolication_root = tempfile::tempdir().expect("tempdir");
+        let client = SymbolicationClient::new(symbolication_root.path().to_path_buf());
+
+        // UUID from the real production upload that motivated this fixture —
+        // the build's Roam.debug.dylib was never uploaded, so symbolication
+        // returned every frame for it as "(unresolved ...)".
+        let missing_uuid = "7FF52BDA-EDB7-3091-827E-A6F67F3BA16C";
+        let payload = serde_json::json!({
+            "timeStampBegin": "2026-05-04 08:30:00",
+            "timeStampEnd": "2026-05-04 08:30:00",
+            "crashDiagnostics": [{
+                "version": "1.0.0",
+                "callStackTree": {
+                    "callStacks": [{
+                        "threadAttributed": true,
+                        "callStackRootFrames": [{
+                            "binaryUUID": missing_uuid,
+                            "binaryName": "Roam.debug.dylib",
+                            "offsetIntoBinaryTextSegment": 178116u64,
+                            "sampleCount": 1,
+                            "subFrames": []
+                        }],
+                    }],
+                    "callStackPerThread": true
+                },
+                "diagnosticMetaData": {
+                    "bundleIdentifier": "com.msdrigg.roam"
+                }
+            }]
+        });
+
+        let payload_dir = symbolication_root.path().join("payload");
+        std::fs::create_dir_all(&payload_dir).unwrap();
+        let payload_path = payload_dir.join("metric.json");
+        tokio::fs::write(&payload_path, serde_json::to_vec(&payload).unwrap())
+            .await
+            .unwrap();
+
+        let report_path = client
+            .symbolicate_diagnostics(&empty_diagnostics(), &empty_device_info(), &payload_path)
+            .await
+            .expect("symbolicate_diagnostics");
+        let report = tokio::fs::read_to_string(&report_path).await.unwrap();
+
+        assert!(
+            report.contains("Unresolved UUIDs"),
+            "expected an Unresolved UUIDs section in report:\n{report}"
+        );
+        assert!(
+            report.contains(missing_uuid),
+            "expected unresolved UUID {missing_uuid} in report:\n{report}"
+        );
     }
 }

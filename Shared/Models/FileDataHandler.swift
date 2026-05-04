@@ -274,7 +274,8 @@ struct DatabaseStatusIssue: Equatable, Sendable {
         case .corrupt:
             return String(localized: "Roam's saved data appears damaged. Device control may still work, but saved devices and messages are unavailable.")
         case .unavailable, .unknown:
-            return String(localized: "Roam could not open its saved data. Device control may still work, but changes may not be saved.")
+            // swiftlint:disable:next line_length
+            return String(localized: "Roam could not open its saved device list. Device control may still work, but changes may not be saved. Please try quitting and re-opening Roam if you are unable to use the app.")
         }
     }
 }

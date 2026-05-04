@@ -1,15 +1,18 @@
+use std::time::Duration;
+
 use crate::{
-    database::{DeviceInfo, User, UserUpdate},
+    database::{DeviceInfo, PendingSymbolication, User, UserUpdate},
     discord::{DiscordAuthor, DiscordFile, DiscordFileUpload, DiscordMessageOptions},
     presence::UserPresenceInfo,
-    symbolicate::{DsymUploadMetadata, RoamDebugInfo},
+    symbolicate::{DsymUploadMetadata, MetricKitPayload, RoamDebugInfo},
     utils::{base64_data_de, i64_to_string, string_to_i64_optional},
 };
 use anyhow::Context;
 use axum::{
     body::{to_bytes, Body},
     extract::{DefaultBodyLimit, Path, Query, State},
-    http::{HeaderName, Request},
+    http::{header, HeaderName, Request, StatusCode},
+    response::{IntoResponse, Response},
     routing::post,
     Json,
 };
@@ -19,6 +22,7 @@ use futures::{stream, StreamExt};
 use opentelemetry::trace::{SpanKind, TraceContextExt};
 use serde::{Deserialize, Serialize};
 use tokio::{net::TcpListener, task::JoinHandle};
+use tokio_util::io::ReaderStream;
 use tower_http::{
     catch_panic::CatchPanicLayer,
     cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer},
@@ -29,6 +33,9 @@ use tower_http::{
 use tracing::{Level, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use uuid::Uuid;
+
+/// How long a leased payload stays out before another worker can re-claim it.
+const LEASE_TTL: Duration = Duration::from_secs(15 * 60);
 
 use crate::{discord::DiscordMessage, AppContext};
 
@@ -175,6 +182,9 @@ fn router(app_context: AppContext) -> Router {
         .route("/v2/new-message", post(new_message))
         .route("/v2/upload-diagnostics", post(upload_metric_diagnostics))
         .route("/v2/upload-roam-dsym", post(upload_roam_dsym))
+        .route("/v2/symbolicate/lease", get(lease_pending_symbolications))
+        .route("/v2/symbolicate/dsym/{uuid}", get(get_dsym_by_uuid))
+        .route("/v2/symbolicate/result", post(submit_symbolication_result))
         .route("/new-apns", post(new_apns))
         .route(
             "/upload-diagnostics/{diagnostic_key}",
@@ -447,120 +457,80 @@ async fn upload_metric_diagnostics(
         )
         .await?;
 
-    // Symbolication can take seconds-to-minutes (downloading a dyld_shared_cache
-    // from ipsw.me/appledb on a cold cache, parsing a fat dSYM, etc.) — longer
-    // than the iOS client's URLSession timeout. Spawn it so the upload returns
-    // now; the symbolicated reports get posted to Discord when ready.
-    let bg_app_context = app_context.clone();
-    let bg_device_id = device_id;
-    let bg_thread_id = user.thread_id;
-    let spawn_result = tokio::task::Builder::new()
-        .name("metric-symbolication")
-        .spawn(async move {
-            run_metric_symbolication(
-                bg_app_context,
-                bg_device_id,
-                bg_thread_id,
-                installation_info,
-                diagnostics,
-                metrics_payloads,
-            )
-            .await;
-        });
-    if let Err(err) = spawn_result {
-        tracing::error!(?err, "Failed to spawn background symbolication task");
+    let pending_dir = app_context.data_dir().join("pending-symbolication");
+    tokio::fs::create_dir_all(&pending_dir)
+        .await
+        .map_err(|e| ApiError::SymbolicationError(anyhow::Error::from(e)))?;
+
+    let total = metrics_payloads.len();
+    let diagnostics_json = serde_json::to_string(&diagnostics)
+        .map_err(|e| ApiError::BadRequest(format!("Error serializing diagnostics: {e}")))?;
+    let installation_info_json = serde_json::to_string(&installation_info)
+        .map_err(|e| ApiError::BadRequest(format!("Error serializing installation info: {e}")))?;
+
+    for (idx, payload_json) in metrics_payloads.into_iter().enumerate() {
+        // Parse defensively: if a payload doesn't deserialize we still want to
+        // surface it for manual triage rather than swallowing the upload.
+        let parsed: MetricKitPayload = match serde_json::from_str(&payload_json) {
+            Ok(p) => p,
+            Err(err) => {
+                tracing::warn!(
+                    idx,
+                    user_id = %device_id,
+                    error = ?err,
+                    "Could not parse MetricKit payload; storing without binary UUID hints"
+                );
+                MetricKitPayload {
+                    time_stamp_begin: None,
+                    time_stamp_end: None,
+                    crash_diagnostics: Vec::new(),
+                }
+            }
+        };
+        let binary_uuids: Vec<String> = parsed.binary_uuids().into_iter().collect();
+        let binary_uuids_json = serde_json::to_string(&binary_uuids).map_err(|e| {
+            ApiError::SymbolicationError(anyhow::anyhow!(
+                "Error serializing binary UUIDs: {e}"
+            ))
+        })?;
+
+        let id = Uuid::new_v4().to_string();
+        let payload_path = pending_dir.join(format!("{id}.json"));
+        tokio::fs::write(&payload_path, payload_json.as_bytes())
+            .await
+            .map_err(|e| ApiError::SymbolicationError(anyhow::Error::from(e)))?;
+
+        let row = PendingSymbolication {
+            id,
+            device_id: device_id.clone(),
+            thread_id: user.thread_id,
+            payload_path: payload_path.to_string_lossy().to_string(),
+            diagnostics_json: diagnostics_json.clone(),
+            installation_info_json: installation_info_json.clone(),
+            binary_uuids_json,
+            payload_index: idx as i64,
+            received_at_ms: chrono::Utc::now().timestamp_millis(),
+            leased_at_ms: None,
+            completed_at_ms: None,
+            failed_at_ms: None,
+            attempts: 0,
+            last_error: None,
+        };
+        app_context
+            .db_client()
+            .insert_pending_symbolication(&row)
+            .await
+            .map_err(ApiError::DatabaseError)?;
     }
+
+    tracing::info!(
+        user_id = %device_id,
+        thread_id = user.thread_id,
+        enqueued = total,
+        "Enqueued MetricKit payloads for symbolication"
+    );
 
     Ok(())
-}
-
-async fn run_metric_symbolication(
-    app_context: AppContext,
-    device_id: String,
-    thread_id: i64,
-    installation_info: DeviceInfo,
-    diagnostics: crate::symbolicate::RoamDebugInfo,
-    metrics_payloads: Vec<String>,
-) {
-    let total_payloads = metrics_payloads.len();
-    tracing::info!(
-        user_id = %device_id,
-        total = total_payloads,
-        "Starting background MetricKit symbolication"
-    );
-
-    for (idx, payload_json) in metrics_payloads.iter().enumerate() {
-        // The iOS client sends each MetricKit payload as a raw JSON string
-        // (see MetricManager.saveMetricKitDiagnostics).
-        let payload = payload_json.as_bytes();
-
-        tracing::info!(
-            idx,
-            total = total_payloads,
-            user_id = %device_id,
-            payload_bytes = payload.len(),
-            "Processing MetricKit payload"
-        );
-
-        let symbolication_dir = app_context.data_dir.join("symbolication").join(&device_id);
-        if let Err(e) = tokio::fs::create_dir_all(&symbolication_dir).await {
-            tracing::error!(?e, "Error creating symbolication dir");
-            continue;
-        }
-        let metric_uuid = Uuid::new_v4();
-        let metric_file_path = symbolication_dir.join(format!("{metric_uuid}.json"));
-        if let Err(e) = tokio::fs::write(&metric_file_path, payload).await {
-            tracing::error!(?e, "Error writing metric file");
-            continue;
-        }
-
-        let symbolicated = match app_context
-            .symbolicate_diagnostics(&diagnostics, &installation_info, &metric_file_path)
-            .await
-        {
-            Ok(s) => s,
-            Err(e) => {
-                tracing::error!(?e, "Error creating symbolicated diagnostics");
-                continue;
-            }
-        };
-
-        let report = match tokio::fs::read_to_string(&symbolicated).await {
-            Ok(report) => report,
-            Err(e) => {
-                tracing::error!(?e, "Error reading symbolicated diagnostics");
-                continue;
-            }
-        };
-
-        if let Err(e) = app_context
-            .discord_client()
-            .send_message(
-                thread_id,
-                &format!(
-                    ":ninja: MK Diagnostics {} Symbolicated at {}",
-                    idx,
-                    symbolicated.display()
-                ),
-                Some(DiscordFileUpload {
-                    content_type: "text/plain".to_string(),
-                    filename: "symbolicated.txt".to_string(),
-                    data: report.as_bytes().to_vec(),
-                    paired_messages: vec![],
-                }),
-                Some(&DiscordMessageOptions::default()),
-            )
-            .await
-        {
-            tracing::error!(?e, "Error sending symbolicated diagnostics to Discord");
-        }
-    }
-
-    tracing::info!(
-        user_id = %device_id,
-        total = total_payloads,
-        "Finished background MetricKit symbolication"
-    );
 }
 
 #[derive(Deserialize)]
@@ -619,6 +589,292 @@ async fn upload_roam_dsym(
         extracted_root: stored.extracted_root.display().to_string(),
         indexed_debug_ids: stored.indexed_debug_ids,
     }))
+}
+
+#[derive(serde::Deserialize)]
+struct LeaseQuery {
+    #[serde(default = "default_lease_n")]
+    n: i64,
+}
+
+fn default_lease_n() -> i64 {
+    5
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MatchedDsym {
+    pub uuid: String,
+    pub breakpad_id: String,
+    pub filename: String,
+    pub size_bytes: u64,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LeasedPayload {
+    pub id: String,
+    pub payload_index: i64,
+    pub device_id: String,
+    #[serde(serialize_with = "i64_to_string")]
+    pub thread_id: i64,
+    pub metric_payload_json: String,
+    pub diagnostics: serde_json::Value,
+    pub installation_info: serde_json::Value,
+    pub matched_dsyms: Vec<MatchedDsym>,
+    pub attempts: i64,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LeaseResponse {
+    pub payloads: Vec<LeasedPayload>,
+}
+
+async fn lease_pending_symbolications(
+    Query(query): Query<LeaseQuery>,
+    State(app_context): State<AppContext>,
+) -> Result<Json<LeaseResponse>, ApiError> {
+    let n = query.n.clamp(1, 50);
+
+    let (newly_failed, leased) = app_context
+        .db_client()
+        .lease_pending_symbolications(n, LEASE_TTL)
+        .await
+        .map_err(ApiError::DatabaseError)?;
+
+    for failed in newly_failed {
+        let message = format!(
+            ":warning: MK Diagnostics {} symbolication failed (after {} attempts): {}",
+            failed.payload_index,
+            failed.attempts,
+            failed.last_error.as_deref().unwrap_or("(no error recorded)"),
+        );
+        if let Err(err) = app_context
+            .discord_client()
+            .send_message(failed.thread_id, &message, None, None)
+            .await
+        {
+            tracing::error!(?err, id = %failed.id, "Failed to post Discord :warning: for exhausted symbolication");
+        }
+        if let Err(err) = tokio::fs::remove_file(&failed.payload_path).await {
+            if err.kind() != std::io::ErrorKind::NotFound {
+                tracing::warn!(?err, path = %failed.payload_path, "Failed to remove payload of permanently-failed symbolication");
+            }
+        }
+    }
+
+    let mut payloads = Vec::with_capacity(leased.len());
+    for row in leased {
+        let metric_payload_json = match tokio::fs::read_to_string(&row.payload_path).await {
+            Ok(text) => text,
+            Err(err) => {
+                tracing::error!(
+                    ?err,
+                    id = %row.id,
+                    path = %row.payload_path,
+                    "Could not read leased payload from disk; releasing lease"
+                );
+                let _ = app_context
+                    .db_client()
+                    .release_lease_with_error(&row.id, &format!("payload missing on disk: {err}"))
+                    .await;
+                continue;
+            }
+        };
+
+        let diagnostics: serde_json::Value =
+            serde_json::from_str(&row.diagnostics_json).map_err(|e| {
+                ApiError::SymbolicationError(anyhow::anyhow!("invalid diagnostics_json: {e}"))
+            })?;
+        let installation_info: serde_json::Value =
+            serde_json::from_str(&row.installation_info_json).map_err(|e| {
+                ApiError::SymbolicationError(anyhow::anyhow!(
+                    "invalid installation_info_json: {e}"
+                ))
+            })?;
+        let binary_uuids: Vec<String> =
+            serde_json::from_str(&row.binary_uuids_json).map_err(|e| {
+                ApiError::SymbolicationError(anyhow::anyhow!("invalid binary_uuids_json: {e}"))
+            })?;
+
+        let mut matched_dsyms = Vec::new();
+        for uuid in binary_uuids {
+            if let Some(path) = app_context.symbolicate_client().dsym_path_for_uuid(&uuid) {
+                let metadata = match tokio::fs::metadata(&path).await {
+                    Ok(m) => m,
+                    Err(err) => {
+                        tracing::warn!(?err, %uuid, "Cached dSYM unreadable; skipping");
+                        continue;
+                    }
+                };
+                let breakpad_id = uuid_to_breakpad_id(&uuid).unwrap_or_default();
+                let filename = path
+                    .file_name()
+                    .map(|f| f.to_string_lossy().to_string())
+                    .unwrap_or_else(|| uuid.clone());
+                matched_dsyms.push(MatchedDsym {
+                    uuid: uuid.to_ascii_uppercase(),
+                    breakpad_id,
+                    filename,
+                    size_bytes: metadata.len(),
+                });
+            }
+        }
+
+        payloads.push(LeasedPayload {
+            id: row.id,
+            payload_index: row.payload_index,
+            device_id: row.device_id,
+            thread_id: row.thread_id,
+            metric_payload_json,
+            diagnostics,
+            installation_info,
+            matched_dsyms,
+            attempts: row.attempts,
+        });
+    }
+
+    Ok(Json(LeaseResponse { payloads }))
+}
+
+fn uuid_to_breakpad_id(uuid: &str) -> Option<String> {
+    let parsed = Uuid::parse_str(uuid).ok()?;
+    if parsed.is_nil() {
+        return None;
+    }
+    Some(
+        samply_symbols::debugid::DebugId::from_uuid(parsed)
+            .breakpad()
+            .to_string(),
+    )
+}
+
+async fn get_dsym_by_uuid(
+    Path(uuid): Path<String>,
+    State(app_context): State<AppContext>,
+) -> Result<Response, ApiError> {
+    let Some(path) = app_context
+        .symbolicate_client()
+        .dsym_path_for_uuid(&uuid)
+    else {
+        return Err(ApiError::NotFound(format!("No cached dSYM for UUID {uuid}")));
+    };
+
+    let file = tokio::fs::File::open(&path)
+        .await
+        .map_err(|e| ApiError::SymbolicationError(anyhow::Error::from(e)))?;
+    let metadata = file
+        .metadata()
+        .await
+        .map_err(|e| ApiError::SymbolicationError(anyhow::Error::from(e)))?;
+    let filename = path
+        .file_name()
+        .map(|f| f.to_string_lossy().to_string())
+        .unwrap_or_else(|| uuid.clone());
+
+    let stream = ReaderStream::new(file);
+    let body = Body::from_stream(stream);
+    Ok((
+        StatusCode::OK,
+        [
+            (
+                header::CONTENT_TYPE,
+                "application/octet-stream".to_string(),
+            ),
+            (header::CONTENT_LENGTH, metadata.len().to_string()),
+            (
+                header::CONTENT_DISPOSITION,
+                format!("attachment; filename=\"{filename}\""),
+            ),
+        ],
+        body,
+    )
+        .into_response())
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SymbolicationResultRequest {
+    id: String,
+    #[serde(default)]
+    symbolicated_text: Option<String>,
+    #[serde(default)]
+    error: Option<String>,
+}
+
+async fn submit_symbolication_result(
+    State(app_context): State<AppContext>,
+    Json(req): Json<SymbolicationResultRequest>,
+) -> Result<(), ApiError> {
+    match (req.symbolicated_text, req.error) {
+        (Some(text), _) => {
+            let Some(row) = app_context
+                .db_client()
+                .complete_pending_symbolication(&req.id)
+                .await
+                .map_err(ApiError::DatabaseError)?
+            else {
+                return Err(ApiError::NotFound(format!(
+                    "No pending symbolication with id {}",
+                    req.id
+                )));
+            };
+
+            let message = format!(
+                ":ninja: MK Diagnostics {} Symbolicated",
+                row.payload_index
+            );
+            app_context
+                .discord_client()
+                .send_message(
+                    row.thread_id,
+                    &message,
+                    Some(DiscordFileUpload {
+                        content_type: "text/plain".to_string(),
+                        filename: "symbolicated.txt".to_string(),
+                        data: text.into_bytes(),
+                        paired_messages: vec![],
+                    }),
+                    Some(&DiscordMessageOptions::default()),
+                )
+                .await?;
+
+            if let Err(err) = tokio::fs::remove_file(&row.payload_path).await {
+                if err.kind() != std::io::ErrorKind::NotFound {
+                    tracing::warn!(
+                        ?err,
+                        path = %row.payload_path,
+                        "Failed to remove cached payload after symbolication"
+                    );
+                }
+            }
+            Ok(())
+        }
+        (None, Some(err_text)) => {
+            let Some(row) = app_context
+                .db_client()
+                .release_lease_with_error(&req.id, &err_text)
+                .await
+                .map_err(ApiError::DatabaseError)?
+            else {
+                return Err(ApiError::NotFound(format!(
+                    "No active pending symbolication with id {}",
+                    req.id
+                )));
+            };
+            tracing::warn!(
+                id = %row.id,
+                attempts = row.attempts,
+                error = %err_text,
+                "Worker reported symbolication failure"
+            );
+            Ok(())
+        }
+        (None, None) => Err(ApiError::BadRequest(
+            "Body must include either `symbolicatedText` or `error`".to_string(),
+        )),
+    }
 }
 
 async fn new_message(

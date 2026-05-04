@@ -1,6 +1,6 @@
 import Foundation
-import os
 import SwiftUI
+import os
 
 struct DevicePicker: View {
     @Environment(\.layoutDirection) var layoutDirection
@@ -23,47 +23,62 @@ struct DevicePicker: View {
     @ViewBuilder
     var mainButton: some View {
         if #available(watchOS 11.0, *) {
-            Button(action: { showingPicker.toggle() }, label: {
-                Label("Devices", systemImage: "list.bullet")
-                    .labelStyle(.iconOnly)
-            })
+            Button(
+                action: { showingPicker.toggle() },
+                label: {
+                    Label("Devices", systemImage: "list.bullet")
+                        .labelStyle(.iconOnly)
+                }
+            )
             .accessibilityIdentifier("DevicePicker")
             .handGestureShortcut(.primaryAction, isEnabled: inScreenshotTestingContext())
         } else {
             // Fallback on earlier versions
-            Button(action: { showingPicker.toggle() }, label: {
-                Label("Devices", systemImage: "list.bullet")
-                    .labelStyle(.iconOnly)
-            })
+            Button(
+                action: { showingPicker.toggle() },
+                label: {
+                    Label("Devices", systemImage: "list.bullet")
+                        .labelStyle(.iconOnly)
+                }
+            )
             .accessibilityIdentifier("DevicePicker")
         }
     }
 
     var body: some View {
         mainButton
-        .sheet(isPresented: $showingPicker) {
-            SettingsNavigationWrapper(path: $navPath) {
-                List {
-                    Section("Devices") {
-                        ForEach(deviceListLoader.devices ?? [], id: \.self) { listItemDevice in
-                            DevicePickerItem(id: listItemDevice, action: { device in
-                                Task {
-                                    do {
-                                        try await RoamDataHandler.shared.makePrimaryDevice(id: device.id)
-                                    } catch {
-                                        Log.connection.error("Error setting selected \(error, privacy: .public)")
-                                        deviceError = error
+            .sheet(isPresented: $showingPicker) {
+                SettingsNavigationWrapper(path: $navPath) {
+                    List {
+                        Section("Devices") {
+                            ForEach(deviceListLoader.devices ?? [], id: \.self) { listItemDevice in
+                                DevicePickerItem(
+                                    id: listItemDevice,
+                                    action: { device in
+                                        Task {
+                                            do {
+                                                try await RoamDataHandler.shared.makePrimaryDevice(
+                                                    id: device.id)
+                                            } catch {
+                                                Log.connection.error(
+                                                    "Error setting selected \(error, privacy: .public)"
+                                                )
+                                                deviceError = error
+                                            }
+                                        }
+                                        showingPicker = false
                                     }
-                                }
-                                showingPicker = false
-                            })
+                                )
                                 .swipeActions(edge: .trailing) {
                                     Button(role: .destructive) {
                                         Task {
                                             do {
-                                                try await RoamDataHandler.shared.deleteDevice(id: listItemDevice)
+                                                try await RoamDataHandler.shared.deleteDevice(
+                                                    id: listItemDevice)
                                             } catch let error as DataHandlerError {
-                                                Log.connection.error("Error deleting device \(error, privacy: .public)")
+                                                Log.connection.error(
+                                                    "Error deleting device \(error, privacy: .public)"
+                                                )
                                                 deviceError = error
                                             }
                                         }
@@ -71,37 +86,40 @@ struct DevicePicker: View {
                                         Label("Delete", systemImage: "trash")
                                     }
                                 }
-                        }
-                        .onDelete { indexSet in
-                            for index in indexSet {
-                                if let pid = deviceListLoader.devices?[safe: index] {
-                                    Task {
-                                        do {
-                                            try await RoamDataHandler.shared.deleteDevice(id: pid)
-                                        } catch let error as DataHandlerError {
-                                            Log.connection.error("Error deleting device \(error, privacy: .public)")
-                                            deviceError = error
+                            }
+                            .onDelete { indexSet in
+                                for index in indexSet {
+                                    if let pid = deviceListLoader.devices?[safe: index] {
+                                        Task {
+                                            do {
+                                                try await RoamDataHandler.shared.deleteDevice(
+                                                    id: pid)
+                                            } catch let error as DataHandlerError {
+                                                Log.connection.error(
+                                                    "Error deleting device \(error, privacy: .public)"
+                                                )
+                                                deviceError = error
+                                            }
                                         }
                                     }
                                 }
                             }
+
+                            if deviceListLoader.devices?.isEmpty ?? true {
+                                Text("No devices")
+                                    .foregroundStyle(.secondary)
+                            }
                         }
 
-                        if deviceListLoader.devices?.isEmpty ?? true {
-                            Text("No devices")
-                                .foregroundStyle(.secondary)
+                        NavigationLink(value: NavigationDestination.settingsDestination(.global)) {
+                            Label("Settings", systemImage: "gear")
                         }
+                        .labelStyle(.titleAndIcon)
+                        .accessibilityIdentifier("SettingsButton")
                     }
-
-                    NavigationLink(value: NavigationDestination.settingsDestination(.global)) {
-                        Label("Settings", systemImage: "gear")
-                    }
-                    .labelStyle(.titleAndIcon)
-                    .accessibilityIdentifier("SettingsButton")
                 }
             }
-        }
-        .alertingError(message: "Device Selection Failed", error: $deviceError)
+            .alertingError(message: "Device Selection Failed", error: $deviceError)
     }
 }
 
@@ -114,20 +132,25 @@ struct DevicePickerItem: View {
     init(id: String, action: @escaping (Device) -> Void) {
         self.id = id
         self.action = action
-        self.deviceLoader = DeviceLoader(deviceId: id, dataHandler: RoamDataHandler.shared)
+        self._deviceLoader = State(
+            initialValue: DeviceLoader(deviceId: id, dataHandler: RoamDataHandler.shared)
+        )
     }
 
     var body: some View {
-        Button(action: {
-            if let device = deviceLoader.device {
-                action(device)
+        Button(
+            action: {
+                if let device = deviceLoader.device {
+                    action(device)
+                }
+            },
+            label: {
+                if let device = deviceLoader.device {
+                    Label(device.name, systemImage: "checkmark.circle.fill")
+                } else {
+                    Label("Loading...", systemImage: "")
+                }
             }
-        }, label: {
-            if let device = deviceLoader.device {
-                Label(device.name, systemImage: "checkmark.circle.fill")
-            } else {
-                Label("Loading...", systemImage: "")
-            }
-        }).tag(id)
+        ).tag(id)
     }
 }

@@ -112,7 +112,7 @@ struct SettingsNavigationWrapper<Content>: View where Content: View {
                 && !window.isMiniaturized
                 && window.canBecomeKey
         }
-        
+
         return NSApp.windows.first {
             return $0.identifier == mainIdentifier && isReplacementCandidate($0)
         } ?? NSApp.windows.first(where: isReplacementCandidate)
