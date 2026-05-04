@@ -978,9 +978,9 @@ fn appledb_args(
 }
 
 /// Upper bound for any single ipsw download attempt. Real macOS dyld
-/// caches embedded in IPSWs are several hundred MB, so this is generous,
+/// caches embedded in IPSWs are several GB, so this is generous,
 /// but bounded so a hung subprocess can't pin the worker forever.
-const IPSW_DOWNLOAD_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(90 * 60);
+const IPSW_DOWNLOAD_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(8 * 60 * 60);
 
 async fn run_ipsw_dyld_download(label: &str, args: Vec<std::ffi::OsString>) -> Result<()> {
     use portable_pty::{native_pty_system, CommandBuilder, PtySize};
