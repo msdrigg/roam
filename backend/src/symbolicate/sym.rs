@@ -93,10 +93,26 @@ impl RoamFileLocation {
 
 impl FileLocation for RoamFileLocation {
     fn location_for_dyld_subcache(&self, suffix: &str) -> Option<Self> {
-        // Dyld shared caches are only loaded from local files.
-        let mut filename = self.path.file_name().unwrap().to_owned();
-        filename.push(suffix);
-        Some(self.with_path(self.path.with_file_name(filename)))
+        // samply-symbols asks for ".N" / ".0N", but macOS 13+ caches store each
+        // subcache with a typed suffix (e.g. ".02.dylddata"). If the bare path
+        // is missing, fall back to the typed variants so the V2 layout loads.
+        let base = self.path.file_name().unwrap().to_owned();
+        let mut bare = base.clone();
+        bare.push(suffix);
+        let bare_path = self.path.with_file_name(&bare);
+        if bare_path.exists() || !suffix.starts_with('.') || suffix == ".symbols" {
+            return Some(self.with_path(bare_path));
+        }
+        for type_suffix in [".dylddata", ".dyldreadonly", ".dyldlinkedit"] {
+            let mut typed = base.clone();
+            typed.push(suffix);
+            typed.push(type_suffix);
+            let typed_path = self.path.with_file_name(typed);
+            if typed_path.exists() {
+                return Some(self.with_path(typed_path));
+            }
+        }
+        Some(self.with_path(bare_path))
     }
 
     fn location_for_external_object_file(&self, object_file: &str) -> Option<Self> {
