@@ -1347,15 +1347,29 @@ fn likely_dylib_paths(library_info: &LibraryInfo) -> Vec<String> {
     if name.ends_with(".dylib") {
         paths.insert(format!("/usr/lib/{name}"));
         paths.insert(format!("/usr/lib/system/{name}"));
+        // Swift runtime dylibs (libswiftCore, libswift_Concurrency, ...)
+        // live under /usr/lib/swift/ in the dyld shared cache.
+        paths.insert(format!("/usr/lib/swift/{name}"));
     } else {
-        paths.insert(format!(
-            "/System/Library/Frameworks/{name}.framework/{name}"
-        ));
-        paths.insert(format!(
-            "/System/Library/PrivateFrameworks/{name}.framework/{name}"
-        ));
+        // macOS framework install_names are versioned (Versions/A/<Name>,
+        // sometimes Versions/C/<Name> for AppKit/Foundation). iOS-style
+        // caches use the bare path. Try both layouts.
+        for parent in ["Frameworks", "PrivateFrameworks"] {
+            paths.insert(format!(
+                "/System/Library/{parent}/{name}.framework/{name}"
+            ));
+            for ver in ["A", "B", "C"] {
+                paths.insert(format!(
+                    "/System/Library/{parent}/{name}.framework/Versions/{ver}/{name}"
+                ));
+            }
+        }
         paths.insert(format!("/usr/lib/{name}.dylib"));
         paths.insert(format!("/usr/lib/system/{name}.dylib"));
+        // dyld is neither a framework nor a .dylib; its install_name is /usr/lib/dyld.
+        if name == "dyld" {
+            paths.insert("/usr/lib/dyld".to_string());
+        }
     }
 
     paths.into_iter().collect()
