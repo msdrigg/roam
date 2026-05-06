@@ -16,8 +16,15 @@ RestartSec=30s
 # Symbolication mmaps large dSYMs; raise the open-files cap.
 LimitNOFILE=65536
 
+# FUSE access. ipsw shells out to apfs-fuse to mount the cryptex DMG inside
+# remote IPSWs so it can copy out the dyld_shared_cache.
+DeviceAllow=/dev/fuse rw
+
 # Hardening
-NoNewPrivileges=true
+# NoNewPrivileges is intentionally NOT set: libfuse execs the setuid
+# fusermount3 helper to perform mount(2), which NoNewPrivileges would block.
+# CapabilityBoundingSet caps what the setuid escalation can grant.
+CapabilityBoundingSet=CAP_SYS_ADMIN
 ProtectSystem=full
 ProtectHome=true
 PrivateTmp=true

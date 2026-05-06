@@ -279,7 +279,9 @@ impl FileAndPathHelper for RoamFileAndPathHelper {
             for device in devices.flatten() {
                 if let Ok(builds) = fs::read_dir(device.path()) {
                     for build in builds.flatten() {
-                        add_entries_in_dir(build.path().join("dyld"));
+                        let dyld_dir = build.path().join("dyld");
+                        normalize_dyld_dir(&dyld_dir);
+                        add_entries_in_dir(dyld_dir);
                     }
                 }
             }
@@ -610,6 +612,7 @@ impl SymbolicationClient {
             requirement.os_family.as_deref(),
         )
         .await?;
+        normalize_dyld_dir(&dyld_dir);
         tracing::info!(
             device_type = %requirement.device_type,
             build_id = %requirement.build_id,
@@ -1221,6 +1224,8 @@ fn extract_ipsw_error_message(stderr: &str, stdout: &str) -> String {
 }
 
 async fn dyld_cache_exists(dyld_dir: &Path, arch: Option<&str>) -> Result<bool> {
+    normalize_dyld_dir(dyld_dir);
+
     let Ok(mut entries) = tokio::fs::read_dir(dyld_dir).await else {
         return Ok(false);
     };
@@ -1234,6 +1239,57 @@ async fn dyld_cache_exists(dyld_dir: &Path, arch: Option<&str>) -> Result<bool> 
         }
     }
     Ok(false)
+}
+
+/// `ipsw download ipsw --dyld --output X` extracts the dyld_shared_cache
+/// files into a nested `X/<build>__<device>/` subdirectory, but the rest of
+/// the symbolicator (existence check + samply lookup) expects the caches
+/// to live directly under `X/`. Flatten any such subdirectory in-place.
+/// Idempotent.
+fn normalize_dyld_dir(dyld_dir: &Path) {
+    let Ok(entries) = fs::read_dir(dyld_dir) else {
+        return;
+    };
+
+    let subdirs: Vec<PathBuf> = entries
+        .flatten()
+        .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
+        .map(|e| e.path())
+        .collect();
+
+    for subdir in subdirs {
+        let Ok(inner) = fs::read_dir(&subdir) else {
+            continue;
+        };
+        let inner_entries: Vec<fs::DirEntry> = inner.flatten().collect();
+
+        let has_cache_files = inner_entries.iter().any(|e| {
+            e.file_name()
+                .to_string_lossy()
+                .starts_with("dyld_shared_cache")
+        });
+        if !has_cache_files {
+            continue;
+        }
+
+        for inner_entry in inner_entries {
+            let from = inner_entry.path();
+            let to = dyld_dir.join(inner_entry.file_name());
+            if to.exists() {
+                continue;
+            }
+            if let Err(error) = fs::rename(&from, &to) {
+                tracing::warn!(
+                    ?error,
+                    from = %from.display(),
+                    to = %to.display(),
+                    "failed to flatten dyld cache; leaving nested layout in place"
+                );
+                return;
+            }
+        }
+        let _ = fs::remove_dir(&subdir);
+    }
 }
 
 fn metadata_string(metadata: &BTreeMap<String, serde_json::Value>, key: &str) -> Option<String> {
