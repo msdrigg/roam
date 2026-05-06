@@ -1612,11 +1612,15 @@ fn extract_zip_archive(dsym_zip: &[u8], extracted_root: &Path) -> Result<()> {
 
 fn find_dwarf_files(root: &Path) -> Result<Vec<PathBuf>> {
     let mut result = Vec::new();
-    find_dwarf_files_impl(root, &mut result)?;
+    find_dwarf_files_impl(root, &mut result, false)?;
     Ok(result)
 }
 
-fn find_dwarf_files_impl(path: &Path, result: &mut Vec<PathBuf>) -> Result<()> {
+fn find_dwarf_files_impl(
+    path: &Path,
+    result: &mut Vec<PathBuf>,
+    inside_dsym: bool,
+) -> Result<()> {
     let metadata = fs::metadata(path).with_context(|| format!("reading {}", path.display()))?;
     if metadata.is_file() {
         if path
@@ -1636,9 +1640,19 @@ fn find_dwarf_files_impl(path: &Path, result: &mut Vec<PathBuf>) -> Result<()> {
     }
 
     if metadata.is_dir() {
+        let is_dsym = path
+            .file_name()
+            .is_some_and(|name| name.to_string_lossy().ends_with(".dSYM"));
+        // A `.dSYM` directory should not legitimately contain another `.dSYM`.
+        // Skip nested ones — they're typically build-tool detritus, and walking
+        // into them feeds non-Mach-O files (Info.plist, etc.) to the UUID
+        // reader, which then fails the whole upload.
+        if is_dsym && inside_dsym {
+            return Ok(());
+        }
         for entry in fs::read_dir(path).with_context(|| format!("reading {}", path.display()))? {
             let entry = entry?;
-            find_dwarf_files_impl(&entry.path(), result)?;
+            find_dwarf_files_impl(&entry.path(), result, inside_dsym || is_dsym)?;
         }
     }
 
