@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n            SELECT thread_id as \"thread_id!\", device_id as \"device_id!: String\", apns_token,\n            device_info_json as \"device_info?: Json<DeviceInfo>\" \n            FROM users WHERE device_id = ?\n            ",
+  "query": "\n            SELECT thread_id as \"thread_id!\", device_id as \"device_id!: String\", apns_token,\n            device_info_json as \"device_info?: Json<DeviceInfo>\",\n            ai_disabled as \"ai_disabled!: bool\"\n            FROM users WHERE device_id = ?\n            ",
   "describe": {
     "columns": [
       {
@@ -22,6 +22,11 @@
         "name": "device_info?: Json<DeviceInfo>",
         "ordinal": 3,
         "type_info": "Text"
+      },
+      {
+        "name": "ai_disabled!: bool",
+        "ordinal": 4,
+        "type_info": "Integer"
       }
     ],
     "parameters": {
@@ -31,8 +36,9 @@
       false,
       true,
       true,
-      true
+      true,
+      false
     ]
   },
-  "hash": "333c8c8841a246e1b2610b4e966432327995dc4f37a36d31474ae89813029173"
+  "hash": "b85df50b5f7af7f0804058dfb24843be0bf7473454273b126053befd22dde998"
 }

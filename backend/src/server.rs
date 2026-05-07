@@ -227,8 +227,11 @@ impl DiscordMessageDownload {
         ai_bot_id: Option<i64>,
         human_support_user_id: Option<i64>,
     ) -> Result<Self, error::ApiError> {
-        let ai_message = Some(message.author.id) == ai_bot_id;
-        let human_support_message = Some(message.author.id) == human_support_user_id;
+        let translated_support = message.is_translated_support_message();
+        let message = message.normalize();
+        let ai_message = !translated_support && Some(message.author.id) == ai_bot_id;
+        let human_support_message =
+            translated_support || Some(message.author.id) == human_support_user_id;
         let attachments = stream::iter(message.attachments.into_iter())
             .map(|attachment| async move {
                 let url = attachment.url;
@@ -291,8 +294,7 @@ async fn get_user_state(
         .get_messages_in_thread(user.thread_id, query.after)
         .await?
         .into_iter()
-        .filter(|m| !m.is_hidden())
-        .map(|m| m.normalize());
+        .filter(|m| !m.is_hidden());
     let ai_bot_id = app_context.ai_responder_discord_bot_id();
     let human_support_user_id = app_context.ai_responder_human_support_user_id();
     let messages = stream::iter(messages)

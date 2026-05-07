@@ -9,6 +9,7 @@ use types::{IdResponse, ThreadResponse};
 
 pub use types::{
     DiscordAuthor, DiscordFile, DiscordFileUpload, DiscordMessage, MessageAttachment, Thread,
+    TRANSLATED_SUPPORT_PREFIX,
 };
 
 #[derive(Debug, Deserialize)]
@@ -215,6 +216,41 @@ impl DiscordClient {
     }
 
     pub async fn register_guild_translate_command(&self) -> Result<(), DiscordError> {
+        let application_id = self.get_current_application_id().await?;
+        let translate_body = serde_json::json!({
+            "name": "translate",
+            "type": 1,
+            "description": "Translate a support reply to the user's language",
+            "options": [{
+                "type": 3,
+                "name": "text",
+                "description": "Support message to translate",
+                "required": true
+            }]
+        });
+        self.register_guild_command(&application_id, "translate", &translate_body)
+            .await?;
+
+        let disable_body = serde_json::json!({
+            "name": "disableai",
+            "type": 1,
+            "description": "Disable the AI responder in this thread until it is re-enabled"
+        });
+        self.register_guild_command(&application_id, "disableai", &disable_body)
+            .await?;
+
+        let enable_body = serde_json::json!({
+            "name": "enableai",
+            "type": 1,
+            "description": "Re-enable the AI responder in this thread"
+        });
+        self.register_guild_command(&application_id, "enableai", &enable_body)
+            .await?;
+
+        Ok(())
+    }
+
+    async fn get_current_application_id(&self) -> Result<String, DiscordError> {
         let _permit = self.acquire().await.expect("Semaphore should never close");
         self.error_on_locked()?;
 
@@ -238,39 +274,41 @@ impl DiscordClient {
                 status,
             })?;
 
+        Ok(application.id)
+    }
+
+    async fn register_guild_command(
+        &self,
+        application_id: &str,
+        name: &str,
+        body: &serde_json::Value,
+    ) -> Result<(), DiscordError> {
+        let _permit = self.acquire().await.expect("Semaphore should never close");
+        self.error_on_locked()?;
+
         let command_url = format!(
             "{}/applications/{}/guilds/{}/commands",
             Self::DISCORD_API_BASE_URL,
-            application.id,
+            application_id,
             self.guild_id
         );
-        let body = serde_json::json!({
-            "name": "translate",
-            "type": 1,
-            "description": "Translate a support reply to the user's language",
-            "options": [{
-                "type": 3,
-                "name": "text",
-                "description": "Support message to translate",
-                "required": true
-            }]
-        });
 
         let response = self
             .client
             .post(&command_url)
             .header("Authorization", format!("Bot {}", self.token))
             .header("Content-Type", "application/json")
-            .json(&body)
+            .json(body)
             .send()
             .await
             .map_err(|e| DiscordError::ConnectionError(e.into()))?;
         self.update_rate_limit(response.headers());
-        self.except_error_response(response, "registering translate command")
+        self.except_error_response(response, &format!("registering {name} command"))
             .await?;
         tracing::info!(
             guild_id = self.guild_id,
-            "Registered AI responder /translate guild command"
+            command = name,
+            "Registered AI responder guild command"
         );
 
         Ok(())
@@ -751,6 +789,8 @@ mod types {
     use regex::Regex;
     use serde::{Deserialize, Serialize};
 
+    pub const TRANSLATED_SUPPORT_PREFIX: &str = ":translated:";
+
     #[derive(Debug, Clone, Deserialize, Serialize)]
     pub struct DiscordMessage {
         #[serde(deserialize_with = "string_to_i64", serialize_with = "i64_to_string")]
@@ -809,6 +849,10 @@ mod types {
             self.content.starts_with(":cold:")
         }
 
+        pub fn is_translated_support_message(&self) -> bool {
+            self.content.trim_start().starts_with(TRANSLATED_SUPPORT_PREFIX)
+        }
+
         fn is_translate_command(&self) -> bool {
             let content = self.content.trim_start();
             if content.starts_with(":translate:")
@@ -830,6 +874,7 @@ mod types {
                     caps[0].replace('_', "-")
                 })
                 .trim_start_matches(":cold:")
+                .trim_start_matches(TRANSLATED_SUPPORT_PREFIX)
                 .trim()
                 .to_string();
 

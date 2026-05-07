@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            UPDATE users SET ai_disabled = ? WHERE thread_id = ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "a24ddc93f85d77fb32be0995431fd9244fb862c28d502fc7bf8b5d83a6d03450"
+}

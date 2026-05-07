@@ -473,6 +473,7 @@ impl AppContext {
             thread_id,
             apns_token: seed.apns_token.clone(),
             device_info: seed.device_info.clone().map(sqlx::types::Json),
+            ai_disabled: false,
         };
 
         self.send_device_info(&user).await?;

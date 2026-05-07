@@ -67,7 +67,8 @@ impl DatabaseClient {
             User,
             r#"
             SELECT thread_id as "thread_id!", device_id as "device_id!: String", apns_token,
-            device_info_json as "device_info?: Json<DeviceInfo>" 
+            device_info_json as "device_info?: Json<DeviceInfo>",
+            ai_disabled as "ai_disabled!: bool"
             FROM users WHERE device_id = ?
             "#,
             device_id
@@ -86,7 +87,8 @@ impl DatabaseClient {
             User,
             r#"
             SELECT thread_id as "thread_id!", device_id as "device_id!: String", apns_token,
-            device_info_json as "device_info?: Json<DeviceInfo>" 
+            device_info_json as "device_info?: Json<DeviceInfo>",
+            ai_disabled as "ai_disabled!: bool"
             FROM users WHERE thread_id = ?
             "#,
             thread_id
@@ -135,7 +137,8 @@ impl DatabaseClient {
             RETURNING
                 device_id as "device_id!: String",
                 thread_id as "thread_id!",
-                apns_token, device_info_json as "device_info?: Json<DeviceInfo>"
+                apns_token, device_info_json as "device_info?: Json<DeviceInfo>",
+                ai_disabled as "ai_disabled!: bool"
             "#,
             user.thread_id,
             user.apns_token,
@@ -146,6 +149,24 @@ impl DatabaseClient {
         .await
         .context("Error updating user")?;
         Ok(user)
+    }
+
+    pub async fn set_thread_ai_disabled(
+        &self,
+        thread_id: i64,
+        ai_disabled: bool,
+    ) -> Result<bool, anyhow::Error> {
+        let result = sqlx::query!(
+            r#"
+            UPDATE users SET ai_disabled = ? WHERE thread_id = ?
+            "#,
+            ai_disabled,
+            thread_id
+        )
+        .execute(&self.writer_pool)
+        .await
+        .context("Error updating thread ai_disabled flag")?;
+        Ok(result.rows_affected() > 0)
     }
 
     pub async fn get_parameter(&self, key: &str) -> Result<Option<String>, anyhow::Error> {
@@ -200,7 +221,8 @@ impl DatabaseClient {
             INSERT INTO users (device_id, thread_id, apns_token, device_info_json)
             VALUES (?, ?, ?, ?)
             RETURNING device_id as "device_id!: String", thread_id as "thread_id!", apns_token,
-            device_info_json as "device_info?: Json<DeviceInfo>"
+            device_info_json as "device_info?: Json<DeviceInfo>",
+            ai_disabled as "ai_disabled!: bool"
             "#,
             user.device_id,
             user.thread_id,
@@ -416,6 +438,8 @@ pub struct User {
     pub thread_id: i64,
     pub apns_token: Option<String>,
     pub device_info: Option<Json<DeviceInfo>>,
+    #[serde(skip_serializing)]
+    pub ai_disabled: bool,
 }
 
 #[derive(Default)]

@@ -22,6 +22,7 @@ use tokio::{task::JoinHandle, time::sleep};
 use crate::{
     discord::{
         DiscordFileUpload, DiscordMessage, DiscordMessageOptions, MessageAttachment, Thread,
+        TRANSLATED_SUPPORT_PREFIX,
     },
     AppContext,
 };
@@ -33,6 +34,8 @@ const TRANSLATE_COMMAND_PREFIX: &str = ":translate:";
 const TRANSLATE_SLASH_COMMAND: &str = "/translate";
 const TRANSLATE_SLASH_COMMAND_NAME: &str = "translate";
 const TRANSLATE_SLASH_COMMAND_TEXT_OPTION: &str = "text";
+const DISABLE_AI_SLASH_COMMAND_NAME: &str = "disableai";
+const ENABLE_AI_SLASH_COMMAND_NAME: &str = "enableai";
 const NO_TRANSLATION: &str = "NO_TRANSLATION";
 const NO_RESPONSE_EVALUATED_MARKER: &str = "AI responder evaluated: no response needed";
 const AI_CONTEXT_FETCH_LIMIT: u8 = 50;
@@ -234,13 +237,15 @@ pub async fn respond_to_old_messages(ctx: AppContext) -> anyhow::Result<()> {
             continue;
         }
 
-        if ctx
+        let user = ctx
             .db_client()
             .get_user_with_thread(thread.id)
             .await
-            .context("Error loading thread user for old AI responder sweep")?
-            .is_none()
-        {
+            .context("Error loading thread user for old AI responder sweep")?;
+        let Some(user) = user else {
+            continue;
+        };
+        if user.ai_disabled {
             continue;
         }
 
@@ -390,8 +395,8 @@ impl EventHandler for Handler {
             return;
         }
 
-        match self.ctx.db_client().get_user_with_thread(thread_id).await {
-            Ok(Some(_)) => {}
+        let user = match self.ctx.db_client().get_user_with_thread(thread_id).await {
+            Ok(Some(user)) => user,
             Ok(None) => {
                 tracing::debug!(thread_id, "AI responder ignored unknown thread");
                 return;
@@ -400,6 +405,38 @@ impl EventHandler for Handler {
                 tracing::warn!(thread_id, error = ?err, "AI responder could not load thread user");
                 return;
             }
+        };
+
+        if user.ai_disabled {
+            tracing::info!(
+                thread_id,
+                message_id,
+                "AI responder skipped scheduling because AI is disabled in this thread"
+            );
+            self.pending_messages
+                .lock()
+                .expect("AI responder pending mutex should not poison")
+                .remove(&thread_id);
+            let ctx = self.ctx.clone();
+            let content = message.normalize().content;
+            tokio::spawn(async move {
+                if let Err(err) = AiResponder::new(ctx)
+                    .send_hidden_english_translation_if_needed(
+                        thread_id,
+                        "User message",
+                        &content,
+                    )
+                    .await
+                {
+                    tracing::warn!(
+                        thread_id,
+                        message_id,
+                        error = ?err,
+                        "AI responder failed to send hidden user translation while disabled"
+                    );
+                }
+            });
+            return;
         }
 
         let response_delay = response_delay_for_thread(&self.ctx, thread_id)
@@ -468,19 +505,59 @@ impl EventHandler for Handler {
         let Interaction::Command(command) = interaction else {
             return;
         };
-        if command.data.name != TRANSLATE_SLASH_COMMAND_NAME {
-            return;
-        }
 
         let thread_id = u64::from(command.channel_id) as i64;
         let command_id = u64::from(command.id) as i64;
-        if let Err(err) = handle_translate_interaction(self.ctx.clone(), ctx, command).await {
-            tracing::warn!(
-                thread_id,
-                command_id,
-                error = ?err,
-                "AI responder failed to handle /translate interaction"
-            );
+        match command.data.name.as_str() {
+            TRANSLATE_SLASH_COMMAND_NAME => {
+                if let Err(err) =
+                    handle_translate_interaction(self.ctx.clone(), ctx, command).await
+                {
+                    tracing::warn!(
+                        thread_id,
+                        command_id,
+                        error = ?err,
+                        "AI responder failed to handle /translate interaction"
+                    );
+                }
+            }
+            DISABLE_AI_SLASH_COMMAND_NAME => {
+                if let Err(err) = handle_set_ai_disabled_interaction(
+                    self.ctx.clone(),
+                    self.pending_messages.clone(),
+                    ctx,
+                    command,
+                    true,
+                )
+                .await
+                {
+                    tracing::warn!(
+                        thread_id,
+                        command_id,
+                        error = ?err,
+                        "AI responder failed to handle /disableai interaction"
+                    );
+                }
+            }
+            ENABLE_AI_SLASH_COMMAND_NAME => {
+                if let Err(err) = handle_set_ai_disabled_interaction(
+                    self.ctx.clone(),
+                    self.pending_messages.clone(),
+                    ctx,
+                    command,
+                    false,
+                )
+                .await
+                {
+                    tracing::warn!(
+                        thread_id,
+                        command_id,
+                        error = ?err,
+                        "AI responder failed to handle /enableai interaction"
+                    );
+                }
+            }
+            _ => {}
         }
     }
 
@@ -557,6 +634,24 @@ async fn respond_to_user_message(
     message_id: i64,
     mut messages: Vec<DiscordMessage>,
 ) -> anyhow::Result<()> {
+    if ctx
+        .db_client()
+        .get_user_with_thread(thread_id)
+        .await
+        .context("Error loading thread user for AI response gate")?
+        .is_some_and(|user| user.ai_disabled)
+    {
+        tracing::info!(
+            thread_id,
+            message_id,
+            "AI responder skipped because AI is disabled in this thread"
+        );
+        if let Some(pending_messages) = pending_messages.as_ref() {
+            clear_pending(pending_messages, thread_id, message_id);
+        }
+        return Ok(());
+    }
+
     let diagnostics_received = has_diagnostics_submission(&messages);
     let device_platform = device_platform_from_messages(&messages);
 
@@ -1109,6 +1204,8 @@ Write concise, natural support replies. Do not announce that you are an AI, do n
 
 Respond in the user's language. If the latest user message is not in English, write the full reply in that same language. If the user's language is ambiguous or mixed, use the dominant language in the latest user message.
 
+Internal handoff reasons (the `reason` argument to bring_in_human_support and apologize_and_bring_in_human_support) must always be written in English, regardless of the user's language, because they are read by English-speaking support staff. Only the user-facing `user_message` argument should follow the user's language rule.
+
 Use search_roam_docs before answering product, troubleshooting, privacy, compatibility, or setup questions unless the answer is already present in the recent conversation. Prefer one clear next step over a long checklist. If the user appears to be reporting a bug, ask them to use Roam settings -> Send feedback when diagnostics would help. If the user only shared diagnostics, especially more than once, most often ignore it because diagnostics are frequently shared accidentally.
 
 When diagnostics are received, they may appear internally as a support-only message beginning with ":ninja:\n\n### Installation Info" or as a diagnostics.json attachment. If internal support context says diagnostics have already been received, do not ask the user to share diagnostics again unless a new, separate diagnostic package is clearly needed.
@@ -1127,13 +1224,15 @@ fn thread_title_prompt() -> &'static str {
 
 Output only the title, with no quotes or explanation.
 
-Use this format:
-[Bug|Feature|Question|Friendly] [iOS | macOS | visionOS | watchOS | Apple TV | <platform>] [Optional, only if non-English: <language>] <short description>
+Always write the entire title in English, regardless of the language used in the chat. Translate any non-English content from the conversation into English when summarizing it in the description.
 
-For non-English chats, insert a bracketed English language name after the platform, such as [Spanish]. Do not include a language tag for English chats.
+Use this format:
+[Bug|Feature|Question|Friendly] [iOS | macOS | visionOS | watchOS | Apple TV | <platform>] [Optional, only if non-English: <language>] <short English description>
+
+For non-English chats, insert a bracketed English language name after the platform, such as [Spanish]. Do not include a language tag for English chats. The short description that follows must always be in English.
 
 If the chat is only casual chitchat, greetings, thanks, or other friendly messages without any support issue (e.g. "hi", "hello", "thanks!", "love the app"), output:
-[Friendly] <short description>
+[Friendly] <short English description>
 
 If the chat has no user issue, no useful user text, or only accidental/no-context messages (truly empty or unintelligible), output exactly:
 [Dead]
@@ -1141,7 +1240,7 @@ If the chat has no user issue, no useful user text, or only accidental/no-contex
 If the chat contains only diagnostics or diagnostic sharing without a clear user issue, output exactly:
 [Dead] Diagnostics
 
-Choose Bug for broken behavior, Feature for requests or suggestions, Question for setup/how-to/general support, and Friendly for casual non-support messages. Prefer Friendly over Dead whenever the user wrote a real (even if trivial) message. Use support-only device info to identify the platform when available; for Friendly chats the platform tag is optional. Keep the description short, specific, and under the Discord title limit."#
+Choose Bug for broken behavior, Feature for requests or suggestions, Question for setup/how-to/general support, and Friendly for casual non-support messages. Prefer Friendly over Dead whenever the user wrote a real (even if trivial) message. Use support-only device info to identify the platform when available; for Friendly chats the platform tag is optional. Keep the description short, specific, in English, and under the Discord title limit."#
 }
 
 fn translation_to_english_prompt() -> &'static str {
@@ -1187,7 +1286,7 @@ fn tools() -> Vec<Value> {
                 "properties": {
                     "reason": {
                         "type": "string",
-                        "description": "Brief reason a human should take over."
+                        "description": "Brief reason a human should take over. Always write this in English, regardless of the user's language."
                     }
                 },
                 "required": ["reason"],
@@ -1204,11 +1303,11 @@ fn tools() -> Vec<Value> {
                 "properties": {
                     "user_message": {
                         "type": "string",
-                        "description": "Brief direct apology to send to the user before human support is summoned."
+                        "description": "Brief direct apology to send to the user before human support is summoned. Write this in the user's language."
                     },
                     "reason": {
                         "type": "string",
-                        "description": "Brief internal reason a human should take over."
+                        "description": "Brief internal reason a human should take over. Always write this in English, regardless of the user's language."
                     }
                 },
                 "required": ["user_message", "reason"],
@@ -1230,6 +1329,8 @@ fn format_conversation(ctx: &AppContext, messages: &[DiscordMessage]) -> String 
         .map(|message| {
             let role = if message.author_id() == ctx.discord_bot_id() {
                 "User"
+            } else if message.is_translated_support_message() {
+                "Human support"
             } else if Some(message.author_id()) == ctx.ai_responder_discord_bot_id() {
                 "Roam support"
             } else {
@@ -1274,6 +1375,8 @@ fn format_thread_title_conversation(ctx: &AppContext, messages: &[DiscordMessage
     for message in recent_messages.into_iter().rev() {
         let role = if message.author_id() == ctx.discord_bot_id() {
             "User"
+        } else if message.is_translated_support_message() {
+            "Human support"
         } else if Some(message.author_id()) == ctx.ai_responder_discord_bot_id() {
             if message.is_hidden() {
                 "Roam support internal"
@@ -1762,6 +1865,97 @@ async fn handle_translate_interaction(
     Ok(())
 }
 
+async fn handle_set_ai_disabled_interaction(
+    app_ctx: AppContext,
+    pending_messages: Arc<Mutex<HashMap<i64, i64>>>,
+    discord_ctx: Context,
+    command: CommandInteraction,
+    disabled: bool,
+) -> anyhow::Result<()> {
+    let thread_id = u64::from(command.channel_id) as i64;
+    let author_id = u64::from(command.user.id) as i64;
+    let command_label = if disabled { "/disableai" } else { "/enableai" };
+
+    if Some(author_id) != app_ctx.ai_responder_human_support_user_id() {
+        command
+            .create_response(
+                &discord_ctx.http,
+                CreateInteractionResponse::Message(
+                    CreateInteractionResponseMessage::new()
+                        .content(format!(
+                            "Only the configured human support user can use {command_label}."
+                        ))
+                        .ephemeral(true),
+                ),
+            )
+            .await
+            .with_context(|| format!("Error sending unauthorized {command_label} response"))?;
+        return Ok(());
+    }
+
+    if app_ctx
+        .db_client()
+        .get_user_with_thread(thread_id)
+        .await
+        .with_context(|| format!("Error loading thread user for {command_label}"))?
+        .is_none()
+    {
+        command
+            .create_response(
+                &discord_ctx.http,
+                CreateInteractionResponse::Message(
+                    CreateInteractionResponseMessage::new()
+                        .content(format!(
+                            "{command_label} can only be used inside a Roam support thread."
+                        ))
+                        .ephemeral(true),
+                ),
+            )
+            .await
+            .with_context(|| format!("Error sending unknown-thread {command_label} response"))?;
+        return Ok(());
+    }
+
+    app_ctx
+        .db_client()
+        .set_thread_ai_disabled(thread_id, disabled)
+        .await
+        .with_context(|| format!("Error updating ai_disabled flag for {command_label}"))?;
+
+    if disabled {
+        pending_messages
+            .lock()
+            .expect("AI responder pending mutex should not poison")
+            .remove(&thread_id);
+    }
+
+    let content = if disabled {
+        "AI responder disabled in this thread. Use /enableai to turn it back on."
+    } else {
+        "AI responder re-enabled in this thread."
+    };
+    command
+        .create_response(
+            &discord_ctx.http,
+            CreateInteractionResponse::Message(
+                CreateInteractionResponseMessage::new()
+                    .content(content)
+                    .ephemeral(true),
+            ),
+        )
+        .await
+        .with_context(|| format!("Error acknowledging {command_label} interaction"))?;
+
+    tracing::info!(
+        thread_id,
+        author_id,
+        disabled,
+        "AI responder updated ai_disabled flag for thread"
+    );
+
+    Ok(())
+}
+
 async fn translate_and_send_human_support_message(
     ctx: AppContext,
     thread_id: i64,
@@ -1803,10 +1997,11 @@ async fn translate_and_send_human_support_message(
         return Ok(false);
     }
 
+    let marked = format!("{TRANSLATED_SUPPORT_PREFIX}{translated}");
     ai_client
         .send_message(
             thread_id,
-            &truncate_discord_message(&translated),
+            &truncate_discord_message(&marked),
             None::<DiscordFileUpload>,
             Some(&DiscordMessageOptions::default()),
         )
