@@ -58,6 +58,13 @@ Roam offers everything you want and nothing you don't
         -   Prime Video
 -   Why does Roam work on my iPhone and mac app work but not on my Apple Watch?
     -   The WatchOS app connects to the TV through the TV's ECP API, which must be enabled on some Roku TV's. To Enable it, go to **Settings -> System -> Advanced System Settings -> Control by mobile apps** and make sure "Network Access" is set to "Permissive"
+-   Why can't I turn my TV on from my Apple Watch?
+    -   Apple Watch can't use the standard wake API to turn the TV on unless **Fast TV Start** is enabled on the Roku TV. To enable it:
+        -   Press the **Home** button on your Roku TV remote
+        -   Scroll up or down and select **Settings**
+        -   Select **System**, then **Power**
+        -   Select **Fast TV Start**
+        -   Highlight **Enable Fast TV Start** and press **OK** on the remote to check the box
 
 ## Other Resources
 

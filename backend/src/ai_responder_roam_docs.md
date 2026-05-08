@@ -36,6 +36,12 @@ Apple Watch and limited-control fixes:
 
 - Some Roku TVs require Control by mobile apps to be permissive. On the Roku, go to Settings -> System -> Advanced System Settings -> Control by mobile apps and set Network Access to Permissive.
 - If Roam works on iPhone or Mac but not Apple Watch, this Roku setting is a strong first thing to check.
+- watchOS cannot turn the TV on through the standard wake API unless Fast TV Start is enabled on the Roku TV. If a watchOS user reports that they cannot power their TV on from Roam (but other controls work, or it works from iPhone/Mac), have them enable Fast TV Start on the Roku:
+  - Press the Home button on the Roku TV remote.
+  - Scroll up or down and select Settings.
+  - Select System, then Power.
+  - Select Fast TV Start.
+  - Highlight "Enable Fast TV Start" and press OK on the remote to check the box.
 
 Private listening:
 

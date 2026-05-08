@@ -22,10 +22,6 @@ hide_table_of_contents: true
             -   Show underneath the main button panel so it's close to mute
         -   Cancels when muting again (and also does api call)
 
--   Fix bug in nextPacket loop
-
--   Automate screenshot upload with sync-metadata
-
 -   Provide an optional Minimalist view on iOS that replicates siri remote's view closely
 
     -   https://support.apple.com/guide/tv/use-ios-or-ipados-control-center-atvb701cadc1/tvos
@@ -57,17 +53,6 @@ hide_table_of_contents: true
     -   Test that the user sees applinks
     -   Refer to swiftdat testingmodelcontainer for modelcontainers
     -   Refer to here https://medium.com/appledeveloperacademy-ufpe/how-to-implement-ui-tests-with-swiftui-a-few-examples-636708ee26ad for how to setup tests
-
-## Bug Fixes
-
--   Figure out if the loop of calls to `nextPacket` make sense.
-    -   Instead of looping every 10ms and hoping the timing is correct, should I instead be looping over received packets and trying to schedule them at host time `10ms * globalSequenceNumber + startHostTime` and sampleTime to `sequenceNumber * Int64(lastSampleTime.sampleRate) / packetsPerSec + startSampleTime`
-    -   Then I can switch from a `for await` loop over the clock to a `while !Task.isCancelled` loop with a `Task.sleep` in it.
-    -   Okay so we need to loop every 10 ms and try to pull the last packet off and then schedule it at that time
-    -   Whenever we do an audio sync
-        -   We have lastRenderTime + a sync packet
-        -   Estimate the packet number we should be sending out at + the sync time
-            -   Render Time + additional
 
 ## Improve user messaging around info/status/capabilities management
 
@@ -110,14 +95,3 @@ hide_table_of_contents: true
         -   Make sure your device is powered on and connected to the same wifi network as your app. If this still doesn't work, try adding the device manually.
         -   Link https://roam.msd3.io/manually-add-tv.md and https://support.roku.com/article/115001480188 for more troubleshooting or chat
 -   Add badge for supportsWakeOnWLAN and supportsAudioControls
-
-## To update when dropping support for iOS 17/macOS 14 (Feb 2026)
-
--   Go around and remove @available(iOS 18) tags
--   Use preview traits to inject sample data into previews
--   SwiftData
-    -   Use new #Index macro for models
-    -   Use new #Unique macro for models
-    -   Use batch deletion
--   TipKit
-    -   Use CloudkitContainer https://developer.apple.com/videos/play/wwdc2024/10070/?time=698
