@@ -28,6 +28,43 @@ struct DeviceInfo: Codable {
     let udn: String
     let serialNumber: String
 
+    let vendorName: String?
+    let modelName: String?
+    let modelNumber: String?
+    let modelRegion: String?
+    let friendlyModelName: String?
+    let defaultDeviceName: String?
+    let isTv: Bool?
+    let isStick: Bool?
+    let isPoweredByTv: Bool?
+    let uiResolution: String?
+    let softwareVersion: String?
+    let softwareBuild: String?
+    let buildNumber: String?
+    let supportsEthernet: Bool?
+    let supportsSuspend: Bool?
+    let supportsFindRemote: Bool?
+    let supportsAudioGuide: Bool?
+    let supportsAirplay: Bool?
+    let supportsWakeOnWlan: Bool?
+    let supportsPrivateListening: Bool?
+    let supportsEcsTextedit: Bool?
+    let supportsEcsMicrophone: Bool?
+    let supportsAudioSettings: Bool?
+    let supportsRva: Bool?
+    let supportsTrc: Bool?
+    let headphonesConnected: Bool?
+    let privateListeningBlocked: Bool?
+    let hasHandsFreeVoiceRemote: Bool?
+    let secureDevice: Bool?
+    let developerEnabled: Bool?
+    let searchEnabled: Bool?
+    let voiceSearchEnabled: Bool?
+    let timeZone: String?
+    let country: String?
+    let language: String?
+    let locale: String?
+
     func isPowerOn() -> Bool {
         powerMode == "PowerOn"
     }
@@ -43,6 +80,42 @@ struct DeviceInfo: Codable {
         try container.encodeIfPresent(uptime, forKey: .uptime)
         try container.encode(udn, forKey: .udn)
         try container.encode(serialNumber, forKey: .serialNumber)
+        try container.encodeIfPresent(vendorName, forKey: .vendorName)
+        try container.encodeIfPresent(modelName, forKey: .modelName)
+        try container.encodeIfPresent(modelNumber, forKey: .modelNumber)
+        try container.encodeIfPresent(modelRegion, forKey: .modelRegion)
+        try container.encodeIfPresent(friendlyModelName, forKey: .friendlyModelName)
+        try container.encodeIfPresent(defaultDeviceName, forKey: .defaultDeviceName)
+        try container.encodeIfPresent(isTv, forKey: .isTv)
+        try container.encodeIfPresent(isStick, forKey: .isStick)
+        try container.encodeIfPresent(isPoweredByTv, forKey: .isPoweredByTv)
+        try container.encodeIfPresent(uiResolution, forKey: .uiResolution)
+        try container.encodeIfPresent(softwareVersion, forKey: .softwareVersion)
+        try container.encodeIfPresent(softwareBuild, forKey: .softwareBuild)
+        try container.encodeIfPresent(buildNumber, forKey: .buildNumber)
+        try container.encodeIfPresent(supportsEthernet, forKey: .supportsEthernet)
+        try container.encodeIfPresent(supportsSuspend, forKey: .supportsSuspend)
+        try container.encodeIfPresent(supportsFindRemote, forKey: .supportsFindRemote)
+        try container.encodeIfPresent(supportsAudioGuide, forKey: .supportsAudioGuide)
+        try container.encodeIfPresent(supportsAirplay, forKey: .supportsAirplay)
+        try container.encodeIfPresent(supportsWakeOnWlan, forKey: .supportsWakeOnWlan)
+        try container.encodeIfPresent(supportsPrivateListening, forKey: .supportsPrivateListening)
+        try container.encodeIfPresent(supportsEcsTextedit, forKey: .supportsEcsTextedit)
+        try container.encodeIfPresent(supportsEcsMicrophone, forKey: .supportsEcsMicrophone)
+        try container.encodeIfPresent(supportsAudioSettings, forKey: .supportsAudioSettings)
+        try container.encodeIfPresent(supportsRva, forKey: .supportsRva)
+        try container.encodeIfPresent(supportsTrc, forKey: .supportsTrc)
+        try container.encodeIfPresent(headphonesConnected, forKey: .headphonesConnected)
+        try container.encodeIfPresent(privateListeningBlocked, forKey: .privateListeningBlocked)
+        try container.encodeIfPresent(hasHandsFreeVoiceRemote, forKey: .hasHandsFreeVoiceRemote)
+        try container.encodeIfPresent(secureDevice, forKey: .secureDevice)
+        try container.encodeIfPresent(developerEnabled, forKey: .developerEnabled)
+        try container.encodeIfPresent(searchEnabled, forKey: .searchEnabled)
+        try container.encodeIfPresent(voiceSearchEnabled, forKey: .voiceSearchEnabled)
+        try container.encodeIfPresent(timeZone, forKey: .timeZone)
+        try container.encodeIfPresent(country, forKey: .country)
+        try container.encodeIfPresent(language, forKey: .language)
+        try container.encodeIfPresent(locale, forKey: .locale)
     }
 
     init(from decoder: any Decoder) throws {
@@ -56,6 +129,61 @@ struct DeviceInfo: Codable {
         self.uptime = try container.decodeIfPresent(Int.self, forKey: .uptime)
         self.udn = try container.decode(String.self, forKey: .udn)
         self.serialNumber = try container.decode(String.self, forKey: .serialNumber)
+        self.vendorName = try container.decodeIfPresent(String.self, forKey: .vendorName)
+        self.modelName = try container.decodeIfPresent(String.self, forKey: .modelName)
+        self.modelNumber = try container.decodeIfPresent(String.self, forKey: .modelNumber)
+        self.modelRegion = try container.decodeIfPresent(String.self, forKey: .modelRegion)
+        self.friendlyModelName = try container.decodeIfPresent(String.self, forKey: .friendlyModelName)
+        self.defaultDeviceName = try container.decodeIfPresent(String.self, forKey: .defaultDeviceName)
+        self.isTv = try Self.decodeFlexibleBool(container, .isTv)
+        self.isStick = try Self.decodeFlexibleBool(container, .isStick)
+        self.isPoweredByTv = try Self.decodeFlexibleBool(container, .isPoweredByTv)
+        self.uiResolution = try container.decodeIfPresent(String.self, forKey: .uiResolution)
+        self.softwareVersion = try container.decodeIfPresent(String.self, forKey: .softwareVersion)
+        self.softwareBuild = try container.decodeIfPresent(String.self, forKey: .softwareBuild)
+        self.buildNumber = try container.decodeIfPresent(String.self, forKey: .buildNumber)
+        self.supportsEthernet = try Self.decodeFlexibleBool(container, .supportsEthernet)
+        self.supportsSuspend = try Self.decodeFlexibleBool(container, .supportsSuspend)
+        self.supportsFindRemote = try Self.decodeFlexibleBool(container, .supportsFindRemote)
+        self.supportsAudioGuide = try Self.decodeFlexibleBool(container, .supportsAudioGuide)
+        self.supportsAirplay = try Self.decodeFlexibleBool(container, .supportsAirplay)
+        self.supportsWakeOnWlan = try Self.decodeFlexibleBool(container, .supportsWakeOnWlan)
+        self.supportsPrivateListening = try Self.decodeFlexibleBool(container, .supportsPrivateListening)
+        self.supportsEcsTextedit = try Self.decodeFlexibleBool(container, .supportsEcsTextedit)
+        self.supportsEcsMicrophone = try Self.decodeFlexibleBool(container, .supportsEcsMicrophone)
+        self.supportsAudioSettings = try Self.decodeFlexibleBool(container, .supportsAudioSettings)
+        self.supportsRva = try Self.decodeFlexibleBool(container, .supportsRva)
+        self.supportsTrc = try Self.decodeFlexibleBool(container, .supportsTrc)
+        self.headphonesConnected = try Self.decodeFlexibleBool(container, .headphonesConnected)
+        self.privateListeningBlocked = try Self.decodeFlexibleBool(container, .privateListeningBlocked)
+        self.hasHandsFreeVoiceRemote = try Self.decodeFlexibleBool(container, .hasHandsFreeVoiceRemote)
+        self.secureDevice = try Self.decodeFlexibleBool(container, .secureDevice)
+        self.developerEnabled = try Self.decodeFlexibleBool(container, .developerEnabled)
+        self.searchEnabled = try Self.decodeFlexibleBool(container, .searchEnabled)
+        self.voiceSearchEnabled = try Self.decodeFlexibleBool(container, .voiceSearchEnabled)
+        self.timeZone = try container.decodeIfPresent(String.self, forKey: .timeZone)
+        self.country = try container.decodeIfPresent(String.self, forKey: .country)
+        self.language = try container.decodeIfPresent(String.self, forKey: .language)
+        self.locale = try container.decodeIfPresent(String.self, forKey: .locale)
+    }
+
+    // Roku XML serializes booleans as "true"/"false" text. XMLStreamDecoder
+    // doesn't natively coerce those into Bool, so accept either form.
+    private static func decodeFlexibleBool(
+        _ container: KeyedDecodingContainer<CodingKeys>,
+        _ key: CodingKeys
+    ) throws -> Bool? {
+        if let bool = try? container.decodeIfPresent(Bool.self, forKey: key) {
+            return bool
+        }
+        guard let raw = try container.decodeIfPresent(String.self, forKey: key) else {
+            return nil
+        }
+        switch raw.lowercased() {
+        case "true", "1", "yes": return true
+        case "false", "0", "no": return false
+        default: return nil
+        }
     }
 
     enum CodingKeys: CodingKey {
@@ -68,6 +196,42 @@ struct DeviceInfo: Codable {
         case uptime
         case udn
         case serialNumber
+        case vendorName
+        case modelName
+        case modelNumber
+        case modelRegion
+        case friendlyModelName
+        case defaultDeviceName
+        case isTv
+        case isStick
+        case isPoweredByTv
+        case uiResolution
+        case softwareVersion
+        case softwareBuild
+        case buildNumber
+        case supportsEthernet
+        case supportsSuspend
+        case supportsFindRemote
+        case supportsAudioGuide
+        case supportsAirplay
+        case supportsWakeOnWlan
+        case supportsPrivateListening
+        case supportsEcsTextedit
+        case supportsEcsMicrophone
+        case supportsAudioSettings
+        case supportsRva
+        case supportsTrc
+        case headphonesConnected
+        case privateListeningBlocked
+        case hasHandsFreeVoiceRemote
+        case secureDevice
+        case developerEnabled
+        case searchEnabled
+        case voiceSearchEnabled
+        case timeZone
+        case country
+        case language
+        case locale
     }
 }
 

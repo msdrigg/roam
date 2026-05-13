@@ -5,20 +5,28 @@ import SwiftUI
 import WatchConnectivity
 #endif
 
-/// Top-level container for iOS / visionOS. Owns the loaders and discovery
-/// driving tasks, then renders one of three states:
-///   • loading — devices haven't been fetched yet
-///   • empty   — devices fetched but list is empty
-///   • loaded  — TabView with one tab per device, plus settings in a sheet
+/// Minimum content size for the iPad split-view detail pane. Smaller windows
+/// (Stage Manager / Slide Over) will scroll the remote rather than clip its
+/// buttons.
+private let iPadMinContentWidth: CGFloat = 460
+private let iPadMinContentHeight: CGFloat = 560
+
+/// Top-level container for iOS / iPadOS / visionOS. Dispatches to:
+///   • `PhoneHomeView` on compact iPhone (weather-card grid → paged remote)
+///   • `DeviceSplitRoot` on iPad and visionOS (sidebar + detail)
+///
+/// Owns the long-lived sheet plumbing (Add device, Settings, Edit device) and
+/// the background scanning + watch-sync tasks, so the inner roots stay focused
+/// on layout.
 struct RemoteRoot: View {
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 
     @State private var devicesLoader = DeviceListLoader(dataHandler: .shared)
     @State private var primaryDeviceLoader = PrimaryDeviceLoader(dataHandler: .shared)
     @State private var messageLoader = MessageListLoader(dataHandler: .shared)
-#if os(iOS)
-    @State private var showingAllDevices = false
-#endif
+    #if os(visionOS)
+    @State private var visionOSKeyboardShown: Bool = false
+    #endif
 
     @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanAutomatically: Bool = true
 
@@ -34,10 +42,10 @@ struct RemoteRoot: View {
         $appDelegate.navigationPath.settingsNavigationPath
     }
 
-    private var selectedTabBinding: Binding<AppTab> {
+    private var editDeviceBinding: Binding<String?> {
         Binding(
-            get: { appDelegate.navigationPath.selectedTab },
-            set: { appDelegate.navigationPath.selectedTab = $0 }
+            get: { appDelegate.navigationPath.showEditDevice },
+            set: { appDelegate.navigationPath.showEditDevice = $0 }
         )
     }
 
@@ -51,17 +59,16 @@ struct RemoteRoot: View {
                     SettingsView(path: settingsNavigationPathBinding, destination: .global)
                 }
             }
-#if os(iOS)
-            .sheet(isPresented: $showingAllDevices) {
-                DeviceSelectionSheet(
-                    deviceIds: deviceIds,
-                    selectedTab: Binding(
-                        get: { appDelegate.navigationPath.selectedTab },
-                        set: { appDelegate.navigationPath.selectedTab = $0 }
-                    )
-                )
+            .sheet(isPresented: Binding(
+                get: { appDelegate.navigationPath.showEditDevice != nil },
+                set: { newValue in
+                    if !newValue {
+                        appDelegate.navigationPath.showEditDevice = nil
+                    }
+                }
+            )) {
+                EditDeviceSheet(deviceIdToEdit: editDeviceBinding)
             }
-#endif
             .task {
                 guard !runningInPreview else { return }
                 await RoamDataHandler.shared.initialize()
@@ -90,145 +97,59 @@ struct RemoteRoot: View {
                 }
             }
             #endif
-            .onChange(of: primaryDeviceLoader.device?.id, initial: true) { _, primaryId in
-                guard let primaryId else { return }
-                let target: AppTab = .device(primaryId)
-                if appDelegate.navigationPath.selectedTab != target {
-                    appDelegate.navigationPath.selectedTab = target
-                }
-            }
-            .onChange(of: appDelegate.navigationPath.selectedTab) { _, newTab in
-                guard case .device(let id) = newTab else { return }
-                guard primaryDeviceLoader.device?.id != id else { return }
-                Task {
-                    do {
-                        try await RoamDataHandler.shared.makePrimaryDevice(id: id)
-                    } catch {
-                        Log.userInteraction.error("Error setting primary device: \(error, privacy: .public)")
-                    }
-                }
-            }
             .customAccentColorTint()
     }
 
     @ViewBuilder
     private var content: some View {
-        if devicesLoader.devices == nil {
-            loadingView
-        } else if deviceIds.isEmpty {
-            emptyView
-        } else {
-            tabView
-        }
-    }
-
-    private var loadingView: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            ProgressView()
-                .controlSize(.large)
-            Text(String(localized: "Loading devices…", comment: "Status while initial device list is being loaded"))
-                .font(.headline)
-                .foregroundStyle(.secondary)
-            Spacer()
-            NetworkConnectivityBanner()
-        }
-        .padding(.horizontal)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private var emptyView: some View {
-        VStack(spacing: 28) {
-            Spacer()
-            Label(
-                String(localized: "Scanning for devices…", comment: "Empty-state heading shown when no devices have been discovered yet"),
-                systemImage: "rays"
-            )
-            .symbolEffect(.variableColor)
-            .font(.title2)
-            .glowing()
-
-            Button {
-                appDelegate.navigationPath.showAddDevice = true
-            } label: {
-                Label(
-                    String(localized: "Add a device manually", comment: "Button to manually add a device"),
-                    systemImage: "plus"
-                )
-                .labelStyle(.titleAndIcon)
-            }
-            .buttonStyle(.glassIfSupported(isProminent: true))
-            .controlSize(.large)
-            Spacer()
-            NetworkConnectivityBanner()
-        }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    @ViewBuilder
-    private var tabView: some View {
 #if os(iOS)
         if UIDevice.current.userInterfaceIdiom == .phone {
-            phoneTabView
+            PhoneHomeView()
         } else {
-            modernTabView
+            iPadRoot
         }
 #else
-        if #available(visionOS 2.0, *) {
-            modernTabView
-        } else {
-            legacyTabView
-        }
+        iPadRoot
 #endif
     }
 
-    @available(visionOS 2.0, *)
-    private var modernTabView: some View {
-        TabView(selection: selectedTabBinding) {
-            ForEach(deviceIds, id: \.self) { deviceId in
-                Tab(value: AppTab.device(deviceId)) {
-                    DeviceTabContent(deviceId: deviceId, unreadMessages: unreadMessages)
-                } label: {
-                    DeviceTabLabel(deviceId: deviceId)
+    private var iPadRoot: some View {
+        DeviceSplitRoot { device in
+            NavigationStack {
+                #if os(visionOS)
+                ScrollView([.vertical, .horizontal], showsIndicators: false) {
+                    RemoteViewContained(
+                        device: device,
+                        unreadMessages: unreadMessages,
+                        externalShowKeyboard: $visionOSKeyboardShown,
+                        hidesKeyboardToolbarButton: true
+                    )
+                    .frame(minWidth: iPadMinContentWidth, minHeight: iPadMinContentHeight)
                 }
-            }
-        }
-        .tabViewStyle(.sidebarAdaptable)
-    }
-
-    private var legacyTabView: some View {
-        TabView(selection: selectedTabBinding) {
-            ForEach(deviceIds, id: \.self) { deviceId in
-                DeviceTabContent(deviceId: deviceId, unreadMessages: unreadMessages)
-                    .tabItem {
-                        Label(
-                            String(localized: "Device", comment: "Device tab fallback label"),
-                            systemImage: "tv"
-                        )
+                .toolbar {
+                    ToolbarItem(placement: .bottomOrnament) {
+                        Button {
+                            withAnimation { visionOSKeyboardShown.toggle() }
+                        } label: {
+                            Label(
+                                String(localized: "Keyboard", comment: "visionOS bottom ornament button to toggle the keyboard"),
+                                systemImage: "keyboard"
+                            )
+                        }
+                        .accessibilityIdentifier("KeyboardButton")
                     }
-                    .tag(AppTab.device(deviceId))
+                }
+                #else
+                ScrollView([.vertical, .horizontal], showsIndicators: false) {
+                    RemoteViewContained(device: device, unreadMessages: unreadMessages)
+                        .frame(minWidth: iPadMinContentWidth, minHeight: iPadMinContentHeight)
+                }
+                #endif
             }
         }
     }
 
 #if os(iOS)
-    private var phoneTabView: some View {
-        TabView(selection: selectedTabBinding) {
-            ForEach(deviceIds, id: \.self) { deviceId in
-                DeviceTabContent(
-                    deviceId: deviceId,
-                    unreadMessages: unreadMessages,
-                    showsDeviceActions: deviceIds.count > 1
-                ) {
-                    showingAllDevices = true
-                }
-                    .tag(AppTab.device(deviceId))
-            }
-        }
-        .tabViewStyle(.page)
-    }
-
     @MainActor
     private func transferDevicesToWatch(_ deviceIds: [String]) async {
         let devices = await RoamDataHandler.shared.requestAllDevices(deviceIds)
@@ -236,143 +157,4 @@ struct RemoteRoot: View {
     }
 #endif
 }
-
-private struct DeviceTabContent: View {
-    @EnvironmentObject private var appDelegate: RoamAppDelegate
-    @State private var deviceLoader: DeviceLoader
-    let deviceId: String
-    let unreadMessages: Int
-    let showsDeviceActions: Bool
-    let showAllDevices: () -> Void
-
-    init(
-        deviceId: String,
-        unreadMessages: Int,
-        showsDeviceActions: Bool = false,
-        showAllDevices: @escaping () -> Void = {}
-    ) {
-        self.deviceId = deviceId
-        self.unreadMessages = unreadMessages
-        self.showsDeviceActions = showsDeviceActions
-        self.showAllDevices = showAllDevices
-        _deviceLoader = State(initialValue: DeviceLoader(deviceId: deviceId, dataHandler: .shared))
-    }
-
-    var body: some View {
-        NavigationStack {
-            RemoteViewContained(device: deviceLoader.device, unreadMessages: unreadMessages)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            appDelegate.navigationPath.append(.settingsDestination(.global))
-                        } label: {
-                            Label(
-                                String(localized: "Settings", comment: "Settings toolbar button label"),
-                                systemImage: "gear"
-                            )
-                        }
-                        .accessibilityIdentifier("SettingsButton")
-                    }
-#if os(iOS)
-                    if showsDeviceActions {
-                        ToolbarItem(placement: .bottomBar) {
-                            Menu {
-                                Button {
-                                    showAllDevices()
-                                } label: {
-                                    Label(
-                                        String(localized: "All devices", comment: "Menu item to show all configured devices"),
-                                        systemImage: "tv"
-                                    )
-                                }
-
-                                Button {
-                                    appDelegate.navigationPath.showAddDevice = true
-                                } label: {
-                                    Label(
-                                        String(localized: "Add a new device", comment: "Menu item to add another device"),
-                                        systemImage: "plus"
-                                    )
-                                }
-                            } label: {
-                                Label(
-                                    String(localized: "More", comment: "Toolbar button label for additional device actions"),
-                                    systemImage: "ellipsis.circle"
-                                )
-                            }
-                            .accessibilityIdentifier("MoreDevicesButton")
-                        }
-                    }
-#endif
-                }
-        }
-    }
-}
-
-private struct DeviceTabLabel: View {
-    @State private var deviceLoader: DeviceLoader
-    let deviceId: String
-
-    init(deviceId: String) {
-        self.deviceId = deviceId
-        _deviceLoader = State(initialValue: DeviceLoader(deviceId: deviceId, dataHandler: .shared))
-    }
-
-    var body: some View {
-        Label(
-            deviceLoader.device?.name ?? String(localized: "Loading…", comment: "Device tab label fallback before the device record loads"),
-            systemImage: "tv"
-        )
-    }
-}
-
-#if os(iOS)
-private struct DeviceSelectionSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    let deviceIds: [String]
-    @Binding var selectedTab: AppTab
-
-    var body: some View {
-        NavigationStack {
-            List(deviceIds, id: \.self) { deviceId in
-                Button {
-                    selectedTab = .device(deviceId)
-                    dismiss()
-                } label: {
-                    DeviceSelectionRow(deviceId: deviceId, isSelected: selectedTab == .device(deviceId))
-                }
-            }
-            .navigationTitle(String(localized: "All devices", comment: "Title for the sheet listing all configured devices"))
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(String(localized: "Done", comment: "Button to dismiss a sheet")) {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct DeviceSelectionRow: View {
-    @State private var deviceLoader: DeviceLoader
-    let deviceId: String
-    let isSelected: Bool
-
-    init(deviceId: String, isSelected: Bool) {
-        self.deviceId = deviceId
-        self.isSelected = isSelected
-        _deviceLoader = State(initialValue: DeviceLoader(deviceId: deviceId, dataHandler: .shared))
-    }
-
-    var body: some View {
-        Label {
-            Text(deviceLoader.device?.name ?? String(localized: "Loading…", comment: "Device list row fallback before the device record loads"))
-        } icon: {
-            Image(systemName: isSelected ? "checkmark.circle.fill" : "tv")
-                .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-        }
-    }
-}
-#endif
 #endif

@@ -628,6 +628,29 @@ private extension RoamDatabase {
         migrator.registerMigration("v3") { db in
             try db.execute(sql: "ALTER TABLE messages ADD COLUMN human_support_message INTEGER NOT NULL DEFAULT 0")
         }
+        migrator.registerMigration("v4") { db in
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN vendor_name TEXT")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN model_name TEXT")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN model_number TEXT")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN model_region TEXT")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN friendly_model_name TEXT")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN is_tv INTEGER")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN is_stick INTEGER")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN is_powered_by_tv INTEGER")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN ui_resolution TEXT")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN software_version TEXT")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN build_number TEXT")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN supports_audio_settings INTEGER")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN supports_private_listening INTEGER")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN supports_find_remote INTEGER")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN supports_suspend INTEGER")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN supports_airplay INTEGER")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN supports_ethernet INTEGER")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN supports_wake_on_wlan INTEGER")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN headphones_connected INTEGER")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN country TEXT")
+            try db.execute(sql: "ALTER TABLE devices ADD COLUMN time_zone TEXT")
+        }
         return migrator
     }
 
@@ -637,8 +660,14 @@ private extension RoamDatabase {
                 INSERT INTO devices (
                     udn, name, location, serial, last_sent_to_watch, last_selected_at,
                     last_sync_at, last_online_at, last_scanned_at, hidden_at, power_mode,
-                    network_type, wifi_mac, ethernet_mac, rtcp_port, supports_datagram, icon_hash
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    network_type, wifi_mac, ethernet_mac, rtcp_port, supports_datagram, icon_hash,
+                    vendor_name, model_name, model_number, model_region, friendly_model_name,
+                    is_tv, is_stick, is_powered_by_tv, ui_resolution, software_version,
+                    build_number, supports_audio_settings, supports_private_listening,
+                    supports_find_remote, supports_suspend, supports_airplay, supports_ethernet,
+                    supports_wake_on_wlan, headphones_connected, country, time_zone
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(udn) DO UPDATE SET
                     name = excluded.name,
                     location = excluded.location,
@@ -655,7 +684,28 @@ private extension RoamDatabase {
                     ethernet_mac = excluded.ethernet_mac,
                     rtcp_port = excluded.rtcp_port,
                     supports_datagram = excluded.supports_datagram,
-                    icon_hash = excluded.icon_hash
+                    icon_hash = excluded.icon_hash,
+                    vendor_name = excluded.vendor_name,
+                    model_name = excluded.model_name,
+                    model_number = excluded.model_number,
+                    model_region = excluded.model_region,
+                    friendly_model_name = excluded.friendly_model_name,
+                    is_tv = excluded.is_tv,
+                    is_stick = excluded.is_stick,
+                    is_powered_by_tv = excluded.is_powered_by_tv,
+                    ui_resolution = excluded.ui_resolution,
+                    software_version = excluded.software_version,
+                    build_number = excluded.build_number,
+                    supports_audio_settings = excluded.supports_audio_settings,
+                    supports_private_listening = excluded.supports_private_listening,
+                    supports_find_remote = excluded.supports_find_remote,
+                    supports_suspend = excluded.supports_suspend,
+                    supports_airplay = excluded.supports_airplay,
+                    supports_ethernet = excluded.supports_ethernet,
+                    supports_wake_on_wlan = excluded.supports_wake_on_wlan,
+                    headphones_connected = excluded.headphones_connected,
+                    country = excluded.country,
+                    time_zone = excluded.time_zone
                 """,
             arguments: [
                 device.udn,
@@ -675,6 +725,27 @@ private extension RoamDatabase {
                 device.rtcpPort.map { Int($0) },
                 device.supportsDatagram,
                 device.iconHash,
+                device.vendorName,
+                device.modelName,
+                device.modelNumber,
+                device.modelRegion,
+                device.friendlyModelName,
+                device.isTV,
+                device.isStick,
+                device.isPoweredByTV,
+                device.uiResolution,
+                device.softwareVersion,
+                device.buildNumber,
+                device.supportsAudioSettings,
+                device.supportsPrivateListening,
+                device.supportsFindRemote,
+                device.supportsSuspend,
+                device.supportsAirplay,
+                device.supportsEthernet,
+                device.supportsWakeOnWlan,
+                device.headphonesConnected,
+                device.country,
+                device.timeZone,
             ])
     }
 
@@ -723,7 +794,28 @@ private extension RoamDatabase {
             ethernetMAC: row["ethernet_mac"],
             rtcpPort: rtcpPortInt.flatMap(UInt16.init),
             supportsDatagram: row["supports_datagram"],
-            iconHash: row["icon_hash"]
+            iconHash: row["icon_hash"],
+            vendorName: row["vendor_name"],
+            modelName: row["model_name"],
+            modelNumber: row["model_number"],
+            modelRegion: row["model_region"],
+            friendlyModelName: row["friendly_model_name"],
+            isTV: row["is_tv"],
+            isStick: row["is_stick"],
+            isPoweredByTV: row["is_powered_by_tv"],
+            uiResolution: row["ui_resolution"],
+            softwareVersion: row["software_version"],
+            buildNumber: row["build_number"],
+            supportsAudioSettings: row["supports_audio_settings"],
+            supportsPrivateListening: row["supports_private_listening"],
+            supportsFindRemote: row["supports_find_remote"],
+            supportsSuspend: row["supports_suspend"],
+            supportsAirplay: row["supports_airplay"],
+            supportsEthernet: row["supports_ethernet"],
+            supportsWakeOnWlan: row["supports_wake_on_wlan"],
+            headphonesConnected: row["headphones_connected"],
+            country: row["country"],
+            timeZone: row["time_zone"]
         )
         device.lastSyncAt = row["last_sync_at"]
         return device

@@ -44,6 +44,15 @@ struct DeviceListItem: View {
                             // swiftlint:disable:next line_length
                             Label(String(localized: "Support Unknown", comment: "Label indicating headphones mode support is possible but not indicated"), systemImage: "headphones").labelStyle(.badge(.yellow))
                         }
+                        if device.supportsAudioSettings == false {
+                            Label(
+                                String(
+                                    localized: "No volume controls",
+                                    comment: "Badge shown when a Roku device cannot accept volume commands from Roam"
+                                ),
+                                systemImage: "speaker.slash"
+                            ).labelStyle(.badge(.red))
+                        }
 #endif
                     }
                 }

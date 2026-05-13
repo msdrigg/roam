@@ -17,6 +17,7 @@
 		AF0042872AEABA9F0051BB1E /* CollectionHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0042842AEABA9D0051BB1E /* CollectionHelpers.swift */; };
 		AF0532802D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF05327D2D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift */; };
 		AF0532812D36DB2200D68F8E /* HeadphonesModeTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF05327E2D36DB2200D68F8E /* HeadphonesModeTip.swift */; };
+		AFD200012F11000100000001 /* NoVolumeControlsTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD200002F11000100000001 /* NoVolumeControlsTip.swift */; };
 		AF0532822D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF05327D2D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift */; };
 		AF0532852D36DB2B00D68F8E /* RoamSwiftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0532832D36DB2B00D68F8E /* RoamSwiftTests.swift */; };
 		AF0C82882AEB44C000CBE7F8 /* AccentColor.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AF0C82872AEB44BF00CBE7F8 /* AccentColor.xcassets */; };
@@ -305,6 +306,12 @@
 		AFFC71E62AD1212100EE8EA0 /* RemoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFC71E52AD1212100EE8EA0 /* RemoteView.swift */; };
 		DC0001D15C0FE2D8000000F2 /* DiscoveryCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0001D15C0FE2D8000000F1 /* DiscoveryCoordinator.swift */; };
 		DC0001D15C0FE2D8000000F4 /* RemoteRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0001D15C0FE2D8000000F3 /* RemoteRoot.swift */; };
+		AFFC720000000000000000A2 /* DeviceSidebarCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFC720000000000000000A1 /* DeviceSidebarCard.swift */; };
+		AFFC720000000000000000B2 /* DeviceActionsModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFC720000000000000000B1 /* DeviceActionsModifier.swift */; };
+		AFFC720000000000000000C2 /* EditDeviceSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFC720000000000000000C1 /* EditDeviceSheet.swift */; };
+		AFFC720000000000000000D2 /* DeviceSplitRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFC720000000000000000D1 /* DeviceSplitRoot.swift */; };
+		AFFC720000000000000000E2 /* PhoneHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFC720000000000000000E1 /* PhoneHomeView.swift */; };
+		AFFC720000000000000000F2 /* PhoneDeviceDetailPager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFC720000000000000000F1 /* PhoneDeviceDetailPager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -411,6 +418,7 @@
 		AF0042842AEABA9D0051BB1E /* CollectionHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionHelpers.swift; sourceTree = "<group>"; };
 		AF05327D2D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalKeyboardShortcutsTip.swift; sourceTree = "<group>"; };
 		AF05327E2D36DB2200D68F8E /* HeadphonesModeTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadphonesModeTip.swift; sourceTree = "<group>"; };
+		AFD200002F11000100000001 /* NoVolumeControlsTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoVolumeControlsTip.swift; sourceTree = "<group>"; };
 		AF0532832D36DB2B00D68F8E /* RoamSwiftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamSwiftTests.swift; sourceTree = "<group>"; };
 		AF05B4792BFDA63100FA3783 /* Bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Bridge.h; sourceTree = "<group>"; };
 		AF0C82872AEB44BF00CBE7F8 /* AccentColor.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AccentColor.xcassets; sourceTree = "<group>"; };
@@ -581,6 +589,12 @@
 		AFFED2502AD75EAF00357FA4 /* BinaryHeap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryHeap.swift; sourceTree = "<group>"; };
 		DC0001D15C0FE2D8000000F1 /* DiscoveryCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryCoordinator.swift; sourceTree = "<group>"; };
 		DC0001D15C0FE2D8000000F3 /* RemoteRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteRoot.swift; sourceTree = "<group>"; };
+		AFFC720000000000000000A1 /* DeviceSidebarCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSidebarCard.swift; sourceTree = "<group>"; };
+		AFFC720000000000000000B1 /* DeviceActionsModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceActionsModifier.swift; sourceTree = "<group>"; };
+		AFFC720000000000000000C1 /* EditDeviceSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditDeviceSheet.swift; sourceTree = "<group>"; };
+		AFFC720000000000000000D1 /* DeviceSplitRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSplitRoot.swift; sourceTree = "<group>"; };
+		AFFC720000000000000000E1 /* PhoneHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneHomeView.swift; sourceTree = "<group>"; };
+		AFFC720000000000000000F1 /* PhoneDeviceDetailPager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneDeviceDetailPager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -640,6 +654,7 @@
 			children = (
 				AF05327D2D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift */,
 				AF05327E2D36DB2200D68F8E /* HeadphonesModeTip.swift */,
+				AFD200002F11000100000001 /* NoVolumeControlsTip.swift */,
 			);
 			path = Tips;
 			sourceTree = "<group>";
@@ -668,6 +683,12 @@
 				AFD100212F00000100000001 /* RemoteViewContainedMacOS.swift */,
 				AFFC71E52AD1212100EE8EA0 /* RemoteView.swift */,
 				DC0001D15C0FE2D8000000F3 /* RemoteRoot.swift */,
+				AFFC720000000000000000A1 /* DeviceSidebarCard.swift */,
+				AFFC720000000000000000B1 /* DeviceActionsModifier.swift */,
+				AFFC720000000000000000C1 /* EditDeviceSheet.swift */,
+				AFFC720000000000000000D1 /* DeviceSplitRoot.swift */,
+				AFFC720000000000000000E1 /* PhoneHomeView.swift */,
+				AFFC720000000000000000F1 /* PhoneDeviceDetailPager.swift */,
 				AF3AD5522AE28F7400E2D780 /* ButtonGrid.swift */,
 				AF3AD5542AE2910B00E2D780 /* CenterController.swift */,
 				AF3AD5562AE2928600E2D780 /* TopBar.swift */,
@@ -1486,6 +1507,7 @@
 				AF0532802D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift in Sources */,
 				AFBDEA322D7D157500C15B18 /* StandardDislosureGroupStyle.swift in Sources */,
 				AF0532812D36DB2200D68F8E /* HeadphonesModeTip.swift in Sources */,
+				AFD200012F11000100000001 /* NoVolumeControlsTip.swift in Sources */,
 				AFBBE16F2C764564002B7F68 /* RemoteViewContained.swift in Sources */,
 				AFD100202F00000100000001 /* RemoteViewContainedMacOS.swift in Sources */,
 				AF0C82952AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */,
@@ -1573,6 +1595,12 @@
 				AF468D372D333A9E00DF0F2E /* QSocket.swift in Sources */,
 				AFFC71E62AD1212100EE8EA0 /* RemoteView.swift in Sources */,
 				DC0001D15C0FE2D8000000F4 /* RemoteRoot.swift in Sources */,
+				AFFC720000000000000000A2 /* DeviceSidebarCard.swift in Sources */,
+				AFFC720000000000000000B2 /* DeviceActionsModifier.swift in Sources */,
+				AFFC720000000000000000C2 /* EditDeviceSheet.swift in Sources */,
+				AFFC720000000000000000D2 /* DeviceSplitRoot.swift in Sources */,
+				AFFC720000000000000000E2 /* PhoneHomeView.swift in Sources */,
+				AFFC720000000000000000F2 /* PhoneDeviceDetailPager.swift in Sources */,
 				AFCF22E02B2A6A720048FFD9 /* NetworkMonitor.swift in Sources */,
 				AF3F350A2D3E9234009AF2F8 /* ImageDecoder.swift in Sources */,
 				AFA9F8992B1D29E000829B7C /* KeyboardShortcutPanel.swift in Sources */,

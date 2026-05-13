@@ -9,6 +9,7 @@ struct DeviceDetailView: View {
     @State var hidden: Bool = false
 
     @State var showHeadphonesModeDescription: Bool = false
+    @State var showNoVolumeControlsDescription: Bool = false
     @State private var deviceError: Error?
     @State private var errorMessage: String = ""
 
@@ -194,7 +195,6 @@ struct DeviceDetailView: View {
                                             ), systemImage: "headphones"
                                         ).labelStyle(.badge(.red))
                                     } else {
-                                        // swiftlint:disable:next line_length
                                         Label(
                                             String(
                                                 localized: "Support Unknown",
@@ -233,6 +233,47 @@ struct DeviceDetailView: View {
                                 // swiftlint:disable:next line_length
                                 "Some Roku devices support streaming audio directly to Roam. Roam hasn't been able to check for support on this device. Click the headphones button in the main view to see if it works for you or visit https://www.roku.com/products/compare to see which devices do support this feature.",
                                 comment: "Descriptive caption in a device settings page"
+                            )
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                        }
+                    }
+
+                    if device?.supportsAudioSettings == false {
+                        Button(
+                            action: {
+                                withAnimation {
+                                    showNoVolumeControlsDescription = !showNoVolumeControlsDescription
+                                }
+                            },
+                            label: {
+                                LabeledContent(
+                                    String(
+                                        localized: "Volume controls",
+                                        comment: "Settings label indicating whether the Roku device accepts volume commands")
+                                ) {
+                                    HStack(spacing: 8) {
+                                        Label(
+                                            String(
+                                                localized: "No volume controls",
+                                                comment: "Badge shown when a Roku device cannot accept volume commands from Roam"
+                                            ),
+                                            systemImage: "speaker.slash"
+                                        ).labelStyle(.badge(.red))
+
+                                        Image(systemName: "info.circle")
+                                    }
+                                }
+                                .contentShape(Rectangle())
+                            }
+                        )
+                        .buttonStyle(.plain)
+
+                        if showNoVolumeControlsDescription {
+                            Text(
+                                // swiftlint:disable:next line_length
+                                "Roku sticks, Roku Express, and other HDMI-connected players route audio through your TV or receiver over HDMI, so Roam can't change their volume. Use your TV or receiver remote to adjust volume instead.",
+                                comment: "Descriptive caption explaining why volume controls are unavailable on HDMI-connected Roku devices"
                             )
                             .foregroundStyle(.secondary)
                             .font(.caption)

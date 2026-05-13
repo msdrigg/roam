@@ -228,6 +228,17 @@ private func discoveryNWInterfaceNames(_ interfaces: [NWInterface]) -> [String] 
     Array(Set(interfaces.map(\.name).filter { !isUnsupportedDiscoveryInterfaceName($0) })).sorted()
 }
 
+/// Run a single concurrent IPV4 + one-shot SSDP scan. Shared by every UI surface
+/// that exposes a manual "Scan / pull-to-refresh" affordance.
+func performManualDeviceScan(ipv4Actor: DeviceDiscoveryActor, ssdpActor: DeviceDiscoveryActor) async {
+    Log.scanning.notice("Manual device scan starting IPV4 and one-shot SSDP")
+    await withDiscardingTaskGroup { taskGroup in
+        taskGroup.addTask { await ipv4Actor.scanIPV4Once() }
+        taskGroup.addTask { await ssdpActor.scanSSDPOnce() }
+    }
+    Log.scanning.notice("Manual device scan completed IPV4 and one-shot SSDP")
+}
+
 private func scanAddress(_ address: (Addressed4NetworkInterface, IP4Address)) async -> String? {
     let (iface, ipAddress) = address
     if Task.isCancelled {

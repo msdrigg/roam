@@ -121,8 +121,26 @@ struct AddDeviceFlow: View {
 #endif
                 Spacer()
 
+                #if os(visionOS) || os(macOS)
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.title3.weight(.semibold))
+                }
+                #if os(visionOS)
+                .buttonBorderShape(.circle)
+                #else
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                #endif
+                .keyboardShortcut(.cancelAction)
+                .accessibilityLabel(String(localized: "Cancel", comment: "Accessibility label for the close button on the Add Device sheet"))
+                .padding(.trailing, 20)
+                #else
                 Spacer()
                     .frame(maxWidth: 95)
+                #endif
             }
             .padding(.top, 30)
             #if os(visionOS)

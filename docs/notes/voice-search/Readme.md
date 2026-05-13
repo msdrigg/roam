@@ -16,6 +16,7 @@ The voice control functionality is one of the final good features that separates
     - Can we send anything to this API to get it to respond in some way? Fuzzing? Guessing?
     - See if we can find the code in /bin/Application that handles the 8060 API and see if we can find the piece that handles this
 4. Can I try to get a serial console on my old Roku TV motherboard? If so, maybe I could attach a debugger and step through some of the code, install root certs, re-dump the firmware, or use some other techniques...
+5. What about the     <supports-ecs-microphone>true</supports-ecs-microphone> setting in deviceinfo. What is ecs microphone? Can we look in the firmware for any code that references this?
 
 ## Implementation Possibilities
 

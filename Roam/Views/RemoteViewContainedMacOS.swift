@@ -28,6 +28,7 @@
         @State private var ssdpActor: DeviceDiscoveryActor?
         @State private var buttonPresses: [RemoteButton: Int] = [:]
         @State private var headphonesModeEnabled = false
+        @State private var headphonesError: Error?
         @State private var errorTrigger = 0
         @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
@@ -83,6 +84,10 @@
             !(selectedDevice?.supportsDatagram ?? true)
         }
 
+        private var noVolumeControls: Bool {
+            selectedDevice?.supportsAudioSettings == false
+        }
+
         private var networkMonitor: NetworkMonitor {
             appDelegate.networkMonitor
         }
@@ -117,17 +122,17 @@
 
         @ViewBuilder
         private var content: some View {
-            if isLoadingDevices {
-                loadingDevicesView
-            } else if deviceIds.isEmpty {
-                noDevicesView
-            } else if isInMenuBar {
-                menuBarRemoteView
-                    .buttonStyle(.bordered)
-            } else if deviceIds.count == 1 {
-                singleDeviceRemoteView
+            if isInMenuBar {
+                if isLoadingDevices {
+                    loadingDevicesView
+                } else if deviceIds.isEmpty {
+                    noDevicesView
+                } else {
+                    menuBarRemoteView
+                        .buttonStyle(.bordered)
+                }
             } else {
-                splitRemoteView
+                mainRemoteView
             }
         }
 
@@ -291,6 +296,7 @@
                                 Log.headphones.notice(
                                     "Non-cancellation error in PL \(#fileID, privacy: .public)")
                                 errorTrigger += 1
+                                headphonesError = error
                             }
                         }
                     }
@@ -301,8 +307,21 @@
                     appDelegate.navigationPath.focusedWindow = .remote
                 }
                 .sensoryFeedback(.error, trigger: errorTrigger)
+                .alertingError(message: "Headphones mode error", error: $headphonesError)
                 .sheet(isPresented: appDelegate.navigationPath.showingAddDevice(for: .remote)) {
                     AddDeviceFlow()
+                }
+                .sheet(isPresented: Binding(
+                    get: { appDelegate.navigationPath.showingEditDevice(for: .remote).wrappedValue != nil },
+                    set: { newValue in
+                        if !newValue {
+                            appDelegate.navigationPath.showingEditDevice(for: .remote).wrappedValue = nil
+                        }
+                    }
+                )) {
+                    EditDeviceSheet(
+                        deviceIdToEdit: appDelegate.navigationPath.showingEditDevice(for: .remote)
+                    )
                 }
                 .frame(minWidth: minimumContentWidth, minHeight: minimumContentHeight)
         }
@@ -378,39 +397,11 @@
             }
         }
 
-        private var singleDeviceRemoteView: some View {
-            NavigationStack {
+        private var mainRemoteView: some View {
+            DeviceSplitRoot { _ in
                 remoteDetail
             }
             .toolbar {
-                settingsNavigationToolbarContent
-            }
-        }
-
-        private var splitRemoteView: some View {
-            NavigationSplitView(columnVisibility: $columnVisibility) {
-                List(selection: deviceSelection) {
-                    Section("Devices") {
-                        ForEach(deviceIds, id: \.self) { deviceId in
-                            MacDeviceSidebarItem(id: deviceId)
-                                .tag(deviceId)
-                        }
-                        .onMove(perform: moveDevices)
-                    }
-                }
-                .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 320)
-            } detail: {
-                remoteDetail
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigation) {
-                    MacDeviceToolbarMenu(
-                        deviceIds: deviceIds,
-                        selectedDevice: selectedDevice,
-                        selection: deviceSelection
-                    )
-                }
-
                 settingsNavigationToolbarContent
             }
             .tint(.none)
@@ -523,8 +514,10 @@
                         pressCounter: buttonPressCount,
                         action: pressButton,
                         enabled: headphonesModeEnabled ? Set([.headphonesMode]) : Set([]),
-                        disabled: headphonesModeDisabled ? Set([.headphonesMode]) : Set([]),
-                        usesNativeGlassButtons: isInMenuBar
+                        disabled: Set([]),
+                        usesNativeGlassButtons: isInMenuBar,
+                        noVolumeControls: noVolumeControls,
+                        headphonesModeUnsupported: headphonesModeDisabled
                     )
                     .transition(.scale.combined(with: .opacity))
                     .matchedGeometryEffect(id: "buttonGrid", in: animation)
@@ -752,30 +745,6 @@
             }
 
             return true
-        }
-    }
-
-    private struct MacDeviceSidebarItem: View {
-        @State private var deviceLoader: DeviceLoader
-
-        private let id: String
-
-        init(id: String) {
-            self.id = id
-            self._deviceLoader = State(
-                initialValue: DeviceLoader(deviceId: id, dataHandler: .shared))
-        }
-
-        var body: some View {
-            Label {
-                Text(deviceLoader.device?.name ?? "Loading...")
-                    .lineLimit(1)
-            } icon: {
-                Image(systemName: (deviceLoader.device?.isOnline() ?? false) ? "tv.fill" : "tv")
-                    .foregroundStyle(
-                        (deviceLoader.device?.isOnline() ?? false)
-                            ? Color.accentColor : Color.secondary)
-            }
         }
     }
 

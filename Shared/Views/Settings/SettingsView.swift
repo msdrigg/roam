@@ -52,6 +52,8 @@ struct SettingsView: View {
 
     @Environment(\.self) var env
 
+    @Environment(\.dismiss) private var dismiss
+
     @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanIpAutomatically: Bool = true
     @AppStorage(UserDefaultKeys.shouldControlVolumeWithHWButtons) private var controlVolumeWithHWButtons: Bool = true
     @AppStorage(UserDefaultKeys.showMenuBar) private var showMenuBar: Bool = false
@@ -78,16 +80,7 @@ struct SettingsView: View {
                  self.isScanning = false
             }
 
-            Log.scanning.notice("Manual settings scan starting IPV4 and one-shot SSDP")
-            await withDiscardingTaskGroup { taskGroup in
-                taskGroup.addTask {
-                    await scanningActor.scanIPV4Once()
-                }
-                taskGroup.addTask {
-                    await ssdpActor.scanSSDPOnce()
-                }
-            }
-            Log.scanning.notice("Manual settings scan completed IPV4 and one-shot SSDP")
+            await performManualDeviceScan(ipv4Actor: scanningActor, ssdpActor: ssdpActor)
         }
     }
     #endif
@@ -436,6 +429,17 @@ struct SettingsView: View {
                 addDeviceButton
             }
         }
+#if os(visionOS)
+        .toolbar {
+            if destination == .global {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(String(localized: "Done", comment: "Button to dismiss the settings sheet")) {
+                        dismiss()
+                    }
+                }
+            }
+        }
+#endif
 #endif
 #if !os(watchOS)
         .navigationTitle(String(localized: "Settings", comment: "Navigation title on the settings page"))

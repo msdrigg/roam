@@ -10,7 +10,7 @@ public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING
     #endif
 
     struct SampleDataPreviewModifier: PreviewModifier {
-        static func makeSharedContext() async throws -> Void {
+        static func makeSharedContext() async throws {
             try await RoamDataHandler.shared.loadTestDataForPreview()
         }
 
@@ -43,6 +43,11 @@ public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING
 
         devices[0].supportsDatagram = true
         devices[1].supportsDatagram = false
+
+        devices[0].supportsAudioSettings = true
+        devices[1].supportsAudioSettings = false
+        devices[1].isStick = true
+        devices[1].modelName = "Roku Express 4K+"
 
         return devices
     }

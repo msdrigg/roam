@@ -25,6 +25,28 @@ public struct Device: AppEntity, Equatable, Identifiable, Hashable, Codable {
     public var supportsDatagram: Bool?
     public var iconHash: String?
 
+    public var vendorName: String?
+    public var modelName: String?
+    public var modelNumber: String?
+    public var modelRegion: String?
+    public var friendlyModelName: String?
+    public var isTV: Bool?
+    public var isStick: Bool?
+    public var isPoweredByTV: Bool?
+    public var uiResolution: String?
+    public var softwareVersion: String?
+    public var buildNumber: String?
+    public var supportsAudioSettings: Bool?
+    public var supportsPrivateListening: Bool?
+    public var supportsFindRemote: Bool?
+    public var supportsSuspend: Bool?
+    public var supportsAirplay: Bool?
+    public var supportsEthernet: Bool?
+    public var supportsWakeOnWlan: Bool?
+    public var headphonesConnected: Bool?
+    public var country: String?
+    public var timeZone: String?
+
     public var id: String {
         udn
     }
@@ -36,7 +58,20 @@ public struct Device: AppEntity, Equatable, Identifiable, Hashable, Codable {
         powerMode: String? = nil, networkType: String? = nil,
         wifiMAC: String? = nil, ethernetMAC: String? = nil,
         rtcpPort: UInt16? = nil, supportsDatagram: Bool? = nil,
-        iconHash: String? = nil
+        iconHash: String? = nil,
+        vendorName: String? = nil, modelName: String? = nil,
+        modelNumber: String? = nil, modelRegion: String? = nil,
+        friendlyModelName: String? = nil,
+        isTV: Bool? = nil, isStick: Bool? = nil, isPoweredByTV: Bool? = nil,
+        uiResolution: String? = nil, softwareVersion: String? = nil,
+        buildNumber: String? = nil,
+        supportsAudioSettings: Bool? = nil,
+        supportsPrivateListening: Bool? = nil,
+        supportsFindRemote: Bool? = nil, supportsSuspend: Bool? = nil,
+        supportsAirplay: Bool? = nil, supportsEthernet: Bool? = nil,
+        supportsWakeOnWlan: Bool? = nil,
+        headphonesConnected: Bool? = nil,
+        country: String? = nil, timeZone: String? = nil
     ) {
         self.serial = serial
         self.name = name
@@ -54,6 +89,27 @@ public struct Device: AppEntity, Equatable, Identifiable, Hashable, Codable {
         self.rtcpPort = rtcpPort
         self.supportsDatagram = supportsDatagram
         self.iconHash = iconHash
+        self.vendorName = vendorName
+        self.modelName = modelName
+        self.modelNumber = modelNumber
+        self.modelRegion = modelRegion
+        self.friendlyModelName = friendlyModelName
+        self.isTV = isTV
+        self.isStick = isStick
+        self.isPoweredByTV = isPoweredByTV
+        self.uiResolution = uiResolution
+        self.softwareVersion = softwareVersion
+        self.buildNumber = buildNumber
+        self.supportsAudioSettings = supportsAudioSettings
+        self.supportsPrivateListening = supportsPrivateListening
+        self.supportsFindRemote = supportsFindRemote
+        self.supportsSuspend = supportsSuspend
+        self.supportsAirplay = supportsAirplay
+        self.supportsEthernet = supportsEthernet
+        self.supportsWakeOnWlan = supportsWakeOnWlan
+        self.headphonesConnected = headphonesConnected
+        self.country = country
+        self.timeZone = timeZone
     }
 
     public var iconURL: URL? {

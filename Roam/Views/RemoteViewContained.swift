@@ -27,6 +27,7 @@ struct RemoteViewContained: View {
     @State private var keyboardLeaving: Bool = false
     @State var buttonPresses: [RemoteButton: Int] = [:]
     @State private var headphonesModeEnabled: Bool = false
+    @State private var headphonesError: Error?
     @State private var errorTrigger: Int = 0
     @AppStorage(UserDefaultKeys.localNetworkPermissionGranted) private var networkPermissionGranted: Bool = false
     @AllCustomKeyboardShortcuts private var allKeyboardShortcuts: [CustomKeyboardShortcut]
@@ -34,6 +35,8 @@ struct RemoteViewContained: View {
     private let device: Device?
     private let unreadMessages: Int
     private let isInMenuBar: Bool
+    private let externalShowKeyboard: Binding<Bool>?
+    private let hidesKeyboardToolbarButton: Bool
 
     private var ecpSessionState: ECPMonitor {
         appDelegate.ecpMonitor
@@ -53,14 +56,26 @@ struct RemoteViewContained: View {
     }
     #endif
 
-    init(device: Device? = nil, unreadMessages: Int = 0, isInMenuBar: Bool = false) {
+    init(
+        device: Device? = nil,
+        unreadMessages: Int = 0,
+        isInMenuBar: Bool = false,
+        externalShowKeyboard: Binding<Bool>? = nil,
+        hidesKeyboardToolbarButton: Bool = false
+    ) {
         self.device = device
         self.unreadMessages = unreadMessages
         self.isInMenuBar = isInMenuBar
+        self.externalShowKeyboard = externalShowKeyboard
+        self.hidesKeyboardToolbarButton = hidesKeyboardToolbarButton
     }
 
     var headphonesModeDisabled: Bool {
         !(selectedDevice?.supportsDatagram ?? true)
+    }
+
+    var noVolumeControls: Bool {
+        selectedDevice?.supportsAudioSettings == false
     }
 
     var hideUIForKeyboardEntry: Bool {
@@ -281,6 +296,7 @@ struct RemoteViewContained: View {
                             if !(error is CancellationError) {
                                 Log.headphones.notice("Non-cancellation error in PL \(#fileID, privacy: .public)")
                                 errorTrigger += 1
+                                headphonesError = error
                             }
                         }
                     }
@@ -311,6 +327,24 @@ struct RemoteViewContained: View {
                                 focusKeyboardMonitor = .monitor
                             }
                         }
+                    }
+                }
+                .onAppear {
+                    if let externalShowKeyboard,
+                       externalShowKeyboard.wrappedValue != showKeyboardEntryManual {
+                        showKeyboardEntryManual = externalShowKeyboard.wrappedValue
+                    }
+                }
+                .onChange(of: showKeyboardEntryManual) { _, new in
+                    if let externalShowKeyboard,
+                       externalShowKeyboard.wrappedValue != new {
+                        externalShowKeyboard.wrappedValue = new
+                    }
+                }
+                .onChange(of: externalShowKeyboard?.wrappedValue) { _, new in
+                    guard let new, showKeyboardEntryManual != new else { return }
+                    withAnimation {
+                        showKeyboardEntryManual = new
                     }
                 }
 
@@ -375,6 +409,7 @@ struct RemoteViewContained: View {
                         Spacer()
                     }
                     #elseif os(visionOS)
+                    if !hidesKeyboardToolbarButton {
                     HStack(alignment: .center) {
                         Button(action: {
                             keyboardLeaving = showKeyboardEntry
@@ -420,6 +455,7 @@ struct RemoteViewContained: View {
                         .disabled(selectedDevice == nil)
 
                         Spacer()
+                    }
                     }
                     #endif
 
@@ -578,15 +614,16 @@ struct RemoteViewContained: View {
             #endif
 #if !os(visionOS) && !os(macOS)
             .toolbar(id: "remote") {
+                if !hidesKeyboardToolbarButton {
                 ToolbarItem(id: "keyboard", placement: .topBarLeading) {
-                    Button(action: {
-                        keyboardLeaving = showKeyboardEntry
-                        withAnimation {
-                            showKeyboardEntryManual = !showKeyboardEntry
-                        }
-                    }, label: {
-                        Label(String(localized: "Keyboard", comment: "Label on a button to open the keyboard"), systemImage: "keyboard")
-                    })
+                        Button(action: {
+                            keyboardLeaving = showKeyboardEntry
+                            withAnimation {
+                                showKeyboardEntryManual = !showKeyboardEntry
+                            }
+                        }, label: {
+                            Label(String(localized: "Keyboard", comment: "Label on a button to open the keyboard"), systemImage: "keyboard")
+                        })
                     .accessibilityIdentifier("KeyboardButton")
                     .focusable(true, interactions: [.activate, .edit])
                     .focused($focusKeyboardMonitor, equals: .monitor)
@@ -658,11 +695,13 @@ struct RemoteViewContained: View {
                     .disabled(selectedDevice == nil)
                     .font(.headline)
                 }
+                }
             }
 #endif
 #if !os(visionOS)
                 .sensoryFeedback(.error, trigger: errorTrigger)
 #endif
+                .alertingError(message: "Headphones mode error", error: $headphonesError)
         }
         .customAccentColorTint()
         .defaultFocus($focusKeyboardMonitor, .monitor, priority: .userInitiated)
@@ -711,7 +750,9 @@ struct RemoteViewContained: View {
                             pressCounter: buttonPressCount,
                             action: pressButton,
                             enabled: headphonesModeEnabled ? Set([.headphonesMode]) : Set([]),
-                            disabled: headphonesModeDisabled ? Set([.headphonesMode]) : Set([])
+                            disabled: Set([]),
+                            noVolumeControls: noVolumeControls,
+                            headphonesModeUnsupported: headphonesModeDisabled
                         )
                         .transition(.scale.combined(with: .opacity))
                         .matchedGeometryEffect(id: "buttonGrid", in: animation)
@@ -765,7 +806,9 @@ struct RemoteViewContained: View {
                     pressCounter: buttonPressCount,
                     action: pressButton,
                     enabled: headphonesModeEnabled ? Set([.headphonesMode]) : Set([]),
-                    disabled: headphonesModeDisabled ? Set([.headphonesMode]) : Set([])
+                    disabled: Set([]),
+                    noVolumeControls: noVolumeControls,
+                    headphonesModeUnsupported: headphonesModeDisabled
                 )
                 .transition(.scale.combined(with: .opacity))
                 .matchedGeometryEffect(id: "buttonGrid", in: animation)
@@ -804,7 +847,9 @@ struct RemoteViewContained: View {
                     pressCounter: buttonPressCount,
                     action: pressButton,
                     enabled: headphonesModeEnabled ? Set([.headphonesMode]) : Set([]),
-                    disabled: headphonesModeDisabled ? Set([.headphonesMode]) : Set([])
+                    disabled: Set([]),
+                    noVolumeControls: noVolumeControls,
+                    headphonesModeUnsupported: headphonesModeDisabled
                 )
                 .transition(.scale.combined(with: .opacity))
                 .matchedGeometryEffect(id: "buttonGrid", in: animation)

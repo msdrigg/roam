@@ -2660,7 +2660,7 @@
       }
     },
     "Add a device manually" : {
-      "comment" : "Button to manually add a device\nLabel on a button to add a device",
+      "comment" : "Button shown in the empty sidebar to manually add a device\nLabel on a button to add a device",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2744,6 +2744,7 @@
     },
     "Add a new device" : {
       "comment" : "Menu item to add another device",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2906,6 +2907,9 @@
           }
         }
       }
+    },
+    "Add device" : {
+      "comment" : "Footer button under the sidebar device list to add a new device"
     },
     "Add Device" : {
       "comment" : "Keyboard shortcut to show the Roam app",
@@ -4065,7 +4069,7 @@
       }
     },
     "App Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -5056,7 +5060,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in about page for the app",
+      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -5220,6 +5224,9 @@
           }
         }
       }
+    },
+    "Cancel" : {
+      "comment" : "Accessibility label for the close button on the Add Device sheet\nCancel button for the delete-device dialog"
     },
     "Cannot update device that is deleted." : {
       "localizations" : {
@@ -6467,6 +6474,7 @@
       }
     },
     "Click here to play your TV audio through your computer!" : {
+      "comment" : "Headphones mode promo body (macOS)",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -7786,7 +7794,7 @@
       }
     },
     "Delete" : {
-      "comment" : "Label on a button to delete a device",
+      "comment" : "Confirm button for deleting a device\nContext-menu action to delete a device\nLabel on a button to delete a device",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -7867,6 +7875,9 @@
           }
         }
       }
+    },
+    "Delete “%@”?" : {
+      "comment" : "Title of the device delete confirmation dialog with the device name interpolated"
     },
     "Delete Device" : {
       "comment" : "Text on a button to delete the device",
@@ -7951,8 +7962,11 @@
         }
       }
     },
+    "Delete device?" : {
+      "comment" : "Generic title of the device delete confirmation dialog when the device name is unknown"
+    },
     "Device" : {
-      "comment" : "Configuration field title for a device selection field\nDescription on a configuration field\nDevice tab fallback label\nTV Device Selection Option",
+      "comment" : "Configuration field title for a device selection field\nDescription on a configuration field\nTV Device Selection Option",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8118,7 +8132,7 @@
       }
     },
     "Devices" : {
-      "comment" : "Header in device selection menu",
+      "comment" : "Title of the device sidebar in the split-view layout",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8365,7 +8379,7 @@
       }
     },
     "Done" : {
-      "comment" : "Button to dismiss a sheet",
+      "comment" : "Button to dismiss the edit device sheet",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8696,7 +8710,7 @@
       }
     },
     "Edit" : {
-      "comment" : "Label on a button to edit a device",
+      "comment" : "Context-menu action to edit a device\nLabel on a button to edit a device",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8777,6 +8791,9 @@
           }
         }
       }
+    },
+    "Edit Device" : {
+      "comment" : "Title of the sheet for editing a device's settings"
     },
     "Enter" : {
       "comment" : "Remote button to enter",
@@ -10594,6 +10611,9 @@
           }
         }
       }
+    },
+    "Headphones mode unavailable" : {
+      "comment" : "Title of the popup shown when a user taps a disabled headphones mode button"
     },
     "HI" : {
       "localizations" : {
@@ -13082,7 +13102,7 @@
       }
     },
     "Keyboard" : {
-      "comment" : "Label on a button to open the keyboard",
+      "comment" : "Label on a button to open the keyboard\nvisionOS bottom ornament button to toggle the keyboard",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -14000,6 +14020,7 @@
     },
     "Loading devices…" : {
       "comment" : "Status while initial device list is being loaded",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -14164,7 +14185,7 @@
       }
     },
     "Loading…" : {
-      "comment" : "Device tab label fallback before the device record loads",
+      "comment" : "Placeholder shown on a device card while its record loads",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -16161,7 +16182,8 @@
       }
     },
     "More" : {
-      "comment" : "Toolbar button label for additional device actions",
+      "comment" : "Accessibility label for the sidebar toolbar more menu",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -17983,6 +18005,9 @@
           }
         }
       }
+    },
+    "No volume controls" : {
+      "comment" : "Badge shown when a Roku device cannot accept volume commands from Roam"
     },
     "No WiFi connection detected" : {
       "comment" : "Warning indicator message that there is no WiFi network connection",
@@ -23858,6 +23883,9 @@
         }
       }
     },
+    "Roku sticks, Roku Express, and other HDMI-connected players route audio through your TV or receiver over HDMI, so Roam can't change their volume. Use your TV or receiver remote to adjust volume instead." : {
+      "comment" : "Descriptive caption explaining why volume controls are unavailable on HDMI-connected Roku devices"
+    },
     "Save to files" : {
       "comment" : "Label on a button to download an attachment",
       "localizations" : {
@@ -24356,7 +24384,7 @@
       }
     },
     "Scanning for devices…" : {
-      "comment" : "Empty-state heading shown when no devices have been discovered yet",
+      "comment" : "Sidebar empty-state heading while no devices have been discovered",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -25017,7 +25045,7 @@
       }
     },
     "Settings" : {
-      "comment" : "Navigation title on the settings page\nSettings toolbar button label",
+      "comment" : "Navigation title on the settings page",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -26668,6 +26696,15 @@
         }
       }
     },
+    "This Roku device can't change its volume from Roam. Roku sticks, Roku Express, and other HDMI-connected players route audio over HDMI, so you'll need to use your TV or receiver remote to adjust volume." : {
+      "comment" : "Body of the popup shown when a user taps a disabled volume button"
+    },
+    "This Roku device doesn't support streaming audio to Roam, so headphones mode is unavailable. To see which Roku devices do support it, visit https://www.roku.com/products/compare." : {
+      "comment" : "Body of the popup shown when a user taps a disabled headphones mode button"
+    },
+    "This will remove the device from Roam. You can always add it back later." : {
+      "comment" : "Body text of the device delete confirmation dialog"
+    },
     "Times" : {
       "comment" : "Configuration field title for a repeat count",
       "localizations" : {
@@ -28241,6 +28278,12 @@
     "Vision Pro" : {
 
     },
+    "Volume controls" : {
+      "comment" : "Settings label indicating whether the Roku device accepts volume commands"
+    },
+    "Volume controls unavailable" : {
+      "comment" : "Title of the popup shown when a user taps a disabled volume button"
+    },
     "Volume Down" : {
       "comment" : "Keyboard shortcut to turn the volume down\nRemote button to decrease volume\nSiri shortcut to turn the volume down",
       "localizations" : {
@@ -28572,6 +28615,7 @@
       }
     },
     "Want to listen through your device?" : {
+      "comment" : "Headphones mode promo title",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

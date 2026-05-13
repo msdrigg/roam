@@ -1457,6 +1457,28 @@ extension RoamDataHandler {
         device.networkType = deviceInfo.networkType
         device.powerMode = deviceInfo.powerMode
 
+        device.vendorName = deviceInfo.vendorName
+        device.modelName = deviceInfo.modelName
+        device.modelNumber = deviceInfo.modelNumber
+        device.modelRegion = deviceInfo.modelRegion
+        device.friendlyModelName = deviceInfo.friendlyModelName
+        device.isTV = deviceInfo.isTv
+        device.isStick = deviceInfo.isStick
+        device.isPoweredByTV = deviceInfo.isPoweredByTv
+        device.uiResolution = deviceInfo.uiResolution
+        device.softwareVersion = deviceInfo.softwareVersion
+        device.buildNumber = deviceInfo.buildNumber
+        device.supportsAudioSettings = deviceInfo.supportsAudioSettings
+        device.supportsPrivateListening = deviceInfo.supportsPrivateListening
+        device.supportsFindRemote = deviceInfo.supportsFindRemote
+        device.supportsSuspend = deviceInfo.supportsSuspend
+        device.supportsAirplay = deviceInfo.supportsAirplay
+        device.supportsEthernet = deviceInfo.supportsEthernet
+        device.supportsWakeOnWlan = deviceInfo.supportsWakeOnWlan
+        device.headphonesConnected = deviceInfo.headphonesConnected
+        device.country = deviceInfo.country
+        device.timeZone = deviceInfo.timeZone
+
         // Update device name if it's still the default
         if device.name == getGlobalNewDeviceName(), let newName = deviceInfo.friendlyDeviceName {
             device.name = newName

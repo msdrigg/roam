@@ -16,6 +16,10 @@ enum UserDefaultKeys {
     static let localNetworkPermissionGranted = "localNetworkPermissionGranted"
     static let macosKeysWindowHorizontal = "macosKeysWindowHorizontal"
 
+    // Tips
+    static let headphonesModeUsed = "headphonesModeUsed"
+    static let audioInteractionCount = "audioInteractionCount"
+
     // Messaging
     static let lastTypingTime = "lastTypingTime"
     static let lastSupportTypingTime = "lastSupportTypingTime"

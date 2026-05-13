@@ -34,6 +34,9 @@ final class NavigationManager {
 
     var showAddDevice: Bool = false
 
+    /// Non-nil when the device-edit sheet should be shown for that device id.
+    var showEditDevice: String?
+
     var last: NavigationDestination? {
         #if !os(macOS) && !os(watchOS)
         settingsNavigationPath.last
@@ -98,6 +101,14 @@ final class NavigationManager {
             return Binding(get: { self.showAddDevice }, set: { self.showAddDevice = $0 })
         } else {
             return Binding(get: { false }, set: { _ in })
+        }
+    }
+
+    func showingEditDevice(for focusedWindow: WindowDestination) -> Binding<String?> {
+        if focusedWindow == self.focusedWindow {
+            return Binding(get: { self.showEditDevice }, set: { self.showEditDevice = $0 })
+        } else {
+            return Binding(get: { nil }, set: { _ in })
         }
     }
     #endif

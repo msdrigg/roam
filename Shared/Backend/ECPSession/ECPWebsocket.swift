@@ -25,6 +25,17 @@ enum ECPWebsocketState: Equatable, CustomDebugStringConvertible {
 }
 
 actor ECPWebsocketClient {
+    static let PrintAllTraffic = false
+
+    static func logTraffic(_ label: String, data: Data) {
+        guard PrintAllTraffic else { return }
+        if let text = String(data: data, encoding: .utf8) {
+            Log.connection.notice("[TRAFFIC] \(label, privacy: .public) [\(data.count, privacy: .public) bytes text]: \(text, privacy: .public)")
+        } else {
+            Log.connection.notice("[TRAFFIC] \(label, privacy: .public) [\(data.count, privacy: .public) bytes hex]: \(data.toHexString(), privacy: .public)")
+        }
+    }
+
     enum ECPError: Error {
         case requestFailed(String)
         case badKeypress(RemoteButton)
@@ -200,6 +211,7 @@ actor ECPWebsocketClient {
             guard let data = resp.contentData else {
                 throw ECPError.invalidResponse
             }
+            Self.logTraffic("DeviceInfo XML pre-decode", data: data)
             let decoder = XMLStreamDecoder(.convertFromKebabCase)
             do {
                 return try decoder.decode(DeviceInfo.self, from: data)
@@ -219,6 +231,7 @@ actor ECPWebsocketClient {
                 throw ECPError.invalidResponse
             }
 
+            Self.logTraffic("AudioDevice XML pre-decode", data: data)
             let decoder = XMLStreamDecoder()
             let audioDevice = try decoder.decode(AudioDevice.self, from: data)
 
@@ -238,6 +251,7 @@ actor ECPWebsocketClient {
                 throw ECPError.invalidResponse
             }
 
+            Self.logTraffic("Apps XML pre-decode", data: data)
             let decoder = XMLStreamDecoder()
             let apps: Apps
             do {
@@ -321,6 +335,9 @@ actor ECPWebsocketClient {
         let message = inputMessage.withId(reqId)
 
         Log.connection.notice("Current response handlers \(self.responseHandlers.count, privacy: .public) and new request \(message.requestId, privacy: .public) with state \(self.state.debugDescription, privacy: .public) and ws state \(String(describing: self.connection.state), privacy: .public)")
+        if Self.PrintAllTraffic {
+            Log.connection.notice("[TRAFFIC] OUT request \(message.requestId, privacy: .public): \(message.debugDescription, privacy: .public)")
+        }
         self.responseHandlers[reqId] = completion
         let metadata = NWProtocolFramer.Message(ecpRequest: message)
         let context = NWConnection.ContentContext(
@@ -473,9 +490,15 @@ actor ECPWebsocketClient {
         switch response {
         case .notify(let notify):
             Log.connection.notice("Getting notify \(notify.notifyType.rawValue, privacy: .public)")
+            if Self.PrintAllTraffic {
+                Log.connection.notice("[TRAFFIC] IN notify type=\(notify.notifyType.rawValue, privacy: .public): \(String(describing: notify), privacy: .public)")
+            }
             self.notificationhandler(notify)
         case .response(let response):
             Log.connection.notice("Getting success for req \(response.responseId, privacy: .public): \(response.responseType, privacy: .public)")
+            if Self.PrintAllTraffic {
+                Log.connection.notice("[TRAFFIC] IN response \(response.responseId, privacy: .public) type=\(response.responseType, privacy: .public) status=\(response.status, privacy: .public)")
+            }
             if let handler = self.responseHandlers.removeValue(forKey: response.responseId) {
                 handler(.success(response))
             } else {

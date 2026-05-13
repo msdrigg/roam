@@ -6,6 +6,18 @@ import os.log
 enum HeadphonesModeError: Error, LocalizedError {
     case badURL
     case audioStreamingTimeout
+    case rtpListenerFailed(underlying: Error)
+
+    var errorDescription: String? {
+        switch self {
+        case .badURL:
+            return "Invalid device address for headphones mode."
+        case .audioStreamingTimeout:
+            return "Audio streaming timed out."
+        case let .rtpListenerFailed(underlying):
+            return "Couldn't start headphones mode: UDP port \(globalHostRTPPort) is unavailable (\(underlying.localizedDescription)). Another app on this Mac may be holding it; try quitting other audio/casting apps and try again."
+        }
+    }
 }
 
 func listenContinually(ecpSession: ECPWebsocketClient, location: String, rtcpPort: UInt16?) async throws {
@@ -98,8 +110,8 @@ actor RTPSession {
     }
 
     let rtcpInbox = RtcpInbox()
-    let rtpStream: AsyncStream<RtpPacket>
-    let rtpStreamContinuation: AsyncStream<RtpPacket>.Continuation
+    let rtpStream: AsyncThrowingStream<RtpPacket, Error>
+    let rtpStreamContinuation: AsyncThrowingStream<RtpPacket, Error>.Continuation
     let rtpListener: NWListener
     let rtcpListener: NWListener
 
@@ -161,7 +173,13 @@ actor RTPSession {
                 Log.headphones.notice("remoteRtcpConnection state \(String(describing: state), privacy: .public)")
             }
         }
-        remoteRtcpConnection.start(queue: .global())
+        // Intentionally do NOT call remoteRtcpConnection.start() yet. It
+        // must bind AFTER rtpListener (both want port 6970). Listener binds
+        // first as an unconnected SO_REUSEPORT socket; the connected
+        // socket then joins via REUSEPORT and the kernel demuxes by
+        // 4-tuple. If we start the connection first, its bind wins and
+        // the listener gets EADDRINUSE. start() is deferred to
+        // rtpListener's `.ready` callback (see startRtpStream).
 
         // Defensive: also drain any RTCP that the kernel routes to this
         // connection. In practice Roku addresses replies to local 6971,
@@ -195,13 +213,19 @@ actor RTPSession {
         }
         remoteRtcpConnection.receiveMessage(completion: receiveOutboundRtcp)
 
-        let (rtpStream, rtpContuation) = AsyncStream<RtpPacket>.makeStream(of: RtpPacket.self, bufferingPolicy: .bufferingNewest(512))
+        let (rtpStream, rtpContuation) = AsyncThrowingStream<RtpPacket, Error>.makeStream(
+            of: RtpPacket.self,
+            throwing: Error.self,
+            bufferingPolicy: .bufferingNewest(512)
+        )
         self.rtpStream = rtpStream
         rtpStreamContinuation = rtpContuation
-        Task {
-            await startRtcpStream()
-            await startRtpStream()
-        }
+
+        // Wire and start listeners synchronously, in init, so the rtpListener
+        // wins the bind race with remoteRtcpConnection on port 6970.
+        // rtcpListener (port 6971) has no conflict and is started for symmetry.
+        startRtcpStream()
+        startRtpStream()
     }
 
     deinit {
@@ -211,7 +235,16 @@ actor RTPSession {
         self.remoteRtcpConnection.cancel()
     }
 
-    func startRtcpStream() {
+    /// Guards `remoteRtcpConnection.start()` so it runs exactly once, even
+    /// if rtpListener emits `.ready` more than once (interface flips etc.).
+    private var rtcpConnectionStarted = false
+    private func startRemoteRtcpConnectionIfNeeded() {
+        guard !rtcpConnectionStarted else { return }
+        rtcpConnectionStarted = true
+        remoteRtcpConnection.start(queue: .global())
+    }
+
+    nonisolated func startRtcpStream() {
         rtcpListener.stateUpdateHandler = { state in
             switch state {
             case let .failed(err):
@@ -270,17 +303,28 @@ actor RTPSession {
         rtcpListener.start(queue: .global())
     }
 
-    func startRtpStream() {
+    nonisolated func startRtpStream() {
         rtpListener.stateUpdateHandler = { [weak self] state in
             switch state {
             case let .failed(err):
-                Log.headphones.notice("rtpConnection failed with error \(err, privacy: .public)")
-                self?.rtpStreamContinuation.finish()
+                Log.headphones.notice("rtpListener failed with error \(err, privacy: .public)")
+                // Surface the bind failure to streamAudio's `for try await`
+                // so the whole headphones-mode task group throws out and the
+                // UI can flip the toggle off + show an alert. Logging alone
+                // leaves the stream silent with no audio and no feedback.
+                self?.rtpStreamContinuation.finish(throwing: HeadphonesModeError.rtpListenerFailed(underlying: err))
             case .cancelled:
-                Log.headphones.notice("rtpConnection cancelled")
+                Log.headphones.notice("rtpListener cancelled")
                 self?.rtpStreamContinuation.finish()
             case .ready:
-                Log.headphones.notice("rtpConnection ready")
+                Log.headphones.notice("rtpListener ready")
+                // Now that the listener owns port 6970 (unconnected, with
+                // SO_REUSEPORT via allowLocalEndpointReuse), it's safe to
+                // bring up the outbound RTCP connection that also wants to
+                // bind 6970 — the kernel demuxes by 4-tuple. If we started
+                // the connection first, its connected bind would block the
+                // listener and we'd get EADDRINUSE.
+                Task { [weak self] in await self?.startRemoteRtcpConnectionIfNeeded() }
             default:
                 Log.headphones.notice("Getting new rtp state \(String(describing: state), privacy: .public)")
             }
@@ -492,7 +536,7 @@ actor RTPSession {
                 var count = 0
                 var lsqNo: Int64 = 0
 
-                for await rtpPacket in self.rtpStream {
+                for try await rtpPacket in self.rtpStream {
                     let seqNo = rtpPacket.sequenceNumber
                     if seqNo % 1000 == 0 {
                         Log.headphones.debug("Received packet in stream (every 1000 packets): \(seqNo, privacy: .public)")
