@@ -1,7 +1,8 @@
+import Foundation
+
 public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
 
 #if DEBUG
-    import Foundation
     import SwiftUI
     #if os(macOS)
         import AppKit
