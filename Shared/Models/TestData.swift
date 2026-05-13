@@ -2,11 +2,26 @@ public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING
 
 #if DEBUG
     import Foundation
+    import SwiftUI
     #if os(macOS)
         import AppKit
     #else
         import UIKit
     #endif
+
+    struct SampleDataPreviewModifier: PreviewModifier {
+        static func makeSharedContext() async throws -> Void {
+            try await RoamDataHandler.shared.loadTestDataForPreview()
+        }
+
+        func body(content: Content, context: Void) -> some View {
+            content
+        }
+    }
+
+    extension PreviewTrait where T == Preview.ViewTraits {
+        @MainActor static var sampleData: Self = .modifier(SampleDataPreviewModifier())
+    }
 
     func getTestingDevices() -> [Device] {
         var devices = [

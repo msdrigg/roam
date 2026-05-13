@@ -20,29 +20,16 @@ struct DevicePicker: View {
         device?.isOnline() ?? false ? Color.green : Color.secondary
     }
 
-    @ViewBuilder
     var mainButton: some View {
-        if #available(watchOS 11.0, *) {
-            Button(
-                action: { showingPicker.toggle() },
-                label: {
-                    Label("Devices", systemImage: "list.bullet")
-                        .labelStyle(.iconOnly)
-                }
-            )
-            .accessibilityIdentifier("DevicePicker")
-            .handGestureShortcut(.primaryAction, isEnabled: inScreenshotTestingContext())
-        } else {
-            // Fallback on earlier versions
-            Button(
-                action: { showingPicker.toggle() },
-                label: {
-                    Label("Devices", systemImage: "list.bullet")
-                        .labelStyle(.iconOnly)
-                }
-            )
-            .accessibilityIdentifier("DevicePicker")
-        }
+        Button(
+            action: { showingPicker.toggle() },
+            label: {
+                Label("Devices", systemImage: "list.bullet")
+                    .labelStyle(.iconOnly)
+            }
+        )
+        .accessibilityIdentifier("DevicePicker")
+        .handGestureShortcut(.primaryAction, isEnabled: inScreenshotTestingContext())
     }
 
     var body: some View {

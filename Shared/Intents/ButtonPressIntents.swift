@@ -5,7 +5,6 @@ import WidgetKit
 import Foundation
 import SwiftUI
 
-@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public enum PressCountAppEnum: String, AppEnum {
     case one = "1"
     case two = "2"
@@ -58,7 +57,6 @@ public enum PressCountAppEnum: String, AppEnum {
     }
 }
 
-@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public struct PlayIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigratedAppIntent, PredictableIntent {
     public static let intentClassName = "PlayIntent"
 
@@ -92,7 +90,6 @@ public struct PlayIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigr
     }
 }
 
-@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public struct OkIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigratedAppIntent, PredictableIntent {
     public static let intentClassName = "OkIntent"
 
@@ -125,7 +122,6 @@ public struct OkIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigrat
     }
 }
 
-@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public struct MuteIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigratedAppIntent, PredictableIntent {
     public var value: Never?
 
@@ -159,7 +155,6 @@ public struct MuteIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigr
     }
 }
 
-@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public enum TimedMuteDuration: String, AppEnum {
     case thirtySeconds = "30Seconds"
     case oneMinute = "1Minute"
@@ -188,7 +183,6 @@ public enum TimedMuteDuration: String, AppEnum {
     }
 }
 
-@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public struct TimedMuteIntent: AppIntent, CustomIntentMigratedAppIntent, PredictableIntent {
     public static let intentClassName = "TimedMuteIntent"
 
@@ -227,7 +221,6 @@ public struct TimedMuteIntent: AppIntent, CustomIntentMigratedAppIntent, Predict
     }
 }
 
-@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public struct VolumeUpIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigratedAppIntent,
     PredictableIntent
 {
@@ -266,7 +259,6 @@ public struct VolumeUpIntent: AppIntent, WidgetConfigurationIntent, CustomIntent
     }
 }
 
-@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public struct VolumeDownIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigratedAppIntent,
     PredictableIntent
 {
@@ -304,7 +296,6 @@ public struct VolumeDownIntent: AppIntent, WidgetConfigurationIntent, CustomInte
     }
 }
 
-@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public struct PowerIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMigratedAppIntent, PredictableIntent {
     public static let intentClassName = "PowerIntent"
 
@@ -338,7 +329,6 @@ public struct PowerIntent: AppIntent, WidgetConfigurationIntent, CustomIntentMig
 }
 
 #if os(iOS)
-@available(iOS 18.0, *)
 extension PlayIntent: ControlWidget {
     static let kind = "com.msdrigg.roam.playButton"
 
@@ -357,7 +347,6 @@ extension PlayIntent: ControlWidget {
     }
 }
 
-@available(iOS 18.0, *)
 extension OkIntent: ControlWidget {
     static let kind = "com.msdrigg.roam.okButton"
 
@@ -376,7 +365,6 @@ extension OkIntent: ControlWidget {
     }
 }
 
-@available(iOS 18.0, *)
 extension MuteIntent: ControlWidget {
     static let kind = "com.msdrigg.roam.muteButton"
 
@@ -395,7 +383,6 @@ extension MuteIntent: ControlWidget {
     }
 }
 
-@available(iOS 18.0, *)
 extension VolumeUpIntent: ControlWidget {
     static let kind = "com.msdrigg.roam.volumeUpButton"
 
@@ -414,7 +401,6 @@ extension VolumeUpIntent: ControlWidget {
     }
 }
 
-@available(iOS 18.0, *)
 extension VolumeDownIntent: ControlWidget {
     static let kind = "com.msdrigg.roam.volumeDownButton"
 
@@ -433,7 +419,6 @@ extension VolumeDownIntent: ControlWidget {
     }
 }
 
-@available(iOS 18.0, *)
 extension PowerIntent: ControlWidget {
     static let kind = "com.msdrigg.roam.powerButton"
 
@@ -452,7 +437,6 @@ extension PowerIntent: ControlWidget {
     }
 }
 
-@available(iOS 18.0, *)
 struct DeviceChoiceConfigurationProvider: AppIntentControlValueProvider {
     func previewValue(configuration: DeviceChoiceIntent) -> Device? {
         return configuration.selectedDevice

@@ -10,7 +10,6 @@
         let new: String
     }
 
-    @available(iOS, introduced: 17.0)
     struct KeyboardEntry: View {
         @State var str: String = ""
         @State var strSent: String = ""

@@ -116,34 +116,32 @@ struct SmallAppView: View {
     }
 
     var body: some View {
-        if #available(watchOS 11.0, *) {
-            AccessoryWidgetGroup(String(localized: "Roku Apps", comment: "Label on a widget for interactions with my application"), systemImage: "app.dashed") {
-                ForEach(appRow.indices, id: \.self) { rowIndex in
-                    if let app = appRow[rowIndex] {
-                        Button(intent: LaunchAppIntent(app, device: device)) {
-                            FallibleImage(from: app.iconURL, fallback: "questionmark.app.fill", maxSize: 150)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                .shadow(radius: 4)
-                        }
-                        .labelStyle(.iconOnly)
-                        .buttonStyle(.plain)
-                    } else if device != nil {
-                        Spacer()
-                    } else {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.gray.opacity(0.5))
+        AccessoryWidgetGroup(String(localized: "Roku Apps", comment: "Label on a widget for interactions with my application"), systemImage: "app.dashed") {
+            ForEach(appRow.indices, id: \.self) { rowIndex in
+                if let app = appRow[rowIndex] {
+                    Button(intent: LaunchAppIntent(app, device: device)) {
+                        FallibleImage(from: app.iconURL, fallback: "questionmark.app.fill", maxSize: 150)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
                             .shadow(radius: 4)
                     }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.plain)
+                } else if device != nil {
+                    Spacer()
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.gray.opacity(0.5))
+                        .shadow(radius: 4)
                 }
             }
-            .padding(.all, 4)
-            .fontDesign(.rounded)
-            .font(.body.bold())
-            .accessoryWidgetGroupStyle(.roundedSquare)
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .customAccentColorTint()
         }
+        .padding(.all, 4)
+        .fontDesign(.rounded)
+        .font(.body.bold())
+        .accessoryWidgetGroupStyle(.roundedSquare)
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .customAccentColorTint()
     }
 }
 #endif

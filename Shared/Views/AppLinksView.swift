@@ -169,7 +169,7 @@ private extension View {
 #if DEBUG
 #Preview(
     "App Links",
-    traits: .fixedLayout(width: 400, height: 300)
+    traits: .sampleData, .fixedLayout(width: 400, height: 300)
 ) {
     AppLinksView(deviceId: nil, rows: 2, handleOpenApp: { _ in })
         .padding(.bottom, 10)

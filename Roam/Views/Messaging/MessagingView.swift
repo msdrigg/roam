@@ -487,14 +487,14 @@ struct MessageView: View {
 #if DEBUG
 #Preview(
     "Message View",
-    traits: .fixedLayout(width: 400, height: 300)
+    traits: .sampleData, .fixedLayout(width: 400, height: 300)
 ) {
     MessageView()
 }
 
 #Preview(
     "Message List",
-    traits: .fixedLayout(width: 400, height: 100)
+    traits: .sampleData, .fixedLayout(width: 400, height: 100)
 ) {
     Group {
         MessageView()

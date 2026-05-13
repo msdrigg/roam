@@ -444,7 +444,11 @@ struct RemoteViewContained: View {
                     }
 
                     if !hideUIForKeyboardEntry {
-                        if unreadMessages > 0 {
+                        // Suppress the unread-developer-message banner under
+                        // screenshot tests — it's data-driven by an untrusted
+                        // count from the testing data fixture and clutters
+                        // marketing captures.
+                        if unreadMessages > 0 && !inScreenshotTestingContext() {
                             // swiftlint:disable:next line_length
                             NotificationBanner(message: String(localized: "The developer chatted you back", comment: "Notification indicator that there was is message response waiting to be read"), onClick: {
 #if os(macOS)
@@ -985,7 +989,7 @@ struct RemoteViewContained: View {
 #if DEBUG
 #Preview(
     "Remote horizontal",
-    traits: .fixedLayout(width: 400, height: 800)
+    traits: .sampleData, .fixedLayout(width: 400, height: 800)
 ) {
     RemoteView()
         .environmentObject(RoamAppDelegate())

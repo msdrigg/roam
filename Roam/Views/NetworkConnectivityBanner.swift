@@ -62,7 +62,14 @@ struct NetworkConnectivityBanner: View {
 
     @ViewBuilder
     var mainBody: some View {
-        if !connectedForSure {
+        // Suppress all connectivity / permission warning banners under any UI
+        // test — they otherwise clutter marketing captures with simulator-
+        // environment noise (no Wi-Fi, no Local Network permission). This
+        // covers both the "ScreenScanning" empty-state launch (carries only
+        // -DataTesting) and the screenshot-mode launch (-ScreenshotTesting).
+        if inUITestingContext() {
+            EmptyView()
+        } else if !connectedForSure {
             if networkMonitor.networkConnection == .none {
                 NotificationBanner(message: String(
                     localized: "No network connection",

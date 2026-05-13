@@ -5,14 +5,12 @@ import WidgetKit
 struct RoamWidgetsApp: WidgetBundle {
     var body: some Widget {
         #if os(iOS)
-        if #available(iOS 18.0, *) {
-            PlayIntent()
-            PowerIntent()
-            OkIntent()
-            MuteIntent()
-            VolumeUpIntent()
-            VolumeDownIntent()
-        }
+        PlayIntent()
+        PowerIntent()
+        OkIntent()
+        MuteIntent()
+        VolumeUpIntent()
+        VolumeDownIntent()
         #endif
 
 #if !os(watchOS)
@@ -23,16 +21,14 @@ struct RoamWidgetsApp: WidgetBundle {
 #endif
 
 #if !os(macOS)
-        if #available(watchOS 11.0, iOS 17.0, visionOS 1.0, *) {
-            SmallVolumeWidget()
-            SmallerAppWidget()
-            SmallControlWidget()
-            #if os(watchOS)
-            SmallPowerWidget()
-            SmallOkWidget()
-            SmallMuteWidget()
-            #endif
-        }
+        SmallVolumeWidget()
+        SmallerAppWidget()
+        SmallControlWidget()
+        #if os(watchOS)
+        SmallPowerWidget()
+        SmallOkWidget()
+        SmallMuteWidget()
+        #endif
 #endif
     }
 }

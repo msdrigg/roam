@@ -235,6 +235,18 @@ actor RoamDataHandler {
 
 #if DEBUG
     private static func debugStartupDatabaseFaultIfNeeded() -> DebugStartupDatabaseFault? {
+        // Don't inject random startup faults under UI/screenshot tests — they
+        // launch the app multiple times per run and depend on a healthy DB to
+        // load test data and render the screens being captured.
+        let testFlags: Set<String> = [
+            "-ScreenshotTesting",
+            "-DataLoadTestingData",
+            "-DataTesting",
+        ]
+        if ProcessInfo.processInfo.arguments.contains(where: { testFlags.contains($0) }) {
+            return nil
+        }
+
         let defaults = UserDefaults.standard
         let openCount = defaults.integer(forKey: debugDatabaseStartupOpenCountKey) + 1
         defaults.set(openCount, forKey: debugDatabaseStartupOpenCountKey)
@@ -1745,6 +1757,12 @@ extension RoamDataHandler {
         self.startPersistentRetryLoopIfNeeded()
     }
 
+    #if DEBUG
+    func loadTestDataForPreview() async throws {
+        try await loadTestData()
+    }
+    #endif
+
     private func loadTestData() async throws {
         // Clear existing data first
         try await clearData()
@@ -1806,6 +1824,21 @@ extension RoamDataHandler {
 public func inScreenshotTestingContext() -> Bool {
     #if DEBUG
     return CommandLine.arguments.contains("-ScreenshotTesting")
+    #else
+    return false
+    #endif
+}
+
+/// Returns true when the app is running under any UI-test invocation —
+/// either explicitly capturing screenshots, or using the test data store.
+/// Suitable for hiding runtime warnings (network / permission banners) that
+/// otherwise clutter captures, including the empty-state "ScreenScanning"
+/// shot which only carries `-DataTesting`.
+public func inUITestingContext() -> Bool {
+    #if DEBUG
+    return CommandLine.arguments.contains("-ScreenshotTesting")
+        || CommandLine.arguments.contains("-DataTesting")
+        || CommandLine.arguments.contains("-DataLoadTestingData")
     #else
     return false
     #endif

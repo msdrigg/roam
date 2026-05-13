@@ -199,7 +199,6 @@
 		AFA9F8972B1B878600829B7C /* Shortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6B72ADE28C80036EC90 /* Shortcuts.swift */; };
 		AFA9F8992B1D29E000829B7C /* KeyboardShortcutPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */; };
 		AFBBE16F2C764564002B7F68 /* RemoteViewContained.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBBE16D2C76455E002B7F68 /* RemoteViewContained.swift */; };
-		AFD100202F00000100000001 /* RemoteViewContainedMacOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100212F00000100000001 /* RemoteViewContainedMacOS.swift */; };
 		AFBDE4542DD5341700DD1741 /* FileLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDE4532DD5340F00DD1741 /* FileLock.swift */; };
 		AFBDE4552DD5341700DD1741 /* FileLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDE4532DD5340F00DD1741 /* FileLock.swift */; };
 		AFBDE4562DD5341700DD1741 /* FileLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBDE4532DD5340F00DD1741 /* FileLock.swift */; };
@@ -223,11 +222,6 @@
 		AFCD23602DCBC6270000E80E /* QBackgroundExecution.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCD235D2DCBC6210000E80E /* QBackgroundExecution.swift */; };
 		AFCF22DE2B2A52190048FFD9 /* NotificationBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCF22DD2B2A52190048FFD9 /* NotificationBanner.swift */; };
 		AFCF22E02B2A6A720048FFD9 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCF22DF2B2A6A720048FFD9 /* NetworkMonitor.swift */; };
-		AFD590D02AEC673C00189620 /* WatchConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590CF2AEC673C00189620 /* WatchConnector.swift */; };
-		AFD590D22AEC692700189620 /* IPhoneConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D12AEC692700189620 /* IPhoneConnector.swift */; };
-		AFD590D62AEC787700189620 /* ModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D52AEC787700189620 /* ModelContainer.swift */; };
-		AFD590D72AEC787700189620 /* ModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D52AEC787700189620 /* ModelContainer.swift */; };
-		AFD590D82AEC787700189620 /* ModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D52AEC787700189620 /* ModelContainer.swift */; };
 		AFD100102F00000100000001 /* DatabaseFileLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100002F00000100000001 /* DatabaseFileLock.swift */; };
 		AFD100112F00000100000001 /* RoamDataSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100012F00000100000001 /* RoamDataSnapshot.swift */; };
 		AFD100122F00000100000001 /* RoamDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100022F00000100000001 /* RoamDatabase.swift */; };
@@ -237,10 +231,16 @@
 		AFD100162F00000100000001 /* DatabaseFileLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100002F00000100000001 /* DatabaseFileLock.swift */; };
 		AFD100172F00000100000001 /* RoamDataSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100012F00000100000001 /* RoamDataSnapshot.swift */; };
 		AFD100182F00000100000001 /* RoamDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100022F00000100000001 /* RoamDatabase.swift */; };
+		AFD100202F00000100000001 /* RemoteViewContainedMacOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100212F00000100000001 /* RemoteViewContainedMacOS.swift */; };
 		AFD100322F00000100000001 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = AFD100312F00000100000001 /* GRDB */; };
 		AFD100332F00000100000001 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = AFD100312F00000100000001 /* GRDB */; };
 		AFD100342F00000100000001 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = AFD100312F00000100000001 /* GRDB */; };
 		AFD100412F00000100000001 /* RoamDatabaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD100402F00000100000001 /* RoamDatabaseTests.swift */; };
+		AFD590D02AEC673C00189620 /* WatchConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590CF2AEC673C00189620 /* WatchConnector.swift */; };
+		AFD590D22AEC692700189620 /* IPhoneConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D12AEC692700189620 /* IPhoneConnector.swift */; };
+		AFD590D62AEC787700189620 /* ModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D52AEC787700189620 /* ModelContainer.swift */; };
+		AFD590D72AEC787700189620 /* ModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D52AEC787700189620 /* ModelContainer.swift */; };
+		AFD590D82AEC787700189620 /* ModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD590D52AEC787700189620 /* ModelContainer.swift */; };
 		AFD9C4DB2AE97FE100C4079C /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA165BF2AE92F92003F45ED /* AboutView.swift */; };
 		AFD9C4DF2AE9801400C4079C /* SmallAppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD9C4DC2AE9800500C4079C /* SmallAppView.swift */; };
 		AFD9C4E32AE9808E00C4079C /* Device.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6E6872ADDDE110036EC90 /* Device.swift */; };
@@ -255,7 +255,6 @@
 		AFD9C4ED2AE980C300C4079C /* DataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA222AE455B400A42DFF /* DataHelpers.swift */; };
 		AFD9C4F22AE9828600C4079C /* SmallRemoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD9C4E02AE9802200C4079C /* SmallRemoteView.swift */; };
 		AFD9C4F32AE982E400C4079C /* DiscoveryActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF95B7532ADF4435005FC338 /* DiscoveryActor.swift */; };
-		DC0001D15C0FE2D8000000F2 /* DiscoveryCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0001D15C0FE2D8000000F1 /* DiscoveryCoordinator.swift */; };
 		AFD9C4F82AE983A800C4079C /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */; };
 		AFD9C4F92AE983AE00C4079C /* SSDPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA272AE54ABC00A42DFF /* SSDPService.swift */; };
 		AFD9C4FA2AE983B300C4079C /* SSDPDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA2A2AE54AD100A42DFF /* SSDPDiscovery.swift */; };
@@ -304,6 +303,7 @@
 		AFF6DE0E2BCF0326002C13FC /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF6DE0C2BCF0326002C13FC /* Message.swift */; };
 		AFF6DE142BCF0A14002C13FC /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF6DE0C2BCF0326002C13FC /* Message.swift */; };
 		AFFC71E62AD1212100EE8EA0 /* RemoteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFC71E52AD1212100EE8EA0 /* RemoteView.swift */; };
+		DC0001D15C0FE2D8000000F2 /* DiscoveryCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0001D15C0FE2D8000000F1 /* DiscoveryCoordinator.swift */; };
 		DC0001D15C0FE2D8000000F4 /* RemoteRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0001D15C0FE2D8000000F3 /* RemoteRoot.swift */; };
 /* End PBXBuildFile section */
 
@@ -507,7 +507,6 @@
 		AF95B71D2ADF3BA7005FC338 /* MediumRemoteWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediumRemoteWidget.swift; sourceTree = "<group>"; };
 		AF95B74F2ADF43FD005FC338 /* NetworkHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkHelpers.swift; sourceTree = "<group>"; };
 		AF95B7532ADF4435005FC338 /* DiscoveryActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryActor.swift; sourceTree = "<group>"; };
-		DC0001D15C0FE2D8000000F1 /* DiscoveryCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryCoordinator.swift; sourceTree = "<group>"; };
 		AF9A00602DFF4705000F764F /* ErrorAlertingModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorAlertingModifier.swift; sourceTree = "<group>"; };
 		AF9A00642DFF5224000F764F /* AsyncQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncQueue.swift; sourceTree = "<group>"; };
 		AF9DE5662D553DDE00C50894 /* SelectedAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectedAttachment.swift; sourceTree = "<group>"; };
@@ -524,7 +523,6 @@
 		AFA68FE72BD06474005A102E /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = docs/src; sourceTree = "<group>"; };
 		AFA9F8982B1D29E000829B7C /* KeyboardShortcutPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutPanel.swift; sourceTree = "<group>"; };
 		AFBBE16D2C76455E002B7F68 /* RemoteViewContained.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteViewContained.swift; sourceTree = "<group>"; };
-		AFD100212F00000100000001 /* RemoteViewContainedMacOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteViewContainedMacOS.swift; sourceTree = "<group>"; };
 		AFBDE4532DD5340F00DD1741 /* FileLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileLock.swift; sourceTree = "<group>"; };
 		AFBDEA2E2D7D121D00C15B18 /* AddDeviceFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddDeviceFlow.swift; sourceTree = "<group>"; };
 		AFBDEA312D7D157100C15B18 /* StandardDislosureGroupStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandardDislosureGroupStyle.swift; sourceTree = "<group>"; };
@@ -548,14 +546,15 @@
 		AFCD235D2DCBC6210000E80E /* QBackgroundExecution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QBackgroundExecution.swift; sourceTree = "<group>"; };
 		AFCF22DD2B2A52190048FFD9 /* NotificationBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationBanner.swift; sourceTree = "<group>"; };
 		AFCF22DF2B2A6A720048FFD9 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		AFD100002F00000100000001 /* DatabaseFileLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseFileLock.swift; sourceTree = "<group>"; };
+		AFD100012F00000100000001 /* RoamDataSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamDataSnapshot.swift; sourceTree = "<group>"; };
+		AFD100022F00000100000001 /* RoamDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamDatabase.swift; sourceTree = "<group>"; };
+		AFD100212F00000100000001 /* RemoteViewContainedMacOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteViewContainedMacOS.swift; sourceTree = "<group>"; };
+		AFD100402F00000100000001 /* RoamDatabaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamDatabaseTests.swift; sourceTree = "<group>"; };
 		AFD590CF2AEC673C00189620 /* WatchConnector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnector.swift; sourceTree = "<group>"; };
 		AFD590D12AEC692700189620 /* IPhoneConnector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPhoneConnector.swift; sourceTree = "<group>"; };
 		AFD590D32AEC6B4600189620 /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS17.0.sdk/System/Library/Frameworks/WatchConnectivity.framework; sourceTree = DEVELOPER_DIR; };
 		AFD590D52AEC787700189620 /* ModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelContainer.swift; sourceTree = "<group>"; };
-		AFD100002F00000100000001 /* DatabaseFileLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseFileLock.swift; sourceTree = "<group>"; };
-		AFD100012F00000100000001 /* RoamDataSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamDataSnapshot.swift; sourceTree = "<group>"; };
-		AFD100022F00000100000001 /* RoamDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamDatabase.swift; sourceTree = "<group>"; };
-		AFD100402F00000100000001 /* RoamDatabaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamDatabaseTests.swift; sourceTree = "<group>"; };
 		AFD9C4DC2AE9800500C4079C /* SmallAppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmallAppView.swift; sourceTree = "<group>"; };
 		AFD9C4E02AE9802200C4079C /* SmallRemoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmallRemoteView.swift; sourceTree = "<group>"; };
 		AFDB19A12C0D8D4E00C4DAB7 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
@@ -579,8 +578,9 @@
 		AFF607892AE0037900A7D657 /* WidgetIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetIntents.swift; sourceTree = "<group>"; };
 		AFF6DE0C2BCF0326002C13FC /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		AFFC71E52AD1212100EE8EA0 /* RemoteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteView.swift; sourceTree = "<group>"; };
-		DC0001D15C0FE2D8000000F3 /* RemoteRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteRoot.swift; sourceTree = "<group>"; };
 		AFFED2502AD75EAF00357FA4 /* BinaryHeap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryHeap.swift; sourceTree = "<group>"; };
+		DC0001D15C0FE2D8000000F1 /* DiscoveryCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryCoordinator.swift; sourceTree = "<group>"; };
+		DC0001D15C0FE2D8000000F3 /* RemoteRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteRoot.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -771,16 +771,6 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
-		AFD100032F00000100000001 /* Database */ = {
-			isa = PBXGroup;
-			children = (
-				AFD100002F00000100000001 /* DatabaseFileLock.swift */,
-				AFD100012F00000100000001 /* RoamDataSnapshot.swift */,
-				AFD100022F00000100000001 /* RoamDatabase.swift */,
-			);
-			path = Database;
-			sourceTree = "<group>";
-		};
 		AF56E3BA2AD9863100F5E6E0 /* Views */ = {
 			isa = PBXGroup;
 			children = (
@@ -959,6 +949,16 @@
 				AF95B74D2ADF43A4005FC338 /* AudioPlayer */,
 			);
 			path = Roam;
+			sourceTree = "<group>";
+		};
+		AFD100032F00000100000001 /* Database */ = {
+			isa = PBXGroup;
+			children = (
+				AFD100002F00000100000001 /* DatabaseFileLock.swift */,
+				AFD100012F00000100000001 /* RoamDataSnapshot.swift */,
+				AFD100022F00000100000001 /* RoamDatabase.swift */,
+			);
+			path = Database;
 			sourceTree = "<group>";
 		};
 		AFDB4FF62D53C09F004E27A4 /* Settings */ = {
@@ -1308,6 +1308,7 @@
 				"",
 				"",
 				"",
+				"",
 			);
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -1316,12 +1317,12 @@
 		AF15C2422AE8672700B79FD9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
-					AF70BB0B2BA7CBD3009A06EC /* PaddedHoverButtonStyle.swift in Sources */,
-					AFE6249E2BDCAA5000F4992E /* DataHandler.swift in Sources */,
-					AFD100132F00000100000001 /* DatabaseFileLock.swift in Sources */,
-					AFD100142F00000100000001 /* RoamDataSnapshot.swift in Sources */,
-					AFD100152F00000100000001 /* RoamDatabase.swift in Sources */,
-					AFE89A2E2B9EBBD30078387C /* Debugger.swift in Sources */,
+				AF70BB0B2BA7CBD3009A06EC /* PaddedHoverButtonStyle.swift in Sources */,
+				AFE6249E2BDCAA5000F4992E /* DataHandler.swift in Sources */,
+				AFD100132F00000100000001 /* DatabaseFileLock.swift in Sources */,
+				AFD100142F00000100000001 /* RoamDataSnapshot.swift in Sources */,
+				AFD100152F00000100000001 /* RoamDatabase.swift in Sources */,
+				AFE89A2E2B9EBBD30078387C /* Debugger.swift in Sources */,
 				AFD9C4FA2AE983B300C4079C /* SSDPDiscovery.swift in Sources */,
 				AF0042862AEABA9D0051BB1E /* CollectionHelpers.swift in Sources */,
 				AFD9C4E72AE980A800C4079C /* LaunchAppIntent.swift in Sources */,
@@ -1401,11 +1402,11 @@
 		AF2740072AE02C25007C6208 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
-					AFD9C4F22AE9828600C4079C /* SmallRemoteView.swift in Sources */,
-					AFD100162F00000100000001 /* DatabaseFileLock.swift in Sources */,
-					AFD100172F00000100000001 /* RoamDataSnapshot.swift in Sources */,
-					AFD100182F00000100000001 /* RoamDatabase.swift in Sources */,
-					AF468D382D333A9E00DF0F2E /* QSocket.swift in Sources */,
+				AFD9C4F22AE9828600C4079C /* SmallRemoteView.swift in Sources */,
+				AFD100162F00000100000001 /* DatabaseFileLock.swift in Sources */,
+				AFD100172F00000100000001 /* RoamDataSnapshot.swift in Sources */,
+				AFD100182F00000100000001 /* RoamDatabase.swift in Sources */,
+				AF468D382D333A9E00DF0F2E /* QSocket.swift in Sources */,
 				AF1899F62C1CDF83001EDA78 /* NavigationDestination.swift in Sources */,
 				AF205B272AE02D0100041CDF /* NetworkHelpers.swift in Sources */,
 				AF205B2B2AE02D1C00041CDF /* ButtonPressIntents.swift in Sources */,
@@ -1488,12 +1489,12 @@
 				AFBBE16F2C764564002B7F68 /* RemoteViewContained.swift in Sources */,
 				AFD100202F00000100000001 /* RemoteViewContainedMacOS.swift in Sources */,
 				AF0C82952AEBFB4600CBE7F8 /* APIHelpers.swift in Sources */,
-					AF9DE5672D553DE300C50894 /* SelectedAttachment.swift in Sources */,
-					AF60A7E02E36CDEE00D1D16B /* DataLoaders.swift in Sources */,
-					AFD100102F00000100000001 /* DatabaseFileLock.swift in Sources */,
-					AFD100112F00000100000001 /* RoamDataSnapshot.swift in Sources */,
-					AFD100122F00000100000001 /* RoamDatabase.swift in Sources */,
-					AF65A88A2BB5ABF9005ECF7F /* RoamAppDelegate.swift in Sources */,
+				AF9DE5672D553DE300C50894 /* SelectedAttachment.swift in Sources */,
+				AF60A7E02E36CDEE00D1D16B /* DataLoaders.swift in Sources */,
+				AFD100102F00000100000001 /* DatabaseFileLock.swift in Sources */,
+				AFD100112F00000100000001 /* RoamDataSnapshot.swift in Sources */,
+				AFD100122F00000100000001 /* RoamDatabase.swift in Sources */,
+				AF65A88A2BB5ABF9005ECF7F /* RoamAppDelegate.swift in Sources */,
 				AF90B5C62D3B52340063FADD /* ECPMonitor.swift in Sources */,
 				AF19CA2B2AE54AD100A42DFF /* SSDPDiscovery.swift in Sources */,
 				AF3446AD2D5FE8CF0037EFC8 /* WrongAttempts.swift in Sources */,
@@ -1602,11 +1603,11 @@
 		AFEDCDF02CD1331E0001D959 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
-					AF0D09F42CDE64750098122E /* Helpers.swift in Sources */,
-					AF68F2842D41EC2700F39530 /* DataHelpers.swift in Sources */,
-					AF6D56132DCE50DF00B00780 /* LinkedListTests.swift in Sources */,
-					AFD100412F00000100000001 /* RoamDatabaseTests.swift in Sources */,
-					AF0532852D36DB2B00D68F8E /* RoamSwiftTests.swift in Sources */,
+				AF0D09F42CDE64750098122E /* Helpers.swift in Sources */,
+				AF68F2842D41EC2700F39530 /* DataHelpers.swift in Sources */,
+				AF6D56132DCE50DF00B00780 /* LinkedListTests.swift in Sources */,
+				AFD100412F00000100000001 /* RoamDatabaseTests.swift in Sources */,
+				AF0532852D36DB2B00D68F8E /* RoamSwiftTests.swift in Sources */,
 				AFDB50002D53C7B7004E27A4 /* Loggers.swift in Sources */,
 				AF3F350D2D3E99A2009AF2F8 /* ECPMessages.swift in Sources */,
 				AF3F350C2D3E98C9009AF2F8 /* ECPProtocol.swift in Sources */,
@@ -1685,7 +1686,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
 			};
 			name = Debug;
 		};
@@ -1720,7 +1721,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = 4;
 				VALIDATE_PRODUCT = YES;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
 			};
 			name = Release;
 		};
@@ -1743,7 +1744,7 @@
 				INFOPLIST_FILE = RoamWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = RoamWidgets;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1754,7 +1755,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = "$(MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.roam.RoamWidgets;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=watchos*]" = com.msdrigg.roam.watchkitapp.RoamWidgets;
@@ -1790,7 +1791,7 @@
 				INFOPLIST_FILE = RoamWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = RoamWidgets;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1802,7 +1803,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				LLVM_LTO = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = "$(MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.roam.RoamWidgets;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=watchos*]" = com.msdrigg.roam.watchkitapp.RoamWidgets;
@@ -1966,9 +1967,9 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.48;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -1981,9 +1982,9 @@
 				SWIFT_OBJC_BRIDGING_HEADER = Shared/Bridge.h;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
-				TVOS_DEPLOYMENT_TARGET = 17.0;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
-				XROS_DEPLOYMENT_TARGET = 1.0;
+				TVOS_DEPLOYMENT_TARGET = 18.6;
+				WATCHOS_DEPLOYMENT_TARGET = 11.6;
+				XROS_DEPLOYMENT_TARGET = 2.6;
 			};
 			name = Debug;
 		};
@@ -2040,9 +2041,9 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.48;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -2054,9 +2055,9 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = Shared/Bridge.h;
 				SWIFT_VERSION = 6.0;
-				TVOS_DEPLOYMENT_TARGET = 17.0;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
-				XROS_DEPLOYMENT_TARGET = 1.0;
+				TVOS_DEPLOYMENT_TARGET = 18.6;
+				WATCHOS_DEPLOYMENT_TARGET = 11.6;
+				XROS_DEPLOYMENT_TARGET = 2.6;
 			};
 			name = Release;
 		};
@@ -2098,7 +2099,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = "$(MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.roam;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2153,7 +2154,7 @@
 					"@executable_path/../Frameworks",
 				);
 				LLVM_LTO = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = "$(MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = com.msdrigg.roam;
 				PRODUCT_NAME = "$(TARGET_NAME)";

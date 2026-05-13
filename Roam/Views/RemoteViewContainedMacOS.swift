@@ -471,7 +471,7 @@
                         .controlSize(.small)
                         .labelStyle(.iconOnly)
 
-                    if unreadMessages > 0 {
+                    if unreadMessages > 0 && !inScreenshotTestingContext() {
                         NotificationBanner(
                             message: String(
                                 localized: "The developer chatted you back",
@@ -826,7 +826,7 @@
     #if DEBUG
         #Preview(
             "Remote macOS",
-            traits: .fixedLayout(width: 780, height: 620)
+            traits: .sampleData, .fixedLayout(width: 780, height: 620)
         ) {
             RemoteView()
                 .environmentObject(RoamAppDelegate())

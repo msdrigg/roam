@@ -437,11 +437,7 @@ struct BreatheEffect: ViewModifier {
 extension Scene {
     func disableRestoration() -> some Scene {
 #if !os(iOS) && !os(watchOS) && !os(visionOS)
-        if #available(macOS 15.0, watchOS 11.0, *) {
-            return self.restorationBehavior(.disabled)
-        } else {
-            return self
-        }
+        return self.restorationBehavior(.disabled)
 #else
         return self
 #endif

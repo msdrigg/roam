@@ -8,12 +8,12 @@ final class RoamUITestsScreenshotTests: XCTestCase {
 
     @MainActor
     func testCaptureScreenshots() async throws {
-//        let locales = ["en-US", "fr-FR", "fr-CA", "de-DE", "it", "es-ES", "es-MX", "pt-PT", "pt-BR", "vi", "ar-SA", "zh-Hans"]
-        let locales = ["en-US"]
-
-        for locale in locales {
-            try await captureScreenshots(locale: Locale(identifier: locale))
-        }
+        let env = ProcessInfo.processInfo.environment
+        let locale = env["SCREENSHOT_LOCALE"]
+            ?? env["TEST_RUNNER_SCREENSHOT_LOCALE"]
+            ?? "en-US"
+        print("Capturing screenshots for locale \(locale)")
+        try await captureScreenshots(locale: Locale(identifier: locale))
     }
 
 #if os(iOS)
@@ -23,8 +23,11 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         XCUIDevice.shared.appearance = .dark
         XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication()
-        app.launchArguments += ["-AppleLanguages", "(\(locale.language.languageCode!.identifier))"]
-        app.launchArguments += ["-AppleLocale", "\(locale.identifier)"]
+        // Preserve the full BCP-47 identifier (e.g. fr-CA, en-GB) — passing
+        // only the bare languageCode would lose the regional variant.
+        app.launchArguments += ["-AppleLanguages", "(\(locale.identifier))"]
+        // -AppleLocale expects NSLocale's underscore form (fr_CA, not fr-CA).
+        app.launchArguments += ["-AppleLocale", locale.identifier.replacingOccurrences(of: "-", with: "_")]
         app.launchArguments += ["-DataTesting"]
 
         app.launch()
@@ -38,51 +41,62 @@ final class RoamUITestsScreenshotTests: XCTestCase {
 
         app.launchArguments += ["-DataLoadTestingData"]
         app.launchArguments += ["-ScreenshotTesting"]
-        app.launch()
-        try await Task.sleep(nanoseconds: 2_000_000_000)
 
+        // Capture LandscapePrimary first, by setting orientation BEFORE launch.
+        // iPad in Xcode 26 doesn't reliably re-layout when the orientation
+        // changes mid-session — the canvas swaps to landscape dims but the
+        // app's view stays portrait, producing a sideways-rotated capture.
+        // Setting orientation pre-launch makes the app come up in landscape
+        // from the start so the layout is correct.
         XCUIDevice.shared.orientation = .landscapeLeft
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        app.launch()
+        try await Task.sleep(nanoseconds: 3_000_000_000)
 
-        // Wait for 0.8 s
-        try await Task.sleep(nanoseconds: 800_000_000)
-
-        let landscapeModeAttachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        let landscapeModeAttachment = XCTAttachment(screenshot: app.screenshot())
         landscapeModeAttachment.lifetime = .keepAlways
         landscapeModeAttachment.name = "\(locale.identifier)/3/LandscapePrimary"
         add(landscapeModeAttachment)
 
+        // Now back to portrait for the rest of the captures. Terminate +
+        // relaunch ensures the app picks up the new orientation.
+        app.terminate()
         XCUIDevice.shared.orientation = .portrait
-
-        // Wait for 0.8 s
-        try await Task.sleep(nanoseconds: 800_000_000)
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        app.launch()
+        try await Task.sleep(nanoseconds: 2_000_000_000)
 
         let primaryAttachment = XCTAttachment(screenshot: app.screenshot())
         primaryAttachment.lifetime = .keepAlways
         primaryAttachment.name = "\(locale.identifier)/1/Primary"
         add(primaryAttachment)
 
-        // Click on device picker
+        // Open the keyboard.
         app.buttons["KeyboardButton"].waitForClickable(app: app, testCase: self).tap()
 
         // Wait for 0.5 s
         try await Task.sleep(nanoseconds: 500_000_000)
+
+        // First-time iOS keyboard usage may pop the QuickPath ("slide to type")
+        // tutorial card on top of the keyboard. Dismiss it if present so the
+        // capture shows the actual keyboard, not the iOS tutorial.
+        let tutorialContinueButton = app.buttons["Continue"]
+        if tutorialContinueButton.exists && tutorialContinueButton.isHittable {
+            tutorialContinueButton.tap()
+            try await Task.sleep(nanoseconds: 500_000_000)
+        }
 
         let kbAttachment = XCTAttachment(screenshot: app.screenshot())
         kbAttachment.lifetime = .keepAlways
         kbAttachment.name = "\(locale.identifier)/5/KeyboardOpen"
         add(kbAttachment)
 
+        // Close the keyboard to get back to the remote view, then go straight
+        // to Settings. The new iOS UI uses a segmented Picker for device
+        // selection (no separate "opened" state), so a dedicated
+        // "DevicePickerOpen" capture is redundant with Primary.
         app.buttons["KeyboardButton"].waitForClickable(app: app, testCase: self).tap()
         try await Task.sleep(nanoseconds: 300_000_000)
-        app.buttons["DevicePicker"].firstMatch.waitForClickable(app: app, testCase: self).tap()
-
-        // Wait for 0.3 s
-        try await Task.sleep(nanoseconds: 300_000_000)
-
-        let dpAttachment = XCTAttachment(screenshot: app.screenshot())
-        dpAttachment.lifetime = .keepAlways
-        dpAttachment.name = "\(locale.identifier)/6/DevicePickerOpen"
-        add(dpAttachment)
 
         // Click on settings
         app.buttons["SettingsButton"].waitForClickable(app: app, testCase: self).tap()
@@ -114,14 +128,17 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         print("Capturing screenshot's for \(locale.identifier)")
         XCUIDevice.shared.appearance = .dark
         let app = XCUIApplication()
-        app.launchArguments += ["-AppleLanguages", "(\(locale.language.languageCode!.identifier))"]
-        app.launchArguments += ["-AppleLocale", "\(locale.identifier)"]
+        // Preserve the full BCP-47 identifier (e.g. fr-CA, en-GB).
+        app.launchArguments += ["-AppleLanguages", "(\(locale.identifier))"]
+        // -AppleLocale expects NSLocale's underscore form (fr_CA, not fr-CA).
+        app.launchArguments += ["-AppleLocale", locale.identifier.replacingOccurrences(of: "-", with: "_")]
         app.launchArguments += ["-DataTesting"]
-        print("Launching with args \(app.launchArguments)")
 
         app.launch()
 
-        let scanningAttachmentDark = XCTAttachment(screenshot: app.screenshot())
+        // visionOS sim: app.screenshot() returns 1x1 placeholders. Use
+        // XCUIScreen.main.screenshot() to capture the actual rendered window.
+        let scanningAttachmentDark = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         scanningAttachmentDark.lifetime = .keepAlways
         scanningAttachmentDark.name = "\(locale.identifier)/4/ScreenScanning"
         add(scanningAttachmentDark)
@@ -133,50 +150,20 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         app.launch()
         try await Task.sleep(nanoseconds: 2_000_000_000)
 
-        let primaryAttachment = XCTAttachment(screenshot: app.screenshot())
+        let primaryAttachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         primaryAttachment.lifetime = .keepAlways
         primaryAttachment.name = "\(locale.identifier)/1/Primary"
         add(primaryAttachment)
 
-        // Click on device picker
-        app.buttons["KeyboardButton"].waitForClickable(app: app, testCase: self).tap()
-
-        // Wait for 0.5 s
-        try await Task.sleep(nanoseconds: 500_000_000)
-
-        let kbAttachment = XCTAttachment(screenshot: app.screenshot())
-        kbAttachment.lifetime = .keepAlways
-        kbAttachment.name = "\(locale.identifier)/5/KeyboardOpen"
-        add(kbAttachment)
-
-//        app.buttons["KeyboardButton"].waitForClickable(app: app, testCase: self).tap()
-        app.textFields.firstMatch.typeText("\n")
-        try await Task.sleep(nanoseconds: 300_000_000)
-        let devicePickerButton = app.buttons["DevicePicker"].firstMatch.waitForClickable(app: app, testCase: self)
-//        let buttonFrame = devicePickerButton.frame
-//        let bottomMiddleX = buttonFrame.midX
-//        let bottomMiddleY = buttonFrame.maxY
-//        let bottomMiddleCoordinate = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
-//            .withOffset(CGVector(dx: bottomMiddleX, dy: bottomMiddleY))
-//
-//        // Perform the tap at the calculated coordinate
-//        bottomMiddleCoordinate.tap()
-
-        // Wait for 0.3 s
-        try await Task.sleep(nanoseconds: 300_000_000)
-
-        let dpAttachment = XCTAttachment(screenshot: app.screenshot())
-        dpAttachment.lifetime = .keepAlways
-        dpAttachment.name = "\(locale.identifier)/6/DevicePickerOpen"
-        add(dpAttachment)
-
-        // Click on settings
+        // Skip the keyboard view + DevicePicker tap: the new UI's keyboard
+        // doesn't surface a TextField on visionOS, and the segmented Picker
+        // has no "opened" state. Go straight to Settings.
         app.buttons["SettingsButton"].waitForClickable(app: app, testCase: self).tap()
 
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)
 
-        let sAttachment = XCTAttachment(screenshot: app.screenshot())
+        let sAttachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         sAttachment.lifetime = .keepAlways
         sAttachment.name = "\(locale.identifier)/7/Settings"
         add(sAttachment)
@@ -187,21 +174,10 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)
 
-        let sIAttachment = XCTAttachment(screenshot: app.screenshot())
+        let sIAttachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         sIAttachment.lifetime = .keepAlways
         sIAttachment.name = "\(locale.identifier)/8/SettingsItem"
         add(sIAttachment)
-
-        app.terminate()
-
-        app.launchArguments += ["-WindowStyleVertical"]
-        app.launch()
-        try await Task.sleep(nanoseconds: 200_000_000)
-
-        let landscapeModeAttachment = XCTAttachment(screenshot: app.screenshot())
-        landscapeModeAttachment.lifetime = .keepAlways
-        landscapeModeAttachment.name = "\(locale.identifier)/3/LandscapePrimary"
-        add(landscapeModeAttachment)
 
         app.terminate()
     }
@@ -211,8 +187,11 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         print("Capturing screenshot's for \(locale.identifier)")
         XCUIDevice.shared.appearance = .dark
         let app = XCUIApplication()
-        app.launchArguments += ["-AppleLanguages", "(\(locale.language.languageCode!.identifier))"]
-        app.launchArguments += ["-AppleLocale", "\(locale.identifier)"]
+        // Preserve the full BCP-47 identifier (e.g. fr-CA, en-GB) — passing
+        // only the bare languageCode would lose the regional variant.
+        app.launchArguments += ["-AppleLanguages", "(\(locale.identifier))"]
+        // -AppleLocale expects NSLocale's underscore form (fr_CA, not fr-CA).
+        app.launchArguments += ["-AppleLocale", locale.identifier.replacingOccurrences(of: "-", with: "_")]
         app.launchArguments += ["-DataTesting"]
         print("Launching with args \(app.launchArguments)")
 
@@ -235,18 +214,11 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         primaryAttachment.name = "\(locale.identifier)/1/Primary"
         add(primaryAttachment)
 
-        app.buttons["DevicePicker"].firstMatch.waitForClickable(app: app, testCase: self).tap()
-
-        // Wait for 0.3 s
-        try await Task.sleep(nanoseconds: 300_000_000)
-
-        let dpAttachment = XCTAttachment(screenshot: app.screenshot())
-        dpAttachment.lifetime = .keepAlways
-        dpAttachment.name = "\(locale.identifier)/5/DevicePickerOpen"
-        add(dpAttachment)
-
-        // Click on settings via keyboard shortcut
-        app.buttons["DevicePicker"].firstMatch.waitForClickable(app: app, testCase: self).typeKey(XCUIKeyboardKey(","), modifierFlags: .command)
+        // The new UI uses a segmented Picker for device selection (no separate
+        // "opened" state), so a dedicated "DevicePickerOpen" capture is
+        // redundant with Primary. Skip directly to Settings via Cmd+, on the
+        // frontmost window — no need for a focus target element.
+        app.typeKey(",", modifierFlags: .command)
 
         // Wait for 0.3 s
         try await Task.sleep(nanoseconds: 300_000_000)

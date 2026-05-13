@@ -106,11 +106,13 @@ struct DevicePicker: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(maxWidth: devicePickerMaxWidth)
+                .accessibilityIdentifier("DevicePicker")
             } else {
                 Text("No devices")
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .frame(maxWidth: devicePickerMaxWidth)
+                    .accessibilityIdentifier("DevicePicker")
             }
 
             #if os(macOS)

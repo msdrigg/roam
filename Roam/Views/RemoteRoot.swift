@@ -171,13 +171,11 @@ struct RemoteRoot: View {
 #if os(iOS)
         if UIDevice.current.userInterfaceIdiom == .phone {
             phoneTabView
-        } else if #available(iOS 18.0, *) {
-            modernTabView
         } else {
-            legacyTabView
+            modernTabView
         }
 #else
-        if #available(iOS 18.0, visionOS 2.0, *) {
+        if #available(visionOS 2.0, *) {
             modernTabView
         } else {
             legacyTabView
@@ -185,7 +183,7 @@ struct RemoteRoot: View {
 #endif
     }
 
-    @available(iOS 18.0, visionOS 2.0, *)
+    @available(visionOS 2.0, *)
     private var modernTabView: some View {
         TabView(selection: selectedTabBinding) {
             ForEach(deviceIds, id: \.self) { deviceId in

@@ -2,7 +2,6 @@ import AppIntents
 import Foundation
 import os
 
-@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public struct OpenDeviceIntent: OpenIntent {
     public typealias Value = Device
 
@@ -21,7 +20,6 @@ public struct OpenDeviceIntent: OpenIntent {
     }
 }
 
-@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public struct DeviceChoiceIntent: AppIntent, WidgetConfigurationIntent {
     public static let title: LocalizedStringResource = LocalizedStringResource("Choose a device", comment: "Configuration title for a settings page")
     public static let description = IntentDescription(LocalizedStringResource("Choose which device to target", comment: "Configuration description for a settings page"))
@@ -57,14 +55,20 @@ public struct DeviceChoiceIntent: AppIntent, WidgetConfigurationIntent {
 
         return device
     }
+
+    // Xcode 26 / iOS 26 SDK: AppIntent and ControlConfigurationIntent both
+    // expose a default `perform()` witness, making the conformance ambiguous.
+    // Configuration intents don't actually act at perform-time; this explicit
+    // override resolves the ambiguity.
+    public func perform() async throws -> some IntentResult {
+        return .result()
+    }
 }
 
 #if os(iOS)
-@available(iOS 18.0, *)
 extension DeviceChoiceIntent: ControlConfigurationIntent {}
 #endif
 
-@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public struct DeviceAndAppChoiceIntent: AppIntent, WidgetConfigurationIntent {
     public static let title: LocalizedStringResource = LocalizedStringResource("Choose a device and apps", comment: "Configuration title for a settings page")
     public static let description = IntentDescription(LocalizedStringResource("Choose which device to target and select apps to view", comment: "Configuration description for a settings page"))
@@ -145,7 +149,6 @@ public struct DeviceAndAppChoiceIntent: AppIntent, WidgetConfigurationIntent {
     }
 }
 
-@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 public struct ButtonPressIntent: AppIntent, CustomIntentMigratedAppIntent, PredictableIntent {
     public static let intentClassName = "ButtonPressIntent"
 

@@ -473,7 +473,7 @@ struct MacSettings: View {
 #if DEBUG
 #Preview(
     "Device List",
-     traits: .fixedLayout(width: 400, height: 300)
+    traits: .sampleData, .fixedLayout(width: 400, height: 300)
 ) {
     @Previewable @State var path: [NavigationDestination] = []
     return SettingsView(path: $path, destination: .global)
