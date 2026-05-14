@@ -9,24 +9,29 @@ struct GlowingModifier: ViewModifier {
 
     let gradientColors = Gradient(colors: [.teal, .blue, .pink, .purple, .indigo])
 
+    @ViewBuilder
+    private var solidBackground: some View {
+        let shape = RoundedRectangle(cornerRadius: buttonRadius).fill(Material.ultraThick)
+#if os(macOS)
+        shape.overlay(HoverEffectBackground().cornerRadius(buttonRadius))
+#else
+        shape
+#endif
+    }
+
+    private var glowBackground: some View {
+        let angle = Angle.degrees(animate ? 360 : 0)
+        let gradient = AngularGradient(gradient: gradientColors, center: .center, angle: angle)
+        return RoundedRectangle(cornerRadius: buttonRadius)
+            .fill(gradient)
+            .blur(radius: glowRadius)
+    }
+
     func body(content: Content) -> some View {
         content
-            .background(
-                RoundedRectangle(cornerRadius: buttonRadius)
-                    .fill(Material.ultraThick)
-#if os(macOS)
-                    .overlay(
-                        HoverEffectBackground()
-                            .cornerRadius(buttonRadius)
-                   )
-#endif
-            )
+            .background(solidBackground)
             .padding(glowRadius)
-            .background(
-                RoundedRectangle(cornerRadius: buttonRadius)
-                    .fill(AngularGradient(gradient: gradientColors, center: .center, angle: .degrees(animate ? 360 : 0)))
-                    .blur(radius: glowRadius)
-            )
+            .background(glowBackground)
             .padding(glowRadius * 2 - glowRadius / 4)
             .onAppear {
                 withAnimation(.easeInOut(duration: 5).repeatForever(autoreverses: true)) {

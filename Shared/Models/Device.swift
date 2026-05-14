@@ -190,6 +190,49 @@ public struct Device: AppEntity, Equatable, Identifiable, Hashable, Codable {
         }
         return Date().timeIntervalSince(lastOnlineAt) < 60
     }
+
+    // Explicit Equatable — the synthesized version takes 130-176ms to
+    // type-check across all three targets because of the field count.
+    public static func == (lhs: Device, rhs: Device) -> Bool {
+        return lhs.name == rhs.name
+            && lhs.location == rhs.location
+            && lhs.udn == rhs.udn
+            && lhs.serial == rhs.serial
+            && lhs.lastSentToWatch == rhs.lastSentToWatch
+            && lhs.lastSelectedAt == rhs.lastSelectedAt
+            && lhs.lastSyncAt == rhs.lastSyncAt
+            && lhs.lastOnlineAt == rhs.lastOnlineAt
+            && lhs.lastScannedAt == rhs.lastScannedAt
+            && lhs.hiddenAt == rhs.hiddenAt
+            && lhs.powerMode == rhs.powerMode
+            && lhs.networkType == rhs.networkType
+            && lhs.wifiMAC == rhs.wifiMAC
+            && lhs.ethernetMAC == rhs.ethernetMAC
+            && lhs.rtcpPort == rhs.rtcpPort
+            && lhs.supportsDatagram == rhs.supportsDatagram
+            && lhs.iconHash == rhs.iconHash
+            && lhs.vendorName == rhs.vendorName
+            && lhs.modelName == rhs.modelName
+            && lhs.modelNumber == rhs.modelNumber
+            && lhs.modelRegion == rhs.modelRegion
+            && lhs.friendlyModelName == rhs.friendlyModelName
+            && lhs.isTV == rhs.isTV
+            && lhs.isStick == rhs.isStick
+            && lhs.isPoweredByTV == rhs.isPoweredByTV
+            && lhs.uiResolution == rhs.uiResolution
+            && lhs.softwareVersion == rhs.softwareVersion
+            && lhs.buildNumber == rhs.buildNumber
+            && lhs.supportsAudioSettings == rhs.supportsAudioSettings
+            && lhs.supportsPrivateListening == rhs.supportsPrivateListening
+            && lhs.supportsFindRemote == rhs.supportsFindRemote
+            && lhs.supportsSuspend == rhs.supportsSuspend
+            && lhs.supportsAirplay == rhs.supportsAirplay
+            && lhs.supportsEthernet == rhs.supportsEthernet
+            && lhs.supportsWakeOnWlan == rhs.supportsWakeOnWlan
+            && lhs.headphonesConnected == rhs.headphonesConnected
+            && lhs.country == rhs.country
+            && lhs.timeZone == rhs.timeZone
+    }
 }
 
 #if !os(watchOS)

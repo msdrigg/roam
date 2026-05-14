@@ -1824,7 +1824,10 @@ extension RoamDataHandler {
             try await database.saveMessage(message)
         }
 
-        Log.data.info("Loaded test data: \(testDevices.count) devices, \(testDevices.map { cachedDeviceApps[$0.id]?.count ?? 0 }.reduce(0, +)) total apps, \(testMessages.count) messages")
+        let totalApps = testDevices.reduce(0) { $0 + (cachedDeviceApps[$1.id]?.count ?? 0) }
+        let deviceCount = testDevices.count
+        let messageCount = testMessages.count
+        Log.data.info("Loaded test data: \(deviceCount) devices, \(totalApps) total apps, \(messageCount) messages")
         #endif
     }
 

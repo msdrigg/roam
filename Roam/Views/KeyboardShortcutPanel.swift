@@ -698,6 +698,107 @@ struct KeyboardShortcutPanel: View {
     @Environment(\.openURL) var openURL
     @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
 
+    private func resetAll() {
+        for shortcut in shortcuts {
+            shortcut.reset()
+        }
+    }
+
+    private func clearAll() {
+        for shortcut in shortcuts {
+            let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
+            scClone.persist()
+        }
+    }
+
+    private func clearOne(_ shortcut: CustomKeyboardShortcut) {
+        let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
+        scClone.persist()
+    }
+
+    @ViewBuilder
+    private var resetAllButton: some View {
+        Button(role: .cancel, action: resetAll, label: {
+            Label(String(localized: "Reset All", comment: "Label on a button to reset keyboard shortcuts"), systemImage: "arrow.uturn.backward")
+        })
+    }
+
+    @ViewBuilder
+    private var clearAllButton: some View {
+        Button(role: .cancel, action: clearAll, label: {
+            Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
+        })
+    }
+
+    @ViewBuilder
+    private func resetOneButton(_ shortcut: CustomKeyboardShortcut) -> some View {
+        Button(role: .cancel, action: { shortcut.reset() }, label: {
+            Label(String(localized: "Reset", comment: "Label on a button to reset a keyboard shortcut"), systemImage: "arrow.uturn.backward")
+        })
+    }
+
+    @ViewBuilder
+    private func clearOneButton(_ shortcut: CustomKeyboardShortcut) -> some View {
+        Button(role: .cancel, action: { clearOne(shortcut) }, label: {
+            Label(String(localized: "Clear", comment: "Label on a button to clear a keyboard shortcut"), systemImage: "xmark")
+        })
+    }
+
+    @ViewBuilder
+    private var headerRow: some View {
+#if os(macOS)
+        Text("Click on a row below to change the shortcut, or right click it to reset", comment: "Caption on a keyboard shortcut panel")
+            .foregroundStyle(.secondary)
+            .swipeActions(edge: .trailing) {
+                resetAllButton
+                clearAllButton
+            }
+            .contextMenu {
+                resetAllButton
+                clearAllButton
+            }
+#else
+        Text("Tap a row below to change the shortcut, or swipe to reset", comment: "Caption on a keyboard shortcut panel")
+            .foregroundStyle(.secondary)
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                resetAllButton
+                clearAllButton
+            }
+            .contextMenu {
+                resetAllButton
+                clearAllButton
+            }
+#endif
+    }
+
+    @ViewBuilder
+    private func shortcutRow(_ shortcut: CustomKeyboardShortcut) -> some View {
+        let isFocused = focusedShortcut == shortcut.title
+        Button(action: {
+            focusedShortcut = shortcut.title
+        }, label: {
+            ShortcutDisplay(shortcut.title)
+                .padding(6)
+                .contentShape(RoundedRectangle(cornerRadius: 8.0))
+        })
+        .buttonStyle(.plain)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(customAccentColor.secondary, lineWidth: 4)
+                .opacity(isFocused ? 1 : 0)
+                .scaleEffect(isFocused ? 1 : 1.04)
+                .animation(isFocused ? .easeIn(duration: 0.2) : .easeOut(duration: 0.0), value: isFocused)
+        )
+        .swipeActions(edge: .trailing) {
+            resetOneButton(shortcut)
+            clearOneButton(shortcut)
+        }
+        .contextMenu {
+            resetOneButton(shortcut)
+            clearOneButton(shortcut)
+        }
+    }
+
     @ViewBuilder
     var body: some View {
         Form {
@@ -707,131 +808,9 @@ struct KeyboardShortcutPanel: View {
             })
             .customAccentColorTint()
 #endif
-
-#if os(macOS)
-            Text("Click on a row below to change the shortcut, or right click it to reset", comment: "Caption on a keyboard shortcut panel")
-                .foregroundStyle(.secondary)
-                .swipeActions(edge: .trailing) {
-                    Button(role: .cancel, action: {
-                        for shortcut in shortcuts {
-                            shortcut.reset()
-                        }
-                    }, label: {
-                        Label(String(localized: "Reset All", comment: "Label on a button to reset keyboard shortcuts"), systemImage: "arrow.uturn.backward")
-                    })
-                    Button(role: .cancel, action: {
-                        for shortcut in shortcuts {
-                            let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
-                            scClone.persist()
-
-                        }
-                    }, label: {
-                        Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
-                    })
-
-                }
-                .contextMenu {
-                    Button(role: .cancel, action: {
-                        for shortcut in shortcuts {
-                            shortcut.reset()
-                        }
-                    }, label: {
-                        Label(String(localized: "Reset All", comment: "Label on a button to reset keyboard shortcuts"), systemImage: "arrow.uturn.backward")
-                    })
-                    Button(role: .cancel, action: {
-                        for shortcut in shortcuts {
-                            let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
-                            scClone.persist()
-                        }
-                    }, label: {
-                        Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
-                    })
-                }
-#else
-            Text("Tap a row below to change the shortcut, or swipe to reset", comment: "Caption on a keyboard shortcut panel")
-                .foregroundStyle(.secondary)
-                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    Button(role: .cancel, action: {
-                        for shortcut in shortcuts {
-                            shortcut.reset()
-                        }
-                    }, label: {
-                        Label(String(localized: "Reset All", comment: "Label on a button to reset keyboard shortcuts"), systemImage: "arrow.uturn.backward")
-                    })
-                    Button(role: .cancel, action: {
-                        for shortcut in shortcuts {
-                            let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
-                            scClone.persist()
-
-                        }
-                    }, label: {
-                        Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
-                    })
-
-                }
-                .contextMenu {
-                    Button(role: .cancel, action: {
-                        for shortcut in shortcuts {
-                            shortcut.reset()
-                        }
-                    }, label: {
-                        Label(String(localized: "Reset All", comment: "Label on a button to reset keyboard shortcuts"), systemImage: "arrow.uturn.backward")
-                    })
-                    Button(role: .cancel, action: {
-                        for shortcut in shortcuts {
-                            let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
-                            scClone.persist()
-
-                        }
-                    }, label: {
-                        Label(String(localized: "Clear All", comment: "Label on a button to clear keyboard shortcuts"), systemImage: "xmark")
-                    })
-
-                }
-
-#endif
+            headerRow
             ForEach(shortcuts, id: \.id) { shortcut in
-                Button(action: {
-                    focusedShortcut = shortcut.title
-                }, label: {
-                    ShortcutDisplay(shortcut.title)
-                        .padding(6)
-                        .contentShape(RoundedRectangle(cornerRadius: 8.0))
-                })
-                .buttonStyle(.plain)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(customAccentColor.secondary, lineWidth: 4)
-                        .opacity(focusedShortcut == shortcut.title ? 1 : 0)
-                        .scaleEffect(focusedShortcut == shortcut.title ? 1 : 1.04)
-                        .animation(focusedShortcut == shortcut.title ? .easeIn(duration: 0.2) : .easeOut(duration: 0.0), value: focusedShortcut == shortcut.title)
-                )
-                .swipeActions(edge: .trailing) {
-                    Button(role: .cancel, action: {
-                        shortcut.reset()
-                    }, label: {
-                        Label(String(localized: "Reset", comment: "Label on a button to reset a keyboard shortcut"), systemImage: "arrow.uturn.backward")
-                    })
-                    Button(role: .cancel, action: {
-                        let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
-                        scClone.persist()
-                    }, label: {
-                        Label(String(localized: "Clear", comment: "Label on a button to clear a keyboard shortcut"), systemImage: "xmark")
-                    })
-                }
-                .contextMenu {
-                    Button(role: .cancel, action: {
-                        shortcut.reset()
-                    }, label: {
-                        Label(String(localized: "Reset", comment: "Label on a button to reset a keyboard shortcut"), systemImage: "arrow.uturn.backward")
-                    })
-                    Button(role: .cancel, action: {
-                        let scClone = CustomKeyboardShortcut(title: shortcut.title, key: nil, modifiers: [])
-                        scClone.persist()
-                    }, label: {
-                        Label(String(localized: "Clear", comment: "Label on a button to clear a keyboard shortcut"), systemImage: "xmark")
-                    })
-                }
+                shortcutRow(shortcut)
             }
         }
         .onAppear {

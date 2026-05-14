@@ -437,7 +437,7 @@ actor ECPWebsocketClient {
     private func listen() {
         connection.receiveMessage { [weak self] (_, context, _, error) in
             guard let self = self else {
-                Log.connection.warning("Triggering receive message with no self")
+                Log.connection.info("Triggering receive message with no self. Dropping ws client...")
                 return
             }
 

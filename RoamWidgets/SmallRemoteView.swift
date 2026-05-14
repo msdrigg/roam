@@ -7,6 +7,34 @@ struct SmallRemoteView: View {
     let device: Device?
     let controls: [[RemoteButton?]]
 
+    private static let dpadButtons: Set<RemoteButton> = [.up, .down, .left, .right, .select]
+
+    private func buttonLabel(_ button: RemoteButton) -> some View {
+        button.label
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+    }
+
+    @ViewBuilder
+    private func remoteButton(_ button: RemoteButton) -> some View {
+        if button == .power {
+            Button(intent: ButtonPressIntent(button, device: device)) {
+                buttonLabel(button).foregroundStyle(.red)
+            }
+            .buttonStyle(.plain)
+        } else if Self.dpadButtons.contains(button) {
+            Button(intent: ButtonPressIntent(button, device: device)) {
+                buttonLabel(button)
+            }
+            .buttonStyle(.borderedProminent)
+        } else {
+            Button(intent: ButtonPressIntent(button, device: device)) {
+                buttonLabel(button)
+            }
+        }
+    }
+
     var body: some View {
         Grid(horizontalSpacing: 1, verticalSpacing: 1) {
             ForEach(0 ..< controls.count, id: \.self) { index in
@@ -14,30 +42,7 @@ struct SmallRemoteView: View {
                 GridRow {
                     ForEach(row.indices, id: \.self) { rowIndex in
                         if let button = row[rowIndex] {
-                            if button == .power {
-                                Button(intent: ButtonPressIntent(button, device: device)) {
-                                    button.label
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.8)
-                                        .foregroundStyle(.red)
-                                }
-                                .buttonStyle(.plain)
-                            } else if [.up, .down, .left, .right, .select].contains(button) {
-                                Button(intent: ButtonPressIntent(button, device: device)) {
-                                    button.label
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.8)
-                                }.buttonStyle(.borderedProminent)
-                            } else {
-                                Button(intent: ButtonPressIntent(button, device: device)) {
-                                    button.label
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.8)
-                                }
-                            }
+                            remoteButton(button)
                         } else {
                             Spacer()
                         }

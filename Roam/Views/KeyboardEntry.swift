@@ -38,18 +38,109 @@
         let onKeyPress: @Sendable (_ press: KeyEquivalent) async -> Void
         let leaving: Bool
 
-        var body: some View {
-            TextFieldContainer(String(localized: "Enter some text...", comment: "Placeholder for a text field"), text: $str, onDelete: {
-                Task {
-                    await onKeyPress(.delete)
+        private func handleDelete() {
+            Task {
+                await onKeyPress(.delete)
+            }
+        }
+
+        private func handleDone() {
+            withAnimation {
+                keyboardFocused = false
+                showing = false
+            }
+        }
+
+        private func scenePhaseTask() async {
+            guard scenePhase == .active else {
+                return
+            }
+            do {
+                try await Task.sleep(duration: 0.5)
+            } catch {
+                return
+            }
+            let listener = KeyboardListener()
+            if let events = listener.events {
+                for await _ in events {
+                    withAnimation {
+                        keyboardFocused = false
+                        showing = false
+                    }
                 }
-            }, onDone: {
+            }
+        }
+
+        private func handleStringChange(_ str: String) {
+            if let texteditId {
+                Task {
+                    do {
+                        try await ecpSession?.setTextEdit(str, texteditId: texteditId)
+                    } catch {
+                        Log.connection.error("Error setting textedit text \(error, privacy: .public)")
+                    }
+                }
+            } else {
+                let strSentNow = strSent
+                queue.async {
+                    let charDifference = str.count - strSentNow.count
+
+                    if charDifference > 0 {
+                        let startIndex = str.index(str.endIndex, offsetBy: -charDifference)
+                        let newChars = str[startIndex..<str.endIndex]
+
+                        do {
+                            try await withTimeout(delay: 2.0) {
+                                for char in newChars.unicodeScalars {
+                                    await onKeyPress(KeyEquivalent(Character(char)))
+                                }
+                            }
+                        } catch {
+                            Log.userInteraction.warning("Couldn't send kb input within 2s, or canccelled \(error, privacy: .public)")
+                        }
+                    }
+                }
+            }
+            strSent = str
+        }
+
+        private func handleTexteditIdChange() {
+            Log.userInteraction.notice("Text edit id changed to \(texteditId ?? "nil")")
+            if texteditId != nil && (texteditText ?? "" != str) {
+                str = texteditText ?? ""
+            }
+        }
+
+        private func handleLeavingChange(_ leaving: Bool) {
+            if leaving {
                 withAnimation {
                     keyboardFocused = false
-
                     showing = false
                 }
-            }, fullFeatures: texteditId != nil)
+            } else {
+                keyboardFocused = true
+            }
+        }
+
+        private func handleAppear() {
+            keyboardFocused = true
+            if texteditId == nil {
+                str = ""
+                strSent = ""
+            } else {
+                str = texteditText ?? ""
+                strSent = texteditText ?? ""
+            }
+        }
+
+        var body: some View {
+            TextFieldContainer(
+                String(localized: "Enter some text...", comment: "Placeholder for a text field"),
+                text: $str,
+                onDelete: handleDelete,
+                onDone: handleDone,
+                fullFeatures: texteditId != nil
+            )
             .textSelection(.disabled)
             .focused($keyboardFocused)
             .font(.body)
@@ -57,83 +148,11 @@
             .padding(.vertical, 12)
             .background(RoundedRectangle(cornerRadius: 8).fill(.fill.tertiary))
             .frame(height: 60)
-            .task(id: scenePhase) {
-                guard scenePhase == .active else {
-                    return
-                }
-                do {
-                    try await Task.sleep(duration: 0.5)
-                } catch {
-                    return
-                }
-                let listener = KeyboardListener()
-                if let events = listener.events {
-                    for await _ in events {
-                        withAnimation {
-                            keyboardFocused = false
-                            showing = false
-                        }
-                    }
-                }
-            }
-            .onChange(of: str) { _, str in
-                if let texteditId {
-                    Task {
-                        do {
-                            try await ecpSession?.setTextEdit(str, texteditId: texteditId)
-                        } catch {
-                            Log.connection.error("Error setting textedit text \(error, privacy: .public)")
-                        }
-                    }
-                } else {
-                    let strSentNow = strSent
-                    queue.async {
-                        let charDifference = str.count - strSentNow.count
-
-                        if charDifference > 0 {
-                            let startIndex = str.index(str.endIndex, offsetBy: -charDifference)
-                            let newChars = str[startIndex..<str.endIndex]
-
-                            do {
-                                try await withTimeout(delay: 2.0) {
-                                    for char in newChars.unicodeScalars {
-                                        await onKeyPress(KeyEquivalent(Character(char)))
-                                    }
-                                }
-                            } catch {
-                                Log.userInteraction.warning("Couldn't send kb input within 2s, or canccelled \(error, privacy: .public)")
-                            }
-                        }
-                    }
-                }
-                strSent = str
-            }
-            .onChange(of: texteditId) {
-                Log.userInteraction.notice("Text edit id changed to \(texteditId ?? "nil")")
-                if texteditId != nil && (texteditText ?? "" != str) {
-                    str = texteditText ?? ""
-                }
-            }
-            .onChange(of: leaving) { _, leaving in
-                if leaving {
-                    withAnimation {
-                        keyboardFocused = false
-                        showing = false
-                    }
-                } else {
-                    keyboardFocused = true
-                }
-            }
-            .onAppear {
-                keyboardFocused = true
-                if texteditId == nil {
-                    str = ""
-                    strSent = ""
-                } else {
-                    str = texteditText ?? ""
-                    strSent = texteditText ?? ""
-                }
-            }
+            .task(id: scenePhase) { await scenePhaseTask() }
+            .onChange(of: str) { _, newStr in handleStringChange(newStr) }
+            .onChange(of: texteditId) { handleTexteditIdChange() }
+            .onChange(of: leaving) { _, newLeaving in handleLeavingChange(newLeaving) }
+            .onAppear(perform: handleAppear)
         }
     }
 

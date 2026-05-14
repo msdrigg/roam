@@ -76,8 +76,14 @@ struct PhoneHomeView: View {
         .onChange(of: primaryDeviceLoader.device?.id, initial: true) { _, newId in
             guard !didAutoOpenPrimary, let newId, !newId.isEmpty else { return }
             didAutoOpenPrimary = true
-            if path.isEmpty {
-                path = [newId]
+            // Defer the push so the LazyVStack has a layout pass to register the
+            // primary card's matchedTransitionSource; otherwise the very first
+            // interactive swipe-back has no source and falls back to a default pop.
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(150))
+                if path.isEmpty {
+                    path = [newId]
+                }
             }
         }
     }

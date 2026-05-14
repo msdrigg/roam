@@ -417,7 +417,7 @@ struct RemoteViewContained: View {
                             .lineLimit(1)
                             .truncationMode(.tail)
                             .frame(maxWidth: .infinity)
-                            .padding(.bottom, 8)
+                            .padding(.bottom, 20)
                     }
                     #elseif os(visionOS)
                     if !hidesKeyboardToolbarButton {
@@ -620,6 +620,8 @@ struct RemoteViewContained: View {
 #endif
             #if os(macOS)
             .padding(.bottom, 6)
+            #elseif os(iOS)
+            .padding(.bottom, UIDevice.current.userInterfaceIdiom == .phone ? -16 : 10)
             #else
             .padding(.bottom, 10)
             #endif

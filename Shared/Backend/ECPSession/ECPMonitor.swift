@@ -46,7 +46,9 @@ final class ECPMonitor {
             await oldEcpClient?.cancel()
         }
         guard let device, let url = URL(string: device.location) else {
-            Log.connection.error("Could not parse URL for selected device \(device?.location ?? "nil", privacy: .public)")
+            if device != nil {
+                Log.connection.error("Could not parse URL for selected device \(device?.location ?? "nil", privacy: .public)")
+            }
             return
         }
         let ecpClient = ECPWebsocketClient(
