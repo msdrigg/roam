@@ -18,6 +18,7 @@
         @Environment(\.dismiss) private var dismiss
         @Environment(\.openSettings) private var openSettings
         @Environment(\.openWindow) private var openWindow
+        @Environment(\.requestReview) private var requestReview
 
         @EnvironmentObject private var appDelegate: RoamAppDelegate
 
@@ -124,9 +125,15 @@
         private var content: some View {
             if isInMenuBar {
                 if isLoadingDevices {
-                    loadingDevicesView
+                    VStack(spacing: 0) {
+                        menuBarHeader
+                        loadingDevicesView
+                    }
                 } else if deviceIds.isEmpty {
-                    noDevicesView
+                    VStack(spacing: 0) {
+                        menuBarHeader
+                        noDevicesView
+                    }
                 } else {
                     menuBarRemoteView
                         .buttonStyle(.bordered)
@@ -134,6 +141,17 @@
             } else {
                 mainRemoteView
             }
+        }
+
+        private var menuBarHeader: some View {
+            HStack(spacing: 8) {
+                Spacer(minLength: 0)
+                settingsToolbarButtons
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 10)
+            .padding(.bottom, 16)
+            .buttonStyle(.accessoryBar)
         }
 
         private var configuredContent: some View {
@@ -628,8 +646,9 @@
             UserDefaults.standard.set(count, forKey: UserDefaultKeys.userMajorActionCount)
 
             if shouldRequestReview() {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    SKStoreReviewController.requestReview()
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(500))
+                    requestReview()
                 }
 
                 UserDefaults.standard.set(

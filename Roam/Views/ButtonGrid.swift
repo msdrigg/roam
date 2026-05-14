@@ -214,7 +214,6 @@ private struct HeadphonesUnsupportedTipContent: View {
             .font(.headline)
 
             Text(
-                // swiftlint:disable:next line_length
                 "This Roku device doesn't support streaming audio to Roam, so headphones mode is unavailable. To see which Roku devices do support it, visit https://www.roku.com/products/compare.",
                 comment: "Body of the popup shown when a user taps a disabled headphones mode button"
             )

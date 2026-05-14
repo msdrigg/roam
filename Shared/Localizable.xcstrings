@@ -3324,7 +3324,7 @@
       }
     },
     "All devices" : {
-      "comment" : "Menu item to show all configured devices\nTitle for the sheet listing all configured devices",
+      "comment" : "Accessibility label for the floating button that returns to the device grid",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6557,6 +6557,7 @@
       }
     },
     "Click here to play your TV audio through your iPad or connected headphones" : {
+      "comment" : "Headphones mode promo body (iPad)",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6639,6 +6640,7 @@
       }
     },
     "Click here to play your TV audio through your iPhone or connected headphones" : {
+      "comment" : "Headphones mode promo body (iPhone)",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -6721,6 +6723,7 @@
       }
     },
     "Click here to play your TV audio through your Vision Pro!" : {
+      "comment" : "Headphones mode promo body (visionOS)",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -19083,6 +19086,17 @@
         }
       }
     },
+    "Page %d of %d" : {
+      "comment" : "Accessibility label for the iPhone detail pager indicator. First int is the current page, second is the total.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Page %1$d of %2$d"
+          }
+        }
+      }
+    },
     "Parameters" : {
       "comment" : "Settings section title indicating device parameters",
       "localizations" : {
@@ -23305,6 +23319,9 @@
           }
         }
       }
+    },
+    "Roam will list Roku devices on your network as they're found." : {
+      "comment" : "Empty-state caption on iPhone home explaining auto-discovery"
     },
     "roam-support@msd3.io" : {
       "comment" : "Support email (not localizable)",

@@ -18,6 +18,7 @@ enum KeyboardFocus {
 
 struct RemoteViewContained: View {
     @Environment(\.openWindow) var openWindow
+    @Environment(\.requestReview) private var requestReview
 
     @EnvironmentObject private var appDelegate: RoamAppDelegate
 
@@ -1008,18 +1009,9 @@ struct RemoteViewContained: View {
         UserDefaults.standard.set(count, forKey: UserDefaultKeys.userMajorActionCount)
 
         if shouldRequestReview() {
-            #if os(iOS)
-                guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
-                    return
-                }
-            #endif
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                #if os(iOS)
-                    SKStoreReviewController.requestReview(in: windowScene)
-                #elseif !os(visionOS)
-                    SKStoreReviewController.requestReview()
-                #endif
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(500))
+                requestReview()
             }
 
             UserDefaults.standard.set(

@@ -39,8 +39,19 @@ def archive_application(platform: str, render_github_actions: bool = False):
 
 def publish_to_app_store(platform: str, render_github_actions: bool = False):
     print(f"Exporting for platform {platform}")
+    api_key = os.environ.get("XCODE_API_KEY")
+    api_issuer = os.environ.get("XCODE_API_ISSUER")
+    auth_args = ""
+    if api_key and api_issuer:
+        key_path = os.path.expanduser(f"~/.private_keys/AuthKey_{api_key}.p8")
+        auth_args = (
+            f" -authenticationKeyID {api_key}"
+            f" -authenticationKeyIssuerID {api_issuer}"
+            f" -authenticationKeyPath {key_path}"
+            f" -allowProvisioningUpdates"
+        )
     subprocess.run(
-        f"""set -o pipefail && xcodebuild -exportArchive -archivePath "./Archives/XCArchives/{platform}.xcarchive" -exportPath "./Archives/Exports/{platform}" -exportOptionsPlist ./scripts/options.plist | xcbeautify{' --renderer github-actions' if render_github_actions else ''}""",
+        f"""set -o pipefail && xcodebuild -exportArchive -archivePath "./Archives/XCArchives/{platform}.xcarchive" -exportPath "./Archives/Exports/{platform}" -exportOptionsPlist ./scripts/options.plist{auth_args} | xcbeautify{' --renderer github-actions' if render_github_actions else ''}""",
         shell=True,
         check=True,
     )

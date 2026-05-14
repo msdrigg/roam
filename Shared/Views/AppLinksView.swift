@@ -30,6 +30,9 @@ struct AppLinksView: View {
     }
 
     @State private var appLoader: DeviceAppsLoader?
+    // Remember whether the previous device had apps so we don't collapse the
+    // grid back to zero height while a new device's apps are still loading.
+    @State private var lastKnownHasApps: Bool = false
 
     @ScaledMetric var gridWidth: CGFloat = globalGridWidth
     @ScaledMetric var gridSpacing: CGFloat = globalGridSpacing
@@ -39,16 +42,22 @@ struct AppLinksView: View {
     var appLinks: [AppLink] {
         appLoader?.apps ?? []
     }
+
+    private var confirmedHasApps: Bool? {
+        guard let apps = appLoader?.apps else { return nil }
+        return !apps.isEmpty
+    }
+
+    private var shouldShowApps: Bool {
+        confirmedHasApps ?? lastKnownHasApps
+    }
+
     var gridHeight: CGFloat {
-        if appLinks.isEmpty {
-            return 1
-        } else {
-            return populatedGridHeightScaled
-        }
+        shouldShowApps ? populatedGridHeightScaled : 1
     }
 
     var totalGridHeight: CGFloat {
-        if appLinks.isEmpty {
+        if !shouldShowApps {
             return gridHeight
         } else {
             return gridHeight * CGFloat(rows) + gridRowSpacing * CGFloat(max(rows - 1, 0))
@@ -112,8 +121,14 @@ struct AppLinksView: View {
             .onChange(of: deviceId) { _, newDeviceId in
                 appLoader = Self.makeAppLoader(deviceId: newDeviceId)
             }
+            .onChange(of: confirmedHasApps) { _, newValue in
+                if let newValue {
+                    lastKnownHasApps = newValue
+                }
+            }
             .foregroundStyle(.white.opacity(0.8))
             .frame(height: totalGridHeight)
+            .animation(.default, value: shouldShowApps)
             .fixedSize(horizontal: false, vertical: true)
     }
 }

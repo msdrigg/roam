@@ -36,22 +36,28 @@ struct PhoneHomeView: View {
                 ))
                 .navigationBarTitleDisplayMode(.large)
                 .toolbar {
-                    ToolbarItemGroup(placement: .topBarTrailing) {
+                    ToolbarItemGroup(placement: .bottomBar) {
                         Button {
                             appDelegate.navigationPath.showAddDevice = true
                         } label: {
                             Label(
-                                String(localized: "Add device", comment: "Toolbar button on iPhone home to add a new device"),
+                                String(
+                                    localized: "Add a device manually",
+                                    comment: "Bottom-bar button on iPhone home to manually add a device"
+                                ),
                                 systemImage: "plus"
                             )
+                            .labelStyle(.titleAndIcon)
                         }
                         .accessibilityIdentifier("AddDeviceButton")
+
+                        Spacer()
 
                         Button {
                             appDelegate.navigationPath.append(.settingsDestination(.global))
                         } label: {
                             Label(
-                                String(localized: "Settings", comment: "Toolbar button on iPhone home to open Settings"),
+                                String(localized: "Settings", comment: "Bottom-bar button on iPhone home to open Settings"),
                                 systemImage: "gear"
                             )
                         }
@@ -98,9 +104,6 @@ struct PhoneHomeView: View {
             .padding(.bottom, 24)
         }
         .refreshable { await runManualScan() }
-        .safeAreaInset(edge: .bottom) {
-            addDeviceFooter
-        }
     }
 
     @ViewBuilder
@@ -143,9 +146,6 @@ struct PhoneHomeView: View {
             }
         }
         .refreshable { await runManualScan() }
-        .safeAreaInset(edge: .bottom) {
-            addDeviceFooter
-        }
     }
 
     private var emptyScanningCard: some View {
@@ -171,27 +171,6 @@ struct PhoneHomeView: View {
         .frame(maxWidth: .infinity)
         .padding(24)
         .background(cardBackground)
-    }
-
-    private var addDeviceFooter: some View {
-        Button {
-            appDelegate.navigationPath.showAddDevice = true
-        } label: {
-            Label(
-                String(
-                    localized: "Add a device manually",
-                    comment: "Footer button on iPhone home to manually add a device"
-                ),
-                systemImage: "plus"
-            )
-            .labelStyle(.titleAndIcon)
-            .font(.subheadline)
-            .padding(.vertical, 10)
-            .padding(.horizontal, 18)
-        }
-        .buttonStyle(.bordered)
-        .controlSize(.regular)
-        .padding(.bottom, 8)
     }
 
     // MARK: - Navigation destination

@@ -37,25 +37,27 @@ struct PhoneDeviceDetailPager: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            TabView(selection: $selectedDeviceId) {
-                ForEach(allDeviceIds, id: \.self) { deviceId in
-                    PhoneDetailPage(
-                        deviceId: deviceId,
-                        unreadMessages: unreadMessages,
-                        externalShowKeyboard: $showKeyboard
-                    )
-                    .tag(deviceId)
-                }
+        TabView(selection: $selectedDeviceId) {
+            ForEach(allDeviceIds, id: \.self) { deviceId in
+                PhoneDetailPage(
+                    deviceId: deviceId,
+                    unreadMessages: unreadMessages,
+                    externalShowKeyboard: $showKeyboard
+                )
+                .padding(.top, 24)
+                .tag(deviceId)
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .ignoresSafeArea(.keyboard)
-
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .ignoresSafeArea(.keyboard)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             floatingButtonBar
                 .padding(.horizontal, 18)
-                .padding(.bottom, 18)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
         }
         .toolbar(.hidden, for: .navigationBar)
+        .toolbar(.hidden, for: .bottomBar)
         .onChange(of: selectedDeviceId) { _, newId in
             Task {
                 do {
