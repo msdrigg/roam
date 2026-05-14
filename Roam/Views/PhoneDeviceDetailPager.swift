@@ -44,7 +44,6 @@ struct PhoneDeviceDetailPager: View {
                     unreadMessages: unreadMessages,
                     externalShowKeyboard: $showKeyboard
                 )
-                .padding(.top, 24)
                 .tag(deviceId)
             }
         }

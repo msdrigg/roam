@@ -123,14 +123,17 @@ struct DeviceSplitRoot<Detail: View>: View {
             Spacer()
             Label(
                 String(
-                    localized: "Scanning for devices…",
+                    localized: "Scanning for devices",
                     comment: "Sidebar empty-state heading while no devices have been discovered"
                 ),
                 systemImage: "rays"
             )
+            .labelStyle(.titleAndIcon)
+            .font(.title3)
             .symbolEffect(.variableColor)
-            .font(.headline)
             .multilineTextAlignment(.center)
+            .padding()
+            .glowing()
 
             Button {
                 appDelegate.navigationPath.showAddDevice = true

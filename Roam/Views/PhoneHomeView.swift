@@ -67,6 +67,7 @@ struct PhoneHomeView: View {
                 .navigationDestination(for: String.self) { deviceId in
                     detailDestination(for: deviceId)
                 }
+                .customAccentColorTint()
         }
         .onAppear {
             if scanIPV4Actor == nil { scanIPV4Actor = DeviceDiscoveryActor() }
@@ -140,37 +141,33 @@ struct PhoneHomeView: View {
     private var emptyContent: some View {
         ScrollView {
             VStack(spacing: 18) {
-                emptyScanningCard
-                    .padding(.horizontal, 16)
-                    .padding(.top, 24)
+                Spacer(minLength: 24)
+
+                Label(
+                    String(
+                        localized: "Scanning for devices",
+                        comment: "Empty-state heading on iPhone home while no devices have been discovered"
+                    ),
+                    systemImage: "rays"
+                )
+                .labelStyle(.titleAndIcon)
+                .font(.title3)
+                .symbolEffect(.variableColor)
+                .padding()
+                .glowing()
+
+                Text(
+                    "Roam will list Roku devices on your network as they're found.",
+                    comment: "Empty-state caption on iPhone home explaining auto-discovery"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
             }
+            .frame(maxWidth: .infinity)
         }
         .refreshable { await runManualScan() }
-    }
-
-    private var emptyScanningCard: some View {
-        VStack(spacing: 14) {
-            Label(
-                String(
-                    localized: "Scanning for devices…",
-                    comment: "Empty-state heading on iPhone home while no devices have been discovered"
-                ),
-                systemImage: "rays"
-            )
-            .symbolEffect(.variableColor)
-            .font(.headline)
-
-            Text(
-                "Roam will list Roku devices on your network as they're found.",
-                comment: "Empty-state caption on iPhone home explaining auto-discovery"
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(24)
-        .background(cardBackground)
     }
 
     // MARK: - Navigation destination

@@ -73,7 +73,7 @@ struct AppStorageColor: DynamicProperty {
 }
 
 struct CustomAccentColorTint: ViewModifier {
-    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
+    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = Color("AccentColor")
 
     func body(content: Content) -> some View {
         content
@@ -82,7 +82,7 @@ struct CustomAccentColorTint: ViewModifier {
 }
 
 struct CustomAccentColorForeground: ViewModifier {
-    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
+    @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = Color("AccentColor")
 
     func body(content: Content) -> some View {
         content

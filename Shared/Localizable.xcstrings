@@ -2660,7 +2660,7 @@
       }
     },
     "Add a device manually" : {
-      "comment" : "Button shown in the empty sidebar to manually add a device\nLabel on a button to add a device",
+      "comment" : "Bottom-bar button on iPhone home to manually add a device\nButton shown in the empty sidebar to manually add a device\nLabel on a button to add a device\nLabel on a button to open the device setup page",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2909,7 +2909,7 @@
       }
     },
     "Add device" : {
-      "comment" : "Footer button under the sidebar device list to add a new device"
+      "comment" : "Footer button under the sidebar device list to add a new device\nToolbar button on iPad sidebar to add a new device"
     },
     "Add Device" : {
       "comment" : "Keyboard shortcut to show the Roam app",
@@ -4069,7 +4069,7 @@
       }
     },
     "App Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -5060,7 +5060,7 @@
       }
     },
     "Build Version" : {
-      "comment" : "Version label in About page for the app\nVersion label in about page for the app",
+      "comment" : "Version label in about page for the app",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -5226,7 +5226,7 @@
       }
     },
     "Cancel" : {
-      "comment" : "Accessibility label for the close button on the Add Device sheet\nCancel button for the delete-device dialog"
+      "comment" : "Cancel button for the delete-device dialog"
     },
     "Cannot update device that is deleted." : {
       "localizations" : {
@@ -7797,7 +7797,7 @@
       }
     },
     "Delete" : {
-      "comment" : "Confirm button for deleting a device\nContext-menu action to delete a device\nLabel on a button to delete a device",
+      "comment" : "Confirm button for deleting a device\nContext-menu action to delete a device\nLabel on a button to delete a device\nSwipe action to delete a device",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8135,7 +8135,7 @@
       }
     },
     "Devices" : {
-      "comment" : "Title of the device sidebar in the split-view layout",
+      "comment" : "Header in device selection menu\nTitle of the device sidebar in the split-view layout\nTitle of the iPhone home screen listing all devices",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8713,7 +8713,7 @@
       }
     },
     "Edit" : {
-      "comment" : "Context-menu action to edit a device\nLabel on a button to edit a device",
+      "comment" : "Context-menu action to edit a device\nLabel on a button to edit a device\nSwipe action to edit a device",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -13105,7 +13105,7 @@
       }
     },
     "Keyboard" : {
-      "comment" : "Label on a button to open the keyboard\nvisionOS bottom ornament button to toggle the keyboard",
+      "comment" : "Accessibility label for the floating keyboard toggle on iPhone detail\nLabel on a button to open the keyboard",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -23735,7 +23735,7 @@
       }
     },
     "Roku Apps" : {
-      "comment" : "Siri spotlight recommendation",
+      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -23818,7 +23818,7 @@
       }
     },
     "Roku Controls" : {
-      "comment" : "Siri spotlight recommendation",
+      "comment" : "Label on a widget for interactions with my application\nSiri spotlight recommendation",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -24236,6 +24236,7 @@
       }
     },
     "Scanning for devices" : {
+      "comment" : "Empty-state heading on iPhone home while no devices have been discovered\nSidebar empty-state heading while no devices have been discovered",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -24402,6 +24403,7 @@
     },
     "Scanning for devices…" : {
       "comment" : "Sidebar empty-state heading while no devices have been discovered",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -25062,7 +25064,7 @@
       }
     },
     "Settings" : {
-      "comment" : "Navigation title on the settings page",
+      "comment" : "Bottom-bar button on iPhone home to open Settings\nNavigation title on the settings page\nToolbar button on iPad/visionOS sidebar to open Settings",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

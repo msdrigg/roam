@@ -277,12 +277,20 @@ if __name__ == "__main__":
         default="com.msdrigg.roam",
     )
     parser.add_argument(
+        "--bump-versions",
+        help="Update the marketing and build versions in the Xcode project to match git before building",
+        action="store_true",
+    )
+    parser.add_argument(
         "--env-file",
         help="Path to the env file used for backend upload settings",
         default=".env",
     )
 
     args = parser.parse_args()
+
+    if args.bump_versions:
+        bump_versions()
 
     if not args.no_bump and (args.archive or args.publish):
         bump_versions()

@@ -409,6 +409,16 @@ struct RemoteViewContained: View {
 
                         Spacer()
                     }
+                    #elseif os(iOS)
+                    if let deviceName = selectedDevice?.name, !hideUIForKeyboardEntry {
+                        Text(deviceName)
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .frame(maxWidth: .infinity)
+                            .padding(.bottom, 8)
+                    }
                     #elseif os(visionOS)
                     if !hidesKeyboardToolbarButton {
                     HStack(alignment: .center) {
