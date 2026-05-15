@@ -1,5 +1,6 @@
 #if os(iOS)
 import SwiftUI
+import UIKit
 
 /// iPhone detail screen pushed from `PhoneHomeView`.
 ///
@@ -22,6 +23,7 @@ struct PhoneDeviceDetailPager: View {
 
     @State private var selectedDeviceId: String
     @State private var showKeyboard: Bool = false
+    @State private var isInteractivelyPopping: Bool = false
 
     init(
         startingDeviceId: String,
@@ -53,10 +55,20 @@ struct PhoneDeviceDetailPager: View {
             floatingButtonBar
                 .padding(.horizontal, 18)
                 .padding(.top, 8)
-                .padding(.bottom, 12)
+                .padding(.bottom, -18)
+                // Without this, SwiftUI applies its default slow fade to the
+                // safeAreaInset content when the destination view appears
+                // via .navigationTransition(.zoom), which extends the
+                // perceived transition long after the zoom has finished.
+                .transaction { $0.animation = nil }
         }
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .bottomBar)
+        // While the user is interactively swiping back to the home grid,
+        // disable hit-testing so taps that visually appear to land on the
+        // revealed home view don't actually press remote buttons.
+        .allowsHitTesting(!isInteractivelyPopping)
+        .background(InteractivePopObserver { isInteractivelyPopping = $0 })
         .onChange(of: selectedDeviceId) { _, newId in
             Task {
                 do {
@@ -167,6 +179,41 @@ private struct PhoneDetailPage: View {
             externalShowKeyboard: $externalShowKeyboard,
             hidesKeyboardToolbarButton: true
         )
+    }
+}
+
+/// Surfaces UIKit's interactive-pop state into SwiftUI by embedding a
+/// near-empty child view controller. When the host's `viewWillDisappear`
+/// fires with an interactive transition coordinator, the swipe-back is
+/// in progress; we report `true` and listen for cancellation to flip back.
+private struct InteractivePopObserver: UIViewControllerRepresentable {
+    var onChange: (Bool) -> Void
+
+    func makeUIViewController(context: Context) -> Observer {
+        let vc = Observer()
+        vc.onChange = onChange
+        return vc
+    }
+
+    func updateUIViewController(_ uiViewController: Observer, context: Context) {
+        uiViewController.onChange = onChange
+    }
+
+    final class Observer: UIViewController {
+        var onChange: ((Bool) -> Void)?
+
+        override func viewWillDisappear(_ animated: Bool) {
+            super.viewWillDisappear(animated)
+            guard let coordinator = transitionCoordinator, coordinator.isInteractive else {
+                return
+            }
+            onChange?(true)
+            coordinator.notifyWhenInteractionChanges { [weak self] context in
+                if context.isCancelled {
+                    self?.onChange?(false)
+                }
+            }
+        }
     }
 }
 #endif

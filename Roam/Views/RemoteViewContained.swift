@@ -125,6 +125,10 @@ struct RemoteViewContained: View {
         device
     }
 
+    private var isDeviceOnline: Bool {
+        selectedDevice?.isOnline() ?? false || inScreenshotTestingContext()
+    }
+
     private var runningInPreview: Bool {
         ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
     }
@@ -167,356 +171,608 @@ struct RemoteViewContained: View {
         buttonPresses[key] ?? 0
     }
 
+    private func keepFocusTask() async {
+        focusKeyboardMonitor = .monitor
+        while !Task.isCancelled {
+            try? await Task.sleep(duration: 1)
+            if !showKeyboardEntry {
+                focusKeyboardMonitor = .monitor
+            }
+        }
+    }
+
+    private func restoreFocusIfNeeded() {
+        if focusKeyboardMonitor == nil && !showKeyboardEntry {
+            focusKeyboardMonitor = .monitor
+        }
+        if !showKeyboardEntry {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                if !showKeyboardEntry {
+                    focusKeyboardMonitor = .monitor
+                }
+            }
+        }
+    }
+
+    private func handleTextEditStatusChange(old: TextEditStatus, new: TextEditStatus) {
+        if old.isActive && !new.isActive {
+            withAnimation {
+                showKeyboardEntryManual = false
+            }
+        } else if !old.isActive && new.isActive {
+            withAnimation {
+                showKeyboardEntryManual = true
+            }
+        }
+    }
+
+    private func handleShowKeyboardChange() {
+        if !showKeyboardEntry {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                if !showKeyboardEntry {
+                    focusKeyboardMonitor = .monitor
+                }
+            }
+        }
+    }
+
+    private func networkPermissionTask() async {
+        do {
+            Log.network.notice("\("Checking", privacy: .public) for local network permission")
+            let permission = try await requestLocalNetworkAuthorization()
+            Log.network.notice("Got permission check result \(permission, privacy: .public)")
+            self.networkPermissionGranted = permission
+        } catch {
+            Log.network.error("Error requesting local network authorization \(error, privacy: .public)")
+        }
+    }
+
+    private func logAppear() {
+        Log.lifecycle.notice("Showing \(#fileID, privacy: .public) view")
+    }
+
+    private func logDisappear() {
+        Log.lifecycle.notice("Closing \(#fileID, privacy: .public) view")
+    }
+
+    private func refreshDeviceBackoffTask() async {
+        for await _ in exponentialBackoff(min: 30, max: 3600) {
+            if let selectedDevice, let ecpSession {
+                Log.connection
+                    .info("Refreshing device \(selectedDevice.location, privacy: .public) after backoff")
+                if Task.isCancelled {
+                    return
+                }
+                let handler = RoamDataHandler.shared
+                await handler.refreshDevice(
+                    client: ECPWebsocketRefreshClient(
+                        id: selectedDevice.id,
+                        client: ecpSession,
+                        location: selectedDevice.location
+                    )
+                )
+            } else {
+                Log.connection
+                    .info("No selected device to refresh")
+                return
+            }
+        }
+    }
+
+    private func ecpSessionLocationTask() async {
+        Log.connection.notice("Creating ecp session with location \(String(describing: selectedDevice?.location), privacy: .public)")
+        if let device = selectedDevice {
+            self.ecpSessionState.setDevice(device)
+        } else {
+            self.ecpSessionState.setDevice(nil)
+        }
+    }
+
+    private func headphonesTask() async {
+        if !headphonesModeEnabled {
+            #if os(iOS)
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.ambient)
+                try AVAudioSession.sharedInstance().setActive(false)
+            } catch {
+                Log.headphones.notice("Unable to set AVAudioSession category to background: \(#fileID, privacy: .public)")
+            }
+            #endif
+            return
+        }
+        defer {
+            headphonesModeEnabled = false
+        }
+
+        if let device = selectedDevice, let ecpSession {
+            let location = device.location
+            let rtcpPort = device.rtcpPort
+            do {
+                try await listenContinually(
+                    ecpSession: ecpSession,
+                    location: location,
+                    rtcpPort: rtcpPort
+                )
+                Log.headphones.notice(
+                    "Listencontinually returned \(#fileID, privacy: .public)"
+                )
+            } catch {
+                Log.headphones.warning("Catching error in pl handler \(error, privacy: .public)")
+                if !(error is CancellationError) {
+                    Log.headphones.notice("Non-cancellation error in PL \(#fileID, privacy: .public)")
+                    errorTrigger += 1
+                    headphonesError = error
+                }
+            }
+        }
+    }
+
+    #if os(macOS)
+    private func handleWindowFocused() {
+        Log.lifecycle.notice("\(#fileID, privacy: .public) becoming key window")
+        appDelegate.navigationPath.focusedWindow = .remote
+    }
+    #endif
+
+    private func syncExternalKeyboardOnAppear() {
+        if let externalShowKeyboard,
+           externalShowKeyboard.wrappedValue != showKeyboardEntryManual {
+            showKeyboardEntryManual = externalShowKeyboard.wrappedValue
+        }
+    }
+
+    private func propagateKeyboardManualChange(_ new: Bool) {
+        if let externalShowKeyboard,
+           externalShowKeyboard.wrappedValue != new {
+            externalShowKeyboard.wrappedValue = new
+        }
+    }
+
+    private func propagateExternalKeyboardChange(_ new: Bool?) {
+        guard let new, showKeyboardEntryManual != new else { return }
+        withAnimation {
+            showKeyboardEntryManual = new
+        }
+    }
+
+    private var headphonesTaskId: String {
+        "\(headphonesModeEnabled),\(selectedDevice?.location ?? "--")"
+    }
+
     var body: some View {
         if runningInPreview {
             remotePage
         } else {
-            remotePage
-                .task {
-                    // Hack to make sure we don't get in a bad focus state :/
-                    focusKeyboardMonitor = .monitor
-                    while !Task.isCancelled {
-                        try? await Task.sleep(duration: 1)
+            decoratedRemotePage
+        }
+    }
 
-                        if !showKeyboardEntry {
-                            focusKeyboardMonitor = .monitor
-                        }
-                    }
-                }
-                .defaultFocus($focusKeyboardMonitor, .monitor, priority: .userInitiated)
-                .onChange(of: focusKeyboardMonitor) {
-                    if focusKeyboardMonitor == nil && !showKeyboardEntry {
-                        focusKeyboardMonitor = .monitor
-                    }
-                    if !showKeyboardEntry {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                            if !showKeyboardEntry {
-                                focusKeyboardMonitor = .monitor
-                            }
-                        }
-                    }
-                }
-                .onChange(of: ecpSessionState.textEditStatus) { old, new in
-                    if old.isActive && !new.isActive {
-                        withAnimation {
-                            showKeyboardEntryManual = false
-                        }
-                    } else if !old.isActive && new.isActive {
-                        withAnimation {
-                            showKeyboardEntryManual = true
-                        }
-                    }
-                }
-                .onChange(of: showKeyboardEntry) {
-                    if !showKeyboardEntry {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                            if !showKeyboardEntry {
-                                focusKeyboardMonitor = .monitor
-                            }
-                        }
-                    }
-                }
-                .task {
-                    do {
-                        Log.network.notice("\("Checking", privacy: .public) for local network permission")
-                        let permission = try await requestLocalNetworkAuthorization()
-                        Log.network.notice("Got permission check result \(permission, privacy: .public)")
-                        self.networkPermissionGranted = permission
-                    } catch {
-                        Log.network.error("Error requesting local network authorization \(error, privacy: .public)")
-                    }
-                }
-                .onAppear {
-                    Log.lifecycle.notice("Showing \(#fileID, privacy: .public) view")
-                }
-                .onDisappear {
-                    Log.lifecycle.notice("Closing \(#fileID, privacy: .public) view")
-                }
-                .task(id: selectedDevice?.id, priority: .medium) {
-                    for await _ in exponentialBackoff(min: 30, max: 3600) {
-                        if let selectedDevice, let ecpSession {
-                            Log.connection
-                                .info("Refreshing device \(selectedDevice.location, privacy: .public) after backoff")
-                            if Task.isCancelled {
-                                return
-                            }
-                            let handler = RoamDataHandler.shared
-                            await handler.refreshDevice(
-                                client: ECPWebsocketRefreshClient(
-                                    id: selectedDevice.id,
-                                    client: ecpSession,
-                                    location: selectedDevice.location
-                                )
-                            )
-                        } else {
-                            Log.connection
-                                .info("No selected device to refresh")
-                            return
-                        }
-                    }
-                }
-                .task(id: selectedDevice?.location, priority: .medium) {
-                    Log.connection.notice("Creating ecp session with location \(String(describing: selectedDevice?.location), privacy: .public)")
-                    if let device = selectedDevice {
-                        self.ecpSessionState.setDevice(device)
-                    } else {
-                        self.ecpSessionState.setDevice(nil)
-                    }
-                }
-                .task(id: "\(headphonesModeEnabled),\(selectedDevice?.location ?? "--")") {
-                    if !headphonesModeEnabled {
-                        #if os(iOS)
-                        do {
-                        try AVAudioSession.sharedInstance().setCategory(.ambient)
-                        try AVAudioSession.sharedInstance().setActive(false)
-                        } catch {
-                            Log.headphones.notice("Unable to set AVAudioSession category to background: \(#fileID, privacy: .public)")
-                        }
-                        #endif
-                        return
-                    }
-                    defer {
-                        headphonesModeEnabled = false
-                    }
+    private var decoratedRemotePage: some View {
+        remotePage
+            .task { await keepFocusTask() }
+            .defaultFocus($focusKeyboardMonitor, .monitor, priority: .userInitiated)
+            .onChange(of: focusKeyboardMonitor) { restoreFocusIfNeeded() }
+            .onChange(of: ecpSessionState.textEditStatus) { old, new in
+                handleTextEditStatusChange(old: old, new: new)
+            }
+            .onChange(of: showKeyboardEntry) { handleShowKeyboardChange() }
+            .task { await networkPermissionTask() }
+            .onAppear(perform: logAppear)
+            .onDisappear(perform: logDisappear)
+            .task(id: selectedDevice?.id, priority: .medium) { await refreshDeviceBackoffTask() }
+            .task(id: selectedDevice?.location, priority: .medium) { await ecpSessionLocationTask() }
+            .task(id: headphonesTaskId) { await headphonesTask() }
+            #if os(macOS)
+            .onKeyDown({ key in pressKey(key.key, modifiers: key.modifiers) }, enabled: true)
+            .onWindowFocused(perform: handleWindowFocused)
+            #endif
+            .onChange(of: focusKeyboardMonitor) { restoreFocusIfNeeded() }
+            .onChange(of: showKeyboardEntry) { handleShowKeyboardChange() }
+            .onAppear(perform: syncExternalKeyboardOnAppear)
+            .onChange(of: showKeyboardEntryManual) { _, new in
+                propagateKeyboardManualChange(new)
+            }
+            .onChange(of: externalShowKeyboard?.wrappedValue) { _, new in
+                propagateExternalKeyboardChange(new)
+            }
+    }
 
-                    if let device = selectedDevice, let ecpSession {
-                        let location = device.location
-                        let rtcpPort = device.rtcpPort
-                        do {
-                            try await listenContinually(
-                                ecpSession: ecpSession,
-                                location: location,
-                                rtcpPort: rtcpPort
-                            )
-                            Log.headphones.notice(
-                                "Listencontinually returned \(#fileID, privacy: .public)"
-                            )
-                        } catch {
-                            Log.headphones.warning("Catching error in pl handler \(error, privacy: .public)")
-                            // Increment errorTrigger if the error is anything but a cancellation error
-                            if !(error is CancellationError) {
-                                Log.headphones.notice("Non-cancellation error in PL \(#fileID, privacy: .public)")
-                                errorTrigger += 1
-                                headphonesError = error
-                            }
-                        }
+    private func toggleKeyboardEntry() {
+        keyboardLeaving = showKeyboardEntry
+        withAnimation {
+            showKeyboardEntryManual = !showKeyboardEntry
+        }
+    }
+
+    #if os(visionOS)
+    private func handleVisionOSShortcutKeyPress(_ ke: KeyPress) -> KeyPress.Result {
+        for shortcut in allKeyboardShortcuts {
+            if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
+                let title = shortcut.title
+                Log.headphones.notice("Not handling key press because found shortcut with title \(title, privacy: .public)")
+                if let rb = title.matchingRemoteButton {
+                    pressButton(rb)
+                    return .handled
+                }
+                if title == .chatWithDeveloper {
+                    appDelegate.navigationPath.openMessages()
+                } else if title == .keyboardShortcuts {
+                    appDelegate.navigationPath.openKeyboardShortcuts()
+                } else {
+                    Log.userInteraction.warning("Unknown function for keyboard shortcut \(title, privacy: .public)")
+                }
+                return .handled
+            }
+        }
+        pressKey(ke.key, modifiers: ke.modifiers)
+        return .handled
+    }
+
+    private var visionOSKeyboardHeader: some View {
+        HStack(alignment: .center) {
+            if !hidesKeyboardToolbarButton {
+                Button(action: toggleKeyboardEntry, label: {
+                    Label(String(localized: "Keyboard", comment: "Label on a button to open the keyboard"), systemImage: "keyboard")
+                })
+                .accessibilityIdentifier("KeyboardButton")
+                .focusable(true, interactions: [.activate, .edit])
+                .focused($focusKeyboardMonitor, equals: .monitor)
+                .onKeyPress { ke in handleVisionOSShortcutKeyPress(ke) }
+                .controlSize(.large)
+                .font(.headline)
+                .labelStyle(.iconOnly)
+                .buttonStyle(.borderless)
+                .disabled(selectedDevice == nil)
+            }
+
+            Spacer()
+
+            deviceTitleHeader
+
+            Spacer()
+        }
+        .padding(.bottom, 14)
+    }
+    #endif
+
+    #if !os(visionOS) && !os(macOS)
+    private var toolbarKeyboardButton: some View {
+        Button(action: toggleKeyboardEntry, label: {
+            Label(String(localized: "Keyboard", comment: "Label on a button to open the keyboard"), systemImage: "keyboard")
+        })
+        .accessibilityIdentifier("KeyboardButton")
+        .focusable(true, interactions: [.activate, .edit])
+        .focused($focusKeyboardMonitor, equals: .monitor)
+        .onKeyPress { ke in handleToolbarKeyPress(ke) }
+        .controlSize(.large)
+        .font(.headline)
+        .labelStyle(.iconOnly)
+        .buttonStyle(.borderless)
+        .disabled(selectedDevice == nil)
+        .font(.headline)
+    }
+
+    private func handleToolbarPaste() {
+        Log.userInteraction.notice("Trying to paste: \(#fileID, privacy: .public)")
+        guard let id = ecpSessionState.textEditStatus.texteditId, UIPasteboard.general.hasStrings else {
+            Log.userInteraction.notice("Not pasting due to empty textedit id (\(ecpSessionState.textEditStatus.texteditId ?? "none", privacy: .public)) or false UI pasteboard hasStrings (\(UIPasteboard.general.hasStrings), privacy: .public)")
+            return
+        }
+        guard let text = UIPasteboard.general.string else {
+            Log.userInteraction.warning("No text to paste: \(#fileID, privacy: .public)")
+            return
+        }
+        Log.userInteraction.notice("Trying to paste \(text, privacy: .public)")
+        Task {
+            do {
+                try await ecpSession?.setTextEdit(text, texteditId: id)
+            } catch {
+                Log.userInteraction.error("Error cutting text: \(error, privacy: .public)")
+            }
+        }
+    }
+
+    private func handleToolbarCut() {
+        if let text = ecpSessionState.textEditStatus.text {
+            UIPasteboard.general.string = text
+        }
+        if let id = ecpSessionState.textEditStatus.texteditId {
+            Task {
+                do {
+                    try await ecpSession?.setTextEdit("", texteditId: id)
+                } catch {
+                    Log.userInteraction.error("Error cutting text: \(error, privacy: .public)")
+                }
+            }
+        }
+    }
+
+    private func handleToolbarKeyPress(_ ke: KeyPress) -> KeyPress.Result {
+        for shortcut in allKeyboardShortcuts {
+            if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
+                let title = shortcut.title
+                Log.userInteraction.notice("Not handling key press because found shortcut with title \(title, privacy: .public)")
+                if let rb = title.matchingRemoteButton {
+                    pressButton(rb)
+                    return .handled
+                }
+                if title == .chatWithDeveloper {
+                    appDelegate.navigationPath.openMessages()
+                } else if title == .keyboardShortcuts {
+                    appDelegate.navigationPath.openKeyboardShortcuts()
+                } else if title == .copy {
+                    if let text = ecpSessionState.textEditStatus.text {
+                        UIPasteboard.general.string = text
                     }
+                } else if title == .cut {
+                    handleToolbarCut()
+                } else if title == .paste {
+                    handleToolbarPaste()
+                } else {
+                    Log.userInteraction.warning("Unknown function for keyboard shortcut \(title, privacy: .public)")
                 }
-                #if os(macOS)
-                .onKeyDown({ key in pressKey(key.key, modifiers: key.modifiers) }, enabled: true)
-                .onWindowFocused {
-                    Log.lifecycle.notice("\(#fileID, privacy: .public) becoming key window")
-                    appDelegate.navigationPath.focusedWindow = .remote
+                return .handled
+            }
+        }
+        pressKey(ke.key, modifiers: ke.modifiers)
+        return .handled
+    }
+    #endif
+
+    #if !os(macOS)
+    #if os(iOS)
+    private func handleVolumeEvent(_ volumeEvent: VolumeEvent) {
+        let key: RemoteButton = switch volumeEvent.direction {
+        case .up: .volumeUp
+        case .down: .volumeDown
+        }
+        Log.connection.notice(
+            "Pressing button \(String(describing: key), privacy: .public) with volume \(volume, privacy: .public) after volume event \(String(describing: volumeEvent), privacy: .public)"
+        )
+        pressButton(key)
+    }
+
+    @ViewBuilder
+    private var volumeOverlay: some View {
+        if controlVolumeWithHWButtons && !headphonesModeEnabled {
+            CustomVolumeSliderOverlay(volume: $volume, changeVolume: handleVolumeEvent)
+                .id("VolumeOverlay")
+                .frame(maxWidth: 1)
+        }
+    }
+    #endif
+
+    private func dismissKeyboardEntry() {
+        keyboardLeaving = true
+        withAnimation {
+            showKeyboardEntryManual = false
+        }
+    }
+
+    private var keyboardEntryShowingBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { showKeyboardEntry },
+            set: { newVal in showKeyboardEntryManual = newVal }
+        )
+    }
+
+    private func handleKeyboardEntryPress(_ char: KeyEquivalent) async {
+        await self.pressKeyAsync(char, modifiers: EventModifiers())
+    }
+
+    @ViewBuilder
+    private var keyboardEntryOverlay: some View {
+        if showKeyboardEntry {
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack {
+                        Button(action: dismissKeyboardEntry, label: {
+                            ZStack {
+                                Rectangle().foregroundColor(.clear)
+                                VStack {
+                                    Spacer()
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        })
+                        .frame(maxHeight: .infinity)
+                        .buttonStyle(.plain)
+
+                        KeyboardEntry(
+                            showing: keyboardEntryShowingBinding,
+                            onKeyPress: handleKeyboardEntryPress,
+                            leaving: keyboardLeaving
+                        )
+                        .focused($focusKeyboardMonitor, equals: .entry)
+                        .padding(.bottom, 10)
+                        .padding(.horizontal, 10)
+                        .zIndex(1)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
                 }
+                .scrollIndicators(.never)
+                #if !os(visionOS)
+                .scrollDismissesKeyboard(.immediately)
                 #endif
-                .onChange(of: focusKeyboardMonitor) {
-                    if focusKeyboardMonitor == nil && !showKeyboardEntry {
-                        focusKeyboardMonitor = .monitor
-                    }
-                    if !showKeyboardEntry {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                            if !showKeyboardEntry {
-                                focusKeyboardMonitor = .monitor
-                            }
-                        }
-                    }
-                }
-                .onChange(of: showKeyboardEntry) {
-                    if !showKeyboardEntry {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                            if !showKeyboardEntry {
-                                focusKeyboardMonitor = .monitor
-                            }
-                        }
-                    }
-                }
-                .onAppear {
-                    if let externalShowKeyboard,
-                       externalShowKeyboard.wrappedValue != showKeyboardEntryManual {
-                        showKeyboardEntryManual = externalShowKeyboard.wrappedValue
-                    }
-                }
-                .onChange(of: showKeyboardEntryManual) { _, new in
-                    if let externalShowKeyboard,
-                       externalShowKeyboard.wrappedValue != new {
-                        externalShowKeyboard.wrappedValue = new
-                    }
-                }
-                .onChange(of: externalShowKeyboard?.wrappedValue) { _, new in
-                    guard let new, showKeyboardEntryManual != new else { return }
-                    withAnimation {
-                        showKeyboardEntryManual = new
-                    }
-                }
+            }
+        }
+    }
 
+    @ViewBuilder
+    private var mobileOverlays: some View {
+        #if os(iOS)
+        volumeOverlay
+        #endif
+        keyboardEntryOverlay
+    }
+    #endif
+
+    private func handleIsHorizontalChange(_ value: Bool) {
+        DispatchQueue.main.async {
+            withAnimation {
+                Log.userInteraction.notice("IsHorizontalKey changed to \(value, privacy: .public)")
+                controlledIsHorizontal = value
+                windowWasLastHorizontal = value
+            }
+        }
+    }
+
+    #if os(macOS)
+    private func openMainWindowFromMenuBar() {
+        openWindow(id: "main")
+        dismiss()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            NSApp.forceFront("main")
+        }
+    }
+
+    @ViewBuilder
+    private var macOSTopHeader: some View {
+        HStack(alignment: .center) {
+            Spacer()
+
+            DevicePicker(
+                device: selectedDevice,
+                ecpSessionState: ecpSessionState,
+                showScanning: true
+            )
+            .buttonStyle(PaddedBorderlessButtonStyleWithChevron())
+            .menuStyle(.button)
+            .controlSize(.extraLarge)
+            .glowing(enabled: selectedDevice == nil)
+            .hoverHighlight(enabled: selectedDevice != nil)
+
+            if isInMenuBar {
+                Button(action: openMainWindowFromMenuBar, label: {
+                    Label("Open main window", systemImage: "macwindow.on.rectangle")
+                        .labelStyle(.iconOnly)
+                })
+                .buttonStyle(PaddedBorderlessButtonStyle())
+                .menuStyle(.button)
+                .controlSize(.extraLarge)
+                .hoverHighlight(enabled: true)
+            }
+
+            Spacer()
+        }
+    }
+    #endif
+
+    #if os(iOS)
+    @ViewBuilder
+    private var iOSDeviceNameHeader: some View {
+        if selectedDevice?.name != nil, !hideUIForKeyboardEntry {
+            deviceTitleHeader
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 14)
+        }
+    }
+    #endif
+
+    @ViewBuilder
+    private var deviceTitleHeader: some View {
+        if let deviceName = selectedDevice?.name {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(isDeviceOnline ? Color.green : Color.secondary.opacity(0.5))
+                    .frame(width: 8, height: 8)
+                Text(deviceName)
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    @ViewBuilder
+    private var topHeader: some View {
+        #if os(macOS)
+        macOSTopHeader
+        #elseif os(iOS)
+        iOSDeviceNameHeader
+        #elseif os(visionOS)
+        visionOSKeyboardHeader
+        #endif
+    }
+
+    private func openMessages() {
+#if os(macOS)
+        openWindow(id: "messages")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            NSApp.forceFront("messages")
+        }
+#else
+        appDelegate.navigationPath.openMessages()
+#endif
+    }
+
+    @ViewBuilder
+    private var banners: some View {
+        if !hideUIForKeyboardEntry {
+            // Suppress the unread-developer-message banner under
+            // screenshot tests — it's data-driven by an untrusted
+            // count from the testing data fixture and clutters
+            // marketing captures.
+            if unreadMessages > 0 && !inScreenshotTestingContext() {
+                // swiftlint:disable:next line_length
+                NotificationBanner(message: String(localized: "The developer chatted you back", comment: "Notification indicator that there was is message response waiting to be read"), onClick: openMessages, level: .info)
+            }
+            NetworkConnectivityBanner()
+        }
+    }
+
+    private var directionalBody: some View {
+        Group {
+            if isHorizontal {
+                horizontalBody()
+            } else {
+                verticalBody()
+            }
+        }
+        .disabled(selectedDevice == nil)
+        .font(.title2)
+        .fontDesign(.rounded)
+        .controlSize(.extraLarge)
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.roundedRectangle)
+        .labelStyle(.iconOnly)
+    }
+
+    private var isHorizontalDetector: some View {
+        Color.clear
+            .overlay(
+                GeometryReader { proxy in
+                    let isHorizontal = proxy.size.width > proxy.size.height
+                    Color.clear.preference(key: IsHorizontalKey.self, value: isHorizontal)
+                }
+            )
+            .onPreferenceChange(IsHorizontalKey.self) { value in
+                handleIsHorizontalChange(value)
+            }
+    }
+
+    private var mainColumn: some View {
+        VStack(alignment: .center, spacing: 0) {
+            topHeader
+            directionalBody
+            banners
+#if !os(macOS)
+            if showKeyboardEntry {
+                Spacer()
+            }
+#endif
         }
     }
 
     var remotePage: some View {
         ZStack {
-            Color.clear
-                .overlay(
-                    GeometryReader { proxy in
-                        let isHorizontal = proxy.size.width > proxy.size.height
-
-                        Color.clear.preference(key: IsHorizontalKey.self, value: isHorizontal)
-                    }
-                )
-                .onPreferenceChange(IsHorizontalKey.self) { value in
-                    DispatchQueue.main.async {
-                        withAnimation {
-                            Log.userInteraction.notice("IsHorizontalKey changed to \(value, privacy: .public)")
-                            controlledIsHorizontal = value
-                            windowWasLastHorizontal = value
-                        }
-                    }
-                }
+            isHorizontalDetector
 
             HStack(alignment: .top) {
                 Spacer()
-                VStack(alignment: .center, spacing: 0) {
-                    #if os(macOS)
-                    HStack(alignment: .center) {
-                        Spacer()
-
-                        DevicePicker(
-                            device: selectedDevice,
-                            ecpSessionState: ecpSessionState,
-                            showScanning: true
-                        )
-                        .buttonStyle(PaddedBorderlessButtonStyleWithChevron())
-                        .menuStyle(.button)
-                        .controlSize(.extraLarge)
-                        .glowing(enabled: selectedDevice == nil)
-                        .hoverHighlight(enabled: selectedDevice != nil)
-
-                        if isInMenuBar {
-                            Button(action: {
-                                openWindow(id: "main")
-                                dismiss()
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                    NSApp.forceFront("main")
-                                }
-                            }, label: {
-                                Label("Open main window", systemImage: "macwindow.on.rectangle")
-                                    .labelStyle(.iconOnly)
-                            })
-                            .buttonStyle(PaddedBorderlessButtonStyle())
-                            .menuStyle(.button)
-                            .controlSize(.extraLarge)
-                            .hoverHighlight(enabled: true)
-                        }
-
-                        Spacer()
-                    }
-                    #elseif os(iOS)
-                    if let deviceName = selectedDevice?.name, !hideUIForKeyboardEntry {
-                        Text(deviceName)
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                            .frame(maxWidth: .infinity)
-                            .padding(.bottom, 20)
-                    }
-                    #elseif os(visionOS)
-                    if !hidesKeyboardToolbarButton {
-                    HStack(alignment: .center) {
-                        Button(action: {
-                            keyboardLeaving = showKeyboardEntry
-                            withAnimation {
-                                showKeyboardEntryManual = !showKeyboardEntry
-                            }
-                        }, label: {
-                            Label(String(localized: "Keyboard", comment: "Label on a button to open the keyboard"), systemImage: "keyboard")
-                        })
-                        .accessibilityIdentifier("KeyboardButton")
-                        .focusable(true, interactions: [.activate, .edit])
-                        .focused($focusKeyboardMonitor, equals: .monitor)
-                        .onKeyPress { ke in
-                            for shortcut in allKeyboardShortcuts {
-                                if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
-                                    let title = shortcut.title
-                                    Log.headphones.notice("Not handling key press because found shortcut with title \(title, privacy: .public)")
-                                    if let rb = title.matchingRemoteButton {
-                                        pressButton(rb)
-                                        return .handled
-                                    }
-
-                                    if title == .chatWithDeveloper {
-                                        appDelegate.navigationPath.openMessages()
-                                    } else
-                                    if title == .keyboardShortcuts {
-                                        appDelegate.navigationPath.openKeyboardShortcuts()
-                                    } else {
-                                        Log.userInteraction.warning("Unknown function for keyboard shortcut \(title, privacy: .public)")
-                                    }
-
-                                    return .handled
-                                }
-                            }
-
-                            pressKey(ke.key, modifiers: ke.modifiers)
-                            return .handled
-                        }
-                        .controlSize(.large)
-                        .font(.headline)
-                        .labelStyle(.iconOnly)
-                        .buttonStyle(.borderless)
-                        .disabled(selectedDevice == nil)
-
-                        Spacer()
-                    }
-                    }
-                    #endif
-
-                    if isHorizontal {
-                        horizontalBody()
-                            .disabled(selectedDevice == nil)
-                            .font(.title2)
-                            .fontDesign(.rounded)
-                            .controlSize(.extraLarge)
-                            .buttonStyle(.bordered)
-                            .buttonBorderShape(.roundedRectangle)
-                            .labelStyle(.iconOnly)
-                    } else {
-                        verticalBody()
-                            .disabled(selectedDevice == nil)
-                            .font(.title2)
-                            .fontDesign(.rounded)
-                            .controlSize(.extraLarge)
-                            .buttonStyle(.bordered)
-                            .buttonBorderShape(.roundedRectangle)
-                            .labelStyle(.iconOnly)
-                    }
-
-                    if !hideUIForKeyboardEntry {
-                        // Suppress the unread-developer-message banner under
-                        // screenshot tests — it's data-driven by an untrusted
-                        // count from the testing data fixture and clutters
-                        // marketing captures.
-                        if unreadMessages > 0 && !inScreenshotTestingContext() {
-                            // swiftlint:disable:next line_length
-                            NotificationBanner(message: String(localized: "The developer chatted you back", comment: "Notification indicator that there was is message response waiting to be read"), onClick: {
-#if os(macOS)
-                                openWindow(id: "messages")
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                    NSApp.forceFront("messages")
-                                }
-#else
-                                appDelegate.navigationPath.openMessages()
-#endif
-                            }, level: .info)
-                        }
-                        NetworkConnectivityBanner()
-                    }
-
-#if !os(macOS)
-                    if showKeyboardEntry {
-                        Spacer()
-                    }
-            #endif
-                }
+                mainColumn
                 #if os(macOS)
                 .fixedSize(horizontal: false, vertical: true)
                 #else
@@ -531,70 +787,7 @@ struct RemoteViewContained: View {
             .frame(maxHeight: .infinity)
             #endif
             #if !os(macOS)
-            .overlay {
-                #if os(iOS)
-                    if controlVolumeWithHWButtons && !headphonesModeEnabled {
-                        CustomVolumeSliderOverlay(volume: $volume) { volumeEvent in
-                            let key: RemoteButton = switch volumeEvent.direction {
-                            case .up:
-                                .volumeUp
-                            case .down:
-                                .volumeDown
-                            }
-                            Log.connection.notice(
-                                "Pressing button \(String(describing: key), privacy: .public) with volume \(volume, privacy: .public) after volume event \(String(describing: volumeEvent), privacy: .public)"
-                            )
-                            pressButton(key)
-                        }
-                            .id("VolumeOverlay")
-                            .frame(maxWidth: 1)
-                    }
-                #endif
-
-                if showKeyboardEntry {
-                    GeometryReader { proxy in
-                        ScrollView {
-                            VStack {
-                                Button(action: {
-                                    keyboardLeaving = true
-                                    withAnimation {
-                                        showKeyboardEntryManual = false
-                                    }
-                                }, label: {
-                                    ZStack {
-                                        Rectangle().foregroundColor(.clear)
-                                        VStack {
-                                            Spacer()
-                                        }
-                                    }.contentShape(Rectangle())
-                                })
-                                .frame(maxHeight: .infinity)
-                                .buttonStyle(.plain)
-
-                                KeyboardEntry(
-                                    showing: Binding<Bool>(get: {
-                                        showKeyboardEntry
-                                    }, set: { newVal in
-                                        showKeyboardEntryManual = newVal
-                                    }),
-                                    onKeyPress: { char async in
-                                        await self.pressKeyAsync(char, modifiers: EventModifiers())
-                                    },
-                                    leaving: keyboardLeaving
-                                )
-                                .focused($focusKeyboardMonitor, equals: .entry)
-                                .padding(.bottom, 10)
-                                .padding(.horizontal, 10)
-                                .zIndex(1)
-                            }.frame(maxWidth: .infinity, minHeight: proxy.size.height)
-                        }
-                        .scrollIndicators(.never)
-                        #if !os(visionOS)
-                            .scrollDismissesKeyboard(.immediately)
-                        #endif
-                    }
-                }
-            }
+            .overlay { mobileOverlays }
             #endif
             #if os(macOS)
             .padding(.horizontal, 6)
@@ -621,93 +814,16 @@ struct RemoteViewContained: View {
             #if os(macOS)
             .padding(.bottom, 6)
             #elseif os(iOS)
-            .padding(.bottom, UIDevice.current.userInterfaceIdiom == .phone ? -16 : 10)
+            .padding(.bottom, UIDevice.current.userInterfaceIdiom == .phone ? -32 : 10)
             #else
             .padding(.bottom, 10)
             #endif
 #if !os(visionOS) && !os(macOS)
             .toolbar(id: "remote") {
                 if !hidesKeyboardToolbarButton {
-                ToolbarItem(id: "keyboard", placement: .topBarLeading) {
-                        Button(action: {
-                            keyboardLeaving = showKeyboardEntry
-                            withAnimation {
-                                showKeyboardEntryManual = !showKeyboardEntry
-                            }
-                        }, label: {
-                            Label(String(localized: "Keyboard", comment: "Label on a button to open the keyboard"), systemImage: "keyboard")
-                        })
-                    .accessibilityIdentifier("KeyboardButton")
-                    .focusable(true, interactions: [.activate, .edit])
-                    .focused($focusKeyboardMonitor, equals: .monitor)
-                    .onKeyPress { ke in
-                        for shortcut in allKeyboardShortcuts {
-                            if shortcut.key == ke.key && shortcut.modifiers == ke.modifiers {
-                                let title = shortcut.title
-                                Log.userInteraction.notice("Not handling key press because found shortcut with title \(title, privacy: .public)")
-                                if let rb = title.matchingRemoteButton {
-                                    pressButton(rb)
-                                    return .handled
-                                }
-
-                                if title == .chatWithDeveloper{
-                                    appDelegate.navigationPath.openMessages()
-                                } else if title == .keyboardShortcuts {
-                                    appDelegate.navigationPath.openKeyboardShortcuts()
-                                } else if title == .copy {
-                                    if let text = ecpSessionState.textEditStatus.text {
-                                        UIPasteboard.general.string = text
-                                    }
-                                } else if title == .cut {
-                                    if let text = ecpSessionState.textEditStatus.text {
-                                        UIPasteboard.general.string = text
-                                    }
-
-                                    if let id = ecpSessionState.textEditStatus.texteditId {
-                                        Task {
-                                            do {
-                                                try await ecpSession?.setTextEdit("", texteditId: id)
-                                            } catch {
-                                                Log.userInteraction.error("Error cutting text: \(error, privacy: .public)")
-                                            }
-                                        }
-                                    }
-                                } else if title == .paste {
-                                    Log.userInteraction.notice("Trying to paste: \(#fileID, privacy: .public)")
-                                    if let id = ecpSessionState.textEditStatus.texteditId, UIPasteboard.general.hasStrings {
-                                        if let text = UIPasteboard.general.string {
-                                            Log.userInteraction.notice("Trying to paste \(text, privacy: .public)")
-                                            Task {
-                                                do {
-                                                    try await ecpSession?.setTextEdit(text, texteditId: id)
-                                                } catch {
-                                                    Log.userInteraction.error("Error cutting text: \(error, privacy: .public)")
-                                                }
-                                            }
-                                        } else {
-                                            Log.userInteraction.warning("No text to paste: \(#fileID, privacy: .public)")
-                                        }
-                                    } else {
-                                        Log.userInteraction.notice("Not pasting due to empty textedit id (\(ecpSessionState.textEditStatus.texteditId ?? "none", privacy: .public)) or false UI pasteboard hasStrings (\(UIPasteboard.general.hasStrings), privacy: .public)")
-                                    }
-                                } else {
-                                    Log.userInteraction.warning("Unknown function for keyboard shortcut \(title, privacy: .public)")
-                                }
-
-                                return .handled
-                            }
-                        }
-
-                        pressKey(ke.key, modifiers: ke.modifiers)
-                        return .handled
+                    ToolbarItem(id: "keyboard", placement: .topBarLeading) {
+                        toolbarKeyboardButton
                     }
-                    .controlSize(.large)
-                    .font(.headline)
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.borderless)
-                    .disabled(selectedDevice == nil)
-                    .font(.headline)
-                }
                 }
             }
 #endif

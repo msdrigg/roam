@@ -1,33 +1,4 @@
 import SwiftUI
-#if os(iOS)
-import UIKit
-#endif
-
-#if os(iOS)
-private struct DisableEnclosingScrollBounce: UIViewRepresentable {
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView()
-        view.isUserInteractionEnabled = false
-        view.backgroundColor = .clear
-        return view
-    }
-
-    func updateUIView(_ uiView: UIView, context: Context) {
-        DispatchQueue.main.async {
-            var ancestor: UIView? = uiView.superview
-            while let v = ancestor {
-                if let scroll = v as? UIScrollView {
-                    scroll.bounces = false
-                    scroll.alwaysBounceHorizontal = false
-                    scroll.alwaysBounceVertical = false
-                    return
-                }
-                ancestor = v.superview
-            }
-        }
-    }
-}
-#endif
 
 #if os(visionOS)
     let globalGridWidth: CGFloat = 100
@@ -141,13 +112,18 @@ struct AppLinksView: View {
 #if os(macOS)
                     .captureVerticalScrollWheel()
 #endif
-#if os(iOS)
-                    .background(DisableEnclosingScrollBounce())
-#endif
                     Spacer()
                 }
                 .scrollClipDisabled()
                 .safeAreaPadding(.horizontal, 4)
+#if os(iOS)
+                // Claim horizontal drags inside this ScrollView so the
+                // enclosing paging TabView doesn't steal them at content
+                // edges. Bouncing/overscroll on the inner stays default.
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 1)
+                )
+#endif
             }
         }
             .onChange(of: deviceId) { _, newDeviceId in

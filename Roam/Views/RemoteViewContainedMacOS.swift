@@ -85,6 +85,10 @@
             !(selectedDevice?.supportsDatagram ?? true)
         }
 
+        private var isDeviceOnline: Bool {
+            selectedDevice?.isOnline() ?? false || inScreenshotTestingContext()
+        }
+
         private var noVolumeControls: Bool {
             selectedDevice?.supportsAudioSettings == false
         }
@@ -464,11 +468,34 @@
             }
         }
 
+        @ViewBuilder
+        private var deviceTitleHeader: some View {
+            if let deviceName = selectedDevice?.name {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(isDeviceOnline ? Color.green : Color.secondary.opacity(0.5))
+                        .frame(width: 8, height: 8)
+                    Text(deviceName)
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
+
         private var remoteDetail: some View {
             ZStack {
                 Color.clear
 
                 VStack(spacing: 0) {
+                    if !isInMenuBar {
+                        deviceTitleHeader
+                            .padding(.top, 12)
+                            .padding(.bottom, 4)
+                    }
+
                     Spacer(minLength: 0)
 
                     remoteControls
@@ -772,6 +799,10 @@
         let selectedDevice: Device?
         let selection: Binding<String?>
 
+        private var isOnline: Bool {
+            selectedDevice?.isOnline() ?? false || inScreenshotTestingContext()
+        }
+
         var body: some View {
             Menu {
                 ForEach(deviceIds, id: \.self) { deviceId in
@@ -780,7 +811,12 @@
                     }
                 }
             } label: {
-                Text(selectedDevice?.name ?? "Device")
+                (Text(Image(systemName: "circle.fill"))
+                    .foregroundStyle(isOnline ? Color.green : Color.secondary.opacity(0.5))
+                    .font(.system(size: 8))
+                    .baselineOffset(2)
+                + Text("  ")
+                + Text(selectedDevice?.name ?? "Device"))
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .frame(maxWidth: 140, alignment: .leading)

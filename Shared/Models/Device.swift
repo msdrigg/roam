@@ -191,47 +191,50 @@ public struct Device: AppEntity, Equatable, Identifiable, Hashable, Codable {
         return Date().timeIntervalSince(lastOnlineAt) < 60
     }
 
-    // Explicit Equatable — the synthesized version takes 130-176ms to
-    // type-check across all three targets because of the field count.
+    // Explicit Equatable — broken into independent guard statements rather
+    // than a flat `&&` chain. The synthesized version was 130-176ms; a flat
+    // chain of 38 comparisons was 505ms; per-statement guards type-check
+    // each comparison independently.
     public static func == (lhs: Device, rhs: Device) -> Bool {
-        return lhs.name == rhs.name
-            && lhs.location == rhs.location
-            && lhs.udn == rhs.udn
-            && lhs.serial == rhs.serial
-            && lhs.lastSentToWatch == rhs.lastSentToWatch
-            && lhs.lastSelectedAt == rhs.lastSelectedAt
-            && lhs.lastSyncAt == rhs.lastSyncAt
-            && lhs.lastOnlineAt == rhs.lastOnlineAt
-            && lhs.lastScannedAt == rhs.lastScannedAt
-            && lhs.hiddenAt == rhs.hiddenAt
-            && lhs.powerMode == rhs.powerMode
-            && lhs.networkType == rhs.networkType
-            && lhs.wifiMAC == rhs.wifiMAC
-            && lhs.ethernetMAC == rhs.ethernetMAC
-            && lhs.rtcpPort == rhs.rtcpPort
-            && lhs.supportsDatagram == rhs.supportsDatagram
-            && lhs.iconHash == rhs.iconHash
-            && lhs.vendorName == rhs.vendorName
-            && lhs.modelName == rhs.modelName
-            && lhs.modelNumber == rhs.modelNumber
-            && lhs.modelRegion == rhs.modelRegion
-            && lhs.friendlyModelName == rhs.friendlyModelName
-            && lhs.isTV == rhs.isTV
-            && lhs.isStick == rhs.isStick
-            && lhs.isPoweredByTV == rhs.isPoweredByTV
-            && lhs.uiResolution == rhs.uiResolution
-            && lhs.softwareVersion == rhs.softwareVersion
-            && lhs.buildNumber == rhs.buildNumber
-            && lhs.supportsAudioSettings == rhs.supportsAudioSettings
-            && lhs.supportsPrivateListening == rhs.supportsPrivateListening
-            && lhs.supportsFindRemote == rhs.supportsFindRemote
-            && lhs.supportsSuspend == rhs.supportsSuspend
-            && lhs.supportsAirplay == rhs.supportsAirplay
-            && lhs.supportsEthernet == rhs.supportsEthernet
-            && lhs.supportsWakeOnWlan == rhs.supportsWakeOnWlan
-            && lhs.headphonesConnected == rhs.headphonesConnected
-            && lhs.country == rhs.country
-            && lhs.timeZone == rhs.timeZone
+        guard lhs.name == rhs.name else { return false }
+        guard lhs.location == rhs.location else { return false }
+        guard lhs.udn == rhs.udn else { return false }
+        guard lhs.serial == rhs.serial else { return false }
+        guard lhs.lastSentToWatch == rhs.lastSentToWatch else { return false }
+        guard lhs.lastSelectedAt == rhs.lastSelectedAt else { return false }
+        guard lhs.lastSyncAt == rhs.lastSyncAt else { return false }
+        guard lhs.lastOnlineAt == rhs.lastOnlineAt else { return false }
+        guard lhs.lastScannedAt == rhs.lastScannedAt else { return false }
+        guard lhs.hiddenAt == rhs.hiddenAt else { return false }
+        guard lhs.powerMode == rhs.powerMode else { return false }
+        guard lhs.networkType == rhs.networkType else { return false }
+        guard lhs.wifiMAC == rhs.wifiMAC else { return false }
+        guard lhs.ethernetMAC == rhs.ethernetMAC else { return false }
+        guard lhs.rtcpPort == rhs.rtcpPort else { return false }
+        guard lhs.supportsDatagram == rhs.supportsDatagram else { return false }
+        guard lhs.iconHash == rhs.iconHash else { return false }
+        guard lhs.vendorName == rhs.vendorName else { return false }
+        guard lhs.modelName == rhs.modelName else { return false }
+        guard lhs.modelNumber == rhs.modelNumber else { return false }
+        guard lhs.modelRegion == rhs.modelRegion else { return false }
+        guard lhs.friendlyModelName == rhs.friendlyModelName else { return false }
+        guard lhs.isTV == rhs.isTV else { return false }
+        guard lhs.isStick == rhs.isStick else { return false }
+        guard lhs.isPoweredByTV == rhs.isPoweredByTV else { return false }
+        guard lhs.uiResolution == rhs.uiResolution else { return false }
+        guard lhs.softwareVersion == rhs.softwareVersion else { return false }
+        guard lhs.buildNumber == rhs.buildNumber else { return false }
+        guard lhs.supportsAudioSettings == rhs.supportsAudioSettings else { return false }
+        guard lhs.supportsPrivateListening == rhs.supportsPrivateListening else { return false }
+        guard lhs.supportsFindRemote == rhs.supportsFindRemote else { return false }
+        guard lhs.supportsSuspend == rhs.supportsSuspend else { return false }
+        guard lhs.supportsAirplay == rhs.supportsAirplay else { return false }
+        guard lhs.supportsEthernet == rhs.supportsEthernet else { return false }
+        guard lhs.supportsWakeOnWlan == rhs.supportsWakeOnWlan else { return false }
+        guard lhs.headphonesConnected == rhs.headphonesConnected else { return false }
+        guard lhs.country == rhs.country else { return false }
+        guard lhs.timeZone == rhs.timeZone else { return false }
+        return true
     }
 }
 
