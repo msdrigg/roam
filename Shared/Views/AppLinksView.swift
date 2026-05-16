@@ -1,5 +1,17 @@
 import SwiftUI
 
+/// Set to `true` while the apps row's horizontal `ScrollView` is in any
+/// non-idle phase (tracking/interacting/decelerating/animating). The
+/// enclosing pager observes this via `.onPreferenceChange` and applies
+/// `.scrollDisabled` so the user's drag inside the apps row can't bleed
+/// into a page swipe.
+struct AppsScrollingPreferenceKey: PreferenceKey {
+    static let defaultValue: Bool = false
+    static func reduce(value: inout Bool, nextValue: () -> Bool) {
+        value = value || nextValue()
+    }
+}
+
 #if os(visionOS)
     let globalGridWidth: CGFloat = 100
     let globalGridSpacing: CGFloat = 20
@@ -33,6 +45,7 @@ struct AppLinksView: View {
     // Remember whether the previous device had apps so we don't collapse the
     // grid back to zero height while a new device's apps are still loading.
     @State private var lastKnownHasApps: Bool = false
+    @State private var isInnerScrolling: Bool = false
 
     @ScaledMetric var gridWidth: CGFloat = globalGridWidth
     @ScaledMetric var gridSpacing: CGFloat = globalGridSpacing
@@ -116,14 +129,9 @@ struct AppLinksView: View {
                 }
                 .scrollClipDisabled()
                 .safeAreaPadding(.horizontal, 4)
-#if os(iOS)
-                // Claim horizontal drags inside this ScrollView so the
-                // enclosing paging TabView doesn't steal them at content
-                // edges. Bouncing/overscroll on the inner stays default.
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 1)
-                )
-#endif
+                .onScrollPhaseChange { _, newPhase in
+                    isInnerScrolling = newPhase != .idle
+                }
             }
         }
             .onChange(of: deviceId) { _, newDeviceId in
@@ -138,6 +146,7 @@ struct AppLinksView: View {
             .frame(height: totalGridHeight)
             .animation(.default, value: shouldShowApps)
             .fixedSize(horizontal: false, vertical: true)
+            .preference(key: AppsScrollingPreferenceKey.self, value: isInnerScrolling)
     }
 }
 

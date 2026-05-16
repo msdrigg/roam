@@ -35,34 +35,8 @@ struct PhoneHomeView: View {
                     comment: "Title of the iPhone home screen listing all devices"
                 ))
                 .navigationBarTitleDisplayMode(.large)
-                .toolbar {
-                    ToolbarItemGroup(placement: .bottomBar) {
-                        Button {
-                            appDelegate.navigationPath.showAddDevice = true
-                        } label: {
-                            Label(
-                                String(
-                                    localized: "Add a device manually",
-                                    comment: "Bottom-bar button on iPhone home to manually add a device"
-                                ),
-                                systemImage: "plus"
-                            )
-                            .labelStyle(.titleAndIcon)
-                        }
-                        .accessibilityIdentifier("AddDeviceButton")
-
-                        Spacer()
-
-                        Button {
-                            appDelegate.navigationPath.append(.settingsDestination(.global))
-                        } label: {
-                            Label(
-                                String(localized: "Settings", comment: "Bottom-bar button on iPhone home to open Settings"),
-                                systemImage: "gear"
-                            )
-                        }
-                        .accessibilityIdentifier("SettingsButton")
-                    }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    simulatedBottomBar
                 }
                 .navigationDestination(for: String.self) { deviceId in
                     detailDestination(for: deviceId)
@@ -86,6 +60,71 @@ struct PhoneHomeView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Simulated bottom bar
+    //
+    // A custom view in the bottom safe area replaces the native `.bottomBar`
+    // toolbar so the buttons can carry a real liquid-glass effect rather than
+    // the default toolbar chrome. Because the inset lives inside `content`,
+    // it naturally fades in alongside the `.navigationTransition(.zoom)`
+    // pop from `PhoneDeviceDetailPager` — we intentionally don't suppress
+    // that fade so the buttons settle in with the zoom.
+
+    private var simulatedBottomBar: some View {
+        VStack(spacing: 0) {
+            // Connectivity / permission warnings live above the bottom bar so
+            // they stay pinned in place while the device grid scrolls.
+            NetworkConnectivityBanner()
+                .padding(.horizontal, 16)
+                .padding(.bottom, 4)
+            bottomBarButtons
+        }
+    }
+
+    private var bottomBarButtons: some View {
+        HStack(spacing: 12) {
+            Button {
+                appDelegate.navigationPath.showAddDevice = true
+            } label: {
+                Label(
+                    String(
+                        localized: "Add device manually",
+                        comment: "Bottom-bar button on iPhone home to manually add a device"
+                    ),
+                    systemImage: "plus"
+                )
+                .labelStyle(.titleAndIcon)
+                .font(.subheadline.weight(.medium))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(.regularMaterial, in: Capsule())
+                .glassEffectIfSupported(tint: Color.accentColor.opacity(0.18), in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("AddDeviceButton")
+
+            Spacer()
+
+            Button {
+                appDelegate.navigationPath.append(.settingsDestination(.global))
+            } label: {
+                Image(systemName: "gear")
+                    .font(.title3)
+                    .frame(width: 44, height: 44)
+                    .background(.regularMaterial, in: Circle())
+                    .glassEffectIfSupported(tint: Color.accentColor.opacity(0.18), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("SettingsButton")
+            .accessibilityLabel(String(
+                localized: "Settings",
+                comment: "Bottom-bar button on iPhone home to open Settings"
+            ))
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 8)
+        .padding(.bottom, -10)
     }
 
     // MARK: - Content

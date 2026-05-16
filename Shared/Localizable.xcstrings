@@ -2663,7 +2663,7 @@
       }
     },
     "Add a device manually" : {
-      "comment" : "Bottom-bar button on iPhone home to manually add a device\nButton shown in the empty sidebar to manually add a device\nLabel on a button to add a device\nLabel on a button to open the device setup page",
+      "comment" : "Button shown in the empty sidebar to manually add a device\nLabel on a button to add a device\nLabel on a button to open the device setup page",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2996,6 +2996,9 @@
           }
         }
       }
+    },
+    "Add device manually" : {
+      "comment" : "Bottom-bar button on iPhone home to manually add a device"
     },
     "Added device successfully" : {
       "localizations" : {

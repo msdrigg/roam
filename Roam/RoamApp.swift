@@ -314,6 +314,11 @@ struct RoamApp: App {
                         )
                         .frame(minWidth: 400, minHeight: 950)
                     #endif
+                    #if os(iOS)
+                        .task {
+                            applyForceOrientationIfRequested()
+                        }
+                    #endif
                     .onReceive(
                         NotificationCenter.default.publisher(
                             for: UIApplication.willTerminateNotification)
@@ -428,6 +433,36 @@ struct RoamApp: App {
             return 1500
         }
     }
+
+    #if os(iOS)
+    @MainActor
+    private func applyForceOrientationIfRequested() {
+        let args = CommandLine.arguments
+        let mask: UIInterfaceOrientationMask
+        if args.contains("-ForceLandscapeLeft") {
+            mask = .landscapeLeft
+        } else if args.contains("-ForceLandscapeRight") {
+            mask = .landscapeRight
+        } else if args.contains("-ForceLandscape") {
+            mask = .landscape
+        } else if args.contains("-ForcePortrait") {
+            mask = .portrait
+        } else {
+            return
+        }
+        // Xcode 26 iOS sim ignores XCUIDevice.shared.orientation when used from
+        // UI tests — the canvas rotates but the app's scene geometry doesn't
+        // follow. Drive the rotation app-side via requestGeometryUpdate so the
+        // app's window relayouts even when XCTest's orientation handling is
+        // broken. Used only under screenshot testing launch args.
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return
+        }
+        scene.requestGeometryUpdate(.iOS(interfaceOrientations: mask)) { error in
+            Log.lifecycle.error("requestGeometryUpdate failed: \(error, privacy: .public)")
+        }
+    }
+    #endif
 
     var macOSWidth: CGFloat {
         return 760

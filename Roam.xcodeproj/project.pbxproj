@@ -312,6 +312,8 @@
 		AFFC720000000000000000D2 /* DeviceSplitRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFC720000000000000000D1 /* DeviceSplitRoot.swift */; };
 		AFFC720000000000000000E2 /* PhoneHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFC720000000000000000E1 /* PhoneHomeView.swift */; };
 		AFFC720000000000000000F2 /* PhoneDeviceDetailPager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFC720000000000000000F1 /* PhoneDeviceDetailPager.swift */; };
+		DC1C00010000000000000002 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = DC1C00010000000000000001 /* AppIcon.icon */; };
+		DC1C00010000000000000003 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = DC1C00010000000000000001 /* AppIcon.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -595,6 +597,7 @@
 		AFFC720000000000000000D1 /* DeviceSplitRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSplitRoot.swift; sourceTree = "<group>"; };
 		AFFC720000000000000000E1 /* PhoneHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneHomeView.swift; sourceTree = "<group>"; };
 		AFFC720000000000000000F1 /* PhoneDeviceDetailPager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneDeviceDetailPager.swift; sourceTree = "<group>"; };
+		DC1C00010000000000000001 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = "folder.iconcomposer.icon"; name = "AppIcon.icon"; path = "AppIcons/AppIcon.icon"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -923,6 +926,7 @@
 				AF6520872BCE55E200B69BE8 /* Vars.xcconfig */,
 				AF9FC8232B9F9C9500109268 /* scripts */,
 				AFA165C32AE93FE1003F45ED /* AppIcons */,
+				DC1C00010000000000000001 /* AppIcon.icon */,
 				AF95B6F62ADF2F9F005FC338 /* README.md */,
 				AFEEF2932E2462F900C0A445 /* LICENSE.txt */,
 				AFA68FE02BD063DD005A102E /* External */,
@@ -1252,6 +1256,7 @@
 				AFC4A6582AE867A3005DAC6C /* AppIcon.xcassets in Resources */,
 				AF94AEF42C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */,
 				AF0C82892AEB463300CBE7F8 /* AccentColor.xcassets in Resources */,
+				DC1C00010000000000000003 /* AppIcon.icon in Resources */,
 			);
 		};
 		AF2740092AE02C25007C6208 /* Resources */ = {
@@ -1282,6 +1287,7 @@
 				AF0C82882AEB44C000CBE7F8 /* AccentColor.xcassets in Resources */,
 				AF94AEF32C0BEA8200D8D7CF /* Localizable.xcstrings in Resources */,
 				AFC24F052AD0E5A2002AB66C /* AppIcon.xcassets in Resources */,
+				DC1C00010000000000000002 /* AppIcon.icon in Resources */,
 			);
 		};
 		AFEDCDF22CD1331E0001D959 /* Resources */ = {

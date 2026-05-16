@@ -42,27 +42,32 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         app.launchArguments += ["-DataLoadTestingData"]
         app.launchArguments += ["-ScreenshotTesting"]
 
-        // Capture LandscapePrimary first, by setting orientation BEFORE launch.
-        // iPad in Xcode 26 doesn't reliably re-layout when the orientation
-        // changes mid-session — the canvas swaps to landscape dims but the
-        // app's view stays portrait, producing a sideways-rotated capture.
-        // Setting orientation pre-launch makes the app come up in landscape
-        // from the start so the layout is correct.
-        XCUIDevice.shared.orientation = .landscapeLeft
-        try await Task.sleep(nanoseconds: 1_000_000_000)
+        // Xcode 26 iOS sim ignores XCUIDevice.shared.orientation — the canvas
+        // swaps to landscape dims but the app's scene geometry doesn't follow,
+        // producing a landscape-canvas capture with portrait content in the
+        // upper-left third. Work around it by passing -ForceLandscapeLeft as
+        // a launch arg; RoamApp's iOS WindowGroup honors it and drives the
+        // rotation app-side via UIWindowScene.requestGeometryUpdate. Use
+        // XCUIScreen.main.screenshot() (not app.screenshot()) so we capture
+        // the actual rendered screen — app.screenshot() in Xcode 26 returns
+        // a landscape canvas with the unrotated portrait framebuffer pasted
+        // into it.
+        var landscapeArgs = app.launchArguments
+        landscapeArgs.append("-ForceLandscapeLeft")
+        app.launchArguments = landscapeArgs
         app.launch()
         try await Task.sleep(nanoseconds: 3_000_000_000)
 
-        let landscapeModeAttachment = XCTAttachment(screenshot: app.screenshot())
+        let landscapeModeAttachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         landscapeModeAttachment.lifetime = .keepAlways
         landscapeModeAttachment.name = "\(locale.identifier)/3/LandscapePrimary"
         add(landscapeModeAttachment)
 
-        // Now back to portrait for the rest of the captures. Terminate +
-        // relaunch ensures the app picks up the new orientation.
+        // Now back to portrait for the rest of the captures. Drop the
+        // -ForceLandscapeLeft arg and relaunch.
         app.terminate()
-        XCUIDevice.shared.orientation = .portrait
-        try await Task.sleep(nanoseconds: 1_000_000_000)
+        app.launchArguments = app.launchArguments.filter { $0 != "-ForceLandscapeLeft" }
+        try await Task.sleep(nanoseconds: 500_000_000)
         app.launch()
         try await Task.sleep(nanoseconds: 2_000_000_000)
 

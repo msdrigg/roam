@@ -507,6 +507,12 @@ DISPLAY_TYPE_DIMENSIONS: dict[str, list[tuple[int, int]]] = {
     # Accepts both the iPhone 14/15 Pro Max dims and the iPhone 16/17 Pro Max
     # dims, in portrait or landscape.
     "APP_IPHONE_67": [(1290, 2796), (2796, 1290), (1320, 2868), (2868, 1320)],
+    # Legacy 6.5" iPhone slot (XS Max / 11 Pro Max). Apple keeps this slot
+    # available even after introducing 6.7"/6.9". A plain iPhone 11 sim
+    # produces 828x1792 (6.1" dims) which does NOT match — the matching
+    # simulator is "iPhone 11 Pro Max" (1242x2688). The 12-15 Pro Max sims
+    # render at 1284x2778, also accepted here.
+    "APP_IPHONE_65": [(1242, 2688), (2688, 1242), (1284, 2778), (2778, 1284)],
     # 12.9"/13" iPad Pro slot — Apple accepts both the legacy 12.9" dims and
     # the 13" M4's native render.
     "APP_IPAD_PRO_3GEN_129": [(2048, 2732), (2732, 2048), (2064, 2752), (2752, 2064)],
@@ -728,6 +734,7 @@ class MetadataManager:
         devices = {
             Platform.iOS: [
                 ScreenshotSource(device="iPhone 17 Pro Max", size="6.9"),
+                ScreenshotSource(device="iPhone 11", size="6.5"),
                 ScreenshotSource(device="iPad Pro 13-inch (M4)", size="13"),
                 ScreenshotSource(device="Apple Watch Series 11 (46mm)", size="Watch46"),
             ],
@@ -1067,6 +1074,72 @@ class MetadataManager:
                                     f"sim rotation bug"
                                 )
 
+        # iPhone test uses -ForceLandscapeLeft + UIWindowScene.requestGeometryUpdate
+        # to render the app in landscape, then captures via XCUIScreen.main
+        # .screenshot() which writes the device-native framebuffer (always
+        # portrait pixel dims, e.g. 1320x2868). The landscape-rendered content
+        # appears rotated 90° within that portrait frame. Rotate 90° CW to
+        # produce a properly oriented 2868x1320 landscape image that
+        # APP_IPHONE_69 accepts.
+        if "iPhone" in device_name:
+            for root, _, files in os.walk(screenshots_dir_export):
+                for fname in files:
+                    if "LandscapePrimary" in fname and fname.lower().endswith(".png"):
+                        fpath = os.path.join(root, fname)
+                        dims = _read_png_dimensions(fpath)
+                        if dims is not None and dims[1] > dims[0]:
+                            rot = subprocess.run(
+                                ["sips", "--rotate", "90", fpath, "--out", fpath],
+                                capture_output=True,
+                            )
+                            if rot.returncode == 0:
+                                print(
+                                    f"Rotated iPhone LandscapePrimary 90° "
+                                    f"({device_name}/{locale_id}) to fix iOS "
+                                    f"sim rotation bug"
+                                )
+
+        # iPhone 11 sim renders at 828x1792 (6.1" dims), but we want the
+        # captures in the APP_IPHONE_65 (6.5") slot — Apple requires 1242x2688.
+        # The aspect ratio is identical (1.5x in both axes), so a uniform sips
+        # upscale produces a slightly soft but ASC-acceptable image. If a
+        # genuine 6.5" sim (e.g. "iPhone 11 Pro Max") is installed and added
+        # below, this branch becomes a no-op since dims already match.
+        if device_name == "iPhone 11":
+            for root, _, files in os.walk(screenshots_dir_export):
+                for fname in files:
+                    if not fname.lower().endswith(".png"):
+                        continue
+                    fpath = os.path.join(root, fname)
+                    dims = _read_png_dimensions(fpath)
+                    if dims is None:
+                        continue
+                    target = None
+                    if dims == (828, 1792):
+                        target = (1242, 2688)
+                    elif dims == (1792, 828):
+                        target = (2688, 1242)
+                    if target is None:
+                        continue
+                    resample = subprocess.run(
+                        [
+                            "sips",
+                            "--resampleHeightWidth", str(target[1]), str(target[0]),
+                            fpath, "--out", fpath,
+                        ],
+                        capture_output=True,
+                    )
+                    if resample.returncode == 0:
+                        print(
+                            f"Upscaled iPhone 11 capture {dims[0]}x{dims[1]} → "
+                            f"{target[0]}x{target[1]} ({fname}) for APP_IPHONE_65"
+                        )
+                    else:
+                        print(
+                            f"  Warning: sips upscale failed for {fpath}: "
+                            f"{resample.stderr.decode('utf-8', errors='replace')}"
+                        )
+
         return screenshots_dir_export
 
 
@@ -1159,6 +1232,7 @@ async def main():
         display_type_mapping = {
             # iOS
             "6.9": "APP_IPHONE_67",  # 6.9" Pro Max uploads to ASC's 6.7" slot
+            "6.5": "APP_IPHONE_65",  # legacy 6.5" slot (XS Max / 11 Pro Max)
             "13": "APP_IPAD_PRO_3GEN_129",  # iPad Pro 12.9" slot (accepts 13")
             # watchOS
             "Watch46": "APP_WATCH_SERIES_10",  # Series 10/11 (46mm)

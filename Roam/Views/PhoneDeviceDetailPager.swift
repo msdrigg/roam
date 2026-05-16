@@ -24,6 +24,13 @@ struct PhoneDeviceDetailPager: View {
     @State private var selectedDeviceId: String
     @State private var showKeyboard: Bool = false
     @State private var isInteractivelyPopping: Bool = false
+    @State private var isAppsScrolling: Bool = false
+    @State private var lastPagerWidth: CGFloat = 0
+    // The ScrollView's `.scrollPosition` binding. Held separately from
+    // `selectedDeviceId` so we can briefly drive it to `nil` and back on
+    // width changes to force a re-snap to the current page (otherwise
+    // rotation leaves the page half-scrolled at the old pixel offset).
+    @State private var scrollPositionId: String?
 
     init(
         startingDeviceId: String,
@@ -36,31 +43,72 @@ struct PhoneDeviceDetailPager: View {
         self.unreadMessages = unreadMessages
         self.onBackToHome = onBackToHome
         _selectedDeviceId = State(initialValue: startingDeviceId)
+        _scrollPositionId = State(initialValue: startingDeviceId)
     }
 
     var body: some View {
-        TabView(selection: $selectedDeviceId) {
-            ForEach(allDeviceIds, id: \.self) { deviceId in
-                PhoneDetailPage(
-                    deviceId: deviceId,
-                    unreadMessages: unreadMessages,
-                    externalShowKeyboard: $showKeyboard
-                )
-                .tag(deviceId)
+        ScrollView(.horizontal) {
+            LazyHStack(spacing: 0) {
+                ForEach(allDeviceIds, id: \.self) { deviceId in
+                    PhoneDetailPage(
+                        deviceId: deviceId,
+                        unreadMessages: unreadMessages,
+                        isActive: deviceId == selectedDeviceId,
+                        externalShowKeyboard: $showKeyboard
+                    )
+                    .id(deviceId)
+                    .containerRelativeFrame(.horizontal)
+                }
+            }
+            .scrollTargetLayout()
+        }
+        .scrollIndicators(.hidden)
+        .scrollTargetBehavior(.paging)
+        .scrollPosition(id: $scrollPositionId)
+        .scrollDisabled(isAppsScrolling)
+        .onPreferenceChange(AppsScrollingPreferenceKey.self) { newValue in
+            isAppsScrolling = newValue
+        }
+        .onChange(of: scrollPositionId) { _, newValue in
+            if let newValue, newValue != selectedDeviceId {
+                selectedDeviceId = newValue
             }
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .ignoresSafeArea(.keyboard)
+        // When the layout width changes (typically on rotation), the paged
+        // ScrollView keeps its pixel offset, which leaves the current page
+        // half-scrolled. Drive the position to `nil` and then back to the
+        // selected device on the next runloop tick so the scroll view
+        // re-snaps cleanly.
+        .background(
+            GeometryReader { proxy in
+                Color.clear.preference(key: PagerWidthKey.self, value: proxy.size.width)
+            }
+        )
+        .onPreferenceChange(PagerWidthKey.self) { newWidth in
+            handleWidthChange(newWidth)
+        }
+        // When the keyboard-entry overlay's text field becomes first
+        // responder, let the system keyboard push the pager content up so
+        // the entry floats above the keyboard. Otherwise the keyboard
+        // would cover the field. While the keyboard is hidden, ignore its
+        // safe area so layout stays stable.
+        .ignoresSafeArea(.keyboard, edges: showKeyboard ? [] : .all)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            floatingButtonBar
-                .padding(.horizontal, 18)
-                .padding(.top, 8)
-                .padding(.bottom, -18)
-                // Without this, SwiftUI applies its default slow fade to the
-                // safeAreaInset content when the destination view appears
-                // via .navigationTransition(.zoom), which extends the
-                // perceived transition long after the zoom has finished.
-                .transaction { $0.animation = nil }
+            // Suppress the bottom button bar while the on-screen keyboard
+            // is up so it doesn't sit between the user and the keys; the
+            // tap-to-dismiss area inside `keyboardEntryOverlay` is enough
+            // to close the keyboard.
+            if !showKeyboard {
+                floatingButtonBar
+                    .padding(.horizontal, 18)
+                    .padding(.top, 8)
+                    .padding(.bottom, -10)
+                    // Without this, SwiftUI applies its default slow fade to the
+                    // safeAreaInset content when the destination view appears
+                    // via .navigationTransition(.zoom), which extends the
+                    // perceived transition long after the zoom has finished.
+                    .transaction { $0.animation = nil }
+            }
         }
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .bottomBar)
@@ -78,6 +126,22 @@ struct PhoneDeviceDetailPager: View {
                         "Error setting selected device from pager \(error, privacy: .public)")
                 }
             }
+        }
+    }
+
+    /// On a real width change (rotation, split-view resize) the paged
+    /// scroll view keeps its old pixel offset, which leaves the current
+    /// page half-scrolled. Drive the position binding through a one-tick
+    /// nil → selected re-snap to force a clean alignment.
+    private func handleWidthChange(_ newWidth: CGFloat) {
+        guard newWidth > 0 else { return }
+        let previousWidth = lastPagerWidth
+        lastPagerWidth = newWidth
+        guard previousWidth > 0, abs(newWidth - previousWidth) > 1 else { return }
+        let target = selectedDeviceId
+        scrollPositionId = nil
+        DispatchQueue.main.async {
+            scrollPositionId = target
         }
     }
 
@@ -130,8 +194,9 @@ struct PhoneDeviceDetailPager: View {
         } label: {
             Image(systemName: "keyboard")
                 .font(.title3)
-                .padding(12)
+                .frame(width: 44, height: 44)
                 .background(.regularMaterial, in: Circle())
+                .glassEffectIfSupported(tint: Color.accentColor.opacity(0.18), in: Circle())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("KeyboardButton")
@@ -147,8 +212,9 @@ struct PhoneDeviceDetailPager: View {
         } label: {
             Image(systemName: "square.grid.2x2")
                 .font(.title3)
-                .padding(12)
+                .frame(width: 44, height: 44)
                 .background(.regularMaterial, in: Circle())
+                .glassEffectIfSupported(tint: Color.accentColor.opacity(0.18), in: Circle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(String(
@@ -161,13 +227,15 @@ struct PhoneDeviceDetailPager: View {
 private struct PhoneDetailPage: View {
     let deviceId: String
     let unreadMessages: Int
+    let isActive: Bool
     @Binding var externalShowKeyboard: Bool
 
     @State private var deviceLoader: DeviceLoader
 
-    init(deviceId: String, unreadMessages: Int, externalShowKeyboard: Binding<Bool>) {
+    init(deviceId: String, unreadMessages: Int, isActive: Bool, externalShowKeyboard: Binding<Bool>) {
         self.deviceId = deviceId
         self.unreadMessages = unreadMessages
+        self.isActive = isActive
         self._externalShowKeyboard = externalShowKeyboard
         _deviceLoader = State(initialValue: DeviceLoader(deviceId: deviceId, dataHandler: .shared))
     }
@@ -177,8 +245,19 @@ private struct PhoneDetailPage: View {
             device: deviceLoader.device,
             unreadMessages: unreadMessages,
             externalShowKeyboard: $externalShowKeyboard,
-            hidesKeyboardToolbarButton: true
+            hidesKeyboardToolbarButton: true,
+            isActive: isActive
         )
+    }
+}
+
+/// Propagates the pager's current laid-out width up to the parent so it
+/// can detect rotation/resize and force the paged scroll view to re-snap
+/// to the current page.
+private struct PagerWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 

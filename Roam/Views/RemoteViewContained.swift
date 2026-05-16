@@ -38,6 +38,13 @@ struct RemoteViewContained: View {
     private let isInMenuBar: Bool
     private let externalShowKeyboard: Binding<Bool>?
     private let hidesKeyboardToolbarButton: Bool
+    private let isActive: Bool
+
+    // Tracks whether the heavier per-page content (volume overlay, app links)
+    // should be in the view tree at all. Stays in sync with `isActive`, but
+    // lags by the fade duration on the way out so the unmount happens after
+    // the opacity animation has played.
+    @State private var renderHeavyContent: Bool
 
     private var ecpSessionState: ECPMonitor {
         appDelegate.ecpMonitor
@@ -62,13 +69,16 @@ struct RemoteViewContained: View {
         unreadMessages: Int = 0,
         isInMenuBar: Bool = false,
         externalShowKeyboard: Binding<Bool>? = nil,
-        hidesKeyboardToolbarButton: Bool = false
+        hidesKeyboardToolbarButton: Bool = false,
+        isActive: Bool = true
     ) {
         self.device = device
         self.unreadMessages = unreadMessages
         self.isInMenuBar = isInMenuBar
         self.externalShowKeyboard = externalShowKeyboard
         self.hidesKeyboardToolbarButton = hidesKeyboardToolbarButton
+        self.isActive = isActive
+        self._renderHeavyContent = State(initialValue: isActive)
     }
 
     var headphonesModeDisabled: Bool {
@@ -268,6 +278,20 @@ struct RemoteViewContained: View {
         }
     }
 
+    // When this page becomes inactive, fade-out happens via the opacity
+    // animation; we wait for it to finish, then drop the heavy content from
+    // the view tree. Becoming active flips it back on immediately.
+    private func activeStateTask() async {
+        if isActive {
+            renderHeavyContent = true
+        } else {
+            try? await Task.sleep(for: .milliseconds(250))
+            if !Task.isCancelled {
+                renderHeavyContent = false
+            }
+        }
+    }
+
     private func headphonesTask() async {
         if !headphonesModeEnabled {
             #if os(iOS)
@@ -362,6 +386,7 @@ struct RemoteViewContained: View {
             .task(id: selectedDevice?.id, priority: .medium) { await refreshDeviceBackoffTask() }
             .task(id: selectedDevice?.location, priority: .medium) { await ecpSessionLocationTask() }
             .task(id: headphonesTaskId) { await headphonesTask() }
+            .task(id: isActive) { await activeStateTask() }
             #if os(macOS)
             .onKeyDown({ key in pressKey(key.key, modifiers: key.modifiers) }, enabled: true)
             .onWindowFocused(perform: handleWindowFocused)
@@ -534,7 +559,10 @@ struct RemoteViewContained: View {
 
     @ViewBuilder
     private var volumeOverlay: some View {
-        if controlVolumeWithHWButtons && !headphonesModeEnabled {
+        // Gate on `isActive` so off-screen pager pages don't also install
+        // hardware volume button interceptors — only the visible page should
+        // be live.
+        if controlVolumeWithHWButtons && !headphonesModeEnabled && isActive {
             CustomVolumeSliderOverlay(volume: $volume, changeVolume: handleVolumeEvent)
                 .id("VolumeOverlay")
                 .frame(maxWidth: 1)
@@ -584,6 +612,7 @@ struct RemoteViewContained: View {
                             leaving: keyboardLeaving
                         )
                         .focused($focusKeyboardMonitor, equals: .entry)
+                        .frame(maxWidth: isHorizontal ? 480 : .infinity)
                         .padding(.bottom, 10)
                         .padding(.horizontal, 10)
                         .zIndex(1)
@@ -662,9 +691,19 @@ struct RemoteViewContained: View {
     @ViewBuilder
     private var iOSDeviceNameHeader: some View {
         if selectedDevice?.name != nil, !hideUIForKeyboardEntry {
+            if isHorizontal {
+                Spacer()
+            }
+
             deviceTitleHeader
                 .frame(maxWidth: .infinity)
-                .padding(.bottom, 14)
+            // In portrait, the trailing Spacer separates the device name
+            // from the body's TopBar. In landscape there's no headroom for
+            // it — keeping it competes with `horizontalBody`'s internal
+            // Spacers and pushes the title above the visible area.
+            if !isHorizontal {
+                Spacer()
+            }
         }
     }
     #endif
@@ -734,7 +773,16 @@ struct RemoteViewContained: View {
         .disabled(selectedDevice == nil)
         .font(.title2)
         .fontDesign(.rounded)
+        // On iOS, compact vertical (landscape iPhone) doesn't have the
+        // headroom for `.extraLarge` bordered buttons — the natural
+        // HStack height pushes the device-name header off the top of the
+        // screen. Step down to `.large` so the layout fits without
+        // clipping. Other platforms keep `.extraLarge` unconditionally.
+        #if os(iOS)
+        .controlSize(verticalSizeClass == .compact ? .large : .extraLarge)
+        #else
         .controlSize(.extraLarge)
+        #endif
         .buttonStyle(.bordered)
         .buttonBorderShape(.roundedRectangle)
         .labelStyle(.iconOnly)
@@ -814,7 +862,12 @@ struct RemoteViewContained: View {
             #if os(macOS)
             .padding(.bottom, 6)
             #elseif os(iOS)
-            .padding(.bottom, UIDevice.current.userInterfaceIdiom == .phone ? -32 : 10)
+            // The negative bottom padding intentionally pulls content
+            // below the safe area when no keyboard is up. Switch to a
+            // positive value while the keyboard-entry overlay is showing
+            // so the overlay doesn't extend past the parent's bottom into
+            // the system keyboard, clipping the text field.
+            .padding(.bottom, showKeyboardEntry ? 10 : (UIDevice.current.userInterfaceIdiom == .phone ? (isHorizontal ? -16 : -32) : 10))
             #else
             .padding(.bottom, 10)
             #endif
@@ -838,7 +891,6 @@ struct RemoteViewContained: View {
 
     func horizontalBody() -> some View {
         VStack(alignment: .center) {
-            Spacer()
             HStack(alignment: .center, spacing: globalButtonSpacing * 2) {
                 if !hideUIForKeyboardEntry {
                     Spacer()
@@ -900,10 +952,13 @@ struct RemoteViewContained: View {
             #endif
             .frame(maxWidth: 600)
 
-            if !hideAppsForKeyboardEntry && selectedDevice != nil {
+            if !hideAppsForKeyboardEntry && selectedDevice != nil && renderHeavyContent {
                 Spacer()
                 AppLinksView(deviceId: selectedDevice?.udn, rows: appLinkRows, handleOpenApp: launchApp)
                     .matchedGeometryEffect(id: "appLinksBar", in: animation)
+                    .opacity(isActive ? 1 : 0)
+                    .allowsHitTesting(isActive)
+                    .animation(.easeInOut(duration: 0.2), value: isActive)
                 #if !os(visionOS)
                 .sensoryFeedback(SensoryFeedback.impact, trigger: buttonPressCount(.inputAV1))
                 #endif
@@ -913,9 +968,10 @@ struct RemoteViewContained: View {
 #if os(macOS)
             Spacer()
 #endif
-
-            Spacer()
         }
+        // Landscape iPhone otherwise crowds the buttons + app row against
+        // each other; visually shrink the whole horizontal layout 10%.
+        .scaleEffect(0.9)
     }
 
     func verticalBody() -> some View {
@@ -944,9 +1000,12 @@ struct RemoteViewContained: View {
                 .focusSection()
             }
 
-            if !hideAppsForKeyboardEntry && selectedDevice != nil {
+            if !hideAppsForKeyboardEntry && selectedDevice != nil && renderHeavyContent {
                 AppLinksView(deviceId: selectedDevice?.udn, rows: appLinkRows, handleOpenApp: launchApp)
                     .matchedGeometryEffect(id: "appLinksBar", in: animation)
+                    .opacity(isActive ? 1 : 0)
+                    .allowsHitTesting(isActive)
+                    .animation(.easeInOut(duration: 0.2), value: isActive)
                     .sensoryFeedback(SensoryFeedback.impact, trigger: buttonPressCount(.inputAV1))
             }
         }
@@ -984,10 +1043,13 @@ struct RemoteViewContained: View {
                 .matchedGeometryEffect(id: "buttonGrid", in: animation)
             }
 
-            if !hideAppsForKeyboardEntry && selectedDevice != nil {
+            if !hideAppsForKeyboardEntry && selectedDevice != nil && renderHeavyContent {
                 Spacer()
                 AppLinksView(deviceId: selectedDevice?.udn, rows: appLinkRows, handleOpenApp: launchApp)
                     .matchedGeometryEffect(id: "appLinksBar", in: animation)
+                    .opacity(isActive ? 1 : 0)
+                    .allowsHitTesting(isActive)
+                    .animation(.easeInOut(duration: 0.2), value: isActive)
                 #if !os(visionOS)
                     .sensoryFeedback(SensoryFeedback.impact, trigger: buttonPressCount(.inputAV1))
                 #endif
