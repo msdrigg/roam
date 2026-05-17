@@ -464,11 +464,17 @@ struct RoamApp: App {
     }
     #endif
 
+    // App Store Connect's APP_DESKTOP slot accepts 1280x800, 1440x900,
+    // 2560x1600, or 2880x1800 (all 16:10 landscape). Force the main window
+    // to 1440x900 logical points under UI-test context so XCUI's
+    // window screenshot lands at 2880x1800 actual pixels on a retina display.
     var macOSWidth: CGFloat {
+        if inUITestingContext() { return 1440 }
         return 760
     }
 
     var macOSHeigth: CGFloat {
+        if inUITestingContext() { return 900 }
         return 680
     }
 
@@ -477,6 +483,7 @@ struct RoamApp: App {
     }
 
     var macOSMaxWidth: CGFloat {
+        if inUITestingContext() { return 1440 }
         return 1100
     }
 

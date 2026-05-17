@@ -201,8 +201,13 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         print("Launching with args \(app.launchArguments)")
 
         app.launch()
+        try await Task.sleep(nanoseconds: 1_000_000_000)
 
-        let scanningAttachmentDark = XCTAttachment(screenshot: app.screenshot())
+        // Window-only capture (not app.screenshot() / XCUIScreen.main) so the
+        // result is exactly the 1440x900 main window at retina 2x = 2880x1800
+        // PNG, which matches the APP_DESKTOP slot. app.screenshot() returns
+        // the full host screen (e.g. 3456x2234 on a 16" MBP), which ASC rejects.
+        let scanningAttachmentDark = XCTAttachment(screenshot: app.windows.firstMatch.screenshot())
         scanningAttachmentDark.lifetime = .keepAlways
         scanningAttachmentDark.name = "\(locale.identifier)/4/ScreenScanning"
         add(scanningAttachmentDark)
@@ -214,43 +219,21 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         app.launch()
         try await Task.sleep(nanoseconds: 2_000_000_000)
 
-        let primaryAttachment = XCTAttachment(screenshot: app.screenshot())
+        let primaryAttachment = XCTAttachment(screenshot: app.windows.firstMatch.screenshot())
         primaryAttachment.lifetime = .keepAlways
         primaryAttachment.name = "\(locale.identifier)/1/Primary"
         add(primaryAttachment)
 
-        // The new UI uses a segmented Picker for device selection (no separate
-        // "opened" state), so a dedicated "DevicePickerOpen" capture is
-        // redundant with Primary. Skip directly to Settings via Cmd+, on the
-        // frontmost window — no need for a focus target element.
-        app.typeKey(",", modifierFlags: .command)
-
-        // Wait for 0.3 s
-        try await Task.sleep(nanoseconds: 300_000_000)
-
-        let sAttachment = XCTAttachment(screenshot: app.screenshot())
-        sAttachment.lifetime = .keepAlways
-        sAttachment.name = "\(locale.identifier)/6/Settings"
-        add(sAttachment)
-
-        // Click on the first device
-        app.buttons["DeviceItem_\(0)"].waitForClickable(app: app, testCase: self).tap()
-
-        // Wait for 0.3 s
-        try await Task.sleep(nanoseconds: 300_000_000)
-
-        let sIAttachment = XCTAttachment(screenshot: app.screenshot())
-        sIAttachment.lifetime = .keepAlways
-        sIAttachment.name = "\(locale.identifier)/7/SettingsItem"
-        add(sIAttachment)
-
         app.terminate()
 
+        // -WindowStyleVertical: relaunch and capture a second main-window
+        // variant for the LandscapePrimary slot. (Currently a no-op on the
+        // macOS app side; reserved for future vertical-style variant.)
         app.launchArguments += ["-WindowStyleVertical"]
         app.launch()
-        try await Task.sleep(nanoseconds: 200_000_000)
+        try await Task.sleep(nanoseconds: 1_000_000_000)
 
-        let landscapeModeAttachment = XCTAttachment(screenshot: app.screenshot())
+        let landscapeModeAttachment = XCTAttachment(screenshot: app.windows.firstMatch.screenshot())
         landscapeModeAttachment.lifetime = .keepAlways
         landscapeModeAttachment.name = "\(locale.identifier)/3/LandscapePrimary"
         add(landscapeModeAttachment)

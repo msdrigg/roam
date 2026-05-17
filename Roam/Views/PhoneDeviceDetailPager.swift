@@ -31,6 +31,10 @@ struct PhoneDeviceDetailPager: View {
     // width changes to force a re-snap to the current page (otherwise
     // rotation leaves the page half-scrolled at the old pixel offset).
     @State private var scrollPositionId: String?
+    // Debounces the re-snap so we don't fire mid-rotation when the
+    // PreferenceKey reports each intermediate width — wait for the
+    // animation to settle, then snap once.
+    @State private var resnapTask: Task<Void, Never>?
 
     init(
         startingDeviceId: String,
@@ -131,16 +135,29 @@ struct PhoneDeviceDetailPager: View {
 
     /// On a real width change (rotation, split-view resize) the paged
     /// scroll view keeps its old pixel offset, which leaves the current
-    /// page half-scrolled. Drive the position binding through a one-tick
-    /// nil → selected re-snap to force a clean alignment.
+    /// page half-scrolled. Wait for the rotation animation to settle,
+    /// then drive the position binding through a `nil → selected`
+    /// re-snap to force a clean alignment. The PreferenceKey fires
+    /// multiple times as the layout interpolates, so cancel any
+    /// in-flight task on each new value and only the last one runs.
     private func handleWidthChange(_ newWidth: CGFloat) {
         guard newWidth > 0 else { return }
         let previousWidth = lastPagerWidth
         lastPagerWidth = newWidth
         guard previousWidth > 0, abs(newWidth - previousWidth) > 1 else { return }
         let target = selectedDeviceId
-        scrollPositionId = nil
-        DispatchQueue.main.async {
+        resnapTask?.cancel()
+        resnapTask = Task { @MainActor in
+            // Wait past the iOS rotation animation (~0.3s) plus a small
+            // buffer so the LazyHStack has settled into the new page
+            // widths before we ask the scroll view to snap.
+            try? await Task.sleep(for: .milliseconds(450))
+            guard !Task.isCancelled else { return }
+            scrollPositionId = nil
+            // One runloop tick so SwiftUI registers the change before
+            // we set it back to the target.
+            try? await Task.sleep(for: .milliseconds(16))
+            guard !Task.isCancelled else { return }
             scrollPositionId = target
         }
     }
