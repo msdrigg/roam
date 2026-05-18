@@ -143,6 +143,7 @@
 		AF60A7DF2E36CDEE00D1D16B /* DataLoaders.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF60A7DD2E36CDEC00D1D16B /* DataLoaders.swift */; };
 		AF60A7E02E36CDEE00D1D16B /* DataLoaders.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF60A7DD2E36CDEC00D1D16B /* DataLoaders.swift */; };
 		AF65A88A2BB5ABF9005ECF7F /* RoamAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF65A8892BB5ABF9005ECF7F /* RoamAppDelegate.swift */; };
+		AF250517A05AA05CA05A0AA0 /* ScreenshotCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF250517A05AA05CA05A0AB0 /* ScreenshotCapture.swift */; };
 		AF65A88C2BB5AD02005ECF7F /* ExternalAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF65A88B2BB5AD02005ECF7F /* ExternalAboutView.swift */; };
 		AF68F2842D41EC2700F39530 /* DataHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA222AE455B400A42DFF /* DataHelpers.swift */; };
 		AF6A8F942D060834004AB1D2 /* NetworkUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5FDAD52ADB3C4B006CDEB3 /* NetworkUtils.swift */; };
@@ -488,6 +489,7 @@
 		AF60A7DD2E36CDEC00D1D16B /* DataLoaders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataLoaders.swift; sourceTree = "<group>"; };
 		AF6520872BCE55E200B69BE8 /* Vars.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Vars.xcconfig; sourceTree = "<group>"; };
 		AF65A8892BB5ABF9005ECF7F /* RoamAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoamAppDelegate.swift; sourceTree = "<group>"; };
+		AF250517A05AA05CA05A0AB0 /* ScreenshotCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotCapture.swift; sourceTree = "<group>"; };
 		AF65A88B2BB5AD02005ECF7F /* ExternalAboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalAboutView.swift; sourceTree = "<group>"; };
 		AF6D560C2DCE47E900B00780 /* AsyncTimerSequence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncTimerSequence.swift; sourceTree = "<group>"; };
 		AF6D56122DCE50DD00B00780 /* LinkedListTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkedListTests.swift; sourceTree = "<group>"; };
@@ -965,6 +967,7 @@
 				AF1065CE2DE7A8D50058E45A /* MetricManager.swift */,
 				AFC24EFE2AD0E5A1002AB66C /* RoamApp.swift */,
 				AF65A8892BB5ABF9005ECF7F /* RoamAppDelegate.swift */,
+				AF250517A05AA05CA05A0AB0 /* ScreenshotCapture.swift */,
 				AFC4A6592AE88411005DAC6C /* LatencyListener.swift */,
 				AFED42492AEE8F3B0023D684 /* VolumeListener.swift */,
 				AF5853922D4BCD660027C279 /* GlobalHotkey.swift */,
@@ -1523,6 +1526,7 @@
 				AFD100112F00000100000001 /* RoamDataSnapshot.swift in Sources */,
 				AFD100122F00000100000001 /* RoamDatabase.swift in Sources */,
 				AF65A88A2BB5ABF9005ECF7F /* RoamAppDelegate.swift in Sources */,
+				AF250517A05AA05CA05A0AA0 /* ScreenshotCapture.swift in Sources */,
 				AF90B5C62D3B52340063FADD /* ECPMonitor.swift in Sources */,
 				AF19CA2B2AE54AD100A42DFF /* SSDPDiscovery.swift in Sources */,
 				AF3446AD2D5FE8CF0037EFC8 /* WrongAttempts.swift in Sources */,

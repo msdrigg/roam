@@ -2,9 +2,13 @@ import SwiftUI
 
 struct RemoteView: View {
     @Environment(\.openWindow) var openWindow
+    #if os(macOS)
+    @Environment(\.openSettings) private var openMacSettings
+    #endif
 
     @EnvironmentObject private var appDelegate: RoamAppDelegate
     @State private var deviceError: Error?
+    @State private var didApplyMacLaunchSettings: Bool = false
 
     var body: some View {
         #if os(macOS)
@@ -18,6 +22,7 @@ struct RemoteView: View {
                         }
                     }
                 }
+                .task { applyMacLaunchSettingsIfRequested() }
         }
         .alertingError(message: "Failed to Add Device", error: $deviceError)
         #elseif os(watchOS)
@@ -62,4 +67,16 @@ struct RemoteView: View {
             appDelegate.navigationPath.openMessages()
         }
     }
+
+    #if os(macOS)
+    /// Honors `-OpenSettings` on macOS by triggering the standard Settings
+    /// window via the environment opener. Guarded so re-fires from `.task`
+    /// don't pop multiple Settings instances.
+    private func applyMacLaunchSettingsIfRequested() {
+        guard !didApplyMacLaunchSettings else { return }
+        didApplyMacLaunchSettings = true
+        guard CommandLine.arguments.contains("-OpenSettings") else { return }
+        openMacSettings()
+    }
+    #endif
 }

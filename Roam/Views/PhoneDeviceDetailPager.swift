@@ -22,7 +22,7 @@ struct PhoneDeviceDetailPager: View {
     let onBackToHome: () -> Void
 
     @State private var selectedDeviceId: String
-    @State private var showKeyboard: Bool = false
+    @State private var showKeyboard: Bool = CommandLine.arguments.contains("-OpenKeyboard")
     @State private var isInteractivelyPopping: Bool = false
     @State private var isAppsScrolling: Bool = false
     @State private var lastPagerWidth: CGFloat = 0
@@ -234,6 +234,7 @@ struct PhoneDeviceDetailPager: View {
                 .glassEffectIfSupported(tint: Color.accentColor.opacity(0.18), in: Circle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("AllDevicesButton")
         .accessibilityLabel(String(
             localized: "All devices",
             comment: "Accessibility label for the floating button that returns to the device grid"

@@ -26,6 +26,16 @@ final class RoamAppDelegate: NSObject, NSApplicationDelegate, UNUserNotification
 
     @MainActor
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if MacScreenshotCapture.requestedSavePath != nil {
+            NSApp.setActivationPolicy(.regular)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+        // Drive macOS screenshot self-capture if requested. Owning a
+        // dedicated borderless NSWindow + NSHostingController gets us an
+        // exact 1440x900 contentView that snapshots cleanly at 2880x1800
+        // (APP_DESKTOP).
+        MacScreenshotCapture.scheduleIfRequested(appDelegate: self)
+
         let hasSentFirstMessage = UserDefaults.standard.bool(forKey: UserDefaultKeys.hasSentFirstMessage)
         self.networkMonitor.startMonitoring()
 

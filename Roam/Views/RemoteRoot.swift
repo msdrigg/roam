@@ -25,8 +25,12 @@ struct RemoteRoot: View {
     @State private var primaryDeviceLoader = PrimaryDeviceLoader(dataHandler: .shared)
     @State private var messageLoader = MessageListLoader(dataHandler: .shared)
     #if os(visionOS)
-    @State private var visionOSKeyboardShown: Bool = false
+    @State private var visionOSKeyboardShown: Bool = CommandLine.arguments.contains("-OpenKeyboard")
     #endif
+    #if os(iOS)
+    @State private var iPadKeyboardShown: Bool = CommandLine.arguments.contains("-OpenKeyboard")
+    #endif
+    @State private var didApplyLaunchSettings: Bool = false
 
     @AppStorage(UserDefaultKeys.shouldScanIPRangeAutomatically) private var scanAutomatically: Bool = true
 
@@ -97,7 +101,18 @@ struct RemoteRoot: View {
                 }
             }
             #endif
+            .task { applyLaunchSettingsIfRequested() }
             .customAccentColorTint()
+    }
+
+    /// Honors `-OpenSettings` launch arg by pushing the Settings root once the
+    /// view tree is alive. Idempotent so re-fires from `.task` don't double-push.
+    private func applyLaunchSettingsIfRequested() {
+        guard !didApplyLaunchSettings else { return }
+        didApplyLaunchSettings = true
+        if CommandLine.arguments.contains("-OpenSettings") {
+            appDelegate.navigationPath.append(.settingsDestination(.global))
+        }
     }
 
     @ViewBuilder
@@ -141,9 +156,22 @@ struct RemoteRoot: View {
                 }
                 #else
                 ScrollView([.vertical, .horizontal], showsIndicators: false) {
-                    RemoteViewContained(device: device, unreadMessages: unreadMessages)
-                        .frame(minWidth: iPadMinContentWidth, minHeight: iPadMinContentHeight)
+                    RemoteViewContained(
+                        device: device,
+                        unreadMessages: unreadMessages,
+                        externalShowKeyboard: $iPadKeyboardShown
+                    )
+                    .frame(minWidth: iPadMinContentWidth, minHeight: iPadMinContentHeight)
                 }
+                // While the keyboard-entry text field is up, respect the
+                // keyboard safe area so the field sits just above the system
+                // keyboard. Otherwise iPadOS's automatic ScrollView keyboard
+                // inset over-corrects and parks the field with a large gap
+                // above the keyboard. While closed, ignore the keyboard so
+                // an external keyboard's auto-correct bar doesn't shift
+                // the remote layout.
+                .scrollDisabled(iPadKeyboardShown)
+                .ignoresSafeArea(.keyboard, edges: iPadKeyboardShown ? [] : .all)
                 #endif
             }
         }

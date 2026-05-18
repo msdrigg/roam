@@ -16,232 +16,201 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         try await captureScreenshots(locale: Locale(identifier: locale))
     }
 
+    // MARK: - Common helpers
+
+    /// `-AppleLanguages` needs the BCP-47 form in parens (`(fr-CA)`);
+    /// `-AppleLocale` expects NSLocale's underscore form (`fr_CA`).
+    private func appendLocaleArgs(_ app: XCUIApplication, locale: Locale) {
+        app.launchArguments += ["-AppleLanguages", "(\(locale.identifier))"]
+        app.launchArguments += [
+            "-AppleLocale",
+            locale.identifier.replacingOccurrences(of: "-", with: "_"),
+        ]
+    }
+
 #if os(iOS)
     @MainActor
     func captureScreenshots(locale: Locale) async throws {
         print("Capturing screenshot's for \(locale.identifier)")
         XCUIDevice.shared.appearance = .dark
         XCUIDevice.shared.orientation = .portrait
-        let app = XCUIApplication()
-        // Preserve the full BCP-47 identifier (e.g. fr-CA, en-GB) — passing
-        // only the bare languageCode would lose the regional variant.
-        app.launchArguments += ["-AppleLanguages", "(\(locale.identifier))"]
-        // -AppleLocale expects NSLocale's underscore form (fr_CA, not fr-CA).
-        app.launchArguments += ["-AppleLocale", locale.identifier.replacingOccurrences(of: "-", with: "_")]
-        app.launchArguments += ["-DataTesting"]
 
-        app.launch()
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            try await captureIPadScreenshots(locale: locale)
+        } else {
+            try await captureIPhoneScreenshots(locale: locale)
+        }
+    }
 
-        let scanningAttachmentDark = XCTAttachment(screenshot: app.screenshot())
-        scanningAttachmentDark.lifetime = .keepAlways
-        scanningAttachmentDark.name = "\(locale.identifier)/4/ScreenScanning"
-        add(scanningAttachmentDark)
+    // MARK: - iPhone
 
-        app.terminate()
+    @MainActor
+    private func captureIPhoneScreenshots(locale: Locale) async throws {
+        // 1. Empty-state ScreenScanning capture (no loaded test data).
+        let scanningApp = XCUIApplication()
+        appendLocaleArgs(scanningApp, locale: locale)
+        scanningApp.launchArguments += ["-DataTesting"]
+        scanningApp.launch()
+        try await Task.sleep(nanoseconds: 1_500_000_000)
+        addScreenshot(scanningApp.screenshot(), name: "\(locale.identifier)/4/ScreenScanning")
+        scanningApp.terminate()
 
-        app.launchArguments += ["-DataLoadTestingData"]
-        app.launchArguments += ["-ScreenshotTesting"]
+        // 2. Primary (detail pager auto-opens to first device).
+        let primaryApp = XCUIApplication()
+        appendLocaleArgs(primaryApp, locale: locale)
+        primaryApp.launchArguments += ["-DataTesting", "-DataLoadTestingData", "-ScreenshotTesting"]
+        primaryApp.launch()
+        try await Task.sleep(nanoseconds: 2_500_000_000)
+        addScreenshot(primaryApp.screenshot(), name: "\(locale.identifier)/1/Primary")
 
-        // Xcode 26 iOS sim ignores XCUIDevice.shared.orientation — the canvas
-        // swaps to landscape dims but the app's scene geometry doesn't follow,
-        // producing a landscape-canvas capture with portrait content in the
-        // upper-left third. Work around it by passing -ForceLandscapeLeft as
-        // a launch arg; RoamApp's iOS WindowGroup honors it and drives the
-        // rotation app-side via UIWindowScene.requestGeometryUpdate. Use
-        // XCUIScreen.main.screenshot() (not app.screenshot()) so we capture
-        // the actual rendered screen — app.screenshot() in Xcode 26 returns
-        // a landscape canvas with the unrotated portrait framebuffer pasted
-        // into it.
-        var landscapeArgs = app.launchArguments
-        landscapeArgs.append("-ForceLandscapeLeft")
-        app.launchArguments = landscapeArgs
-        app.launch()
-        try await Task.sleep(nanoseconds: 3_000_000_000)
-
-        let landscapeModeAttachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        landscapeModeAttachment.lifetime = .keepAlways
-        landscapeModeAttachment.name = "\(locale.identifier)/3/LandscapePrimary"
-        add(landscapeModeAttachment)
-
-        // Now back to portrait for the rest of the captures. Drop the
-        // -ForceLandscapeLeft arg and relaunch.
-        app.terminate()
-        app.launchArguments = app.launchArguments.filter { $0 != "-ForceLandscapeLeft" }
-        try await Task.sleep(nanoseconds: 500_000_000)
-        app.launch()
-        try await Task.sleep(nanoseconds: 2_000_000_000)
-
-        let primaryAttachment = XCTAttachment(screenshot: app.screenshot())
-        primaryAttachment.lifetime = .keepAlways
-        primaryAttachment.name = "\(locale.identifier)/1/Primary"
-        add(primaryAttachment)
-
-        // Open the keyboard.
-        app.buttons["KeyboardButton"].waitForClickable(app: app, testCase: self).tap()
-
-        // Wait for 0.5 s
-        try await Task.sleep(nanoseconds: 500_000_000)
-
-        // First-time iOS keyboard usage may pop the QuickPath ("slide to type")
-        // tutorial card on top of the keyboard. Dismiss it if present so the
-        // capture shows the actual keyboard, not the iOS tutorial.
-        let tutorialContinueButton = app.buttons["Continue"]
-        if tutorialContinueButton.exists && tutorialContinueButton.isHittable {
-            tutorialContinueButton.tap()
-            try await Task.sleep(nanoseconds: 500_000_000)
+        // 3. Tap "All devices" button to navigate back to the home grid.
+        let allDevicesButton = primaryApp.buttons["AllDevicesButton"]
+        if allDevicesButton.waitForExistence(timeout: 5) && allDevicesButton.isHittable {
+            allDevicesButton.tap()
+            try await Task.sleep(nanoseconds: 1_000_000_000)
+            addScreenshot(
+                primaryApp.screenshot(), name: "\(locale.identifier)/2/Home"
+            )
+        } else {
+            print("AllDevicesButton not hittable — skipping Home capture")
         }
 
-        let kbAttachment = XCTAttachment(screenshot: app.screenshot())
-        kbAttachment.lifetime = .keepAlways
-        kbAttachment.name = "\(locale.identifier)/5/KeyboardOpen"
-        add(kbAttachment)
+        // 4. Tap "Settings" from the home grid bottom bar to push the
+        //    settings sheet, capture it.
+        let settingsButton = primaryApp.buttons["SettingsButton"]
+        if settingsButton.waitForExistence(timeout: 5) && settingsButton.isHittable {
+            settingsButton.tap()
+            try await Task.sleep(nanoseconds: 1_000_000_000)
+            addScreenshot(
+                primaryApp.screenshot(), name: "\(locale.identifier)/7/Settings"
+            )
+        } else {
+            print("SettingsButton not hittable — skipping Settings capture")
+        }
 
-        // Close the keyboard to get back to the remote view, then go straight
-        // to Settings. The new iOS UI uses a segmented Picker for device
-        // selection (no separate "opened" state), so a dedicated
-        // "DevicePickerOpen" capture is redundant with Primary.
-        app.buttons["KeyboardButton"].waitForClickable(app: app, testCase: self).tap()
-        try await Task.sleep(nanoseconds: 300_000_000)
+        primaryApp.terminate()
 
-        // Click on settings
-        app.buttons["SettingsButton"].waitForClickable(app: app, testCase: self).tap()
-
-        // Wait for 0.3 s
-        try await Task.sleep(nanoseconds: 300_000_000)
-
-        let sAttachment = XCTAttachment(screenshot: app.screenshot())
-        sAttachment.lifetime = .keepAlways
-        sAttachment.name = "\(locale.identifier)/7/Settings"
-        add(sAttachment)
-
-        // Click on the first device
-        app.buttons["DeviceItem_\(0)"].waitForClickable(app: app, testCase: self).tap()
-
-        // Wait for 0.3 s
-        try await Task.sleep(nanoseconds: 300_000_000)
-
-        let sIAttachment = XCTAttachment(screenshot: app.screenshot())
-        sIAttachment.lifetime = .keepAlways
-        sIAttachment.name = "\(locale.identifier)/8/SettingsItem"
-        add(sIAttachment)
-
-        app.terminate()
+        // 5. Landscape primary — relaunch with -ForceLandscapeLeft so the
+        //    app drives the rotation via UIWindowScene.requestGeometryUpdate
+        //    (XCUIDevice.shared.orientation is a no-op on Xcode 26 sims).
+        let landscapeApp = XCUIApplication()
+        appendLocaleArgs(landscapeApp, locale: locale)
+        landscapeApp.launchArguments += [
+            "-DataTesting", "-DataLoadTestingData", "-ScreenshotTesting",
+            "-ForceLandscapeLeft",
+        ]
+        landscapeApp.launch()
+        try await Task.sleep(nanoseconds: 3_000_000_000)
+        // XCUIScreen.main.screenshot() returns the actual rendered framebuffer
+        // (post-rotation if the simulator honored requestGeometryUpdate). The
+        // Python orchestrator handles any necessary post-rotation to satisfy
+        // App Store Connect's landscape pixel-dim requirement.
+        addScreenshot(
+            XCUIScreen.main.screenshot(),
+            name: "\(locale.identifier)/3/LandscapePrimary"
+        )
+        landscapeApp.terminate()
     }
+
+    // MARK: - iPad
+
+    @MainActor
+    private func captureIPadScreenshots(locale: Locale) async throws {
+        // 1. ScreenScanning — empty sidebar + scanning state.
+        let scanningApp = XCUIApplication()
+        appendLocaleArgs(scanningApp, locale: locale)
+        scanningApp.launchArguments += ["-DataTesting"]
+        scanningApp.launch()
+        try await Task.sleep(nanoseconds: 1_500_000_000)
+        addScreenshot(
+            scanningApp.screenshot(), name: "\(locale.identifier)/4/ScreenScanning"
+        )
+        scanningApp.terminate()
+
+        // 2. Primary remote with sidebar populated.
+        let primaryApp = XCUIApplication()
+        appendLocaleArgs(primaryApp, locale: locale)
+        primaryApp.launchArguments += ["-DataTesting", "-DataLoadTestingData", "-ScreenshotTesting"]
+        primaryApp.launch()
+        try await Task.sleep(nanoseconds: 2_500_000_000)
+        addScreenshot(primaryApp.screenshot(), name: "\(locale.identifier)/1/Primary")
+        primaryApp.terminate()
+
+        // 3. Keyboard open — relaunch with -OpenKeyboard so the keyboard
+        //    overlay is up from first appear. Driving via the toolbar
+        //    button is flaky on the iPad sim under non-en locales.
+        let keyboardApp = XCUIApplication()
+        appendLocaleArgs(keyboardApp, locale: locale)
+        keyboardApp.launchArguments += [
+            "-DataTesting", "-DataLoadTestingData", "-ScreenshotTesting",
+            "-OpenKeyboard",
+        ]
+        keyboardApp.launch()
+        try await Task.sleep(nanoseconds: 3_000_000_000)
+        addScreenshot(keyboardApp.screenshot(), name: "\(locale.identifier)/5/KeyboardOpen")
+        keyboardApp.terminate()
+
+        // 4. Settings — relaunch with -OpenSettings to surface the
+        //    Settings sheet on appear.
+        let settingsApp = XCUIApplication()
+        appendLocaleArgs(settingsApp, locale: locale)
+        settingsApp.launchArguments += [
+            "-DataTesting", "-DataLoadTestingData", "-ScreenshotTesting",
+            "-OpenSettings",
+        ]
+        settingsApp.launch()
+        try await Task.sleep(nanoseconds: 2_000_000_000)
+        addScreenshot(settingsApp.screenshot(), name: "\(locale.identifier)/7/Settings")
+        settingsApp.terminate()
+
+        // 5. Landscape primary — for the iPad we also rely on the existing
+        //    iPadOS sim rotation workaround in scripts/sync-metadata.py.
+        let landscapeApp = XCUIApplication()
+        appendLocaleArgs(landscapeApp, locale: locale)
+        landscapeApp.launchArguments += [
+            "-DataTesting", "-DataLoadTestingData", "-ScreenshotTesting",
+        ]
+        XCUIDevice.shared.orientation = .landscapeLeft
+        landscapeApp.launch()
+        try await Task.sleep(nanoseconds: 3_000_000_000)
+        addScreenshot(
+            landscapeApp.screenshot(),
+            name: "\(locale.identifier)/3/LandscapePrimary"
+        )
+        landscapeApp.terminate()
+        XCUIDevice.shared.orientation = .portrait
+    }
+
 #elseif os(visionOS)
     @MainActor
     func captureScreenshots(locale: Locale) async throws {
-        print("Capturing screenshot's for \(locale.identifier)")
-        XCUIDevice.shared.appearance = .dark
-        let app = XCUIApplication()
-        // Preserve the full BCP-47 identifier (e.g. fr-CA, en-GB).
-        app.launchArguments += ["-AppleLanguages", "(\(locale.identifier))"]
-        // -AppleLocale expects NSLocale's underscore form (fr_CA, not fr-CA).
-        app.launchArguments += ["-AppleLocale", locale.identifier.replacingOccurrences(of: "-", with: "_")]
-        app.launchArguments += ["-DataTesting"]
-
-        app.launch()
-
-        // visionOS sim: app.screenshot() returns 1x1 placeholders. Use
-        // XCUIScreen.main.screenshot() to capture the actual rendered window.
-        let scanningAttachmentDark = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        scanningAttachmentDark.lifetime = .keepAlways
-        scanningAttachmentDark.name = "\(locale.identifier)/4/ScreenScanning"
-        add(scanningAttachmentDark)
-
-        app.terminate()
-
-        app.launchArguments += ["-DataLoadTestingData"]
-        app.launchArguments += ["-ScreenshotTesting"]
-        app.launch()
-        try await Task.sleep(nanoseconds: 2_000_000_000)
-
-        let primaryAttachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        primaryAttachment.lifetime = .keepAlways
-        primaryAttachment.name = "\(locale.identifier)/1/Primary"
-        add(primaryAttachment)
-
-        // Skip the keyboard view + DevicePicker tap: the new UI's keyboard
-        // doesn't surface a TextField on visionOS, and the segmented Picker
-        // has no "opened" state. Go straight to Settings.
-        app.buttons["SettingsButton"].waitForClickable(app: app, testCase: self).tap()
-
-        // Wait for 0.3 s
-        try await Task.sleep(nanoseconds: 300_000_000)
-
-        let sAttachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        sAttachment.lifetime = .keepAlways
-        sAttachment.name = "\(locale.identifier)/7/Settings"
-        add(sAttachment)
-
-        // Click on the first device
-        app.buttons["DeviceItem_\(0)"].waitForClickable(app: app, testCase: self).tap()
-
-        // Wait for 0.3 s
-        try await Task.sleep(nanoseconds: 300_000_000)
-
-        let sIAttachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        sIAttachment.lifetime = .keepAlways
-        sIAttachment.name = "\(locale.identifier)/8/SettingsItem"
-        add(sIAttachment)
-
-        app.terminate()
+        // visionOS captures are driven via `simctl io screenshot` from the
+        // Python orchestrator (XCTest's screenshot APIs return 1x1
+        // placeholders on the visionOS sim). This test is a no-op kept so
+        // the test bundle still has a target on visionOS.
+        print("Skipping XCTest captures for visionOS \(locale.identifier) — handled by simctl")
     }
+
 #elseif os(macOS)
     @MainActor
     func captureScreenshots(locale: Locale) async throws {
-        print("Capturing screenshot's for \(locale.identifier)")
-        XCUIDevice.shared.appearance = .dark
-        let app = XCUIApplication()
-        // Preserve the full BCP-47 identifier (e.g. fr-CA, en-GB) — passing
-        // only the bare languageCode would lose the regional variant.
-        app.launchArguments += ["-AppleLanguages", "(\(locale.identifier))"]
-        // -AppleLocale expects NSLocale's underscore form (fr_CA, not fr-CA).
-        app.launchArguments += ["-AppleLocale", locale.identifier.replacingOccurrences(of: "-", with: "_")]
-        app.launchArguments += ["-DataTesting"]
-        print("Launching with args \(app.launchArguments)")
-
-        app.launch()
-        try await Task.sleep(nanoseconds: 1_000_000_000)
-
-        // Window-only capture (not app.screenshot() / XCUIScreen.main) so the
-        // result is exactly the 1440x900 main window at retina 2x = 2880x1800
-        // PNG, which matches the APP_DESKTOP slot. app.screenshot() returns
-        // the full host screen (e.g. 3456x2234 on a 16" MBP), which ASC rejects.
-        let scanningAttachmentDark = XCTAttachment(screenshot: app.windows.firstMatch.screenshot())
-        scanningAttachmentDark.lifetime = .keepAlways
-        scanningAttachmentDark.name = "\(locale.identifier)/4/ScreenScanning"
-        add(scanningAttachmentDark)
-
-        app.terminate()
-
-        app.launchArguments += ["-DataLoadTestingData"]
-        app.launchArguments += ["-ScreenshotTesting"]
-        app.launch()
-        try await Task.sleep(nanoseconds: 2_000_000_000)
-
-        let primaryAttachment = XCTAttachment(screenshot: app.windows.firstMatch.screenshot())
-        primaryAttachment.lifetime = .keepAlways
-        primaryAttachment.name = "\(locale.identifier)/1/Primary"
-        add(primaryAttachment)
-
-        app.terminate()
-
-        // -WindowStyleVertical: relaunch and capture a second main-window
-        // variant for the LandscapePrimary slot. (Currently a no-op on the
-        // macOS app side; reserved for future vertical-style variant.)
-        app.launchArguments += ["-WindowStyleVertical"]
-        app.launch()
-        try await Task.sleep(nanoseconds: 1_000_000_000)
-
-        let landscapeModeAttachment = XCTAttachment(screenshot: app.windows.firstMatch.screenshot())
-        landscapeModeAttachment.lifetime = .keepAlways
-        landscapeModeAttachment.name = "\(locale.identifier)/3/LandscapePrimary"
-        add(landscapeModeAttachment)
-
-        app.terminate()
+        // macOS captures are driven directly by the app via the
+        // `-ScreenshotSavePath` launch arg (see scripts/sync-metadata.py and
+        // Roam/ScreenshotCapture.swift). The XCTest path is bypassed because
+        // xcodebuild reliably hangs after macOS UI tests and XCUI can't
+        // reach the app's window from the headless test runner.
+        print("Skipping XCTest captures for macOS \(locale.identifier) — handled by app self-capture")
     }
 #endif
 
+    // MARK: - Attachment
+
+    private func addScreenshot(_ screenshot: XCUIScreenshot, name: String) {
+        let attachment = XCTAttachment(screenshot: screenshot)
+        attachment.lifetime = .keepAlways
+        attachment.name = name
+        add(attachment)
+    }
 }
 
 extension XCUIElement {

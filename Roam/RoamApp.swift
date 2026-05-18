@@ -304,6 +304,7 @@ struct RoamApp: App {
                     .preferredColorScheme(.dark)
             }
             .menuBarExtraStyle(.window)
+
         #else
             WindowGroup {
                 RemoteView()

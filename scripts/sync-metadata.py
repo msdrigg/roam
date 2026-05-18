@@ -578,6 +578,41 @@ class LocalizedMetadata:
         }
 
 
+# Bump whenever the set of captured states, the launch arg shape, or the
+# capture pipeline changes in a way that makes a cached export from a
+# prior run invalid. The cache directory writes this stamp; on each run
+# the cache is wiped if it doesn't match. Prevents the cache hit at
+# `_get_*_screenshots` from returning stale files when the pipeline has
+# moved on (e.g. switching macOS from xcresult-recovery to direct app
+# launch, or adding new visionOS Keyboard/Settings states).
+SCREENSHOT_SCHEMA_VERSION = "2026-05-17-v2"
+
+
+def _ensure_cache_schema(cache_root: str) -> None:
+    """Wipe `cache_root` if its schema-version stamp doesn't match the
+    current `SCREENSHOT_SCHEMA_VERSION`. Writes the stamp after wiping
+    (or creating) the directory."""
+    stamp_path = os.path.join(cache_root, ".schema-version")
+    existing = None
+    if os.path.isfile(stamp_path):
+        try:
+            with open(stamp_path) as f:
+                existing = f.read().strip()
+        except OSError:
+            existing = None
+    if existing == SCREENSHOT_SCHEMA_VERSION:
+        return
+    if os.path.isdir(cache_root):
+        print(
+            f"Wiping screenshot cache at {cache_root} (schema "
+            f"{existing!r} → {SCREENSHOT_SCHEMA_VERSION!r})"
+        )
+        shutil.rmtree(cache_root)
+    os.makedirs(cache_root, exist_ok=True)
+    with open(stamp_path, "w") as f:
+        f.write(SCREENSHOT_SCHEMA_VERSION)
+
+
 @dataclass
 class ScreenshotSource:
     device: str
@@ -610,6 +645,78 @@ def _read_png_dimensions(path: str) -> tuple[int, int] | None:
 def _dimensions_match(dims: tuple[int, int], display_type: str) -> bool:
     accepted = DISPLAY_TYPE_DIMENSIONS.get(display_type, [])
     return dims in accepted
+
+
+def _recover_pngs_from_xcresult_data(
+    xcresult_path: str, export_path: str, locale_id: str
+) -> int:
+    """
+    Scan an xcresult bundle's Data directory for files starting with the
+    PNG magic signature and copy them into export_path with names that
+    `_collect_locale_screenshots` recognizes. Used on macOS where xcodebuild
+    reliably hangs post-test, leaving the bundle's Info.plist unwritten so
+    xcparse refuses to read it — but the screenshot attachments themselves
+    are written to Data/ as raw blobs by the test.
+
+    Files are sorted by mtime (capture order), then assigned the same
+    `{locale}{index}{name}_0_{UUID}` naming the test would have used:
+      - 1st captured → ScreenScanning (index 4)
+      - 2nd captured → Primary        (index 1)
+      - 3rd captured → LandscapePrimary (index 3)
+
+    The index values match the convention in RoamScreenshotTests.swift so
+    the collector returns Primary > LandscapePrimary > ScreenScanning in
+    display order.
+
+    Returns the number of PNGs recovered.
+    """
+    import uuid as _uuid
+
+    data_dir = os.path.join(xcresult_path, "Data")
+    if not os.path.isdir(data_dir):
+        return 0
+
+    png_magic = b"\x89PNG\r\n\x1a\n"
+    pngs: list[tuple[float, str]] = []
+    for entry in os.listdir(data_dir):
+        full = os.path.join(data_dir, entry)
+        if not os.path.isfile(full):
+            continue
+        try:
+            with open(full, "rb") as f:
+                if f.read(8) != png_magic:
+                    continue
+        except OSError:
+            continue
+        pngs.append((os.path.getmtime(full), full))
+
+    if not pngs:
+        return 0
+
+    pngs.sort(key=lambda t: t[0])
+
+    # (index, name) for each captured-in-order PNG. Mirrors the order in
+    # RoamScreenshotTests.swift's macOS branch. Extras (if any) are
+    # appended with sequential high indices so they're still uploadable.
+    name_plan: list[tuple[int, str]] = [
+        (4, "ScreenScanning"),
+        (1, "Primary"),
+        (3, "LandscapePrimary"),
+    ]
+    while len(name_plan) < len(pngs):
+        name_plan.append((10 + len(name_plan), f"Extra{len(name_plan)}"))
+
+    os.makedirs(export_path, exist_ok=True)
+    out_subdir = os.path.join(export_path, "Mac")
+    os.makedirs(out_subdir, exist_ok=True)
+    for (idx, name), (_, src) in zip(name_plan, pngs):
+        uid = _uuid.uuid4().hex.upper()
+        dst = os.path.join(
+            out_subdir, f"{locale_id}{idx}{name}_0_{uid}.png"
+        )
+        shutil.copyfile(src, dst)
+
+    return len(pngs)
 
 
 def _collect_locale_screenshots(
@@ -834,15 +941,27 @@ class MetadataManager:
 
         # (state_index, attachment_name, extra_launch_args, settle_seconds)
         # State indices match the iOS test convention so the existing
-        # _collect_locale_screenshots helper sorts them consistently.
+        # _collect_locale_screenshots helper sorts them consistently
+        # (Primary first, then KeyboardOpen, then Settings, then ScreenScanning).
+        # The visionOS app honors -OpenKeyboard / -OpenSettings to pre-set
+        # the corresponding view state on launch (see RemoteRoot.swift +
+        # RemoteView.swift), so simctl can capture each state without needing
+        # to drive UI taps (XCTest's screenshots return 1x1 placeholders on
+        # the visionOS sim).
         states = [
             (4, "ScreenScanning", ["-DataTesting"], 6),
             (1, "Primary", ["-DataLoadTestingData", "-ScreenshotTesting", "-DataTesting"], 8),
-            (3, "LandscapePrimary", [
+            (5, "KeyboardOpen", [
                 "-DataLoadTestingData",
                 "-ScreenshotTesting",
                 "-DataTesting",
-                "-WindowStyleVertical",
+                "-OpenKeyboard",
+            ], 8),
+            (7, "Settings", [
+                "-DataLoadTestingData",
+                "-ScreenshotTesting",
+                "-DataTesting",
+                "-OpenSettings",
             ], 8),
         ]
 
@@ -921,6 +1040,173 @@ class MetadataManager:
 
         return export_dir if captured_any else None
 
+    def _get_mac_screenshots_via_direct_launch(
+        self, device_name: str, locale_id: str
+    ) -> str | None:
+        """
+        Capture macOS screenshots by launching the Roam.app directly with
+        `-ScreenshotSavePath`. The app (see Roam/ScreenshotCapture.swift)
+        builds its own borderless NSWindow sized 1440x900 logical points,
+        snapshots its contentView at 2880x1800 pixels, and exits. This
+        bypasses xcodebuild's post-test hang and the AX permission gap
+        that blocked XCUITest's window-element capture in earlier runs.
+        """
+        import uuid as _uuid
+
+        tmp = tempfile.gettempdir()
+        export_dir = os.path.join(
+            tmp, "auto-screenshots", device_name, f"{locale_id}.export"
+        )
+        device_subdir = os.path.join(export_dir, "Mac")
+
+        # Reuse cached captures.
+        if os.path.isdir(device_subdir):
+            for f in os.listdir(device_subdir):
+                if f.lower().endswith((".png", ".jpg", ".jpeg")):
+                    print(
+                        f"Reusing cached macOS screenshots for {locale_id} ({device_subdir})"
+                    )
+                    return export_dir
+        os.makedirs(device_subdir, exist_ok=True)
+
+        # Find the most-recent Debug build of Roam.app for macOS.
+        derived_data = os.path.expanduser("~/Library/Developer/Xcode/DerivedData")
+        candidates: list[str] = []
+        if os.path.isdir(derived_data):
+            for entry in os.listdir(derived_data):
+                if entry.startswith("Roam-"):
+                    candidate = os.path.join(
+                        derived_data, entry, "Build", "Products", "Debug", "Roam.app"
+                    )
+                    if os.path.isdir(candidate):
+                        candidates.append(candidate)
+        if not candidates:
+            print(
+                "Cannot find a Debug build of Roam.app for macOS — run "
+                "`xcodebuild build -scheme Roam -destination 'platform=macOS' "
+                "-configuration Debug` once first."
+            )
+            return None
+        app_path = max(candidates, key=os.path.getmtime)
+        binary = os.path.join(app_path, "Contents", "MacOS", "Roam")
+        bundle_id = "com.msdrigg.roam"
+        # ScreenshotCapture writes to the sandbox container by default when
+        # the requested path is a bare filename — relative paths resolve
+        # against the app's current working directory, which inside the
+        # sandbox is `~/Library/Containers/<bundle>/Data/`.
+        sandbox_data_dir = os.path.expanduser(
+            f"~/Library/Containers/{bundle_id}/Data"
+        )
+
+        underscore_locale = locale_id.replace("-", "_")
+        common_args = [
+            "-AppleLanguages", f"({locale_id})",
+            "-AppleLocale", underscore_locale,
+            # Force-off showMenuBar so the SwiftUI Window scene doesn't
+            # route into menubar-only mode (where the main scene never
+            # auto-opens). ScreenshotCapture creates its own NSWindow
+            # regardless, but suppressing the MenuBarExtra also reduces
+            # clutter in the macOS process tree.
+            "-showMenuBar", "NO",
+        ]
+
+        # (state_index, attachment_name, extra_launch_args, settle_seconds).
+        # macOS doesn't have an iOS-style keyboard overlay, so we capture
+        # ScreenScanning, Primary, and Settings instead.
+        states = [
+            (4, "ScreenScanning", ["-DataTesting"], 6.0),
+            (1, "Primary", [
+                "-DataLoadTestingData", "-ScreenshotTesting", "-DataTesting"
+            ], 7.0),
+            (7, "Settings", [
+                "-DataLoadTestingData", "-ScreenshotTesting", "-DataTesting",
+                "-OpenSettings",
+            ], 6.0),
+        ]
+
+        captured_any = False
+        for state_index, state_name, extra_args, settle in states:
+            # Filename uses the same {locale}{index}{name}_0_{UUID} layout
+            # _collect_locale_screenshots looks for.
+            uid = _uuid.uuid4().hex.upper()
+            fn = f"{locale_id}{state_index}{state_name}_0_{uid}.png"
+            # Tell the app to write to this filename — it resolves to
+            # `sandbox_data_dir/fn`. Pre-clean any stale file with the same
+            # name from a prior crash so we don't accidentally re-publish it.
+            stale = os.path.join(sandbox_data_dir, fn)
+            try:
+                os.remove(stale)
+            except FileNotFoundError:
+                pass
+
+            # Kill any prior Roam process so launch args take effect on a
+            # fresh process. -9 avoids the macOS app's normal terminate
+            # hooks blocking us.
+            subprocess.run(
+                ["pkill", "-9", "-f", f"{app_path}/Contents/MacOS/Roam"],
+                capture_output=True,
+            )
+            time.sleep(0.5)
+
+            cmd = [
+                binary,
+                *common_args, *extra_args,
+                "-ScreenshotSavePath", fn,
+                "-ScreenshotSettleSeconds", str(settle),
+            ]
+            # Bound each launch so a hung capture can't stall the matrix.
+            # waitForTargetWindow adds up to 8s on top of settle.
+            wall_timeout = settle + 20.0
+            launched_at = time.time()
+            proc_stderr = ""
+            try:
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    text=True,
+                )
+                try:
+                    _, proc_stderr = proc.communicate(timeout=wall_timeout)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    _, proc_stderr = proc.communicate()
+                    print(
+                        f"  Warning: Roam macOS launch for {locale_id} "
+                        f"{state_name} timed out after {wall_timeout:.0f}s"
+                    )
+            except Exception as e:
+                print(
+                    f"  Warning: failed to launch Roam for {locale_id} "
+                    f"{state_name}: {e}"
+                )
+                continue
+
+            # Wait briefly for any in-flight file writes to flush (atomic
+            # rename should already have settled by now, but cheap insurance).
+            time.sleep(0.5)
+
+            src = os.path.join(sandbox_data_dir, fn)
+            if not os.path.isfile(src):
+                stderr_tail = "\n".join(proc_stderr.strip().splitlines()[-10:])
+                print(
+                    f"  Warning: no screenshot file at {src} for {locale_id} "
+                    f"{state_name} after {time.time() - launched_at:.1f}s"
+                )
+                if stderr_tail:
+                    print(f"    Roam stderr tail:\n{stderr_tail}")
+                continue
+            dst = os.path.join(device_subdir, fn)
+            shutil.move(src, dst)
+            captured_any = True
+            print(f"  Captured macOS {state_name} for {locale_id} ({fn})")
+
+        # Final cleanup.
+        subprocess.run(
+            ["pkill", "-9", "-f", f"{app_path}/Contents/MacOS/Roam"],
+            capture_output=True,
+        )
+        return export_dir if captured_any else None
+
     def _get_device_screenshots(self, device_name: str, locale_id: str) -> str | None:
         """
         Run UI tests for a specific device and language to capture screenshots.
@@ -934,6 +1220,12 @@ class MetadataManager:
             Path to the directory containing the extracted screenshots, or None
             on failure.
         """
+        # Invalidate the cache root if the screenshot pipeline schema has
+        # changed since last run. Prevents stale captures (different state
+        # set, different launch args, different post-processing) from
+        # masquerading as up-to-date.
+        _ensure_cache_schema(os.path.join(tempfile.gettempdir(), "auto-screenshots"))
+
         # visionOS sim's XCTest screenshot capture returns 1x1 placeholders in
         # Xcode 26 — work around it by using `simctl io screenshot` instead,
         # which captures the full sim display (including the AR background)
@@ -942,6 +1234,14 @@ class MetadataManager:
         # the app with different launch-argument combinations.
         if "Vision" in device_name:
             return self._get_vision_screenshots_via_simctl(device_name, locale_id)
+
+        # macOS: bypass xcodebuild entirely. The app self-captures via
+        # `-ScreenshotSavePath` in its own NSWindow so we get
+        # APP_DESKTOP-acceptable 2880x1800 pixels of just the app, not the
+        # surrounding desktop. xcodebuild's reliable post-test hang made
+        # the XCTest path unusable; direct launch avoids the issue entirely.
+        if device_name == "Mac" or "MacBook" in device_name:
+            return self._get_mac_screenshots_via_direct_launch(device_name, locale_id)
 
         tmp = tempfile.gettempdir()
         screenshots_dir = os.path.join(
@@ -1014,14 +1314,69 @@ class MetadataManager:
         ]
 
         print(f"Running UI tests for {device_name} in {locale_id}...")
-        result = subprocess.run(command, env=env)
+        # xcodebuild on macOS reliably hangs after a successful test run
+        # (the test process tears down cleanly but xcodebuild itself never
+        # writes the result-bundle path line or exits). Run via Popen and
+        # watch the stream for "Test Suite 'Selected tests' passed"; once
+        # seen, give it POST_TEST_GRACE seconds to finalize the result
+        # bundle, then kill. HARD_TIMEOUT bounds the whole invocation in
+        # case the test itself hangs.
+        HARD_TIMEOUT = 600
+        # On macOS the test writes PNGs directly to SCREENSHOT_OUTPUT_DIR
+        # during execution, so we don't need to wait for xcresult
+        # finalization (which never completes due to xcodebuild's post-test
+        # hang). 5s grace is enough for any in-flight writes to flush.
+        POST_TEST_GRACE = 5
+        import threading
+        import sys as _sys
+        process = subprocess.Popen(
+            command, env=env,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, bufsize=1,
+        )
+        kill_lock = threading.Lock()
+        kill_reason = [None]
+        def _kill(msg):
+            with kill_lock:
+                if kill_reason[0] is None:
+                    kill_reason[0] = msg
+                    try:
+                        process.kill()
+                    except ProcessLookupError:
+                        pass
+        kill_timer = threading.Timer(HARD_TIMEOUT, lambda: _kill(f"hard timeout {HARD_TIMEOUT}s"))
+        kill_timer.daemon = True
+        kill_timer.start()
+        try:
+            for line in process.stdout:
+                _sys.stdout.write(line)
+                _sys.stdout.flush()
+                if "Test Suite 'Selected tests' passed" in line:
+                    kill_timer.cancel()
+                    kill_timer = threading.Timer(
+                        POST_TEST_GRACE,
+                        lambda: _kill(f"post-test hang {POST_TEST_GRACE}s"),
+                    )
+                    kill_timer.daemon = True
+                    kill_timer.start()
+        finally:
+            kill_timer.cancel()
+        process.wait()
+        returncode = process.returncode
+        if kill_reason[0] is not None:
+            print(
+                f"Warning: UI tests for {device_name} in {locale_id} were "
+                f"killed ({kill_reason[0]}); attempting to extract any "
+                f"captures already in the result bundle"
+            )
+            returncode = -1 if returncode == 0 else returncode
 
-        if result.returncode != 0:
+        if returncode != 0:
             # The test may have failed AFTER capturing some attachments — try
             # xcparse anyway to salvage what landed in the result bundle.
             print(
                 f"Warning: UI tests for {device_name} in {locale_id} exited "
-                f"with code {result.returncode}; attempting to extract any "
+                f"with code {returncode}; attempting to extract any "
                 f"captures already in the result bundle"
             )
             if not os.path.isdir(screenshots_dir):
@@ -1044,11 +1399,39 @@ class MetadataManager:
         print(f"Extracting screenshots for {device_name} in {locale_id}...")
         extract_result = subprocess.run(extract_command)
 
-        if extract_result.returncode != 0:
+        # xcparse fails (and unhelpfully still exits 0) when the xcresult
+        # bundle isn't finalized — which is always the case on macOS, since
+        # xcodebuild reliably hangs post-test without writing the bundle's
+        # Info.plist. Detect this by checking the export dir post-xcparse:
+        # if it's missing or empty, fall back to scanning Data/ for raw
+        # PNGs (the test attachments are still present as raw blobs there).
+        def _export_has_pngs(path: str) -> bool:
+            if not os.path.isdir(path):
+                return False
+            for _, _, files in os.walk(path):
+                for fn in files:
+                    if fn.lower().endswith((".png", ".jpg", ".jpeg")):
+                        return True
+            return False
+
+        if not _export_has_pngs(screenshots_dir_export):
             print(
-                f"Warning: Screenshot extraction for {device_name} in {locale_id} failed with code {extract_result.returncode}"
+                f"  xcparse produced no PNGs (bundle likely unfinalized) — "
+                f"scanning {screenshots_dir}/Data for raw PNGs"
             )
-            return None
+            recovered = _recover_pngs_from_xcresult_data(
+                xcresult_path=screenshots_dir,
+                export_path=screenshots_dir_export,
+                locale_id=locale_id,
+            )
+            if recovered == 0:
+                print(
+                    f"Warning: Screenshot extraction for {device_name} in "
+                    f"{locale_id} failed and no raw PNGs found in the "
+                    f"bundle Data directory"
+                )
+                return None
+            print(f"  Recovered {recovered} PNG(s) from {screenshots_dir}/Data")
 
         # iPadOS 26 simulator silently ignores XCUIDevice.orientation changes —
         # the screen stays portrait but XCTest tags the capture with landscape
@@ -1138,6 +1521,68 @@ class MetadataManager:
                         print(
                             f"  Warning: sips upscale failed for {fpath}: "
                             f"{resample.stderr.decode('utf-8', errors='replace')}"
+                        )
+
+        # macOS XCUI captures the entire host display (e.g. 3456x2234 on a
+        # 16" MBP) since app.windows.firstMatch.screenshot() doesn't work
+        # reliably in the headless test runner. APP_DESKTOP accepts only
+        # specific 16:10 sizes (1280x800, 1440x900, 2560x1600, 2880x1800).
+        # Uniform-scale to width=2880 (or height=1800 for wider displays),
+        # then center-crop to 2880x1800. Roam is sized to 1440x900 logical
+        # points under -DataTesting (see RoamApp macOSWidth/macOSHeigth),
+        # which renders at 2880x1800 pixels — i.e. the Roam window dominates
+        # the captured screen, and the crop trims off the desktop edges.
+        if device_name == "Mac" or "MacBook" in device_name:
+            target_w, target_h = 2880, 1800
+            target_aspect = target_w / target_h
+            for root, _, files in os.walk(screenshots_dir_export):
+                for fname in files:
+                    if not fname.lower().endswith(".png"):
+                        continue
+                    fpath = os.path.join(root, fname)
+                    dims = _read_png_dimensions(fpath)
+                    if dims is None:
+                        continue
+                    if _dimensions_match(dims, "APP_DESKTOP"):
+                        continue
+                    src_aspect = dims[0] / dims[1]
+                    if src_aspect < target_aspect:
+                        new_w = target_w
+                        new_h = round(dims[1] * target_w / dims[0])
+                    else:
+                        new_h = target_h
+                        new_w = round(dims[0] * target_h / dims[1])
+                    resample = subprocess.run(
+                        [
+                            "sips",
+                            "--resampleHeightWidth", str(new_h), str(new_w),
+                            fpath, "--out", fpath,
+                        ],
+                        capture_output=True,
+                    )
+                    if resample.returncode != 0:
+                        print(
+                            f"  Warning: sips resample failed for {fpath}: "
+                            f"{resample.stderr.decode('utf-8', errors='replace')}"
+                        )
+                        continue
+                    crop = subprocess.run(
+                        [
+                            "sips",
+                            "--cropToHeightWidth", str(target_h), str(target_w),
+                            fpath, "--out", fpath,
+                        ],
+                        capture_output=True,
+                    )
+                    if crop.returncode == 0:
+                        print(
+                            f"Resized macOS capture {dims[0]}x{dims[1]} → "
+                            f"{target_w}x{target_h} ({fname}) for APP_DESKTOP"
+                        )
+                    else:
+                        print(
+                            f"  Warning: sips crop failed for {fpath}: "
+                            f"{crop.stderr.decode('utf-8', errors='replace')}"
                         )
 
         return screenshots_dir_export
