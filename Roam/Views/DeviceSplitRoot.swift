@@ -5,14 +5,15 @@ import SwiftUI
 ///
 /// The sidebar shows a card-styled list of devices with swipe / context-menu
 /// actions to edit and delete, a pull-down rescan, an "+ Add device" footer,
-/// and a `...` toolbar menu (Add device manually / Settings). Selection drives
-/// the primary device — the detail pane is provided by the caller so each
-/// platform can pass its native `RemoteViewContained` variant.
+/// and a Settings toolbar button. Selection drives the primary device — the
+/// detail pane is provided by the caller so each platform can pass its native
+/// `RemoteViewContained` variant.
 struct DeviceSplitRoot<Detail: View>: View {
     @EnvironmentObject private var appDelegate: RoamAppDelegate
     #if os(macOS)
     @Environment(\.openSettings) private var openMacSettings
     #endif
+    @Environment(\.layoutDirection) private var systemLayoutDirection
 
     @State private var devicesLoader = DeviceListLoader(dataHandler: .shared)
     @State private var primaryDeviceLoader = PrimaryDeviceLoader(dataHandler: .shared)
@@ -31,8 +32,15 @@ struct DeviceSplitRoot<Detail: View>: View {
     private var isEmpty: Bool { devicesLoader.devices != nil && deviceIds.isEmpty }
 
     var body: some View {
+        // SwiftUI's NavigationSplitView collapses the sidebar into a
+        // dimming popover in RTL on iPad / visionOS even when
+        // `columnVisibility == .all` and the window is wide enough for the
+        // inline layout. Pin the split itself to LTR so the columns stay
+        // side-by-side, then restore the system layout direction inside
+        // each pane so Arabic text and per-view layouts mirror normally.
         NavigationSplitView(columnVisibility: $columnVisibility) {
             sidebar
+                .environment(\.layoutDirection, systemLayoutDirection)
                 .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 340)
                 .navigationTitle(String(
                     localized: "Devices",
@@ -40,22 +48,7 @@ struct DeviceSplitRoot<Detail: View>: View {
                 ))
                 #if !os(macOS)
                 .toolbar {
-                    ToolbarItemGroup(placement: .primaryAction) {
-                        #if !os(visionOS)
-                        Button {
-                            appDelegate.navigationPath.showAddDevice = true
-                        } label: {
-                            Label(
-                                String(
-                                    localized: "Add device",
-                                    comment: "Toolbar button on iPad sidebar to add a new device"
-                                ),
-                                systemImage: "plus"
-                            )
-                        }
-                        .accessibilityIdentifier("AddDeviceButton")
-                        #endif
-
+                    ToolbarItem(placement: .primaryAction) {
                         Button {
                             openSettings()
                         } label: {
@@ -72,8 +65,25 @@ struct DeviceSplitRoot<Detail: View>: View {
                 }
                 #endif
         } detail: {
+            // Keep the detail pane LTR too. The remote view's inner
+            // ScrollView centers its content horizontally; under RTL the
+            // ScrollView anchors content to the trailing (right) edge and
+            // clips the left half of the remote. The only RTL-sensitive
+            // bits inside the detail pane are SwiftUI `Text` views, which
+            // mirror per-character via bidi regardless of the surrounding
+            // layoutDirection.
             detail(selectedDevice)
         }
+        #if !os(macOS)
+        .environment(\.layoutDirection, .leftToRight)
+        #endif
+        #if os(visionOS)
+        // visionOS's default split-view style collapses the sidebar into a
+        // floating ornament/popover in RTL even with .all visibility. The
+        // .balanced style keeps both columns inline at fixed widths so the
+        // detail pane actually renders within the window.
+        .navigationSplitViewStyle(.balanced)
+        #endif
         .onAppear {
             if scanIPV4Actor == nil { scanIPV4Actor = DeviceDiscoveryActor() }
             if scanSSDPActor == nil { scanSSDPActor = DeviceDiscoveryActor() }

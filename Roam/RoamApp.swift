@@ -314,6 +314,14 @@ struct RoamApp: App {
                             height: inScreenshotTestingContext() ? macOSHeigth : nil
                         )
                         .frame(minWidth: 400, minHeight: 950)
+                        // visionOS's NavigationSplitView reads layout
+                        // direction from the scene/window root, not from
+                        // per-view environment overrides. Pin the whole
+                        // window to LTR so the sidebar stays inline on the
+                        // left and the detail pane actually renders in
+                        // Arabic. Arabic text inside continues to display
+                        // RTL via SwiftUI's bidi handling.
+                        .environment(\.layoutDirection, .leftToRight)
                     #endif
                     #if os(iOS)
                         .task {

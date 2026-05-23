@@ -55,19 +55,28 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         addScreenshot(scanningApp.screenshot(), name: "\(locale.identifier)/4/ScreenScanning")
         scanningApp.terminate()
 
-        // 2. Primary (detail pager auto-opens to first device).
+        // 2. Primary (detail pager auto-opens to first device). The settle
+        //    covers: blocking data load → PhoneHomeView appear → 150ms
+        //    auto-push delay → .zoom push animation → PhoneDetailPage's
+        //    DeviceLoader populating the per-page device. On a cold
+        //    first launch the chain takes ~5s; shorter waits leave
+        //    selectedDevice nil and render the remote in its disabled
+        //    (grey) state with no device-name header.
         let primaryApp = XCUIApplication()
         appendLocaleArgs(primaryApp, locale: locale)
         primaryApp.launchArguments += ["-DataTesting", "-DataLoadTestingData", "-ScreenshotTesting"]
         primaryApp.launch()
-        try await Task.sleep(nanoseconds: 2_500_000_000)
+        try await Task.sleep(nanoseconds: 7_000_000_000)
         addScreenshot(primaryApp.screenshot(), name: "\(locale.identifier)/1/Primary")
 
         // 3. Tap "All devices" button to navigate back to the home grid.
+        //    The `.zoom` navigation pop animation takes ~0.4s; wait
+        //    2.5s past the tap so the home grid has fully settled and we
+        //    don't capture a half-zoomed device card.
         let allDevicesButton = primaryApp.buttons["AllDevicesButton"]
         if allDevicesButton.waitForExistence(timeout: 5) && allDevicesButton.isHittable {
             allDevicesButton.tap()
-            try await Task.sleep(nanoseconds: 1_000_000_000)
+            try await Task.sleep(nanoseconds: 2_500_000_000)
             addScreenshot(
                 primaryApp.screenshot(), name: "\(locale.identifier)/2/Home"
             )
@@ -75,24 +84,59 @@ final class RoamUITestsScreenshotTests: XCTestCase {
             print("AllDevicesButton not hittable — skipping Home capture")
         }
 
-        // 4. Tap "Settings" from the home grid bottom bar to push the
-        //    settings sheet, capture it.
-        let settingsButton = primaryApp.buttons["SettingsButton"]
-        if settingsButton.waitForExistence(timeout: 5) && settingsButton.isHittable {
-            settingsButton.tap()
-            try await Task.sleep(nanoseconds: 1_000_000_000)
-            addScreenshot(
-                primaryApp.screenshot(), name: "\(locale.identifier)/7/Settings"
-            )
-        } else {
-            print("SettingsButton not hittable — skipping Settings capture")
-        }
-
         primaryApp.terminate()
 
-        // 5. Landscape primary — relaunch with -ForceLandscapeLeft so the
+        // 4. Settings — relaunch with -OpenSettings so RemoteRoot's
+        //    `applyLaunchSettingsIfRequested` pushes the Settings sheet on
+        //    first appear. Driving the bottom-bar SettingsButton via XCUI
+        //    was unreliable on the 6.5" iPhone 11 sim (the chain of
+        //    Primary → AllDevicesButton → SettingsButton occasionally lost
+        //    the sheet behind animations) — the launch arg always works.
+        let settingsApp = XCUIApplication()
+        appendLocaleArgs(settingsApp, locale: locale)
+        settingsApp.launchArguments += [
+            "-DataTesting", "-DataLoadTestingData", "-ScreenshotTesting",
+            "-OpenSettings",
+        ]
+        settingsApp.launch()
+        try await Task.sleep(nanoseconds: 3_000_000_000)
+        addScreenshot(
+            settingsApp.screenshot(), name: "\(locale.identifier)/7/Settings"
+        )
+        settingsApp.terminate()
+
+        // 5. Keyboard open — relaunch with -OpenKeyboard so the
+        //    PhoneDeviceDetailPager auto-shows the keyboard entry text
+        //    field from first appear (and the system software keyboard
+        //    follows because the TextField becomes first responder).
+        //    Driving the toolbar/floating keyboard button via XCUI is
+        //    brittle under non-en locales — the launch arg is reliable.
+        let keyboardApp = XCUIApplication()
+        appendLocaleArgs(keyboardApp, locale: locale)
+        keyboardApp.launchArguments += [
+            "-DataTesting", "-DataLoadTestingData", "-ScreenshotTesting",
+            "-OpenKeyboard",
+        ]
+        keyboardApp.launch()
+        try await Task.sleep(nanoseconds: 4_000_000_000)
+        addScreenshot(
+            keyboardApp.screenshot(), name: "\(locale.identifier)/5/KeyboardOpen"
+        )
+        keyboardApp.terminate()
+
+        // 6. Landscape primary — relaunch with -ForceLandscapeLeft so the
         //    app drives the rotation via UIWindowScene.requestGeometryUpdate
         //    (XCUIDevice.shared.orientation is a no-op on Xcode 26 sims).
+        //    Capture via XCUIScreen.main.screenshot() which writes the
+        //    device-native framebuffer (always portrait pixel dims). The
+        //    Python orchestrator post-rotates the PNG 90° CW to satisfy
+        //    App Store Connect's landscape dim requirement.
+        //
+        //    `simctl io booted screenshot` was tried as a "real landscape"
+        //    capture, but the device framebuffer stays portrait regardless
+        //    of how the Simulator window is rotated — the rotation only
+        //    affects the host window's visual presentation, not the
+        //    captured pixels.
         let landscapeApp = XCUIApplication()
         appendLocaleArgs(landscapeApp, locale: locale)
         landscapeApp.launchArguments += [
@@ -100,11 +144,7 @@ final class RoamUITestsScreenshotTests: XCTestCase {
             "-ForceLandscapeLeft",
         ]
         landscapeApp.launch()
-        try await Task.sleep(nanoseconds: 3_000_000_000)
-        // XCUIScreen.main.screenshot() returns the actual rendered framebuffer
-        // (post-rotation if the simulator honored requestGeometryUpdate). The
-        // Python orchestrator handles any necessary post-rotation to satisfy
-        // App Store Connect's landscape pixel-dim requirement.
+        try await Task.sleep(nanoseconds: 5_000_000_000)
         addScreenshot(
             XCUIScreen.main.screenshot(),
             name: "\(locale.identifier)/3/LandscapePrimary"
@@ -132,7 +172,7 @@ final class RoamUITestsScreenshotTests: XCTestCase {
         appendLocaleArgs(primaryApp, locale: locale)
         primaryApp.launchArguments += ["-DataTesting", "-DataLoadTestingData", "-ScreenshotTesting"]
         primaryApp.launch()
-        try await Task.sleep(nanoseconds: 2_500_000_000)
+        try await Task.sleep(nanoseconds: 3_000_000_000)
         addScreenshot(primaryApp.screenshot(), name: "\(locale.identifier)/1/Primary")
         primaryApp.terminate()
 
@@ -146,7 +186,7 @@ final class RoamUITestsScreenshotTests: XCTestCase {
             "-OpenKeyboard",
         ]
         keyboardApp.launch()
-        try await Task.sleep(nanoseconds: 3_000_000_000)
+        try await Task.sleep(nanoseconds: 4_000_000_000)
         addScreenshot(keyboardApp.screenshot(), name: "\(locale.identifier)/5/KeyboardOpen")
         keyboardApp.terminate()
 
@@ -159,26 +199,22 @@ final class RoamUITestsScreenshotTests: XCTestCase {
             "-OpenSettings",
         ]
         settingsApp.launch()
-        try await Task.sleep(nanoseconds: 2_000_000_000)
+        try await Task.sleep(nanoseconds: 2_500_000_000)
         addScreenshot(settingsApp.screenshot(), name: "\(locale.identifier)/7/Settings")
         settingsApp.terminate()
 
-        // 5. Landscape primary — for the iPad we also rely on the existing
-        //    iPadOS sim rotation workaround in scripts/sync-metadata.py.
-        let landscapeApp = XCUIApplication()
-        appendLocaleArgs(landscapeApp, locale: locale)
-        landscapeApp.launchArguments += [
-            "-DataTesting", "-DataLoadTestingData", "-ScreenshotTesting",
-        ]
-        XCUIDevice.shared.orientation = .landscapeLeft
-        landscapeApp.launch()
-        try await Task.sleep(nanoseconds: 3_000_000_000)
-        addScreenshot(
-            landscapeApp.screenshot(),
-            name: "\(locale.identifier)/3/LandscapePrimary"
-        )
-        landscapeApp.terminate()
-        XCUIDevice.shared.orientation = .portrait
+        // 5. Landscape primary — captured by the Python orchestrator via
+        //    `simctl io booted screenshot` after rotating the booted sim
+        //    through Simulator.app's Device → Orientation → Landscape Left
+        //    menu (sent via osascript). On Xcode 26 iPad sims:
+        //      - XCUIDevice.shared.orientation is a no-op.
+        //      - requestGeometryUpdate(.landscapeLeft) returns success but
+        //        the iPad scene stays portrait because the iPad app isn't
+        //        UIRequiresFullScreen — orientation is system-controlled.
+        //      - A system-side menu rotation DOES change the scene, and
+        //        Roam's Info.plist supports all 4 orientations so it
+        //        responds with a real landscape layout.
+        //    Nothing to do from the test side.
     }
 
 #elseif os(visionOS)

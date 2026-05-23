@@ -585,7 +585,7 @@ class LocalizedMetadata:
 # `_get_*_screenshots` from returning stale files when the pipeline has
 # moved on (e.g. switching macOS from xcresult-recovery to direct app
 # launch, or adding new visionOS Keyboard/Settings states).
-SCREENSHOT_SCHEMA_VERSION = "2026-05-17-v2"
+SCREENSHOT_SCHEMA_VERSION = "2026-05-20-v5"
 
 
 def _ensure_cache_schema(cache_root: str) -> None:
@@ -645,6 +645,45 @@ def _read_png_dimensions(path: str) -> tuple[int, int] | None:
 def _dimensions_match(dims: tuple[int, int], display_type: str) -> bool:
     accepted = DISPLAY_TYPE_DIMENSIONS.get(display_type, [])
     return dims in accepted
+
+
+def _strip_png_exif(path: str) -> bool:
+    """Strip any `eXIf` chunk from a PNG so downstream consumers
+    (Finder/Preview/App Store Connect's CDN) use only the IHDR pixel
+    dimensions for display, not the embedded EXIF orientation flag.
+
+    `sips --rotate` rotates the actual pixel data AND inserts an EXIF
+    orientation tag that compensates (rotating LandscapeLeft pixels 90°
+    CW writes Orientation=6, "rotate 90° CW for display"). The compensation
+    means EXIF-aware viewers re-rotate back to the original portrait
+    layout, defeating the purpose of the sips rotation entirely. Apple's
+    ASC CDN does the same, which is why our landscape iPhone uploads were
+    being served as 1320x2868 portrait with sideways content.
+
+    Returns True if a chunk was stripped, False if no eXIf chunk existed.
+    """
+    with open(path, "rb") as fh:
+        data = fh.read()
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        return False
+    out = bytearray(data[:8])
+    i = 8
+    stripped = False
+    while i + 8 <= len(data):
+        length = int.from_bytes(data[i:i + 4], "big")
+        ctype = data[i + 4:i + 8]
+        chunk_total = 12 + length  # length + type + data + crc
+        if ctype == b"eXIf":
+            stripped = True
+        else:
+            out.extend(data[i:i + chunk_total])
+        i += chunk_total
+        if ctype == b"IEND":
+            break
+    if stripped:
+        with open(path, "wb") as fh:
+            fh.write(out)
+    return stripped
 
 
 def _recover_pngs_from_xcresult_data(
@@ -717,6 +756,297 @@ def _recover_pngs_from_xcresult_data(
         shutil.copyfile(src, dst)
 
     return len(pngs)
+
+
+def _rotate_simulator_via_menu(orientation: str) -> bool:
+    """Click Simulator.app's Device → Orientation → <orientation> menu via
+    osascript to rotate the booted device. Unlike Cmd+→ which only flips
+    the host window, the menu click sends a true device-level orientation
+    change that the iOS/iPadOS scene actually responds to (the iPad scene
+    re-lays out in landscape proportions).
+
+    `orientation` must be one of: "Portrait", "Landscape Left",
+    "Landscape Right", "Portrait Upside Down".
+
+    Requires Accessibility permission for the process driving osascript.
+    """
+    if orientation not in {
+        "Portrait", "Landscape Left", "Landscape Right", "Portrait Upside Down"
+    }:
+        raise ValueError(f"Unknown orientation: {orientation}")
+    script = (
+        'tell application "Simulator" to activate\n'
+        'delay 0.5\n'
+        'tell application "System Events"\n'
+        '    tell process "Simulator"\n'
+        f'        click menu item "{orientation}" of menu "Orientation"'
+        ' of menu item "Orientation" of menu "Device" of menu bar 1\n'
+        '    end tell\n'
+        'end tell\n'
+    )
+    proc = subprocess.run(
+        ["osascript", "-e", script], capture_output=True
+    )
+    if proc.returncode != 0:
+        stderr = proc.stderr.decode("utf-8", errors="replace")
+        print(f"  Warning: simulator rotate ({orientation!r}) failed: {stderr}")
+        return False
+    return True
+
+
+def _resolve_device_udid_by_name(device_name: str) -> str | None:
+    """Look up the UDID of an available simulator matching `device_name`
+    regardless of boot state. Picks the newest-runtime entry on a tie."""
+    proc = subprocess.run(
+        ["xcrun", "simctl", "list", "devices", "available", "--json"],
+        capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        return None
+    try:
+        data = json.loads(proc.stdout)
+    except (json.JSONDecodeError, ValueError):
+        return None
+    matches: list[tuple[str, str]] = []
+    for runtime_key, devices in data.get("devices", {}).items():
+        for device in devices:
+            if device.get("name") == device_name and device.get("isAvailable"):
+                matches.append((runtime_key, device.get("udid")))
+    if not matches:
+        return None
+    matches.sort(reverse=True)
+    return matches[0][1]
+
+
+def _boot_sim_and_open_window(udid: str) -> bool:
+    """Quit Simulator.app, shutdown all other booted sims, boot the target
+    device, open Simulator focused on it, and wait for the Device menu's
+    Orientation submenu to be reachable via System Events. Without the full
+    teardown the Simulator app frequently ends up in a state where its
+    `menu bar 1 → Device → Orientation` menu item can't be found by
+    osascript (-1728), even though Simulator is visibly open — typically
+    after xcodebuild's cloned sim is torn down."""
+    # Quit Simulator.app to clear any stale menu state from cloned devices
+    # left over by `xcodebuild test`.
+    subprocess.run(
+        ["osascript", "-e", 'tell application "Simulator" to quit'],
+        capture_output=True,
+    )
+    time.sleep(1.0)
+
+    # Shutdown anything still booted so the next boot is the only one,
+    # and Simulator's CurrentDevice argument resolves unambiguously.
+    subprocess.run(
+        ["xcrun", "simctl", "shutdown", "all"],
+        capture_output=True,
+    )
+    time.sleep(1.0)
+
+    boot_proc = subprocess.run(
+        ["xcrun", "simctl", "boot", udid],
+        capture_output=True,
+    )
+    if boot_proc.returncode != 0:
+        stderr = boot_proc.stderr.decode("utf-8", errors="replace")
+        if "Booted" not in stderr:
+            print(f"  Warning: simctl boot failed for {udid}: {stderr}")
+            return False
+
+    subprocess.run(
+        ["open", "-a", "Simulator", "--args", "-CurrentDeviceUDID", udid],
+        capture_output=True,
+    )
+    subprocess.run(
+        ["xcrun", "simctl", "bootstatus", udid, "-b"],
+        capture_output=True,
+        timeout=180,
+    )
+
+    # Poll for the Device → Orientation menu to be reachable. Without
+    # this the very first menu click after Simulator's window appears
+    # races with menubar population and fails with -1728.
+    probe_script = (
+        'tell application "System Events" to tell process "Simulator" to '
+        'exists menu item "Orientation" of menu "Device" of menu bar 1'
+    )
+    deadline = time.time() + 30.0
+    while time.time() < deadline:
+        proc = subprocess.run(
+            ["osascript", "-e", probe_script],
+            capture_output=True, text=True,
+        )
+        if proc.returncode == 0 and proc.stdout.strip() == "true":
+            time.sleep(0.5)  # one extra beat for the submenu to be clickable
+            return True
+        time.sleep(1.0)
+    print(
+        f"  Warning: Simulator's Device → Orientation menu never appeared "
+        f"for {udid} after 30s — proceeding anyway"
+    )
+    return True
+
+
+def _capture_ipad_landscape_via_simctl(
+    device_name: str,
+    locale_id: str,
+    export_dir: str,
+    bundle_id: str = "com.msdrigg.roam",
+) -> bool:
+    """
+    iPad-specific landscape capture. iPad apps that aren't
+    UIRequiresFullScreen can't force their own orientation
+    (`requestGeometryUpdate(.landscapeLeft)` silently no-ops), so we drive
+    the orientation system-side: rotate the booted sim via
+    Simulator.app's Device → Orientation → Landscape Left menu, let the
+    iPad scene re-lay out in real landscape proportions, then capture via
+    `simctl io booted screenshot`.
+
+    The captured framebuffer is still portrait pixel dims (the sim
+    framebuffer doesn't follow device orientation), so the caller must
+    sips-rotate the file 270° to produce landscape pixel dims with the
+    content right-side-up. Returns True if a file was successfully written.
+    """
+    import uuid as _uuid
+
+    udid = _resolve_device_udid_by_name(device_name)
+    if udid is None:
+        print(
+            f"  Skipping landscape for {device_name}/{locale_id}: "
+            f"no simulator named {device_name!r} available"
+        )
+        return False
+
+    if not _boot_sim_and_open_window(udid):
+        return False
+
+    derived_data = os.path.expanduser("~/Library/Developer/Xcode/DerivedData")
+    candidates: list[str] = []
+    if os.path.isdir(derived_data):
+        for entry in os.listdir(derived_data):
+            if entry.startswith("Roam-"):
+                candidate = os.path.join(
+                    derived_data, entry,
+                    "Build", "Products", "Debug-iphonesimulator", "Roam.app",
+                )
+                if os.path.isdir(candidate):
+                    candidates.append(candidate)
+    if not candidates:
+        print(
+            f"  No Debug-iphonesimulator Roam.app for {device_name} landscape"
+        )
+        return False
+    app_path = max(candidates, key=os.path.getmtime)
+
+    landscape_subdir = os.path.join(export_dir, f"{device_name} (landscape)")
+    os.makedirs(landscape_subdir, exist_ok=True)
+
+    underscore_locale = locale_id.replace("-", "_")
+    common_args = [
+        "-AppleLanguages", f"({locale_id})",
+        "-AppleLocale", underscore_locale,
+    ]
+
+    # Ensure we start from portrait so the rotation menu actually triggers
+    # a transition (clicking Landscape Left from Landscape Left is a no-op).
+    _rotate_simulator_via_menu("Portrait")
+    time.sleep(1.0)
+
+    subprocess.run(
+        ["xcrun", "simctl", "terminate", udid, bundle_id],
+        capture_output=True,
+    )
+    time.sleep(0.5)
+    install_proc = subprocess.run(
+        ["xcrun", "simctl", "install", udid, app_path],
+        capture_output=True,
+    )
+    if install_proc.returncode != 0:
+        stderr = install_proc.stderr.decode("utf-8", errors="replace")
+        print(f"  Warning: simctl install failed for iPad landscape ({stderr})")
+        return False
+
+    try:
+        launch_proc = subprocess.run(
+            [
+                "xcrun", "simctl", "launch", udid, bundle_id,
+                *common_args,
+                "-DataTesting", "-DataLoadTestingData", "-ScreenshotTesting",
+            ],
+            capture_output=True,
+        )
+        if launch_proc.returncode != 0:
+            stderr = launch_proc.stderr.decode("utf-8", errors="replace")
+            print(f"  Warning: simctl launch failed for iPad landscape: {stderr}")
+            return False
+
+        # Wait for the app to render its initial portrait scene fully —
+        # blocking data load (~1s) + PhoneHomeView -> DeviceSplitRoot
+        # appear + DeviceLoader populate + initial layout. RTL locales
+        # (Arabic) take noticeably longer for the SwiftUI layout pass to
+        # finish. A short wait here means the rotation transition collides
+        # with the still-in-flight initial-layout pass and the captured
+        # frame is half portrait-rotated-90°, half landscape.
+        time.sleep(10.0)
+
+        if not _rotate_simulator_via_menu("Landscape Left"):
+            return False
+
+        # Pixel-stability poll: take screenshots ~1s apart until THREE in
+        # a row match byte-for-byte, then use that frame. iPad split-view's
+        # landscape transition runs ~0.3s after the orientation change but
+        # the SwiftUI re-layout (sidebar slides in, detail expands, app
+        # links re-flow) keeps re-rendering for another 2-4s; RTL locales
+        # add another second or two. Requiring 3 consecutive identical
+        # frames (=2s stable) before accepting cuts down on the "we
+        # caught two duplicate transient frames" false-positive that 1
+        # stable frame produced under ar-SA.
+        import hashlib as _hashlib
+
+        fn = (
+            f"{locale_id}3LandscapePrimary_0_"
+            f"{_uuid.uuid4().hex.upper()}.png"
+        )
+        out_path = os.path.join(landscape_subdir, fn)
+        prev_hash = None
+        stable_count = 0
+        max_attempts = 25  # 25s budget post-rotation
+        for attempt in range(max_attempts):
+            time.sleep(1.0)
+            shot_proc = subprocess.run(
+                ["xcrun", "simctl", "io", udid, "screenshot", out_path],
+                capture_output=True,
+            )
+            if shot_proc.returncode != 0 or not os.path.exists(out_path):
+                continue
+            with open(out_path, "rb") as f:
+                cur_hash = _hashlib.md5(f.read()).hexdigest()
+            if cur_hash == prev_hash:
+                stable_count += 1
+                if stable_count >= 2:
+                    break
+            else:
+                stable_count = 0
+            prev_hash = cur_hash
+        if not os.path.exists(out_path):
+            print(
+                f"  Warning: simctl screenshot failed for iPad landscape "
+                f"({device_name}/{locale_id})"
+            )
+            return False
+        print(
+            f"  Captured iPad landscape (pre-rotation) for {locale_id} "
+            f"({fn}) after {attempt + 1} stability polls"
+        )
+        subprocess.run(
+            ["xcrun", "simctl", "terminate", udid, bundle_id],
+            capture_output=True,
+        )
+        time.sleep(0.5)
+        return True
+    finally:
+        # Restore portrait so the next test/run starts from a known state.
+        _rotate_simulator_via_menu("Portrait")
+        time.sleep(0.5)
 
 
 def _collect_locale_screenshots(
@@ -939,7 +1269,11 @@ class MetadataManager:
             "-AppleLocale", underscore_locale,
         ]
 
-        # (state_index, attachment_name, extra_launch_args, settle_seconds)
+        # (state_index, attachment_name, extra_launch_args, settle_seconds,
+        #  post_launch_action) — `post_launch_action` runs after the settle
+        # delay and before the screenshot. Used by KeyboardOpen to dolly the
+        # visionOS camera back so the floating dictation/keyboard pill is
+        # inside the captured 3840×2160 framebuffer instead of below it.
         # State indices match the iOS test convention so the existing
         # _collect_locale_screenshots helper sorts them consistently
         # (Primary first, then KeyboardOpen, then Settings, then ScreenScanning).
@@ -949,20 +1283,20 @@ class MetadataManager:
         # to drive UI taps (XCTest's screenshots return 1x1 placeholders on
         # the visionOS sim).
         states = [
-            (4, "ScreenScanning", ["-DataTesting"], 6),
-            (1, "Primary", ["-DataLoadTestingData", "-ScreenshotTesting", "-DataTesting"], 8),
+            (4, "ScreenScanning", ["-DataTesting"], 6, None),
+            (1, "Primary", ["-DataLoadTestingData", "-ScreenshotTesting", "-DataTesting"], 8, None),
             (5, "KeyboardOpen", [
                 "-DataLoadTestingData",
                 "-ScreenshotTesting",
                 "-DataTesting",
                 "-OpenKeyboard",
-            ], 8),
+            ], 8, "vision_keyboard_camera"),
             (7, "Settings", [
                 "-DataLoadTestingData",
                 "-ScreenshotTesting",
                 "-DataTesting",
                 "-OpenSettings",
-            ], 8),
+            ], 8, None),
         ]
 
         # Boot sim if not already.
@@ -988,7 +1322,7 @@ class MetadataManager:
             return None
 
         captured_any = False
-        for state_index, state_name, extra_args, settle in states:
+        for state_index, state_name, extra_args, settle, post_action in states:
             # Terminate any prior instance so launch args take effect.
             subprocess.run(
                 ["xcrun", "simctl", "terminate", "booted", bundle_id],
@@ -1011,6 +1345,9 @@ class MetadataManager:
                 continue
 
             time.sleep(settle)
+
+            if post_action == "vision_keyboard_camera":
+                self._prepare_vision_keyboard_camera()
 
             # Filename matches the format _collect_locale_screenshots expects.
             fn = (
@@ -1039,6 +1376,78 @@ class MetadataManager:
         )
 
         return export_dir if captured_any else None
+
+    def _prepare_vision_keyboard_camera(self) -> None:
+        """Position the visionOS sim camera so the system dictation/keyboard
+        pill — which floats below the app window in 3D space — lands inside
+        the captured 3840×2160 framebuffer instead of below it.
+
+        Sequence:
+          1. Disconnect the host hardware keyboard (Shift+Cmd+K toggle). With
+             a HW keyboard connected visionOS suppresses the on-screen input
+             surface entirely. The shortcut also flips the simulator's input
+             mode so subsequent "s" keystrokes drive camera navigation in the
+             sim rather than getting typed into the focused text field.
+          2. Reset Camera (Ctrl+Cmd+0) to a known starting pose.
+          3. Hold "s" for ~5s to dolly the camera back. Holding it (rather
+             than tapping) lets the sim's continuous-motion handler move far
+             enough back to fit both the app window and the keyboard pill.
+          4. Re-Center Open Apps to recompose the scene so the app + keyboard
+             pill are both inside the user's POV.
+
+        All steps are best-effort: any AppleScript failure logs a warning
+        and the screenshot is taken anyway. Requires Accessibility permission
+        for the process driving osascript.
+        """
+        toggle_script = (
+            'tell application "Simulator" to activate\n'
+            'delay 0.4\n'
+            'tell application "System Events"\n'
+            '    tell process "Simulator"\n'
+            '        set mark to value of attribute "AXMenuItemMarkChar" '
+            'of menu item "Connect Hardware Keyboard" of menu 1 of '
+            'menu item "Keyboard" of menu "I/O" of menu bar 1\n'
+            '        if mark is not missing value then\n'
+            '            keystroke "k" using {shift down, command down}\n'
+            '            delay 0.4\n'
+            '        end if\n'
+            '    end tell\n'
+            'end tell\n'
+        )
+        toggle = subprocess.run(
+            ["osascript", "-e", toggle_script], capture_output=True
+        )
+        if toggle.returncode != 0:
+            print(
+                "  Warning: visionOS HW keyboard disable failed: "
+                f"{toggle.stderr.decode('utf-8', errors='replace').strip()}"
+            )
+
+        camera_script = (
+            'tell application "Simulator" to activate\n'
+            'delay 0.3\n'
+            'tell application "System Events"\n'
+            '    keystroke "0" using {command down, control down}\n'
+            '    delay 0.5\n'
+            '    key down "s"\n'
+            '    delay 5\n'
+            '    key up "s"\n'
+            '    delay 0.5\n'
+            '    tell process "Simulator"\n'
+            '        click menu item "Re-Center Open Apps" of '
+            'menu "Device" of menu bar 1\n'
+            '    end tell\n'
+            'end tell\n'
+            'delay 1\n'
+        )
+        camera = subprocess.run(
+            ["osascript", "-e", camera_script], capture_output=True
+        )
+        if camera.returncode != 0:
+            print(
+                "  Warning: visionOS camera reposition failed: "
+                f"{camera.stderr.decode('utf-8', errors='replace').strip()}"
+            )
 
     def _get_mac_screenshots_via_direct_launch(
         self, device_name: str, locale_id: str
@@ -1321,7 +1730,7 @@ class MetadataManager:
         # seen, give it POST_TEST_GRACE seconds to finalize the result
         # bundle, then kill. HARD_TIMEOUT bounds the whole invocation in
         # case the test itself hangs.
-        HARD_TIMEOUT = 600
+        HARD_TIMEOUT = 1200
         # On macOS the test writes PNGs directly to SCREENSHOT_OUTPUT_DIR
         # during execution, so we don't need to wait for xcresult
         # finalization (which never completes due to xcodebuild's post-test
@@ -1433,54 +1842,66 @@ class MetadataManager:
                 return None
             print(f"  Recovered {recovered} PNG(s) from {screenshots_dir}/Data")
 
-        # iPadOS 26 simulator silently ignores XCUIDevice.orientation changes —
-        # the screen stays portrait but XCTest tags the capture with landscape
-        # dimensions, so LandscapePrimary comes out as sideways content in a
-        # landscape canvas. Rotate 270° (counter-clockwise) so the content
-        # reads correctly. The result is 2064x2752 (portrait pixel dims), which
-        # APP_IPAD_PRO_3GEN_129 accepts.
+        # iPad landscape: the XCTest path skipped LandscapePrimary because
+        # iPad apps without UIRequiresFullScreen can't force their own
+        # orientation. Capture it now via a separate simctl-driven pass
+        # that uses Simulator.app's menu rotation (which DOES propagate
+        # to the iPad scene). The captured file lands in
+        # `screenshots_dir_export` so the same post-rotation sips step
+        # below picks it up like any other LandscapePrimary.
         if "iPad" in device_name:
-            for root, _, files in os.walk(screenshots_dir_export):
-                for fname in files:
-                    if "LandscapePrimary" in fname and fname.lower().endswith(".png"):
-                        fpath = os.path.join(root, fname)
-                        dims = _read_png_dimensions(fpath)
-                        if dims == (2752, 2064):
-                            rot = subprocess.run(
-                                ["sips", "--rotate", "270", fpath, "--out", fpath],
-                                capture_output=True,
-                            )
-                            if rot.returncode == 0:
-                                print(
-                                    f"Rotated iPad LandscapePrimary 270° "
-                                    f"({device_name}/{locale_id}) to fix iPadOS "
-                                    f"sim rotation bug"
-                                )
+            print(f"Capturing iPad landscape via menu rotation for {locale_id}")
+            _capture_ipad_landscape_via_simctl(
+                device_name=device_name,
+                locale_id=locale_id,
+                export_dir=screenshots_dir_export,
+            )
 
-        # iPhone test uses -ForceLandscapeLeft + UIWindowScene.requestGeometryUpdate
-        # to render the app in landscape, then captures via XCUIScreen.main
-        # .screenshot() which writes the device-native framebuffer (always
-        # portrait pixel dims, e.g. 1320x2868). The landscape-rendered content
-        # appears rotated 90° within that portrait frame. Rotate 90° CW to
-        # produce a properly oriented 2868x1320 landscape image that
-        # APP_IPHONE_69 accepts.
-        if "iPhone" in device_name:
+        # iPhone / iPad LandscapePrimary post-rotation.
+        #
+        # On iPhone the XCTest path uses -ForceLandscapeLeft +
+        # `requestGeometryUpdate(.landscapeLeft)`. The app's scene rotates,
+        # but XCUIScreen.main.screenshot() returns the device-native
+        # portrait framebuffer with the landscape content rendered rotated
+        # 90° CW inside that canvas. Rotate 90° CW with sips to get
+        # APP_IPHONE_67/_65-acceptable landscape pixel dims.
+        #
+        # On iPad the simctl-driven capture above produces a portrait
+        # framebuffer with the landscape content rendered rotated 90° CCW
+        # (opposite of iPhone, because system-driven landscape-left
+        # rotates the content the other way). sips --rotate 270 puts it
+        # right-side-up.
+        if "iPhone" in device_name or "iPad" in device_name:
             for root, _, files in os.walk(screenshots_dir_export):
                 for fname in files:
-                    if "LandscapePrimary" in fname and fname.lower().endswith(".png"):
-                        fpath = os.path.join(root, fname)
-                        dims = _read_png_dimensions(fpath)
-                        if dims is not None and dims[1] > dims[0]:
-                            rot = subprocess.run(
-                                ["sips", "--rotate", "90", fpath, "--out", fpath],
-                                capture_output=True,
-                            )
-                            if rot.returncode == 0:
-                                print(
-                                    f"Rotated iPhone LandscapePrimary 90° "
-                                    f"({device_name}/{locale_id}) to fix iOS "
-                                    f"sim rotation bug"
-                                )
+                    if "LandscapePrimary" not in fname or not fname.lower().endswith(".png"):
+                        continue
+                    fpath = os.path.join(root, fname)
+                    dims = _read_png_dimensions(fpath)
+                    if dims is None or dims[0] >= dims[1]:
+                        continue
+                    rot_deg = "270" if "iPad" in device_name else "90"
+                    rot = subprocess.run(
+                        ["sips", "--rotate", rot_deg, fpath, "--out", fpath],
+                        capture_output=True,
+                    )
+                    if rot.returncode == 0:
+                        new_dims = _read_png_dimensions(fpath)
+                        # Strip the eXIf chunk sips inserts to compensate
+                        # for the pixel rotation — without this Finder/
+                        # Preview/ASC's CDN re-rotate the image back to
+                        # the original orientation for display, defeating
+                        # the rotation entirely. See _strip_png_exif.
+                        stripped = _strip_png_exif(fpath)
+                        print(
+                            f"Rotated LandscapePrimary {dims[0]}x{dims[1]} → "
+                            f"{new_dims[0]}x{new_dims[1]} "
+                            f"({device_name}/{locale_id})"
+                            f"{' [stripped eXIf]' if stripped else ''}"
+                        )
+                    else:
+                        stderr = rot.stderr.decode("utf-8", errors="replace")
+                        print(f"  Warning: sips rotate failed for {fpath}: {stderr}")
 
         # iPhone 11 sim renders at 828x1792 (6.1" dims), but we want the
         # captures in the APP_IPHONE_65 (6.5") slot — Apple requires 1242x2688.

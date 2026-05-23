@@ -97,7 +97,6 @@ struct AppLinksView: View {
         GeometryReader { geometry in
             if !appLinks.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    Spacer()
                     LazyHGrid(
                         rows: Array(
                             repeating: GridItem(.fixed(CGFloat(gridHeight)), spacing: gridRowSpacing),
@@ -118,14 +117,28 @@ struct AppLinksView: View {
                         }
                     }
                     .scrollTargetLayout()
+                    // Lock the scroll content to a strict size: width pins
+                    // to the ScrollView's viewport (so a short app list
+                    // still spans the full bar for scroll snap), height
+                    // matches the grid's intrinsic (rows × gridHeight +
+                    // (rows-1) × gridRowSpacing). A `minHeight` here let
+                    // LazyHGrid stretch and distribute the extra space
+                    // between rows, leaving a visible gap between row 1
+                    // and row 2 on visionOS (gridHeight 145pt). The
+                    // surrounding `Spacer()`s were similarly redundant —
+                    // the grid already fills the viewport width — and
+                    // removing them avoids any extra vertical Spacer
+                    // expansion inside the ScrollView's layout pass.
                     .frame(
                         minWidth: geometry.frame(in: .global).width,
-                        minHeight: geometry.frame(in: .global).height
+                        idealHeight: CGFloat(gridHeight) * CGFloat(rows)
+                            + gridRowSpacing * CGFloat(max(rows - 1, 0)),
+                        maxHeight: CGFloat(gridHeight) * CGFloat(rows)
+                            + gridRowSpacing * CGFloat(max(rows - 1, 0))
                     )
 #if os(macOS)
                     .captureVerticalScrollWheel()
 #endif
-                    Spacer()
                 }
                 .scrollClipDisabled()
                 .safeAreaPadding(.horizontal, 4)

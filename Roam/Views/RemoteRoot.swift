@@ -139,8 +139,26 @@ struct RemoteRoot: View {
                         externalShowKeyboard: $visionOSKeyboardShown,
                         hidesKeyboardToolbarButton: true
                     )
-                    .frame(minWidth: iPadMinContentWidth, minHeight: iPadMinContentHeight)
+                    .frame(
+                        minWidth: iPadMinContentWidth,
+                        minHeight: visionOSKeyboardShown ? 0 : iPadMinContentHeight
+                    )
+                    // While the keyboard-entry overlay is up, pin the
+                    // content height to the ScrollView's viewport so the
+                    // Spacer at the bottom of `mainColumn` actually expands
+                    // and pushes the remote buttons up. Without this the
+                    // ScrollView gives unbounded vertical space to its
+                    // child, the Spacer no-ops, and the keyboardEntry text
+                    // field lands on top of the lowest remote buttons.
+                    .applyBuilder {
+                        if visionOSKeyboardShown {
+                            $0.containerRelativeFrame(.vertical) { length, _ in length }
+                        } else {
+                            $0
+                        }
+                    }
                 }
+                .scrollDisabled(visionOSKeyboardShown)
                 .toolbar {
                     ToolbarItem(placement: .bottomOrnament) {
                         Button {
@@ -161,7 +179,27 @@ struct RemoteRoot: View {
                         unreadMessages: unreadMessages,
                         externalShowKeyboard: $iPadKeyboardShown
                     )
-                    .frame(minWidth: iPadMinContentWidth, minHeight: iPadMinContentHeight)
+                    .frame(
+                        minWidth: iPadMinContentWidth,
+                        minHeight: iPadKeyboardShown ? 0 : iPadMinContentHeight
+                    )
+                    // While the keyboard is up, force the content to
+                    // exactly the ScrollView's visible-above-keyboard
+                    // height so the keyboardEntry overlay (which uses
+                    // `.frame(maxHeight: .infinity, alignment: .bottom)`)
+                    // anchors the text field to just above the system
+                    // keyboard. `.frame(maxHeight: .infinity)` alone is a
+                    // no-op inside a ScrollView (the content stays at
+                    // intrinsic height), but containerRelativeFrame is
+                    // honored — it pins the content's height to the
+                    // scroll container's height.
+                    .applyBuilder {
+                        if iPadKeyboardShown {
+                            $0.containerRelativeFrame(.vertical) { length, _ in length }
+                        } else {
+                            $0
+                        }
+                    }
                 }
                 // While the keyboard-entry text field is up, respect the
                 // keyboard safe area so the field sits just above the system

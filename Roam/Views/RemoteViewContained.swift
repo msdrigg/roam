@@ -97,6 +97,9 @@ struct RemoteViewContained: View {
             return showKeyboardEntry
         }
 #else
+        // visionOS only hides the apps row (via `hideAppsForKeyboardEntry`).
+        // The button grid + d-pad stay rendered so the user can keep
+        // pressing remote buttons while typing.
         return false
 #endif
     }
@@ -354,6 +357,18 @@ struct RemoteViewContained: View {
 
     private func propagateExternalKeyboardChange(_ new: Bool?) {
         guard let new, showKeyboardEntryManual != new else { return }
+        if new {
+            // `keyboardLeaving` is the edge-triggered signal that tells
+            // `KeyboardEntry` to resign focus synchronously inside
+            // `dismissKeyboardEntry`, before the parent's view-removal
+            // animation commits. If it's still `true` from the previous
+            // close, the next `dismissKeyboardEntry` is a no-op edge and
+            // the iOS keyboard lingers until the view tears down. Reset
+            // it here on the external-binding open path; the toolbar
+            // path (`toggleKeyboardEntry`) already does this implicitly
+            // via `keyboardLeaving = showKeyboardEntry`.
+            keyboardLeaving = false
+        }
         withAnimation {
             showKeyboardEntryManual = new
         }
@@ -591,39 +606,37 @@ struct RemoteViewContained: View {
     @ViewBuilder
     private var keyboardEntryOverlay: some View {
         if showKeyboardEntry {
-            GeometryReader { proxy in
-                ScrollView {
-                    VStack {
-                        Button(action: dismissKeyboardEntry, label: {
-                            ZStack {
-                                Rectangle().foregroundColor(.clear)
-                                VStack {
-                                    Spacer()
-                                }
-                            }
-                            .contentShape(Rectangle())
-                        })
-                        .frame(maxHeight: .infinity)
-                        .buttonStyle(.plain)
+            // Pin KeyboardEntry to the BOTTOM of the overlay area using
+            // VStack alignment. The empty Button above it absorbs taps in
+            // the empty area so iPhone (where the remote buttons are
+            // hidden during entry) can tap-anywhere to dismiss.
+            //
+            // The previous GeometryReader + inner ScrollView approach
+            // measured the overlay parent's intrinsic content height
+            // rather than the visible-above-keyboard height. On iPad,
+            // where the remote buttons stay visible and have a small
+            // intrinsic height (~400pt), this parked the text field in
+            // the middle of the screen instead of just above the system
+            // keyboard. A plain VStack with alignment: .bottom anchors
+            // the field to the bottom of the actual overlay frame.
+            VStack(spacing: 0) {
+                Button(action: dismissKeyboardEntry, label: {
+                    Color.clear.contentShape(Rectangle())
+                })
+                .buttonStyle(.plain)
 
-                        KeyboardEntry(
-                            showing: keyboardEntryShowingBinding,
-                            onKeyPress: handleKeyboardEntryPress,
-                            leaving: keyboardLeaving
-                        )
-                        .focused($focusKeyboardMonitor, equals: .entry)
-                        .frame(maxWidth: isHorizontal ? 480 : .infinity)
-                        .padding(.bottom, 10)
-                        .padding(.horizontal, 10)
-                        .zIndex(1)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
-                }
-                .scrollIndicators(.never)
-                #if !os(visionOS)
-                .scrollDismissesKeyboard(.immediately)
-                #endif
+                KeyboardEntry(
+                    showing: keyboardEntryShowingBinding,
+                    onKeyPress: handleKeyboardEntryPress,
+                    leaving: keyboardLeaving
+                )
+                .focused($focusKeyboardMonitor, equals: .entry)
+                .frame(maxWidth: isHorizontal ? 480 : .infinity)
+                .padding(.bottom, 10)
+                .padding(.horizontal, 10)
+                .zIndex(1)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         }
     }
 
