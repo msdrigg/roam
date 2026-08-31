@@ -19,7 +19,7 @@
 
 httpx==0.28.1
 PyJWT[crypto]==2.13.0
-openai==3.3.1
+openai==3.5.0
 
 # Pulled in by PyJWT[crypto], but pinned explicitly so Dependabot keeps
 # tracking it -- the lower bound PyJWT declares (>=3.4.0) is open, so bumping
