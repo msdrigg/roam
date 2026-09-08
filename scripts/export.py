@@ -96,7 +96,13 @@ def verify_archived_attest_entitlement(platform: str, archive_path: str):
     if not candidates:
         raise SystemExit(f"No app bundle found in {archive_path}")
 
-    for app in candidates:
+    # The watch app rides inside the iOS archive with its own bundle id, its own
+    # App ID and so its own capabilities, and it is the one bundle here with no
+    # fallback of any kind: watchOS does not compile the receipt path. It went
+    # out unattested once already because nothing looked at it.
+    embedded = glob.glob(f"{archive_path}/Products/Applications/*.app/Watch/*.app")
+
+    for app in candidates + embedded:
         value = signed_entitlements(app).get(entitlement)
         if not value:
             raise SystemExit(
