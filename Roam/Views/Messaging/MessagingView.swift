@@ -453,7 +453,7 @@ struct MessageView: View {
             ScrollView {
                 LazyVStack {
                     ForEach(zippedMessages, id: \.0.id) { (message, previous) in
-                        MessageBubble(message: message, previous: previous)
+                        MessageBubble(message: message, previous: previous, onRetry: retryMessage)
                     }
                     if showSupportTypingIndicator {
                         SupportTypingIndicator()
@@ -571,6 +571,17 @@ struct MessageView: View {
                     }
                 }
 #endif
+            }
+        }
+    }
+
+    private func retryMessage(id: String) {
+        Log.userInteraction.notice("Retrying a failed message id=\(id, privacy: .public)")
+        Task {
+            await RoamDataHandler.shared.retrySendingMessage(id: id)
+            let result = await RoamDataHandler.shared.refreshMessages(viewed: true)
+            if result > 0 {
+                refreshResetId = UUID()
             }
         }
     }

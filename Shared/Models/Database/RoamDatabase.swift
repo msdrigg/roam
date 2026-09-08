@@ -666,6 +666,10 @@ private extension RoamDatabase {
             try db.execute(sql: "ALTER TABLE devices ADD COLUMN country TEXT")
             try db.execute(sql: "ALTER TABLE devices ADD COLUMN time_zone TEXT")
         }
+        migrator.registerMigration("v5") { db in
+            try db.execute(
+                sql: "ALTER TABLE messages ADD COLUMN send_attempt_count INTEGER NOT NULL DEFAULT 0")
+        }
         return migrator
     }
 
@@ -871,6 +875,7 @@ private extension RoamDatabase {
         )
         message.hidden = row["hidden"]
         message.lastSendAttempt = row["last_send_attempt"]
+        message.sendAttemptCount = row["send_attempt_count"] ?? 0
         return message
     }
 
@@ -883,9 +888,9 @@ private extension RoamDatabase {
             sql: """
                 INSERT INTO messages (
                     id, message, author, viewed, hidden, fetched_backend, last_send_attempt,
-                    nonce, sent_attachments_data, unsent_attachment_data, message_title, robot_message,
-                    ai_message, human_support_message
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    send_attempt_count, nonce, sent_attachments_data, unsent_attachment_data,
+                    message_title, robot_message, ai_message, human_support_message
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
                     message = excluded.message,
                     author = excluded.author,
@@ -893,6 +898,7 @@ private extension RoamDatabase {
                     hidden = excluded.hidden,
                     fetched_backend = excluded.fetched_backend,
                     last_send_attempt = excluded.last_send_attempt,
+                    send_attempt_count = excluded.send_attempt_count,
                     nonce = excluded.nonce,
                     sent_attachments_data = excluded.sent_attachments_data,
                     unsent_attachment_data = excluded.unsent_attachment_data,
@@ -909,6 +915,7 @@ private extension RoamDatabase {
                 message.hidden,
                 message.fetchedBackend,
                 message.lastSendAttempt,
+                message.sendAttemptCount,
                 message.nonce,
                 sentAttachmentsData,
                 unsentAttachmentData,

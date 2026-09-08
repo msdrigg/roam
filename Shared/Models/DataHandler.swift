@@ -106,19 +106,6 @@ actor RoamDataHandler {
     /// message is posted at most once, and drops the one that did the damage.
     private var sendingNonces: Set<String> = []
 
-    /// Consecutive send failures per nonce, used to back the retry off.
-    ///
-    /// A flat 30 second retry is right for a message that failed because the
-    /// link dropped, and badly wrong for one the backend will never accept: the
-    /// user who prompted this was re-uploading 1.3 MB every ~65 seconds, on
-    /// airplane wifi, for a message that could not succeed. Backing off turns
-    /// that into a handful of attempts instead of an unbounded loop.
-    ///
-    /// Deliberately in memory only. Persisting a give-up marker so a message
-    /// stays dead across launches would need a new field on `Message`, and a
-    /// relaunch is a perfectly reasonable moment to try once more anyway.
-    private var sendFailureCounts: [String: Int] = [:]
-
     @MainActor
     private static let _shared: RoamDataHandler = getForShared()
 
@@ -829,6 +816,39 @@ actor RoamDataHandler {
             return await refreshMessages(viewed: false)
         }
 
+        /// Sends a message the app had given up on, because the user asked.
+        ///
+        /// Clearing the attempt count rather than nudging it past the ceiling
+        /// is the point: the user is asserting the reason it kept failing is
+        /// gone - they moved off the plane's wifi, or support fixed something -
+        /// so it gets a fresh run of automatic retries rather than one grudging
+        /// attempt before giving up again.
+        func retrySendingMessage(id: String) async {
+            guard var message = database.messages().first(where: { $0.id == id }),
+                message.author == .me, !message.fetchedBackend
+            else {
+                Log.backend.notice(
+                    "Ignoring retry for a message that is not a failed send id=\(id, privacy: .public)")
+                return
+            }
+
+            Log.backend.notice(
+                "Retrying a failed message at the user's request id=\(id, privacy: .public) previousAttempts=\(message.sendAttemptCount, privacy: .public)"
+            )
+            message.sendAttemptCount = 0
+            message.lastSendAttempt = nil
+            do {
+                try await database.saveMessage(message)
+                refreshMessageCache()
+            } catch {
+                Log.backend.error(
+                    "Error clearing the send failure before a retry id=\(id, privacy: .public): \(error, privacy: .public)"
+                )
+                return
+            }
+            await sendPendingMessage(message, reason: "userRetry")
+        }
+
         func sendChatMessage(message: String, attachment: AttachmentUpload?) async throws {
             let nonce = Self.makeDiscordNonce()
             Log.backend.notice(
@@ -844,6 +864,7 @@ actor RoamDataHandler {
                 nonce: nonce
             )
             pendingMessage.lastSendAttempt = Date.now
+            pendingMessage.sendAttemptCount += 1
 
             Log.backend.notice(
                 "Saving pending message nonce=\(nonce, privacy: .public) pendingId=\(pendingMessage.id, privacy: .public)"
@@ -892,10 +913,15 @@ actor RoamDataHandler {
                     else {
                         return false
                     }
+                    // Given up on. It stays in the outbox and stays visible,
+                    // but only an explicit tap sends it again.
+                    guard !message.sendFailed else {
+                        return false
+                    }
                     guard let lastSendAttempt = message.lastSendAttempt else {
                         return true
                     }
-                    let delay = retryDelay(afterFailures: sendFailureCounts[nonce] ?? 0)
+                    let delay = retryDelay(afterFailures: message.sendAttemptCount)
                     return lastSendAttempt <= now.addingTimeInterval(-delay)
                 }
                 .sorted { lhs, rhs in
@@ -968,6 +994,7 @@ actor RoamDataHandler {
                 "Sending pending message reason=\(reason, privacy: .public) pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public) contentBytes=\(pendingMessage.message.utf8.count, privacy: .public) attachment=\(pendingMessage.unsentAttachment?.filename ?? "--", privacy: .public)"
             )
             pendingMessage.lastSendAttempt = Date.now
+            pendingMessage.sendAttemptCount += 1
             do {
                 try await database.saveMessage(pendingMessage)
                 refreshMessageCache()
@@ -993,7 +1020,6 @@ actor RoamDataHandler {
                     try await database.deleteMessage(id: pendingMessage.id)
                     refreshMessageCache()
                     UserDefaults.standard.set(true, forKey: UserDefaultKeys.hasSentFirstMessage)
-                    sendFailureCounts[nonce] = nil
                     return true
                 } catch {
                     Log.backend.error(
@@ -1002,11 +1028,16 @@ actor RoamDataHandler {
                     return false
                 }
             case .failure(let error):
-                let failures = (sendFailureCounts[nonce] ?? 0) + 1
-                sendFailureCounts[nonce] = failures
-                Log.backend.error(
-                    "Pending message send failed pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public) consecutiveFailures=\(failures, privacy: .public) nextRetryIn=\(self.retryDelay(afterFailures: failures), privacy: .public)s: \(error, privacy: .public)"
-                )
+                let failures = pendingMessage.sendAttemptCount
+                if pendingMessage.sendFailed {
+                    Log.backend.error(
+                        "Giving up on pending message after \(failures, privacy: .public) attempts pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public); waiting for the user to retry: \(error, privacy: .public)"
+                    )
+                } else {
+                    Log.backend.error(
+                        "Pending message send failed pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public) consecutiveFailures=\(failures, privacy: .public) nextRetryIn=\(self.retryDelay(afterFailures: failures), privacy: .public)s: \(error, privacy: .public)"
+                    )
+                }
                 return false
             }
         }

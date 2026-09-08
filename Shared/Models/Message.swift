@@ -10,6 +10,11 @@ public struct Message: Codable, Sendable {
     var hidden: Bool = false
     var fetchedBackend: Bool
     var lastSendAttempt: Date?
+    /// How many times this message has been handed to the backend and not
+    /// landed. Persisted, because giving up has to survive a relaunch: an
+    /// in-memory count means a message the backend will never accept starts
+    /// over on every launch and retries forever.
+    var sendAttemptCount: Int = 0
     var nonce: String?
     var sentAttachments: [SentAttachment]
     var unsentAttachment: AttachmentUpload?
@@ -17,6 +22,22 @@ public struct Message: Codable, Sendable {
     var robotMessage: Bool = false
     var aiMessage: Bool = false
     var humanSupportMessage: Bool = false
+
+    /// How many failed attempts before the app stops trying on its own.
+    ///
+    /// With the backoff below this is roughly two and a half hours of trying,
+    /// which comfortably covers a flaky connection or a backend restart. Past
+    /// it, the message is almost certainly one the backend will never accept -
+    /// a body it rejects, an attachment it refuses - and retrying forever costs
+    /// the user's battery and data to no end. At that point it is better to say
+    /// so and let them decide.
+    static let maxSendAttempts = 10
+
+    /// Whether the app has stopped retrying this message and is waiting on the
+    /// user.
+    var sendFailed: Bool {
+        !fetchedBackend && sendAttemptCount >= Self.maxSendAttempts
+    }
 
     enum AuthorType: String, Codable {
         case me

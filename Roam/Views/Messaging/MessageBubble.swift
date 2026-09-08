@@ -3,6 +3,7 @@ import SwiftUI
 struct MessageBubble: View {
     let message: Message
     let previous: Message?
+    var onRetry: ((String) -> Void)?
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -68,7 +69,7 @@ struct MessageBubble: View {
                     MessageViewText(message)
                         .background(color)
                         .overlay(alignment: .bottomTrailing) {
-                            MessageMetadataOverlay(message: message)
+                            MessageMetadataOverlay(message: message, onRetry: onRetry)
                                 .foregroundStyle(Color.secondary)
                         }
                         #if !os(watchOS)
@@ -149,6 +150,10 @@ struct MessageBubble: View {
 
 struct MessageMetadataOverlay: View {
     let message: Message
+    /// Supplied where a failed message can actually be retried. The attachment
+    /// previews reuse this overlay without a live outbox behind them, so it is
+    /// optional and the control is inert rather than absent when it is missing.
+    var onRetry: ((String) -> Void)?
     @ScaledMetric var fontSize: CGFloat = 12
 
     var body: some View {
@@ -176,6 +181,16 @@ struct MessageMetadataOverlay: View {
             if message.showSending {
                 Image(systemName: "rays")
                     .symbolEffect(.variableColor)
+            }
+            if message.sendFailed {
+                Button {
+                    onRetry?(message.id)
+                } label: {
+                    Label("Not sent, tap to retry", systemImage: "exclamationmark.circle")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.red)
+                .disabled(onRetry == nil)
             }
         }
         .font(.caption)
@@ -378,6 +393,13 @@ extension Message {
     }
 
     var showSending: Bool {
+        // A message we have stopped retrying is not "sending" any more, and
+        // saying otherwise leaves a spinner running forever over something that
+        // will never move on its own.
+        if self.sendFailed {
+            return false
+        }
+
         if self.lastSendAttempt != nil {
             return true
         }

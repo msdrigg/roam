@@ -55,3 +55,44 @@ struct RoamDatabaseTests {
         )
     }
 }
+
+extension RoamDatabaseTests {
+    /// The send attempt count is what stops a message the backend will never
+    /// accept from retrying forever, so it has to survive the round trip
+    /// through SQLite. The upsert binds its columns positionally, where a
+    /// mismatch silently writes the wrong value rather than failing.
+    @Test func testSendAttemptCountPersistsAcrossOpen() throws {
+        let urls = try makeTemporaryDatabaseURLs()
+        let database = try RoamDatabase(databaseURL: urls.database, lockURL: urls.lock)
+
+        var message = Message(
+            id: "pending-1",
+            message: "Cool",
+            author: .me,
+            fetchedBackend: false,
+            nonce: "nonce-1"
+        )
+        message.sendAttemptCount = Message.maxSendAttempts
+        message.lastSendAttempt = Date(timeIntervalSince1970: 1_700_000_000)
+        try database.saveMessage(message)
+
+        let reopened = try RoamDatabase(databaseURL: urls.database, lockURL: urls.lock)
+        let stored = try #require(reopened.messages().first { $0.id == "pending-1" })
+
+        #expect(stored.sendAttemptCount == Message.maxSendAttempts)
+        #expect(stored.message == "Cool")
+        #expect(stored.nonce == "nonce-1")
+        #expect(stored.lastSendAttempt == Date(timeIntervalSince1970: 1_700_000_000))
+        // The whole point of the field: this one is done retrying on its own.
+        #expect(stored.sendFailed)
+    }
+
+    /// A message that has not exhausted its attempts must not be marked failed,
+    /// or the UI would offer a retry button for something still in flight.
+    @Test func testAMessageBelowTheAttemptCeilingIsNotFailed() throws {
+        var message = Message(
+            id: "pending-2", message: "Still trying", author: .me, fetchedBackend: false)
+        message.sendAttemptCount = Message.maxSendAttempts - 1
+        #expect(!message.sendFailed)
+    }
+}
