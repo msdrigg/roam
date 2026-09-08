@@ -68,7 +68,14 @@ impl DiscordClient {
     const DISCORD_NONCE_MAX_LENGTH: usize = 25;
     /// Discord's ceiling on a message body. Over it, the API rejects the whole
     /// request with `50035 BASE_TYPE_MAX_LENGTH`.
-    const DISCORD_CONTENT_MAX_LENGTH: usize = 4000;
+    ///
+    /// 2000, not 4000. Discord reports whichever limit applies to the message
+    /// it was handed, and it has been seen to say both: a first attempt here
+    /// was told "Must be 4000 or fewer" and the retry, after being trimmed to
+    /// exactly 4000, was told "Must be 2000 or fewer". 4000 is the raised
+    /// ceiling and is not what a bot posting into a plain channel gets, so the
+    /// only number safe to build on is the base one.
+    const DISCORD_CONTENT_MAX_LENGTH: usize = 2000;
 
     fn get_flags(options: Option<&DiscordMessageOptions>) -> u32 {
         let notify = options.map(|o| o.notify).unwrap_or(true);

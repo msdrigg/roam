@@ -32,7 +32,13 @@ enum BackendTimeout {
 /// `50035 BASE_TYPE_MAX_LENGTH` and the backend turns that into a 500, on every
 /// attempt, forever. A message that long can never be delivered, so it must
 /// never be put on the wire in the first place.
-public let discordMessageContentLimit = 4000
+///
+/// 2000, not 4000. Discord reports whichever limit applies to the message it
+/// was handed, and it has been seen to say both: an over-length body was
+/// refused with "Must be 4000 or fewer", and the same body trimmed to exactly
+/// 4000 was then refused with "Must be 2000 or fewer". 4000 is the raised
+/// ceiling and is not what these messages get, so build on the base number.
+public let discordMessageContentLimit = 2000
 
 /// Trims `text` to something Discord will accept.
 ///
