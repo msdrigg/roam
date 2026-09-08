@@ -388,6 +388,15 @@ async fn authenticate_session(
             false,
             now,
         )?;
+        // Only for durable routes: the unattested branch also serves polling
+        // and typing, which would bury this at hundreds of lines an hour.
+        if requires_proof(path) {
+            tracing::info!(
+                user_id = %session.user_id,
+                %path,
+                "Served a durable request from an unattested session"
+            );
+        }
         return Ok(Caller {
             kind: CallerKind::Unattested,
             user_id: Some(session.user_id),
@@ -406,6 +415,12 @@ async fn authenticate_session(
     if requires_proof(path) {
         verify_request_assertion(app_context, &session, &key_id, headers, method, path, now)
             .await?;
+        tracing::info!(
+            %key_id,
+            user_id = %session.user_id,
+            %path,
+            "Verified an App Attest assertion"
+        );
     }
 
     Ok(Caller {
