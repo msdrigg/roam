@@ -66,6 +66,9 @@ impl DiscordClient {
     const DEFAULT_AUTO_ARCHIVE_DURATION: i64 = 10080;
     const DISCORD_CONCURRENT_REQUESTS: usize = 3;
     const DISCORD_NONCE_MAX_LENGTH: usize = 25;
+    /// Discord's ceiling on a message body. Over it, the API rejects the whole
+    /// request with `50035 BASE_TYPE_MAX_LENGTH`.
+    const DISCORD_CONTENT_MAX_LENGTH: usize = 4000;
 
     fn get_flags(options: Option<&DiscordMessageOptions>) -> u32 {
         let notify = options.map(|o| o.notify).unwrap_or(true);
@@ -77,6 +80,35 @@ impl DiscordClient {
         }
 
         flags
+    }
+
+    /// Trims a message body to something Discord will accept.
+    ///
+    /// This is a backstop for clients, not the way the summary is meant to be
+    /// sized. Current builds split a long diagnostics summary across several
+    /// `paired_messages` and nothing here fires. Builds already in the field
+    /// send one unbounded string that grows with the user's device count, and
+    /// Discord answers `50035 BASE_TYPE_MAX_LENGTH` for the whole request -
+    /// which aborts the send before the attachment is ever uploaded, and leaves
+    /// the app retrying a megabyte that can never succeed. Truncating loses the
+    /// tail of a summary whose every field is already in the attached
+    /// `Diagnostics.json`; refusing loses the entire report.
+    ///
+    /// Discord counts characters rather than bytes, so this counts characters
+    /// too - slicing by byte offset would also risk splitting a UTF-8 sequence.
+    fn clamp_content(content: &str, thread_id: i64) -> String {
+        if content.chars().count() <= Self::DISCORD_CONTENT_MAX_LENGTH {
+            return content.to_string();
+        }
+
+        const NOTICE: &str = "\n\n… truncated by the server; see the attached file for the rest.";
+        let keep = Self::DISCORD_CONTENT_MAX_LENGTH - NOTICE.chars().count();
+        tracing::warn!(
+            thread_id,
+            original_chars = content.chars().count(),
+            "Truncating an over-length message body for Discord; the client that sent it predates the split-summary fix"
+        );
+        content.chars().take(keep).collect::<String>() + NOTICE
     }
 
     fn normalize_nonce(nonce: &str) -> String {
@@ -689,6 +721,7 @@ impl DiscordClient {
             thread_id
         );
         tracing::info!("Sending message \"{}\" to thread {}", content, thread_id);
+        let content = Self::clamp_content(content, thread_id);
         let body = serde_json::json!({
             "content": content,
             "nonce": nonce,
@@ -733,7 +766,7 @@ impl DiscordClient {
 
         let content = content.unwrap_or_default();
         if !content.is_empty() {
-            form = form.text("content", content.to_string());
+            form = form.text("content", Self::clamp_content(content, thread_id));
         }
         if let Some(nonce) = nonce {
             form = form.text("nonce", nonce.to_string());
@@ -1379,5 +1412,39 @@ mod tests {
 
         // A bare `:warning:` is exactly what leaked before.
         assert!(!hidden(":warning: symbolication failed (after 5 attempts)"));
+    }
+}
+
+#[cfg(test)]
+mod content_clamp_tests {
+    use super::*;
+
+    #[test]
+    fn a_body_within_the_limit_is_untouched() {
+        let content = "a".repeat(DiscordClient::DISCORD_CONTENT_MAX_LENGTH);
+        assert_eq!(DiscordClient::clamp_content(&content, 1), content);
+    }
+
+    #[test]
+    fn an_over_length_body_is_trimmed_to_the_limit() {
+        let content = "a".repeat(DiscordClient::DISCORD_CONTENT_MAX_LENGTH + 5_000);
+        let clamped = DiscordClient::clamp_content(&content, 1);
+        assert_eq!(
+            clamped.chars().count(),
+            DiscordClient::DISCORD_CONTENT_MAX_LENGTH
+        );
+        assert!(clamped.ends_with("see the attached file for the rest."));
+    }
+
+    /// Discord counts characters, and slicing this by byte offset would panic
+    /// mid-sequence rather than truncate.
+    #[test]
+    fn a_multibyte_body_is_counted_in_characters() {
+        let content = "é".repeat(DiscordClient::DISCORD_CONTENT_MAX_LENGTH + 100);
+        let clamped = DiscordClient::clamp_content(&content, 1);
+        assert_eq!(
+            clamped.chars().count(),
+            DiscordClient::DISCORD_CONTENT_MAX_LENGTH
+        );
     }
 }
