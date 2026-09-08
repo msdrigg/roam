@@ -36,22 +36,24 @@ import urllib.request
 
 # The entitlement that means "this build can attest", per platform.
 #
-# iOS and visionOS carry `appattest-environment`, whose value picks the Apple
-# environment the attestation is issued against, and Vars.xcconfig interpolates
-# it so a Debug build cannot claim production.
+# Apple publishes `appattest-environment` for iOS, iPadOS, tvOS and visionOS
+# only, and its value picks the environment the attestation is issued against --
+# Vars.xcconfig interpolates it so a Debug build cannot claim production.
 #
-# macOS carries the other one. Mac App Store provisioning profiles do not grant
-# `appattest-environment` no matter what the App ID has enabled; App Attest on
-# macOS is gated on `app-attest-opt-in` instead, a separate App ID capability
-# ("App Attest opt-in") whose value names what Apple binds the key to. Xcode
-# filters out any entitlement the macOS profile does not grant and says nothing
-# about it, which is why RoamMacOS.entitlements can ask for both and the archive
-# comes out with only the opt-in.
+# macOS and watchOS are not on that list, even though DCAppAttestService itself
+# is declared for macOS 11 and watchOS 9. Those two use `app-attest-opt-in`
+# instead, from the App ID's "App Attest opt-in" capability, and Xcode drops the
+# environment key from their builds without a word. That is the whole of the bug
+# this file used to have: it demanded the iOS key everywhere, so no macOS archive
+# could pass, and the watch app inside the iOS archive shipped unattested because
+# nothing looked at it.
 ATTEST_ENTITLEMENTS = {
     "iOS": "com.apple.developer.devicecheck.appattest-environment",
     "visionOS": "com.apple.developer.devicecheck.appattest-environment",
     "macOS": "com.apple.developer.devicecheck.app-attest-opt-in",
 }
+
+WATCH_ATTEST_ENTITLEMENT = "com.apple.developer.devicecheck.app-attest-opt-in"
 
 
 def signed_entitlements(app: str) -> dict:
@@ -69,9 +71,7 @@ def signed_entitlements(app: str) -> dict:
     return plistlib.loads(result.stdout)
 
 
-def verify_archived_attest_entitlement(
-    platform: str, archive_path: str, render_github_actions: bool = False
-):
+def verify_archived_attest_entitlement(platform: str, archive_path: str):
     """Prove the App Attest entitlement made it into the artifact that was built.
 
     Nothing secret ships in the bundle any more, but the app still cannot reach
@@ -98,10 +98,6 @@ def verify_archived_attest_entitlement(
     if not candidates:
         raise SystemExit(f"No app bundle found in {archive_path}")
 
-    # The watch app rides inside the iOS archive with its own bundle id, its own
-    # App ID and so its own capabilities, and it is the one bundle here with no
-    # fallback of any kind: watchOS does not compile the receipt path. It went
-    # out unattested once already because nothing looked at it.
     embedded = glob.glob(f"{archive_path}/Products/Applications/*.app/Watch/*.app")
 
     for app in candidates:
@@ -117,33 +113,26 @@ def verify_archived_attest_entitlement(
             )
         print(f"App Attest entitlement present in {app} ({entitlement} = {value})")
 
-    # The watch app warns instead of failing, because nothing we control can
-    # currently make the entitlement stick. Its App ID has the App Attest
-    # capability, and the profile Xcode fetched and embedded grants
-    # `appattest-environment` -- decoded from the archived bundle, one second
-    # before Xcode wrote the entitlements it signed with, and the key is not in
-    # them. Xcode filters App Attest out of a watchOS build the way it does out
-    # of a macOS one. Blocking the release on that only stops shipping; it does
-    # not get the watch a credential.
-    #
-    # So this stays loud and reversible: make it fatal the moment a build does
-    # come out with the key, which is the signal that the platform, or our
-    # reading of it, has changed. Until then a watch install cannot authenticate
-    # at all -- watchOS compiles no receipt fallback -- and that is a decision
-    # for the client, not for signing.
+    # The watch app rides inside the iOS archive with its own bundle id, its own
+    # App ID and so its own capabilities, and it is the one bundle here with no
+    # fallback of any kind: watchOS compiles no receipt path. It also takes the
+    # watchOS entitlement rather than the archive platform's, which is why it is
+    # checked separately instead of being folded into the loop above.
     for app in embedded:
-        value = signed_entitlements(app).get(entitlement)
+        value = signed_entitlements(app).get(WATCH_ATTEST_ENTITLEMENT)
         if not value:
-            prefix = "::warning::" if render_github_actions else "WARNING: "
-            print(
-                f"{prefix}{app} carries no {entitlement} entitlement. "
-                "Xcode strips it from watchOS builds even when the embedded "
-                "profile grants it, so the watch app ships unable to "
-                "authenticate against the backend.",
-                flush=True,
+            raise SystemExit(
+                f"{app} carries no {WATCH_ATTEST_ENTITLEMENT} entitlement.\n"
+                "The watch app would ship unable to authenticate against the "
+                "backend at all, since watchOS has no receipt fallback. Check "
+                "that its App ID has App Attest opt-in enabled -- Xcode strips "
+                "entitlements the profile does not grant without reporting it. "
+                "Refusing to continue."
             )
-            continue
-        print(f"App Attest entitlement present in {app} ({entitlement} = {value})")
+        print(
+            f"App Attest entitlement present in {app} "
+            f"({WATCH_ATTEST_ENTITLEMENT} = {value})"
+        )
 
 
 def archive_application(platform: str, render_github_actions: bool = False):
@@ -158,9 +147,7 @@ def archive_application(platform: str, render_github_actions: bool = False):
         shell=True,
         check=True,
     )
-    verify_archived_attest_entitlement(
-        platform, archive_path, render_github_actions=render_github_actions
-    )
+    verify_archived_attest_entitlement(platform, archive_path)
     print(f"Archive succeeded for platform {platform}")
 
 
