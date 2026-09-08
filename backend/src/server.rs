@@ -23,7 +23,7 @@ use axum::{Router, routing::get, serve::ListenerExt};
 use base64::{Engine, prelude::BASE64_STANDARD};
 #[cfg(test)]
 use clap::Parser;
-pub use error::ApiError;
+pub use error::{ApiError, UnauthorizedReason};
 use futures::{StreamExt, stream};
 use opentelemetry::trace::{SpanKind, TraceContextExt};
 use serde::{Deserialize, Serialize};
@@ -308,8 +308,9 @@ async fn attest_register(
         .await
         .map_err(ApiError::DatabaseError)?
     {
-        return Err(ApiError::Unauthorized(
-            "Challenge is unknown, spent, or expired".to_string(),
+        return Err(ApiError::unauthorized(
+            UnauthorizedReason::ChallengeInvalid,
+            "Challenge is unknown, spent, or expired",
         ));
     }
 
@@ -329,7 +330,10 @@ async fn attest_register(
     )
     .map_err(|err| {
         tracing::warn!(?err, %ip, "Rejected App Attest registration");
-        ApiError::Unauthorized("Attestation is not valid".to_string())
+        ApiError::unauthorized(
+            UnauthorizedReason::AttestationInvalid,
+            "Attestation is not valid",
+        )
     })?;
 
     let key = crate::database::AttestKey {
@@ -423,10 +427,13 @@ async fn attest_session(
         .get_attest_key(&key_id)
         .await
         .map_err(ApiError::DatabaseError)?
-        .ok_or_else(|| ApiError::Unauthorized("Attested key is unknown".to_string()))?;
+        .ok_or_else(|| {
+            ApiError::unauthorized(UnauthorizedReason::KeyUnknown, "Attested key is unknown")
+        })?;
     if key.revoked_at_ms.is_some() {
-        return Err(ApiError::Unauthorized(
-            "Attested key was revoked".to_string(),
+        return Err(ApiError::unauthorized(
+            UnauthorizedReason::KeyRevoked,
+            "Attested key was revoked",
         ));
     }
 
@@ -439,14 +446,18 @@ async fn attest_session(
     )
     .map_err(|err| {
         tracing::warn!(%key_id, ?err, "Rejected session refresh assertion");
-        ApiError::Unauthorized("Assertion is not valid".to_string())
+        ApiError::unauthorized(
+            UnauthorizedReason::AssertionInvalid,
+            "Assertion is not valid",
+        )
     })?;
 
     let parsed: crate::auth::AssertionClientData = serde_json::from_slice(&client_data)
         .map_err(|_| ApiError::BadRequest("clientData is not the expected shape".to_string()))?;
     if parsed.p != "/v3/attest/session" || parsed.m != "POST" {
-        return Err(ApiError::Unauthorized(
-            "Assertion does not cover this request".to_string(),
+        return Err(ApiError::unauthorized(
+            UnauthorizedReason::AssertionMismatch,
+            "Assertion does not cover this request",
         ));
     }
     if !app_context
@@ -455,8 +466,9 @@ async fn attest_session(
         .await
         .map_err(ApiError::DatabaseError)?
     {
-        return Err(ApiError::Unauthorized(
-            "Challenge is unknown, spent, or expired".to_string(),
+        return Err(ApiError::unauthorized(
+            UnauthorizedReason::ChallengeInvalid,
+            "Challenge is unknown, spent, or expired",
         ));
     }
 
@@ -522,8 +534,9 @@ async fn attest_unattested_session(
     Json(request): Json<UnattestedRequest>,
 ) -> Result<Json<SessionResponse>, ApiError> {
     if !app_context.app_attest_fallback_enabled() {
-        return Err(ApiError::Unauthorized(
-            "This build must attest; the receipt fallback is closed".to_string(),
+        return Err(ApiError::unauthorized(
+            UnauthorizedReason::FallbackClosed,
+            "This build must attest; the receipt fallback is closed",
         ));
     }
 
@@ -546,8 +559,9 @@ async fn attest_unattested_session(
         .await
         .map_err(ApiError::DatabaseError)?
     {
-        return Err(ApiError::Unauthorized(
-            "Challenge is unknown, spent, or expired".to_string(),
+        return Err(ApiError::unauthorized(
+            UnauthorizedReason::ChallengeInvalid,
+            "Challenge is unknown, spent, or expired",
         ));
     }
 
@@ -561,7 +575,10 @@ async fn attest_unattested_session(
     )
     .map_err(|err| {
         tracing::warn!(?err, %ip, "Rejected an App Store receipt");
-        ApiError::Unauthorized("App Store receipt is not valid".to_string())
+        ApiError::unauthorized(
+            UnauthorizedReason::ReceiptInvalid,
+            "App Store receipt is not valid",
+        )
     })?;
 
     let bound_user_id = app_context
@@ -2156,6 +2173,52 @@ mod error {
     };
     use serde::Serialize;
 
+    /// Why a 401 happened, as a token a client can branch on.
+    ///
+    /// The sentences the routes write are for a person reading a log, and a
+    /// client that wants to tell "your credential is gone" from "that one
+    /// request was no good" cannot match on prose without breaking the moment
+    /// someone rewords it. This is the part that is promised to stay put.
+    ///
+    /// The distinction that matters to the app is narrow: only `KeyUnknown` and
+    /// `KeyRevoked` mean the Secure Enclave key behind the credential is worth
+    /// nothing now. Every other reason describes one bad request, and a client
+    /// that reads them as "start over" burns an App Attest registration --
+    /// which Apple rate limits -- for nothing. That is not hypothetical: a
+    /// server-side signature bug once turned every assertion into
+    /// `AssertionInvalid`, and clients that could not tell the difference
+    /// registered a fresh key every few seconds.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+    #[serde(rename_all = "snake_case")]
+    pub enum UnauthorizedReason {
+        /// The backend has no record of this attestation key.
+        KeyUnknown,
+        /// The key is on file but has been revoked.
+        KeyRevoked,
+        /// A required assertion header was not sent at all.
+        AssertionMissing,
+        /// The assertion did not decode, or its signature did not verify.
+        AssertionInvalid,
+        /// The signature was good but covers a different session, method,
+        /// path, or moment than the request it arrived on.
+        AssertionMismatch,
+        /// The assertion's counter has already been spent.
+        AssertionReplayed,
+        /// The challenge was never issued, is spent, or has expired.
+        ChallengeInvalid,
+        /// The App Attest attestation object did not verify.
+        AttestationInvalid,
+        /// The App Store receipt did not verify.
+        ReceiptInvalid,
+        /// The receipt fallback is closed on this deployment.
+        FallbackClosed,
+        /// The session token is unknown, expired, or malformed.
+        SessionInvalid,
+        /// The credential is fine; the server could not finish this one
+        /// request. Retrying is the right move.
+        Transient,
+    }
+
     #[derive(Debug, thiserror::Error, Serialize)]
     pub enum ApiError {
         #[error("Discord error {0}")]
@@ -2164,6 +2227,11 @@ mod error {
         SymbolicationError(#[serde(serialize_with = "serialize_anyhow")] anyhow::Error),
         #[error("Unauthorized")]
         Unauthorized(String),
+        /// The same 401 as `Unauthorized`, plus the machine-readable reason.
+        /// It serialises to the old shape with one extra field; see
+        /// `into_response`.
+        #[error("Unauthorized")]
+        UnauthorizedBecause(UnauthorizedReason, String),
         #[error("Bad request: {0}")]
         BadRequest(String),
         #[error("Database error {0}")]
@@ -2177,7 +2245,7 @@ mod error {
     impl IntoResponse for ApiError {
         fn into_response(self) -> Response<Body> {
             let headers = match &self {
-                Self::Unauthorized(_) => {
+                Self::Unauthorized(_) | Self::UnauthorizedBecause(..) => {
                     [(WWW_AUTHENTICATE, HeaderValue::from_static("X-API-KEY"))]
                         .into_iter()
                         .collect::<HeaderMap>()
@@ -2186,20 +2254,44 @@ mod error {
             };
             match &self {
                 // User errors don't get logged
-                Self::Unauthorized { .. } | Self::RateLimited { .. } => {}
+                Self::Unauthorized { .. }
+                | Self::UnauthorizedBecause { .. }
+                | Self::RateLimited { .. } => {}
                 _ => {
                     tracing::error!(error = ?self, "Request error");
                 }
             }
             let status_code = self.status_code();
-            (status_code, headers, Json(self)).into_response()
+            match self {
+                // Written by hand rather than derived, because the shape is a
+                // compatibility promise. Builds already in the field read the
+                // human sentence out of `Unauthorized`, so it stays exactly
+                // where it was and the reason arrives beside it, in a field
+                // those builds ignore. Deriving this would have nested it
+                // under `UnauthorizedBecause` and broken every one of them.
+                Self::UnauthorizedBecause(reason, message) => (
+                    status_code,
+                    headers,
+                    Json(serde_json::json!({
+                        "Unauthorized": message,
+                        "reason": reason,
+                    })),
+                )
+                    .into_response(),
+                other => (status_code, headers, Json(other)).into_response(),
+            }
         }
     }
 
     impl ApiError {
+        /// A 401 that says why, for anything a client might reasonably act on.
+        pub fn unauthorized(reason: UnauthorizedReason, message: impl Into<String>) -> Self {
+            Self::UnauthorizedBecause(reason, message.into())
+        }
+
         fn status_code(&self) -> StatusCode {
             match self {
-                Self::Unauthorized(_) => StatusCode::UNAUTHORIZED,
+                Self::Unauthorized(_) | Self::UnauthorizedBecause(..) => StatusCode::UNAUTHORIZED,
                 Self::DatabaseError(_) => StatusCode::INTERNAL_SERVER_ERROR,
                 Self::NotFound(_) => StatusCode::NOT_FOUND,
                 Self::DiscordError(crate::discord::DiscordError::RateLimited { .. }) => {
@@ -2402,6 +2494,92 @@ mod tests {
             "the challenge cannot be presented a second time"
         );
         drop(dir);
+    }
+
+    /// Posts a JSON body and hands back the status and the parsed body.
+    async fn post_json(
+        app: &Router,
+        path: &str,
+        body: serde_json::Value,
+    ) -> (u16, serde_json::Value) {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri(path)
+                    .header("content-type", "application/json")
+                    .body(Body::from(body.to_string()))
+                    .expect("request"),
+            )
+            .await
+            .expect("response");
+        let status = response.status().as_u16();
+        let bytes = to_bytes(response.into_body(), 64 * 1024)
+            .await
+            .expect("body");
+        (status, serde_json::from_slice(&bytes).expect("json"))
+    }
+
+    /// The client deletes its Secure Enclave key and registers a new one only
+    /// when the backend says the key itself is gone, so "which 401 is this"
+    /// has to survive the trip. The human sentence stays under `Unauthorized`
+    /// where releases already in the field read it.
+    #[tokio::test]
+    async fn a_401_names_its_reason_without_moving_the_old_message() {
+        let (app, _dir) = test_app().await;
+
+        let (status, body) = post_json(
+            &app,
+            "/v3/attest/session",
+            serde_json::json!({
+                "keyId": BASE64_STANDARD.encode([9u8; 32]),
+                "assertion": BASE64_STANDARD.encode(b"not an assertion"),
+                "clientData": BASE64_STANDARD.encode(b"{}"),
+            }),
+        )
+        .await;
+        assert_eq!(status, 401);
+        assert_eq!(body["Unauthorized"], "Attested key is unknown");
+        assert_eq!(body["reason"], "key_unknown");
+    }
+
+    /// Everything else on the same route has to read as "this one request was
+    /// no good", or a server-side bug turns into a key-registration loop.
+    #[tokio::test]
+    async fn a_spent_challenge_is_not_a_missing_key() {
+        let (app, _dir) = test_app().await;
+
+        let (status, body) = post_json(
+            &app,
+            "/v3/attest/register",
+            serde_json::json!({
+                "keyId": BASE64_STANDARD.encode([0u8; 32]),
+                "attestation": BASE64_STANDARD.encode(b"not an attestation"),
+                "challenge": "never-issued",
+                "userId": "aaa-bbb-ccc",
+            }),
+        )
+        .await;
+        assert_eq!(status, 401);
+        assert_eq!(
+            body["Unauthorized"],
+            "Challenge is unknown, spent, or expired"
+        );
+        assert_eq!(body["reason"], "challenge_invalid");
+    }
+
+    /// The 401s that predate reason codes still serialise the way they always
+    /// have, so nothing that reads them has to learn a new shape at once.
+    #[tokio::test]
+    async fn an_unlabelled_401_keeps_the_original_body() {
+        let response = ApiError::Unauthorized("Unauthorized".to_string()).into_response();
+        assert_eq!(response.status(), 401);
+        let bytes = to_bytes(response.into_body(), 64 * 1024)
+            .await
+            .expect("body");
+        let body: serde_json::Value = serde_json::from_slice(&bytes).expect("json");
+        assert_eq!(body, serde_json::json!({ "Unauthorized": "Unauthorized" }));
     }
 
     #[tokio::test]

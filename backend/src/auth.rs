@@ -34,7 +34,7 @@ use crate::{
     AppContext,
     attest::{self, ReplayWindow},
     database::AppSession,
-    server::ApiError,
+    server::{ApiError, UnauthorizedReason},
 };
 
 /// Client data an assertion signs. The client sends these exact bytes rather
@@ -373,7 +373,12 @@ async fn authenticate_session(
         .get_session(&hash_token(token), now)
         .await
         .map_err(ApiError::DatabaseError)?
-        .ok_or_else(|| ApiError::Unauthorized("Session is unknown or expired".to_string()))?;
+        .ok_or_else(|| {
+            ApiError::unauthorized(
+                UnauthorizedReason::SessionInvalid,
+                "Session is unknown or expired",
+            )
+        })?;
 
     if !session.attested {
         enforce_budget(
@@ -389,10 +394,12 @@ async fn authenticate_session(
         });
     }
 
-    let key_id = session
-        .key_id
-        .clone()
-        .ok_or_else(|| ApiError::Unauthorized("Attested session has no key".to_string()))?;
+    let key_id = session.key_id.clone().ok_or_else(|| {
+        ApiError::unauthorized(
+            UnauthorizedReason::SessionInvalid,
+            "Attested session has no key",
+        )
+    })?;
 
     // Polling and typing are bearer-only, so the Secure Enclave stays off the
     // paths the app walks every few seconds. Anything durable proves the key.
@@ -417,28 +424,43 @@ async fn verify_request_assertion(
     now: i64,
 ) -> Result<(), ApiError> {
     let assertion = header(headers, HEADER_ASSERTION).ok_or_else(|| {
-        ApiError::Unauthorized(format!("{HEADER_ASSERTION} is required on this request"))
+        ApiError::unauthorized(
+            UnauthorizedReason::AssertionMissing,
+            format!("{HEADER_ASSERTION} is required on this request"),
+        )
     })?;
     let client_data_b64 = header(headers, HEADER_CLIENT_DATA).ok_or_else(|| {
-        ApiError::Unauthorized(format!("{HEADER_CLIENT_DATA} is required on this request"))
+        ApiError::unauthorized(
+            UnauthorizedReason::AssertionMissing,
+            format!("{HEADER_CLIENT_DATA} is required on this request"),
+        )
     })?;
 
-    let assertion = BASE64_STANDARD
-        .decode(assertion)
-        .map_err(|_| ApiError::Unauthorized("Assertion is not valid base64".to_string()))?;
-    let client_data = BASE64_STANDARD
-        .decode(client_data_b64)
-        .map_err(|_| ApiError::Unauthorized("Client data is not valid base64".to_string()))?;
+    let assertion = BASE64_STANDARD.decode(assertion).map_err(|_| {
+        ApiError::unauthorized(
+            UnauthorizedReason::AssertionInvalid,
+            "Assertion is not valid base64",
+        )
+    })?;
+    let client_data = BASE64_STANDARD.decode(client_data_b64).map_err(|_| {
+        ApiError::unauthorized(
+            UnauthorizedReason::AssertionInvalid,
+            "Client data is not valid base64",
+        )
+    })?;
 
     let key = app_context
         .db_client()
         .get_attest_key(key_id)
         .await
         .map_err(ApiError::DatabaseError)?
-        .ok_or_else(|| ApiError::Unauthorized("Attested key is unknown".to_string()))?;
+        .ok_or_else(|| {
+            ApiError::unauthorized(UnauthorizedReason::KeyUnknown, "Attested key is unknown")
+        })?;
     if key.revoked_at_ms.is_some() {
-        return Err(ApiError::Unauthorized(
-            "Attested key was revoked".to_string(),
+        return Err(ApiError::unauthorized(
+            UnauthorizedReason::KeyRevoked,
+            "Attested key was revoked",
         ));
     }
 
@@ -451,26 +473,36 @@ async fn verify_request_assertion(
     )
     .map_err(|err| {
         tracing::warn!(%key_id, ?err, "Rejected request assertion");
-        ApiError::Unauthorized("Assertion is not valid".to_string())
+        ApiError::unauthorized(
+            UnauthorizedReason::AssertionInvalid,
+            "Assertion is not valid",
+        )
     })?;
 
     // The signature proves the key signed these bytes; the fields prove it
     // signed *this* request rather than a different one from the same app.
-    let parsed: AssertionClientData = serde_json::from_slice(&client_data)
-        .map_err(|_| ApiError::Unauthorized("Client data is not the expected shape".to_string()))?;
+    let parsed: AssertionClientData = serde_json::from_slice(&client_data).map_err(|_| {
+        ApiError::unauthorized(
+            UnauthorizedReason::AssertionInvalid,
+            "Client data is not the expected shape",
+        )
+    })?;
     if parsed.s != session.session_id {
-        return Err(ApiError::Unauthorized(
-            "Assertion is bound to another session".to_string(),
+        return Err(ApiError::unauthorized(
+            UnauthorizedReason::AssertionMismatch,
+            "Assertion is bound to another session",
         ));
     }
     if parsed.m != method.as_str() || parsed.p != path {
-        return Err(ApiError::Unauthorized(
-            "Assertion does not cover this request".to_string(),
+        return Err(ApiError::unauthorized(
+            UnauthorizedReason::AssertionMismatch,
+            "Assertion does not cover this request",
         ));
     }
     if (now - parsed.t).abs() > ASSERTION_SKEW.as_millis() as i64 {
-        return Err(ApiError::Unauthorized(
-            "Assertion timestamp is outside the accepted skew".to_string(),
+        return Err(ApiError::unauthorized(
+            UnauthorizedReason::AssertionMismatch,
+            "Assertion timestamp is outside the accepted skew",
         ));
     }
 
@@ -502,7 +534,10 @@ pub async fn commit_counter(
         let mut window = ReplayWindow::from_storage(sign_count, replay_window);
         window.accept(counter).map_err(|err| {
             tracing::warn!(%key_id, counter, ?err, "Rejected replayed assertion counter");
-            ApiError::Unauthorized("Assertion counter was already used".to_string())
+            ApiError::unauthorized(
+                UnauthorizedReason::AssertionReplayed,
+                "Assertion counter was already used",
+            )
         })?;
 
         let next = window.to_storage();
@@ -520,13 +555,18 @@ pub async fn commit_counter(
             .get_attest_key(key_id)
             .await
             .map_err(ApiError::DatabaseError)?
-            .ok_or_else(|| ApiError::Unauthorized("Attested key is unknown".to_string()))?;
+            .ok_or_else(|| {
+                ApiError::unauthorized(UnauthorizedReason::KeyUnknown, "Attested key is unknown")
+            })?;
         sign_count = key.sign_count;
         replay_window = key.replay_window;
     }
 
-    Err(ApiError::Unauthorized(
-        "Could not record the assertion counter".to_string(),
+    // Losing this race four times running says the row is contended, not that
+    // the caller's key is bad -- so it must not read as "re-register".
+    Err(ApiError::unauthorized(
+        UnauthorizedReason::Transient,
+        "Could not record the assertion counter",
     ))
 }
 

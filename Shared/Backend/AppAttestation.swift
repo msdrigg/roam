@@ -49,8 +49,68 @@ private func platformDescription() -> String {
     return "\(platform) \(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
 }
 
+/// Why the backend refused an attestation call.
+///
+/// The 401s on these routes cover unrelated faults -- a signature that did not
+/// verify, a challenge already spent, a counter already seen, a key the server
+/// has never heard of -- and only the last kind says anything about the
+/// credential this device holds. The backend now names the reason in a `reason`
+/// field beside the sentence it has always sent, because matching on the
+/// sentence would break the day someone rewords it.
+///
+/// Reading these wrong is expensive in one direction only. Deleting the key and
+/// registering a new one costs a Secure Enclave attestation, which Apple rate
+/// limits and the backend caps at twenty an hour per address; treating a dead
+/// key as live costs one failed request that the next launch retries. So
+/// anything not positively identified as "the key is gone" is treated as live.
+public enum AttestationRejectionReason: Sendable, Equatable {
+    /// The backend has no record of this key. The credential is gone.
+    case keyUnknown
+    /// The key is on file but revoked. The credential is gone.
+    case keyRevoked
+    /// Everything else, including a 401 from a backend old enough to send no
+    /// code at all. Unrecognised has to land here: re-registering is the
+    /// destructive choice, so it is the one that needs positive evidence.
+    case other(String?)
+
+    init(code: String?) {
+        switch code {
+        case "key_unknown":
+            self = .keyUnknown
+        case "key_revoked":
+            self = .keyRevoked
+        default:
+            self = .other(code)
+        }
+    }
+
+    /// Whether the key behind this credential is worth nothing now, and a
+    /// fresh registration is the only way forward.
+    var credentialIsGone: Bool {
+        switch self {
+        case .keyUnknown, .keyRevoked:
+            return true
+        case .other:
+            return false
+        }
+    }
+
+    /// The wire code, for logs.
+    var code: String {
+        switch self {
+        case .keyUnknown:
+            return "key_unknown"
+        case .keyRevoked:
+            return "key_revoked"
+        case let .other(code):
+            return code ?? "unspecified"
+        }
+    }
+}
+
 public enum BackendAuthError: Error, LocalizedError {
-    case attestationRejected(Int, String)
+    case attestationRejected(status: Int, reason: AttestationRejectionReason, body: String)
+    case registrationThrottled(retryAfter: TimeInterval)
     case missingKey
     case missingReceipt
     case attestationUnavailable(String)
@@ -58,8 +118,11 @@ public enum BackendAuthError: Error, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case let .attestationRejected(code, body):
-            return "The backend rejected attestation (\(code)): \(body)"
+        case let .attestationRejected(status, reason, body):
+            return "The backend rejected attestation (\(status)/\(reason.code)): \(body)"
+        case let .registrationThrottled(retryAfter):
+            return
+                "Too many attestation registrations recently; the next one may run in \(Int(retryAfter))s"
         case .missingKey:
             return "No attestation key is available"
         case .missingReceipt:
@@ -71,6 +134,21 @@ public enum BackendAuthError: Error, LocalizedError {
         }
     }
 }
+
+/// How many key registrations may *start* inside `registrationWindow`, across
+/// every Roam process on this device.
+///
+/// A healthy install registers once and never again, so this only ever bites a
+/// loop. It is deliberately far below the backend's twenty an hour per address
+/// and Apple's own undocumented ceiling: the point is to stop long before
+/// either of those starts refusing, because what they refuse is the app's only
+/// route to a credential. Three leaves room for the genuine retries -- a key
+/// that failed to persist, a registration that lost its network -- while
+/// turning a runaway into a handful of attempts an hour instead of one every
+/// fifty seconds.
+private let registrationBudget = 3
+private let registrationWindow: TimeInterval = 3600
+private let registrationLedgerKey = "app-attest-registration-attempts"
 
 /// The bytes an assertion signs.
 ///
@@ -88,6 +166,14 @@ private struct AssertionClientData: Encodable {
 private struct ChallengeResponse: Decodable {
     let challenge: String
     let expiresAtMs: Int64
+}
+
+/// The part of a backend error body this file acts on.
+///
+/// Everything else in it is prose, and the field is optional because a client
+/// on this route can meet a backend that predates it.
+private struct ErrorEnvelope: Decodable {
+    let reason: String?
 }
 
 private struct SessionResponse: Decodable {
@@ -236,10 +322,25 @@ public actor BackendAuth {
         if let keyID = loadKeyID() {
             do {
                 return try await refreshSession(keyID: keyID, service: service)
-            } catch let BackendAuthError.attestationRejected(code, _) where code == 401 {
-                // The backend does not know this key, so the credential behind
-                // it is gone. Start over rather than retrying forever.
-                Log.backend.notice("Stored attestation key is unknown to the backend; re-registering")
+            } catch let BackendAuthError.attestationRejected(status, reason, _)
+                where status == 401 && reason.credentialIsGone
+            {
+                // The backend has no usable record of this key, so the
+                // credential behind it is gone. Start over rather than
+                // retrying forever.
+                //
+                // Every other 401 this route can return -- a signature that
+                // did not verify, a spent challenge, a counter already seen --
+                // describes the request, not the key, and re-registering fixes
+                // none of them. A server-side signature bug once made all of
+                // them look identical to this one, and a client that could not
+                // tell the difference registered five Secure Enclave keys in
+                // four minutes before anyone noticed. Those fall through
+                // uncaught: the handshake fails, the caller retries, and the
+                // key on disk survives to be used when the server is well.
+                Log.backend.notice(
+                    "The backend no longer holds this attestation key (\(reason.code, privacy: .public)); re-registering"
+                )
                 deleteKeyID()
             } catch let error as DCError {
                 // A key ID outlives the key it names. Reinstalling the app or
@@ -258,6 +359,13 @@ public actor BackendAuth {
     }
 
     private func registerKey(service: DCAppAttestService) async throws -> Session {
+        // Claimed before anything else so a throttled client does not even
+        // spend a challenge, and -- more to the point -- so no future misread
+        // of a server error can turn into an unbounded registration loop. The
+        // reason codes above are the specific fix; this is the backstop that
+        // holds whatever the next bug turns out to be.
+        try claimRegistrationSlot()
+
         let challenge = try await fetchChallenge()
         let keyID = try await service.generateKey()
         // Persist before attesting: a key that is generated but not recorded
@@ -371,12 +479,52 @@ public actor BackendAuth {
         }
         guard http.statusCode == 200 else {
             let detail = String(data: data, encoding: .utf8) ?? "--"
+            let envelope = try? JSONDecoder().decode(ErrorEnvelope.self, from: data)
+            let reason = AttestationRejectionReason(code: envelope?.reason)
             Log.backend.error(
-                "Attestation call \(path, privacy: .public) failed \(http.statusCode, privacy: .public): \(detail, privacy: .public)"
+                "Attestation call \(path, privacy: .public) failed \(http.statusCode, privacy: .public)/\(reason.code, privacy: .public): \(detail, privacy: .public)"
             )
-            throw BackendAuthError.attestationRejected(http.statusCode, detail)
+            throw BackendAuthError.attestationRejected(
+                status: http.statusCode, reason: reason, body: detail)
         }
         return try JSONDecoder().decode(Response.self, from: data)
+    }
+
+    // MARK: - Registration budget
+
+    /// Registrations are recorded here rather than in memory because the loop
+    /// this guards against outlives a process: the widget extensions and the
+    /// watch app each run their own short-lived copy of this actor, and a
+    /// per-process counter would reset before it ever refused anything. The
+    /// app group is what makes the budget one budget.
+    private let registrationLedger = UserDefaults(suiteName: roamAppGroup) ?? .standard
+
+    /// Records that a registration is about to start, or refuses when too many
+    /// have run recently.
+    private func claimRegistrationSlot() throws {
+        let now = Date().timeIntervalSince1970
+        // Stamps far from now in *either* direction are dropped. A clock that
+        // jumps forward and back would otherwise leave entries that never age
+        // out, and a device locked out of attestation forever is a worse
+        // failure than one that registers a few extra times.
+        var recent = (registrationLedger.array(forKey: registrationLedgerKey) as? [Double] ?? [])
+            .filter { abs(now - $0) < registrationWindow }
+
+        guard recent.count < registrationBudget else {
+            let oldest = recent.min() ?? now
+            let retryAfter = max(0, registrationWindow - (now - oldest))
+            Log.backend.error(
+                "Refusing to register another attestation key: \(recent.count, privacy: .public) in the last hour"
+            )
+            throw BackendAuthError.registrationThrottled(retryAfter: retryAfter)
+        }
+
+        // Written before the registration runs rather than after it succeeds.
+        // A registration that is killed or crashes partway has still spent
+        // Apple's budget, and a loop is precisely the case that never reaches
+        // the line after.
+        recent.append(now)
+        registrationLedger.set(recent, forKey: registrationLedgerKey)
     }
 
     // MARK: - Key identifier storage
