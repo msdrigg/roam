@@ -316,9 +316,12 @@ pub struct VerifiedAssertion {
 
 /// Verifies that `assertion` was produced by `public_key` over `client_data`.
 ///
-/// Apple signs `SHA256(authenticatorData || SHA256(clientData))` directly, so
-/// the signature is checked against that digest rather than re-hashing a
-/// message.
+/// Apple's step 2 forms `nonce = SHA256(authenticatorData || SHA256(clientData))`,
+/// and step 3 asks for a signature that "is valid for nonce" -- nonce as the
+/// *message*, not as a digest. ECDSA-SHA256 hashes the message it is given, so
+/// the value actually signed is `SHA256(nonce)`, and the prehash verifier below
+/// has to be handed that second hash. Verifying against `nonce` itself fails
+/// every real assertion the Secure Enclave produces.
 pub fn verify_assertion(
     assertion: &[u8],
     public_key: &[u8],
@@ -348,7 +351,8 @@ pub fn verify_assertion(
     let mut hasher = Sha256::new();
     hasher.update(&auth_data_raw);
     hasher.update(client_data_hash);
-    let digest = hasher.finalize();
+    let nonce = hasher.finalize();
+    let digest = Sha256::digest(nonce);
 
     let verifying_key = p256::ecdsa::VerifyingKey::from_sec1_bytes(public_key)
         .map_err(|_| AttestError::Malformed("stored public key is not a P-256 point".into()))?;

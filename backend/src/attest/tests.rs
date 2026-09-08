@@ -62,7 +62,12 @@ fn sign_assertion(bundle_id: &str, counter: u32, client_data: &[u8]) -> (Vec<u8>
     let mut hasher = Sha256::new();
     hasher.update(&auth_data);
     hasher.update(client_data_hash);
-    let digest = hasher.finalize();
+    let nonce = hasher.finalize();
+
+    // The Secure Enclave signs the nonce as a message, so ECDSA-SHA256 hashes
+    // it once more. Signing `nonce` here instead would round-trip against a
+    // verifier that made the same mistake and pass while every device failed.
+    let digest = Sha256::digest(nonce);
 
     let signature: p256::ecdsa::Signature = key.sign_prehash(&digest).expect("test key signs");
     (
@@ -234,4 +239,54 @@ fn the_nonce_extension_shape_is_enforced() {
     let mut wrong_tag = good.clone();
     wrong_tag[2] = 0xA2;
     assert_ne!(&good[..6], &wrong_tag[..6]);
+}
+
+/// A real assertion, produced by a real Secure Enclave on a real device.
+///
+/// The synthetic assertions above are signed by this file's own helper, so they
+/// only ever prove the verifier agrees with `sign_assertion`. When both halves
+/// shared a wrong idea of what Apple signs they round-tripped happily while
+/// every device in the field got `BadSignature`. This vector is Apple's own
+/// output and cannot be talked into agreeing with a mistake.
+///
+/// From <https://github.com/takimoto3/app-attest> (`testdata/ios-14.4.json`),
+/// captured from Vincent Haupert's `apple-appattest-poc`, iOS 14.4.
+mod real_device_vector {
+    use super::*;
+    use base64::Engine as _;
+    use base64::engine::general_purpose::STANDARD as B64;
+
+    const TEAM_ID: &str = "6MURL8TA57";
+    const BUNDLE_ID: &str = "de.vincent-haupert.apple-appattest-poc";
+    const ASSERTION_B64: &str = "omlzaWduYXR1cmVYRjBEAiBJ6BT/QR689UKy84YyN3RDydYD9KVQ2BTRK+x1i8ezqAIgGM7BsZbSuF6TjmK6xtOFekyVyjf8akGvp5qFRGm9LTxxYXV0aGVudGljYXRvckRhdGFYJUVlEup+JpR2q5Pht5cWhVkv9z+JSsDsL9VICKCL+2yPQAAAAAE=";
+    /// The literal bytes `wurzelpfropf`.
+    const CLIENT_DATA_B64: &str = "d3VyemVscGZyb3Bm";
+    const PUBLIC_KEY_SEC1_B64: &str =
+        "BIjANKGQqn28WgYVAcZUKAOUJYIZiz8cxUZzyjua0gtBUoJnpU9f26BGn6+0a7aZCjlr8E+UpJ1DIMgcerJAo5g=";
+
+    fn real_policy() -> AttestPolicy {
+        AttestPolicy {
+            team_id: TEAM_ID.to_string(),
+            bundle_ids: vec![BUNDLE_ID.to_string()],
+            allow_development: true,
+        }
+    }
+
+    #[test]
+    fn an_assertion_from_a_real_device_verifies() {
+        let assertion = B64.decode(ASSERTION_B64).expect("vector decodes");
+        let client_data = B64.decode(CLIENT_DATA_B64).expect("vector decodes");
+        let public_key = B64.decode(PUBLIC_KEY_SEC1_B64).expect("vector decodes");
+
+        let verified = verify_assertion(
+            &assertion,
+            &public_key,
+            &client_data,
+            &real_policy(),
+            BUNDLE_ID,
+        )
+        .expect("a genuine Apple assertion verifies");
+
+        assert_eq!(verified.counter, 1);
+    }
 }
