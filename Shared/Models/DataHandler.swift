@@ -49,6 +49,8 @@ extension RegistrationListener {
 // MARK: - Main Data Handler
 actor RoamDataHandler {
     private static let pendingMessageRetryDelay: TimeInterval = 30
+    /// Ceiling for the exponential backoff on a message that keeps failing.
+    private static let pendingMessageMaxRetryDelay: TimeInterval = 30 * 60
     private static let discordNonceMaxLength = 25
     private static let persistentDatabaseRetryDelay: UInt64 = 30_000_000_000
 
@@ -94,7 +96,28 @@ actor RoamDataHandler {
     private var cachedPrimaryApps: [AppLink]?
     private var cachedMessages: [Message]?
     private var cachedUnreadMessageCount: Int?
-    private var isSendingPendingMessages = false
+    /// Nonces whose send is currently on the wire.
+    ///
+    /// This replaced a single process-wide "a send is running" flag. That flag
+    /// made the whole outbox serial, so one message holding the socket - a
+    /// megabyte of diagnostics on a bad link takes minutes - stopped every
+    /// other message from even being handed to URLSession. Claiming individual
+    /// nonces keeps the guarantee that actually matters, which is that a
+    /// message is posted at most once, and drops the one that did the damage.
+    private var sendingNonces: Set<String> = []
+
+    /// Consecutive send failures per nonce, used to back the retry off.
+    ///
+    /// A flat 30 second retry is right for a message that failed because the
+    /// link dropped, and badly wrong for one the backend will never accept: the
+    /// user who prompted this was re-uploading 1.3 MB every ~65 seconds, on
+    /// airplane wifi, for a message that could not succeed. Backing off turns
+    /// that into a handful of attempts instead of an unbounded loop.
+    ///
+    /// Deliberately in memory only. Persisting a give-up marker so a message
+    /// stays dead across launches would need a new field on `Message`, and a
+    /// relaunch is a perfectly reasonable moment to try once more anyway.
+    private var sendFailureCounts: [String: Int] = [:]
 
     @MainActor
     private static let _shared: RoamDataHandler = getForShared()
@@ -786,11 +809,11 @@ actor RoamDataHandler {
                     refreshMessageCache()
                 }
 
-                let sentPendingCount = await sendPendingMessagesIfIdle(reason: "refreshMessages")
+                let sentPendingCount = await sendPendingMessages(reason: "refreshMessages")
                 return messagesToSave.count + sentPendingCount
             } catch {
                 Log.backend.warning("Error refreshing messages: \(error, privacy: .public)")
-                await sendPendingMessagesIfIdle(reason: "refreshMessages after refresh failure")
+                await sendPendingMessages(reason: "refreshMessages after refresh failure")
                 return 0
             }
         }
@@ -831,9 +854,14 @@ actor RoamDataHandler {
             )
             refreshMessageCache()
 
+            // Post this message directly instead of draining the whole outbox.
+            // What the user just typed should reach the network now, not after
+            // whatever else is queued has finished uploading, and not behind a
+            // message the backend has already refused several times. Anything
+            // else still pending is the retry sweep's problem.
             Log.backend.notice(
-                "Attempting pending message queue after enqueue nonce=\(nonce, privacy: .public)")
-            await sendPendingMessagesIfIdle(reason: "sendChatMessage", force: true)
+                "Attempting send after enqueue nonce=\(nonce, privacy: .public)")
+            await sendPendingMessage(pendingMessage, reason: "sendChatMessage")
             Log.backend.notice("sendChatMessage queued nonce=\(nonce, privacy: .public)")
         }
 
@@ -843,18 +871,32 @@ actor RoamDataHandler {
             }
         }
 
-        private func pendingMessagesToSend(force: Bool) -> [Message] {
-            let nextAllowedSendAttempt = Date.now.addingTimeInterval(-Self.pendingMessageRetryDelay)
+        /// How long to wait before retrying a message that has failed `failures`
+        /// times in a row. Doubles from the base delay, capped so a message that
+        /// will never send still gets an occasional attempt without costing
+        /// battery or data in between.
+        private func retryDelay(afterFailures failures: Int) -> TimeInterval {
+            guard failures > 0 else { return Self.pendingMessageRetryDelay }
+            let doublings = min(failures - 1, 6)
+            return min(
+                Self.pendingMessageRetryDelay * pow(2, Double(doublings)),
+                Self.pendingMessageMaxRetryDelay)
+        }
+
+        private func pendingMessagesToSend() -> [Message] {
+            let now = Date.now
             return database.messages()
                 .filter { message in
-                    guard message.author == .me && !message.fetchedBackend && message.nonce != nil
+                    guard message.author == .me, !message.fetchedBackend,
+                        let nonce = message.nonce.map(Self.normalizeDiscordNonce)
                     else {
                         return false
                     }
-                    if force {
+                    guard let lastSendAttempt = message.lastSendAttempt else {
                         return true
                     }
-                    return message.lastSendAttempt.map { $0 <= nextAllowedSendAttempt } ?? true
+                    let delay = retryDelay(afterFailures: sendFailureCounts[nonce] ?? 0)
+                    return lastSendAttempt <= now.addingTimeInterval(-delay)
                 }
                 .sorted { lhs, rhs in
                     switch (lhs.lastSendAttempt, rhs.lastSendAttempt) {
@@ -887,78 +929,116 @@ actor RoamDataHandler {
             return String(source.prefix(discordNonceMaxLength))
         }
 
+        /// Posts one pending message, reporting whether the backend took it.
+        ///
+        /// The nonce is claimed for the duration of the call. That claim is the
+        /// only mutual exclusion left in the send path, and it is deliberately
+        /// per-message: two callers must never post the same message twice, but
+        /// they are free to post *different* messages at the same time. The
+        /// network call below is an `await` inside an actor, so a second caller
+        /// arriving while this one is on the wire simply interleaves and gets
+        /// its own request out rather than waiting for this one to land.
         @discardableResult
-        private func sendPendingMessagesIfIdle(reason: String, force: Bool = false) async -> Int {
-            guard !isSendingPendingMessages else {
-                Log.backend.notice(
-                    "Skipping pending message send because another send is active reason=\(reason, privacy: .public)"
+        private func sendPendingMessage(_ message: Message, reason: String) async -> Bool {
+            guard let rawNonce = message.nonce else {
+                Log.backend.error(
+                    "Skipping pending message without nonce pendingId=\(message.id, privacy: .public)"
                 )
-                return 0
+                return false
             }
 
-            isSendingPendingMessages = true
-            defer {
-                isSendingPendingMessages = false
+            var pendingMessage = message
+            let nonce = Self.normalizeDiscordNonce(rawNonce)
+            if nonce != rawNonce {
+                Log.backend.notice(
+                    "Normalizing pending message nonce pendingId=\(pendingMessage.id, privacy: .public) oldNonce=\(rawNonce, privacy: .public) newNonce=\(nonce, privacy: .public)"
+                )
+                pendingMessage.nonce = nonce
             }
 
-            var sentCount = 0
-            while var pendingMessage = pendingMessagesToSend(force: force).first {
-                guard var nonce = pendingMessage.nonce else {
-                    Log.backend.error(
-                        "Skipping pending message without nonce pendingId=\(pendingMessage.id, privacy: .public)"
-                    )
-                    break
-                }
-                let normalizedNonce = Self.normalizeDiscordNonce(nonce)
-                if normalizedNonce != nonce {
-                    Log.backend.notice(
-                        "Normalizing pending message nonce pendingId=\(pendingMessage.id, privacy: .public) oldNonce=\(nonce, privacy: .public) newNonce=\(normalizedNonce, privacy: .public)"
-                    )
-                    pendingMessage.nonce = normalizedNonce
-                    nonce = normalizedNonce
-                }
-
+            guard sendingNonces.insert(nonce).inserted else {
                 Log.backend.notice(
-                    "Sending pending message reason=\(reason, privacy: .public) pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public) contentBytes=\(pendingMessage.message.utf8.count, privacy: .public) attachment=\(pendingMessage.unsentAttachment?.filename ?? "--", privacy: .public)"
+                    "Skipping pending message already in flight nonce=\(nonce, privacy: .public) reason=\(reason, privacy: .public)"
                 )
-                pendingMessage.lastSendAttempt = Date.now
+                return false
+            }
+            defer { sendingNonces.remove(nonce) }
+
+            Log.backend.notice(
+                "Sending pending message reason=\(reason, privacy: .public) pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public) contentBytes=\(pendingMessage.message.utf8.count, privacy: .public) attachment=\(pendingMessage.unsentAttachment?.filename ?? "--", privacy: .public)"
+            )
+            pendingMessage.lastSendAttempt = Date.now
+            do {
+                try await database.saveMessage(pendingMessage)
+                refreshMessageCache()
+            } catch {
+                Log.backend.error(
+                    "Error updating pending message send attempt pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public): \(error, privacy: .public)"
+                )
+                return false
+            }
+
+            let result = await sendMessageDirect(
+                message: pendingMessage.message, attachment: pendingMessage.unsentAttachment,
+                nonce: nonce)
+            switch result {
+            case .success(let response):
+                Log.backend.notice(
+                    "Pending message send succeeded pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public) backendMessageId=\(response.id, privacy: .public)"
+                )
+                var savedMessage = Message(response)
+                savedMessage.viewed = pendingMessage.viewed
                 do {
-                    try await database.saveMessage(pendingMessage)
+                    try await database.saveMessage(savedMessage)
+                    try await database.deleteMessage(id: pendingMessage.id)
                     refreshMessageCache()
+                    UserDefaults.standard.set(true, forKey: UserDefaultKeys.hasSentFirstMessage)
+                    sendFailureCounts[nonce] = nil
+                    return true
                 } catch {
                     Log.backend.error(
-                        "Error updating pending message send attempt pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public): \(error, privacy: .public)"
+                        "Error saving sent pending message pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public): \(error, privacy: .public)"
                     )
-                    return sentCount
+                    return false
                 }
+            case .failure(let error):
+                let failures = (sendFailureCounts[nonce] ?? 0) + 1
+                sendFailureCounts[nonce] = failures
+                Log.backend.error(
+                    "Pending message send failed pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public) consecutiveFailures=\(failures, privacy: .public) nextRetryIn=\(self.retryDelay(afterFailures: failures), privacy: .public)s: \(error, privacy: .public)"
+                )
+                return false
+            }
+        }
 
-                let result = await sendMessageDirect(
-                    message: pendingMessage.message, attachment: pendingMessage.unsentAttachment,
-                    nonce: nonce)
-                switch result {
-                case .success(let response):
-                    Log.backend.notice(
-                        "Pending message send succeeded pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public) backendMessageId=\(response.id, privacy: .public)"
-                    )
-                    var savedMessage = Message(response)
-                    savedMessage.viewed = pendingMessage.viewed
-                    do {
-                        try await database.saveMessage(savedMessage)
-                        try await database.deleteMessage(id: pendingMessage.id)
-                        refreshMessageCache()
-                        UserDefaults.standard.set(true, forKey: UserDefaultKeys.hasSentFirstMessage)
-                        sentCount += 1
-                    } catch {
-                        Log.backend.error(
-                            "Error saving sent pending message pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public): \(error, privacy: .public)"
-                        )
-                        return sentCount
+        /// Retries every message that is still waiting to reach the backend.
+        ///
+        /// This runs off the message poll, so it is a background sweep and not
+        /// the path a freshly typed message takes. One failure no longer ends
+        /// the sweep: a message that the backend will never accept - an
+        /// attachment it rejects, say - used to sit at the head of the queue
+        /// with the oldest send attempt and abort the drain on every pass, so
+        /// nothing queued behind it was ever posted again until the app was
+        /// reinstalled. Each message now gets its own attempt regardless of how
+        /// its neighbours fared.
+        @discardableResult
+        private func sendPendingMessages(reason: String) async -> Int {
+            var sentCount = 0
+            var attempted: Set<String> = []
+
+            while true {
+                let next = pendingMessagesToSend().first { message in
+                    guard let nonce = message.nonce.map(Self.normalizeDiscordNonce) else {
+                        return false
                     }
-                case .failure(let error):
-                    Log.backend.error(
-                        "Pending message send failed pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public): \(error, privacy: .public)"
-                    )
-                    return sentCount
+                    return !attempted.contains(nonce) && !sendingNonces.contains(nonce)
+                }
+                guard let next, let nonce = next.nonce.map(Self.normalizeDiscordNonce) else {
+                    break
+                }
+                attempted.insert(nonce)
+                if await sendPendingMessage(next, reason: reason) {
+                    sentCount += 1
                 }
             }
 

@@ -6,6 +6,52 @@ import UniformTypeIdentifiers
 let globalBackendURL = "https://backend.roam.msd3.io"
 // let globalBackendURL = "http://localhost:8080"
 
+/// How long a backend request may make no progress before it is abandoned.
+///
+/// `URLRequest.timeoutInterval` is an idle timer rather than a wall clock, so
+/// these are budgets for "the link has gone quiet", not for "this is slow".
+/// A megabyte crawling uphill on airplane wifi keeps resetting the timer and
+/// is allowed to finish; a request that has genuinely stalled gives up and
+/// lets the caller retry instead of holding a slot indefinitely. They are
+/// spelled out here rather than left to `URLSession.shared`'s 60 second
+/// default so a future change to the shared session cannot silently move them.
+enum BackendTimeout {
+    /// Sends carry attachments, so they get the most patience.
+    static let send: TimeInterval = 60
+    /// Polling for new messages; the next poll is along shortly either way.
+    static let poll: TimeInterval = 20
+    /// A typing indicator that arrives late is worse than one that never does.
+    static let ephemeral: TimeInterval = 10
+}
+
+/// The longest message body Discord will accept.
+///
+/// The backend forwards `content` and every element of `paired_messages`
+/// straight through as Discord message bodies, so this ceiling is ours to
+/// respect. Exceeding it is not a slow send or a flaky one: Discord answers
+/// `50035 BASE_TYPE_MAX_LENGTH` and the backend turns that into a 500, on every
+/// attempt, forever. A message that long can never be delivered, so it must
+/// never be put on the wire in the first place.
+public let discordMessageContentLimit = 4000
+
+/// Trims `text` to something Discord will accept.
+///
+/// The tail is what gets cut because these bodies lead with the part a human
+/// reads first. Anything dropped is already in the attachment that accompanies
+/// the message, so the note points there rather than pretending nothing is
+/// missing.
+public func clampToDiscordLimit(_ text: String, label: String) -> String {
+    guard text.count > discordMessageContentLimit else {
+        return text
+    }
+    let notice = "\n\n… truncated, see the attached file for the rest."
+    let keep = discordMessageContentLimit - notice.count
+    Log.backend.notice(
+        "Truncating \(label, privacy: .public) from \(text.count, privacy: .public) to \(discordMessageContentLimit, privacy: .public) characters for Discord"
+    )
+    return String(text.prefix(keep)) + notice
+}
+
 public func getSystemInstallID() -> String {
     var ids: [String] = []
     for _ in 0...2 {
@@ -172,6 +218,7 @@ func getMessagingUpdates(after: String?) async throws -> MessagingUpdateResponse
 
     var request = URLRequest(url: url)
     request.httpMethod = "GET"
+    request.timeoutInterval = BackendTimeout.poll
 
     let (data, response) = try await BackendAuth.shared.authorizedData(for: request)
     let statusCode =
@@ -211,6 +258,7 @@ public func sendTyping() async throws {
 
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
+    request.timeoutInterval = BackendTimeout.ephemeral
 
     let (data, response) = try await BackendAuth.shared.authorizedData(for: request)
     let statusCode =
@@ -266,6 +314,7 @@ public func uploadApnsToken(_ token: String) async throws {
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.timeoutInterval = BackendTimeout.poll
 
     let messageRequest = APNSRequest(
         apnsToken: token,
@@ -330,6 +379,7 @@ public func sendMessageDirect(
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+    request.timeoutInterval = BackendTimeout.send
 
     var workersAttachment: WorkersAttachmentUpload?
     do {
@@ -348,7 +398,14 @@ public func sendMessageDirect(
                 data: data,
                 contentType: attachment.contentType,
                 id: attachment.id,
-                pairedMessages: attachment.pairedMessages
+                // The backend posts each paired message as its own Discord
+                // message *before* it uploads the file, so one over-length
+                // entry here fails the whole send and the attachment never
+                // leaves the device. Clamping at the edge means no caller can
+                // reintroduce that by growing a summary string.
+                pairedMessages: attachment.pairedMessages.map {
+                    clampToDiscordLimit($0, label: "paired message")
+                }
             )
         }
     } catch {
@@ -358,7 +415,7 @@ public func sendMessageDirect(
     }
 
     let messageRequest = MessageRequest(
-        content: messageContent,
+        content: clampToDiscordLimit(messageContent, label: "message content"),
         userId: userId,
         installationInfo: InstallationInfo(),
         attachment: workersAttachment,

@@ -75,7 +75,10 @@ final class RoamMetricManager: NSObject, MXMetricManagerSubscriber, Sendable {
     override init() {
         super.init()
         MXMetricManager.shared.add(self)
-        Task {
+        // Background priority on purpose: nothing on screen is waiting for a
+        // crash report, and a launch-time upload that outranks the first
+        // message fetch is exactly how a slow link makes the app feel dead.
+        Task(priority: .utility) {
             await uploadCachedDiagnostics()
             // Widget extensions cannot reach the backend themselves, so any
             // fatal error one logged is waiting in the shared app group.
@@ -109,7 +112,7 @@ final class RoamMetricManager: NSObject, MXMetricManagerSubscriber, Sendable {
             Log.backend.notice(
                 "Sending \(payloadData.count, privacy: .public) crash diagnostics reports for window \(String(describing: crashWindow), privacy: .public)..."
             )
-            Task {
+            Task(priority: .utility) {
                 await saveMetricKitDiagnostics(payloadData, crashWindow: crashWindow)
             }
         }
@@ -277,6 +280,13 @@ private func uploadDiagnosticsV2(_ request: DiagnosticsRequest) async throws -> 
     var urlRequest = URLRequest(url: url)
     urlRequest.httpMethod = "POST"
     urlRequest.addValue("application/json", forHTTPHeaderField: "Content-Type")
+    urlRequest.timeoutInterval = BackendTimeout.send
+    // A crash report is worth uploading but nobody is waiting on it, so tell
+    // the system it may yield the radio to anything the user is actually doing.
+    // This is a courtesy, not a fix for anything: the reason messages once
+    // queued behind diagnostics was a lock in our own outbox, not contention on
+    // the connection.
+    urlRequest.networkServiceType = .background
 
     let encoder = JSONEncoder()
     encoder.dataEncodingStrategy = .base64
