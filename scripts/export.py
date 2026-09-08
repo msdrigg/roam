@@ -6,6 +6,7 @@ from datetime import datetime
 import argparse
 import http.client
 import os
+import plistlib
 import random
 import shutil
 import sys
@@ -33,39 +34,80 @@ import urllib.request
 # The two Unauthenticated keys likely belong to a different issuer than the one above.
 
 
+# The entitlement that means "this build can attest", per platform.
+#
+# iOS and visionOS carry `appattest-environment`, whose value picks the Apple
+# environment the attestation is issued against, and Vars.xcconfig interpolates
+# it so a Debug build cannot claim production.
+#
+# macOS carries the other one. Mac App Store provisioning profiles do not grant
+# `appattest-environment` no matter what the App ID has enabled; App Attest on
+# macOS is gated on `app-attest-opt-in` instead, a separate App ID capability
+# ("App Attest opt-in") whose value names what Apple binds the key to. Xcode
+# filters out any entitlement the macOS profile does not grant and says nothing
+# about it, which is why RoamMacOS.entitlements can ask for both and the archive
+# comes out with only the opt-in.
+ATTEST_ENTITLEMENTS = {
+    "iOS": "com.apple.developer.devicecheck.appattest-environment",
+    "visionOS": "com.apple.developer.devicecheck.appattest-environment",
+    "macOS": "com.apple.developer.devicecheck.app-attest-opt-in",
+}
+
+
+def signed_entitlements(app: str) -> dict:
+    """The entitlements actually in the signature, not the ones we asked for."""
+    result = subprocess.run(
+        ["codesign", "-d", "--entitlements", "-", "--xml", app],
+        capture_output=True,
+    )
+    if result.returncode != 0 or not result.stdout:
+        raise SystemExit(
+            f"Could not read entitlements from {app}: "
+            f"codesign exited {result.returncode}\n"
+            f"{result.stderr.decode(errors='replace').strip()}"
+        )
+    return plistlib.loads(result.stdout)
+
+
 def verify_archived_attest_entitlement(platform: str, archive_path: str):
     """Prove the App Attest entitlement made it into the artifact that was built.
 
     Nothing secret ships in the bundle any more, but the app still cannot reach
     the backend without this entitlement: `DCAppAttestService` refuses to
     generate a key, every request falls through to the unattested path, and the
-    build goes out with a developer chat that answers 401. Vars.xcconfig sets
-    `APP_ATTEST_ENVIRONMENT` and the entitlements files interpolate it, so the
-    failure modes are the same ones the old key check caught: a renamed
-    variable, a target that lost its baseConfigurationReference, a stale build
-    directory.
+    build goes out with a developer chat that answers 401. The failure modes
+    this catches are a renamed variable, a target that lost its
+    baseConfigurationReference, a stale build directory, and -- the one that
+    actually happened -- an entitlement the provisioning profile does not grant,
+    which Xcode drops at signing without a warning.
+
+    macOS keeps its App Store receipt as a fallback for Macs below macOS 27,
+    where App Attest does not exist, so a Mac that cannot attest still reaches
+    the backend. That fallback is not a licence to ship the entitlement missing:
+    it costs those installs the hardware-backed credential and leans the whole
+    platform on the replayable one.
     """
     import glob
 
+    entitlement = ATTEST_ENTITLEMENTS.get(platform)
+    if entitlement is None:
+        raise SystemExit(f"No App Attest entitlement is defined for {platform}")
     candidates = glob.glob(f"{archive_path}/Products/Applications/*.app")
     if not candidates:
         raise SystemExit(f"No app bundle found in {archive_path}")
 
     for app in candidates:
-        entitlements = subprocess.run(
-            ["codesign", "-d", "--entitlements", ":-", app],
-            capture_output=True,
-            text=True,
-        ).stdout
-        if "com.apple.developer.devicecheck.appattest-environment" not in entitlements:
+        value = signed_entitlements(app).get(entitlement)
+        if not value:
             raise SystemExit(
-                f"{platform}: {app} carries no App Attest entitlement.\n"
+                f"{platform}: {app} carries no {entitlement} entitlement.\n"
                 "The archive would ship unable to authenticate against the "
-                "backend (developer chat, diagnostics upload). Refusing to "
-                "continue."
+                "backend (developer chat, diagnostics upload). Check that the "
+                "App ID has the matching capability enabled -- Xcode strips "
+                "entitlements the provisioning profile does not grant without "
+                "reporting it. Refusing to continue."
             )
-        expected = "development" if "development" in entitlements else "production"
-        print(f"App Attest entitlement present in {app} ({expected})")
+        print(f"App Attest entitlement present in {app} ({entitlement} = {value})")
 
 
 def archive_application(platform: str, render_github_actions: bool = False):
