@@ -36,6 +36,8 @@ public enum FileLog {
     private static let maxRunFiles = 8
     private static let flushThresholdBytes = 16 * 1024
     private static let flushInterval: TimeInterval = 1
+    /// How often a still-failing sink is allowed to say so again.
+    private static let failureLogInterval: TimeInterval = 60
     /// How long after launch to write through instead of batching.
     ///
     /// `flushNow()` only fires on background/terminate, so a run that dies
@@ -59,6 +61,8 @@ public enum FileLog {
     nonisolated(unsafe) private static var handle: FileHandle?
     nonisolated(unsafe) private static var bytesWritten = 0
     nonisolated(unsafe) private static var flushScheduled = false
+    nonisolated(unsafe) private static var consecutiveFailures = 0
+    nonisolated(unsafe) private static var lastFailureLogAt: TimeInterval = 0
     nonisolated(unsafe) private static var started = false
 
     public static func start() {
@@ -164,13 +168,48 @@ public enum FileLog {
             let handle = try openHandle()
             try handle.write(contentsOf: pending)
             bytesWritten += pending.count
+            if consecutiveFailures > 0 {
+                selfLog.notice(
+                    "file-log write recovered after \(consecutiveFailures, privacy: .public) failures"
+                )
+                consecutiveFailures = 0
+            }
             if bytesWritten > maxBytesPerRun {
                 trim()
             }
         } catch {
-            selfLog.error("file-log write failed: \(error.localizedDescription, privacy: .public)")
+            noteFailure(error)
             try? handle?.close()
             handle = nil
+        }
+    }
+
+    /// Report a write failure without letting it become the log.
+    ///
+    /// A failed flush drops its handle, so the next line retries from
+    /// `openHandle()` and fails the same way: one `os_log` error per line
+    /// written, 1:1 and unbounded. Two runs against a container they could not
+    /// reach emitted 653 between them, which buries the one failure that
+    /// matters under the noise it generates. Report the first immediately,
+    /// then at most one a minute carrying the count, so a broken sink stays
+    /// visible without crowding out everything else.
+    ///
+    /// The dropped lines are not recovered. `flush` clears the buffer before
+    /// writing, and a container this process cannot reach stays unreachable
+    /// for the life of the run, so holding them would grow memory to no end.
+    private static func noteFailure(_ error: Error) {
+        consecutiveFailures += 1
+        let now = Date().timeIntervalSince1970
+        guard consecutiveFailures == 1 || now - lastFailureLogAt >= failureLogInterval else {
+            return
+        }
+        lastFailureLogAt = now
+        if consecutiveFailures == 1 {
+            selfLog.error("file-log write failed: \(error.localizedDescription, privacy: .public)")
+        } else {
+            selfLog.error(
+                "file-log write failed: \(error.localizedDescription, privacy: .public) (\(consecutiveFailures, privacy: .public) failures so far)"
+            )
         }
     }
 
@@ -181,7 +220,23 @@ public enum FileLog {
         if !manager.fileExists(atPath: url.path) {
             try manager.createDirectory(
                 at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            manager.createFile(atPath: url.path, contents: nil)
+            // `createFile` reports failure in a `Bool`, and discarding it sent
+            // the real reason to the floor: a container the process may not
+            // touch surfaced one line later as `FileHandle`'s "the file does
+            // not exist", which reads as a missing file rather than a denied
+            // one. Debug builds run from DerivedData are denied this group
+            // container, so that is the message the misleading version was
+            // most likely to print. Read `errno` while it still describes
+            // this call.
+            guard manager.createFile(atPath: url.path, contents: nil) else {
+                let code = errno
+                throw NSError(
+                    domain: NSPOSIXErrorDomain, code: Int(code),
+                    userInfo: [
+                        NSLocalizedDescriptionKey:
+                            "could not create \(url.lastPathComponent): \(String(cString: strerror(code)))"
+                    ])
+            }
         }
         let opened = try FileHandle(forWritingTo: url)
         try opened.seekToEnd()
