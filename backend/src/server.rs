@@ -482,6 +482,13 @@ async fn attest_session(
     )
     .await?;
 
+    tracing::info!(
+        %key_id,
+        user_id = %key.user_id,
+        counter = verified.counter,
+        "Refreshed an attested session"
+    );
+
     let (token, session) = crate::auth::mint_session(
         &app_context,
         &key.user_id,
