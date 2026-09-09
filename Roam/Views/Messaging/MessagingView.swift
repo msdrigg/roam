@@ -15,6 +15,12 @@ struct MessageView: View {
     @State private var refreshResetId = UUID()
     @State private var keyboardIsShowing = false
     @State private var wrongAttemptsTracker = WrongAttemptsTracker()
+    // Distinct haptics for the three ways a send tap can end, so it is possible
+    // to tell a tap that did nothing from a tap that never arrived without
+    // reading a log: a real send taps once, a blocked one buzzes an error.
+    @State private var sendTriggeredCounter = 0
+    @State private var sendBlockedCounter = 0
+    @State private var sendEmptyCounter = 0
     @State private var celebration = CelebrationController()
     @State private var tipStore = TipStore.shared
     @AppStorage(UserDefaultKeys.hasSentFirstMessage) private var hasSentFirstMessage: Bool = false
@@ -224,6 +230,18 @@ struct MessageView: View {
 
     @ViewBuilder
     var bottomBar: some View {
+        bottomBarContent
+#if !os(visionOS)
+            // On the bar rather than the button so the same feedback covers the
+            // text field's `onSubmit` and the macOS/watchOS send paths too.
+            .sensoryFeedback(.impact, trigger: sendTriggeredCounter)
+            .sensoryFeedback(.error, trigger: sendBlockedCounter)
+            .sensoryFeedback(.warning, trigger: sendEmptyCounter)
+#endif
+    }
+
+    @ViewBuilder
+    var bottomBarContent: some View {
 #if os(iOS)
         iosBottomBar
 #else
@@ -397,6 +415,12 @@ struct MessageView: View {
                 .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 40, height: 40)
+                // Without this the tappable area is whatever the glass layout
+                // last resolved, which goes stale while the keyboard is up: the
+                // glass still reacts to the touch but the action never runs.
+                // Pinning it to the drawn circle keeps the hit region on the
+                // button itself rather than the container's cached geometry.
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .sendButtonGlass(tint: meColor)
@@ -590,6 +614,7 @@ struct MessageView: View {
         let messageCopy = messageText
         if messageCopy.isEmpty && attachment == nil {
             Log.userInteraction.notice("Ignoring empty message send with no attachment")
+            sendEmptyCounter += 1
             return
         }
         let attachmentSummary = attachment.map { attachment in
@@ -620,10 +645,17 @@ struct MessageView: View {
     }
 
     private func sendTypedMessage() {
-        if attachedFiles.contains(where: {$0.failure != nil || $0.loading}) {
+        // This used to return silently, which made a send blocked by a pinned
+        // attachment indistinguishable from a tap that never arrived.
+        if let blocker = attachedFiles.first(where: {$0.failure != nil || $0.loading}) {
+            Log.userInteraction.error(
+                "Send blocked by attachment name=\(blocker.name, privacy: .public) id=\(blocker.id, privacy: .public) loading=\(blocker.loading, privacy: .public) failure=\(blocker.failure ?? "--", privacy: .public)"
+            )
             wrongAttemptsTracker.attempts += 1
+            sendBlockedCounter += 1
             return
         }
+        sendTriggeredCounter += 1
         let firstAttachment = attachedFiles.first?.attachment
         self.sendMessageText(messageText: messageFieldText, attachment: firstAttachment)
         for attachment in attachedFiles.dropFirst() {

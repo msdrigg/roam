@@ -46,14 +46,21 @@ public let discordMessageContentLimit = 2000
 /// reads first. Anything dropped is already in the attachment that accompanies
 /// the message, so the note points there rather than pretending nothing is
 /// missing.
-public func clampToDiscordLimit(_ text: String, label: String) -> String {
-    guard text.count > discordMessageContentLimit else {
+/// `limit` is lowered by callers that prepend something to the result, so the
+/// prefix they add is charged against Discord's ceiling rather than smuggled
+/// past it.
+public func clampToDiscordLimit(
+    _ text: String,
+    label: String,
+    limit: Int = discordMessageContentLimit
+) -> String {
+    guard text.count > limit else {
         return text
     }
     let notice = "\n\n… truncated, see the attached file for the rest."
-    let keep = discordMessageContentLimit - notice.count
+    let keep = max(0, limit - notice.count)
     Log.backend.notice(
-        "Truncating \(label, privacy: .public) from \(text.count, privacy: .public) to \(discordMessageContentLimit, privacy: .public) characters for Discord"
+        "Truncating \(label, privacy: .public) from \(text.count, privacy: .public) to \(limit, privacy: .public) characters for Discord"
     )
     return String(text.prefix(keep)) + notice
 }
@@ -145,6 +152,13 @@ struct MessageRequest: Encodable, Sendable {
     let installationInfo: InstallationInfo
     let attachment: WorkersAttachmentUpload?
     let nonce: String?
+    /// Tells the backend not to echo the attachment's bytes back. It would
+    /// otherwise re-fetch the file from Discord and base64 it into the
+    /// response - an 8MB diagnostics upload came back as an 11MB download of
+    /// bytes this device just sent from its own disk. Older releases omit the
+    /// flag and still get the old behaviour, because they build the sent
+    /// message's attachment out of whatever the response returns.
+    let omitAttachmentData: Bool = true
 }
 
 public struct MessageModelResponse: Decodable, Sendable {

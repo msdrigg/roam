@@ -654,10 +654,18 @@ pub struct DiscordMessageDownload {
     pub human_support_message: bool,
 }
 impl DiscordMessageDownload {
+    /// `include_attachment_data` pulls every attachment's bytes back off
+    /// Discord's CDN so the caller gets the file inline. That is what a polling
+    /// client needs for an incoming message it has never seen, and pure waste
+    /// on the echo of a message the caller just uploaded: it re-fetched an 8MB
+    /// diagnostics file only to base64 it into an 11MB response, for bytes the
+    /// device already had on disk. The sender keeps its local copy instead, so
+    /// that path asks for metadata only.
     async fn prepare(
         message: DiscordMessage,
         ai_bot_id: Option<i64>,
         human_support_user_id: Option<i64>,
+        include_attachment_data: bool,
     ) -> Result<Self, error::ApiError> {
         let translated_support = message.is_translated_support_message();
         let message = message.normalize();
@@ -668,6 +676,16 @@ impl DiscordMessageDownload {
             .map(|attachment| async move {
                 let url = attachment.url;
                 let id = attachment.id;
+                if !include_attachment_data {
+                    return Ok(DiscordFile {
+                        id,
+                        content_type: attachment
+                            .content_type
+                            .unwrap_or_else(|| "application/octet-stream".to_string()),
+                        filename: attachment.filename,
+                        data: Vec::new(),
+                    });
+                }
                 let data = match reqwest::get(&url).await {
                     Ok(response) => match response.bytes().await {
                         Ok(bytes) => bytes.to_vec(),
@@ -733,7 +751,7 @@ async fn get_user_state(
     let human_support_user_id = app_context.ai_responder_human_support_user_id();
     let messages = stream::iter(messages)
         .map(|m| async move {
-            DiscordMessageDownload::prepare(m, ai_bot_id, human_support_user_id).await
+            DiscordMessageDownload::prepare(m, ai_bot_id, human_support_user_id, true).await
         }) // Async mapping
         .buffer_unordered(10) // Adjust concurrency level as needed
         .collect::<Vec<_>>() // Collect into Vec
@@ -826,6 +844,12 @@ struct MessageRequestV2 {
     attachment: Option<DiscordFileUpload>,
     installation_info: Option<DeviceInfo>,
     nonce: Option<String>,
+    /// Set by clients that keep their own copy of what they just uploaded, so
+    /// the echo can skip re-fetching it off Discord and base64ing it back.
+    /// Absent on every release that predates the flag, which still needs the
+    /// bytes returned to build the sent message's attachment.
+    #[serde(default)]
+    omit_attachment_data: bool,
 }
 
 #[derive(serde::Deserialize)]
@@ -1897,6 +1921,7 @@ async fn new_message(
         installation_info,
         attachment,
         nonce,
+        omit_attachment_data,
     } = message_request;
     caller.authorize_user(&device_id)?;
     let attachment_summary = attachment
@@ -1978,6 +2003,7 @@ async fn new_message(
             message_result,
             app_context.ai_responder_discord_bot_id(),
             app_context.ai_responder_human_support_user_id(),
+            !omit_attachment_data,
         )
         .await?,
     ))

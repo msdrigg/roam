@@ -70,7 +70,9 @@ struct DiagnosticsImport: PendingAttachment {
     nonisolated static func getDebugLogMessages(_ debugInfo: DebugInfo) -> [String] {
         var entries: [String] = []
 
-        var installation: String = ":ninja:\n\n"
+        // No `:ninja:` here - `packIntoDiscordMessages` puts one on every
+        // message it produces, including this one.
+        var installation: String = "\n"
         installation += "### Installation Info\n\n"
         installation += "- **User ID**: \(debugInfo.installationInfo.userId)\n"
         installation += "- **Build Version**: \(debugInfo.installationInfo.buildVersion ?? "--")\n"
@@ -135,14 +137,23 @@ struct DiagnosticsImport: PendingAttachment {
 /// order. `clampToDiscordLimit` is the backstop for the one case packing cannot
 /// solve - a single entry longer than the limit all by itself, which only a
 /// pathologically long field can produce.
-nonisolated func packIntoDiscordMessages(_ entries: [String], label: String) -> [String] {
+///
+/// Every message gets the `:ninja:` marker, not just the first. The backend
+/// posts each one as its own Discord message and the app hides a message by
+/// looking for that prefix, so a summary that packed into more than one message
+/// used to put every message after the first into the user's own chat. The
+/// marker is charged against the budget here so prefixing cannot push a message
+/// back over the limit that packing just kept it under.
+public nonisolated func packIntoDiscordMessages(_ entries: [String], label: String) -> [String] {
+    let marker = ":ninja:\n"
+    let budget = discordMessageContentLimit - marker.count
     var messages: [String] = []
     var current = ""
 
     for entry in entries {
         if current.isEmpty {
             current = entry
-        } else if current.count + entry.count <= discordMessageContentLimit {
+        } else if current.count + entry.count <= budget {
             current += entry
         } else {
             messages.append(current)
@@ -153,7 +164,7 @@ nonisolated func packIntoDiscordMessages(_ entries: [String], label: String) -> 
         messages.append(current)
     }
 
-    return messages.map { clampToDiscordLimit($0, label: label) }
+    return messages.map { marker + clampToDiscordLimit($0, label: label, limit: budget) }
 }
 
 struct PhotoImport: PendingAttachment {

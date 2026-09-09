@@ -131,12 +131,31 @@ extension Message {
 
 #if !WIDGET
 extension Message {
-    init(_ message: MessageModelResponse) {
+    /// `localAttachment` is the copy the sender already holds on disk.
+    ///
+    /// The send response no longer echoes attachment bytes back: the backend
+    /// was re-fetching an 8MB diagnostics file off Discord's CDN and base64ing
+    /// it into an 11MB response, for bytes the device had just uploaded from
+    /// its own disk. An attachment that arrives with no data is matched to that
+    /// local copy instead, so the message keeps a usable `dataHash` rather than
+    /// being written out as an empty file. Polled messages still carry data and
+    /// take the path below.
+    init(_ message: MessageModelResponse, localAttachment: AttachmentUpload? = nil) {
         self.init(
             id: message.id,
             message: message.message,
             author: message.author,
             attachments: message.attachments?.compactMap({ attachment in
+                if attachment.data.isEmpty {
+                    guard let localAttachment else { return nil }
+                    return Message.SentAttachment(
+                        id: attachment.id,
+                        dataHash: localAttachment.dataHash,
+                        dataSize: localAttachment.dataSize,
+                        filename: localAttachment.filename,
+                        mimetype: localAttachment.contentType
+                    )
+                }
                 let hash = fastHashData(data: attachment.data)
                 do {
                     try storeAttachmentToDisk(attachmentData: attachment.data, hash: hash, filename: attachment.filename)
