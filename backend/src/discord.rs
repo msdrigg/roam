@@ -155,6 +155,20 @@ impl DiscordClient {
         *self.retry_at.lock().expect("Mutex shouldn't poison") = Some(retry_at);
     }
 
+    /// Waits out a Discord throttle instead of failing the caller.
+    ///
+    /// Discord's limits are measured in seconds. A diagnostics send makes one
+    /// API call per paired summary message plus one for the attachment, so it
+    /// arrives as a burst and trips the per-channel limit where a single chat
+    /// message never does. Failing the whole send on that turned a four second
+    /// throttle into a client backoff measured in minutes, and the retry
+    /// re-posted the paired messages that had already been delivered.
+    async fn sleep_for_retry(retry_after: f64) {
+        let wait = retry_after.clamp(0.25, 10.0);
+        tracing::warn!(retry_after, wait, "Discord rate limited; waiting it out");
+        tokio::time::sleep(std::time::Duration::from_secs_f64(wait)).await;
+    }
+
     fn update_rate_limit(&self, headers: &reqwest::header::HeaderMap) {
         let remaining = headers
             .get("X-RateLimit-Remaining")
@@ -919,20 +933,53 @@ impl DiscordClient {
             Ok(result)
         };
 
+        const RATE_LIMIT_ATTEMPTS: usize = 4;
+
         let result = if let Some(attachment) = attachment {
             for paired_message in attachment.paired_messages.iter() {
-                let response = self
-                    ._send_message_no_attachments(thread_id, paired_message, None)
-                    .await?;
-                handle_response(response).await?;
+                let mut attempt = 0;
+                loop {
+                    attempt += 1;
+                    let sent = async {
+                        let response = self
+                            ._send_message_no_attachments(thread_id, paired_message, None)
+                            .await?;
+                        handle_response(response).await
+                    }
+                    .await;
+                    match sent {
+                        Ok(_) => break,
+                        Err(DiscordError::RateLimited { retry_after, .. })
+                            if attempt < RATE_LIMIT_ATTEMPTS =>
+                        {
+                            Self::sleep_for_retry(retry_after).await;
+                        }
+                        Err(e) => return Err(e),
+                    }
+                }
             }
 
             // Split off first attachment
-            let response = self
-                ._send_message_multipart(thread_id, Some(content), &[&attachment], options)
-                .await?;
-
-            handle_response(response).await?
+            let mut attempt = 0;
+            loop {
+                attempt += 1;
+                let sent = async {
+                    let response = self
+                        ._send_message_multipart(thread_id, Some(content), &[&attachment], options)
+                        .await?;
+                    handle_response(response).await
+                }
+                .await;
+                match sent {
+                    Ok(message) => break message,
+                    Err(DiscordError::RateLimited { retry_after, .. })
+                        if attempt < RATE_LIMIT_ATTEMPTS =>
+                    {
+                        Self::sleep_for_retry(retry_after).await;
+                    }
+                    Err(e) => return Err(e),
+                }
+            }
         } else {
             let response = self
                 ._send_message_no_attachments(thread_id, content, options)
