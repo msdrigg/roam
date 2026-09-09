@@ -197,3 +197,43 @@ struct RoamSwiftTests {
         #expect(abs(entry.date.timeIntervalSince1970 - 1_786_834_162.976) < 0.001)
     }
 }
+
+/// The diagnostics summary is posted as several Discord messages, and the app
+/// hides a message by looking for the `:ninja:` prefix. Only the first message
+/// used to carry it, so a user with enough devices to spill onto a second
+/// message saw the rest of their own diagnostics dump appear in the chat.
+struct DiagnosticsSummaryPackingTests {
+    private func longEntry(_ marker: String) -> String {
+        "- \(marker) " + String(repeating: "x", count: 900) + "\n"
+    }
+
+    @Test func everyPackedMessageIsHiddenFromTheUser() throws {
+        // Enough entries to force several messages, not just the first.
+        let entries = (0..<8).map { longEntry("device\($0)") }
+        let messages = packIntoDiscordMessages(entries, label: "test")
+
+        #expect(messages.count > 1)
+        for message in messages {
+            #expect(message.hasPrefix(":ninja:"))
+            #expect(isHiddenMessage(message))
+        }
+    }
+
+    @Test func packedMessagesStayUnderDiscordsLimitWithTheMarker() throws {
+        let entries = (0..<8).map { longEntry("device\($0)") }
+
+        for message in packIntoDiscordMessages(entries, label: "test") {
+            #expect(message.count <= discordMessageContentLimit)
+        }
+    }
+
+    @Test func aSingleOverlongEntryIsClampedAndStillHidden() throws {
+        let huge = String(repeating: "y", count: discordMessageContentLimit * 3)
+        let messages = packIntoDiscordMessages([huge], label: "test")
+
+        #expect(messages.count == 1)
+        let only = try #require(messages.first)
+        #expect(only.hasPrefix(":ninja:"))
+        #expect(only.count <= discordMessageContentLimit)
+    }
+}

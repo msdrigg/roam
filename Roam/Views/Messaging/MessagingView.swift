@@ -645,13 +645,8 @@ struct MessageView: View {
     }
 
     private func sendTypedMessage() {
-        // Instrumentation for "send does nothing": this line firing proves the
-        // button's action ran at all, which a stale hit region would prevent.
-        // The block below used to return silently, so a pinned attachment and a
-        // dead button were indistinguishable in the logs.
-        Log.userInteraction.notice(
-            "Send tapped contentBytes=\(messageFieldText.utf8.count, privacy: .public) attachedFiles=\(attachedFiles.count, privacy: .public) keyboardIsShowing=\(keyboardIsShowing, privacy: .public)"
-        )
+        // This used to return silently, which made a send blocked by a pinned
+        // attachment indistinguishable from a tap that never arrived.
         if let blocker = attachedFiles.first(where: {$0.failure != nil || $0.loading}) {
             Log.userInteraction.error(
                 "Send blocked by attachment name=\(blocker.name, privacy: .public) id=\(blocker.id, privacy: .public) loading=\(blocker.loading, privacy: .public) failure=\(blocker.failure ?? "--", privacy: .public)"

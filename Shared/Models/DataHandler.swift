@@ -1013,7 +1013,8 @@ actor RoamDataHandler {
                 Log.backend.notice(
                     "Pending message send succeeded pendingId=\(pendingMessage.id, privacy: .public) nonce=\(nonce, privacy: .public) backendMessageId=\(response.id, privacy: .public)"
                 )
-                var savedMessage = Message(response)
+                var savedMessage = Message(
+                    response, localAttachment: pendingMessage.unsentAttachment)
                 savedMessage.viewed = pendingMessage.viewed
                 do {
                     try await database.saveMessage(savedMessage)

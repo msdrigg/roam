@@ -569,7 +569,7 @@ extension KeyboardReadable {
 }
 #endif
 
-func isHiddenMessage(_ message: String) -> Bool {
+public func isHiddenMessage(_ message: String) -> Bool {
     let hiddenPatterns = [
         ":ninja:", ":command-share-diagnostics:", ":command_share_diagnostics:",
         // The developer unlock code. Hidden because the app replaces it with a
