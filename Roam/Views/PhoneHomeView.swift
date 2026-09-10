@@ -66,9 +66,10 @@ struct PhoneHomeView: View {
         .onChange(of: primaryDeviceLoader.device?.id, initial: true) { _, newId in
             guard !didAutoOpenPrimary, let newId, !newId.isEmpty else { return }
             didAutoOpenPrimary = true
-            // Defer the push so the LazyVStack has a layout pass to register the
-            // primary card's matchedTransitionSource; otherwise the very first
-            // interactive swipe-back has no source and falls back to a default pop.
+            // Defer the push so the card stack has had a layout pass to
+            // register the primary card's matchedTransitionSource; otherwise the
+            // very first interactive swipe-back has no source and falls back to
+            // a default pop.
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(150))
                 if path.isEmpty {
@@ -180,7 +181,15 @@ struct PhoneHomeView: View {
 
     private var deviceGrid: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
+            // Deliberately eager rather than a LazyVStack. Every card is a
+            // `.matchedTransitionSource` for the `.zoom` push into the detail
+            // pager, and UIKit's magic-morph animation hard-asserts - "Attempting
+            // to morph to a view that is not in the view hierarchy!",
+            // _UIMagicMorphAnimation.swift:71 - when the view behind the
+            // transition's sourceID is not realised. A lazy container drops
+            // scrolled-out cards, so zooming back to one killed the process.
+            // Device counts are small enough that building them all is cheap.
+            VStack(spacing: 12) {
                 ForEach(deviceIds, id: \.self) { deviceId in
                     deviceCardButton(for: deviceId)
                 }
