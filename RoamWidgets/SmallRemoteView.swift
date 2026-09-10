@@ -1,13 +1,24 @@
 import Foundation
 import SwiftUI
+import WidgetKit
 
 struct SmallRemoteView: View {
     @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor: Color = .accentColor
+    @Environment(\.widgetRenderingMode) private var renderingMode
 
     let device: Device?
     let controls: [[RemoteButton?]]
 
     private static let dpadButtons: Set<RemoteButton> = [.up, .down, .left, .right, .select]
+
+    /// Tinted and clear home screens (`.accented`) and the lock screen (`.vibrant`) redraw the
+    /// widget from the luminance of whatever we hand them, so a prominent button's filled
+    /// background flattens into an opaque block and swallows the glyph sitting on top of it —
+    /// the dpad turns into five blank squares. Only fill the dpad when we are drawing our own
+    /// colors, and let `widgetAccentable` carry the emphasis everywhere else.
+    private var drawsOwnColors: Bool {
+        renderingMode == .fullColor
+    }
 
     private func buttonLabel(_ button: RemoteButton) -> some View {
         button.label
@@ -24,10 +35,14 @@ struct SmallRemoteView: View {
             }
             .buttonStyle(.plain)
         } else if Self.dpadButtons.contains(button) {
-            Button(intent: ButtonPressIntent(button, device: device)) {
+            let dpadButton = Button(intent: ButtonPressIntent(button, device: device)) {
                 buttonLabel(button)
             }
-            .buttonStyle(.borderedProminent)
+            if drawsOwnColors {
+                dpadButton.buttonStyle(.borderedProminent)
+            } else {
+                dpadButton.buttonStyle(.bordered).widgetAccentable()
+            }
         } else {
             Button(intent: ButtonPressIntent(button, device: device)) {
                 buttonLabel(button)
