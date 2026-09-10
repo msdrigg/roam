@@ -27,6 +27,7 @@ enum UserDefaultKeys {
     static let cosmeticsGrandfathered = "cosmeticsGrandfathered"
     static let didEvaluateCosmeticsGrandfathering = "didEvaluateCosmeticsGrandfathering"
     static let developerCosmeticsUnlock = "developerCosmeticsUnlock"
+    static let dateOfLastEntitlementRefresh = "dateOfLastEntitlementRefresh"
     static let alternateAppIcon = "alternateAppIcon"
 
     // Messaging

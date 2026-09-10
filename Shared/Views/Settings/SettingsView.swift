@@ -161,6 +161,13 @@ struct SettingsView: View {
                 .task(id: allDeviceRefreshKey) {
                     allDevices = await RoamDataHandler.shared.requestAllDevices(allDeviceIds)
                 }
+#if !os(watchOS)
+                // The tip-gated rows here have to show the right lock state
+                // without making the user walk through the tip jar first.
+                .task {
+                    await tipStore.refreshEntitlementsIfStale()
+                }
+#endif
                 // Keeps the status dot next to each device honest - the record's
                 // own `lastOnlineAt` only moves for the connected device.
                 .probingDeviceLiveness(allDeviceIds, isActive: scenePhase == .active)

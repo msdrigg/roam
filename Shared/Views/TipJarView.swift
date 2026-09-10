@@ -131,6 +131,9 @@ struct TipJarView: View {
         .navigationTitle(String(localized: "Tip Jar", comment: "Navigation title of the tip jar page"))
         .task {
             await store.loadProducts()
+            // Unconditional: opening the tip jar is exactly when a purchase
+            // made on another device needs to already be reflected.
+            await store.refreshEntitlements()
         }
         .alertingError(message: "Purchase Failed", error: $store.purchaseError)
         .customAccentColorTint()

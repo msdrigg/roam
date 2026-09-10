@@ -130,6 +130,8 @@ final class TipStore {
 
     // MARK: - Loading
 
+    /// Prices never change under us mid-session, so the catalog loads once.
+    /// Entitlements are the part that goes stale, and they refresh separately.
     func loadProducts() async {
         guard products.isEmpty, !isLoadingProducts else { return }
         isLoadingProducts = true
@@ -142,8 +144,6 @@ final class TipStore {
         } catch {
             Log.backend.error("Failed loading tip products \(error, privacy: .public)")
         }
-
-        await refreshEntitlements()
     }
 
     func refreshEntitlements() async {
@@ -154,7 +154,28 @@ final class TipStore {
             owned.insert(transaction.productID)
         }
         purchasedProductIDs = owned
+        UserDefaults.standard.set(Date(), forKey: UserDefaultKeys.dateOfLastEntitlementRefresh)
         Log.backend.notice("Tip entitlements refreshed count=\(owned.count, privacy: .public)")
+    }
+
+    private static let entitlementRefreshInterval: TimeInterval = 60 * 60 * 24
+
+    /// For screens that only need to know whether the tip extras are unlocked -
+    /// Settings, mainly. Reading `currentEntitlements` is local and cheap, but
+    /// Settings gets opened constantly and a purchase made elsewhere already
+    /// arrives live over `Transaction.updates`, so once a day per install is
+    /// enough to catch the case where the app wasn't running when it happened.
+    func refreshEntitlementsIfStale() async {
+        let lastRefresh = UserDefaults.standard
+            .object(forKey: UserDefaultKeys.dateOfLastEntitlementRefresh) as? Date
+
+        // `abs` so a clock that jumped forward and back doesn't wedge the
+        // refresh off until the stored date catches up again.
+        if let lastRefresh, abs(lastRefresh.timeIntervalSinceNow) < Self.entitlementRefreshInterval {
+            return
+        }
+
+        await refreshEntitlements()
     }
 
     func product(for tier: TipTier) -> Product? {

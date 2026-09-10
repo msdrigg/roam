@@ -8,12 +8,24 @@
 
     let globalDefaultVolume: Float = 0.25
 
+    /// Bounds handed to the `MPVolumeView`.
+    ///
+    /// Nothing here is ever seen - the overlay lives 800pt off-screen and only
+    /// exists so the system volume HUD stays suppressed - but the size still
+    /// has to be a real one. UISlider lays out horizontally, so the width is
+    /// the track: the rotation below turns it into the vertical slider the
+    /// design wants. Sizing it to a 1pt sliver left UIKit computing a thumb
+    /// position against a zero-length track.
+    let sliderSize = CGSize(width: 150, height: 30)
+
     struct CustomVolumeSlider: UIViewRepresentable {
         @Binding var volume: Float
         @Binding var isTouched: Bool
 
         func makeUIView(context: Context) -> MPVolumeView {
-            let volumeView = MPVolumeView(frame: .zero)
+            // Born with real bounds rather than `.zero`, so the first
+            // layout pass never runs against an empty track.
+            let volumeView = MPVolumeView(frame: CGRect(origin: .zero, size: sliderSize))
             if let slider = volumeView.subviews.first(where: { $0 is UISlider }) as? UISlider {
                 slider.addTarget(
                     context.coordinator,
@@ -115,7 +127,7 @@
                 Spacer()
                 HStack {
                     CustomVolumeSlider(volume: $volume, isTouched: $isTouched)
-                        .frame(maxHeight: 150)
+                        .frame(width: sliderSize.width, height: sliderSize.height)
                     Spacer()
                 }
                 Spacer()
