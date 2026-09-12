@@ -433,6 +433,16 @@ private enum ActivationPolicyCoalescer {
         }
 
         func application(_ application: UIApplication, willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+            // Migrations lock files in the shared app-group container. Acquire
+            // suspension protection before opening them, after UIApplicationMain
+            // creates UIApplication. A task requested in RoamApp.init is invalid.
+            let dontKillAssertion = QRunInBackgroundAssertion(name: "roam-launch-database-init")
+            defer { dontKillAssertion.release() }
+            Log.lifecycle.notice(
+                "Opening database, launch guard \(dontKillAssertion.isReleased() ? "not held" : "held", privacy: .public)"
+            )
+            RoamDataHandler.initializeSharedBlocking()
+            migrateOffSwiftData()
             return true
         }
 

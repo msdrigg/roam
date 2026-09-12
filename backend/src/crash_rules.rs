@@ -313,6 +313,14 @@ pub fn match_rule(report: &str, facts: &CrashFacts) -> Option<RuleMatch> {
         })
 }
 
+const LAUNCH_DATABASE_LOCK_REPLY: &str = ":ninja: **Auto-review: `0xdead10cc` during database startup migration**
+
+The termination reason confirms that iOS suspended Roam while it held a shared-container file or SQLite lock. The stack places the database migration inside the shared data handler's first open.
+
+The launch guard used to be requested in `RoamApp.init`, before `UIApplicationMain` created `UIApplication`. That request returned an invalid background-task identifier, leaving the migration without suspension protection.
+
+**Fix in 1.58:** open the database and read the legacy SwiftData store in `application(_:willFinishLaunchingWithOptions:)`, after acquiring a background task and before constructing the app's scenes. Release the task when initialization returns.";
+
 const DEAD10CC_REPLY: &str = ":ninja: **Auto-review: `0xdead10cc` - suspended while holding the database lock**
 
 `EXC_CRASH (10)` / `SIGKILL (9)` with the attributed thread in the middle of a database write. This is not a fault in the app's own code; iOS killed the process.
@@ -493,6 +501,25 @@ pub static RULES: &[CrashRule] = &[
         reply: EXC_GUARD_REPLY,
     },
     CrashRule {
+        id: "launch-database-lock-suspension",
+        title: "0xdead10cc during the shared database's startup migration",
+        fixed_in: Some("1.58"),
+        environmental: false,
+        exception_type: Some(10),
+        signal: Some(9),
+        termination_code: Some("0xdead10cc"),
+        min_thermal_level: None,
+        max_app_cpu_percent: None,
+        all_of: &[
+            "RoamDataHandler.getForShared",
+            "RoamDatabase.init",
+            "DatabaseMigrator.migrate",
+            "DatabaseFileLock.withExclusiveLock",
+        ],
+        none_of: &[],
+        reply: LAUNCH_DATABASE_LOCK_REPLY,
+    },
+    CrashRule {
         id: "database-lock-suspension",
         title: "0xdead10cc suspension while holding the database file lock",
         fixed_in: Some("1.51"),
@@ -503,7 +530,9 @@ pub static RULES: &[CrashRule] = &[
         min_thermal_level: None,
         max_app_cpu_percent: None,
         all_of: &["DatabaseFileLock.withExclusiveLock"],
-        none_of: &[],
+        // Startup used a separate guard. Reports without a confirmed kill
+        // policy must remain available for review under that diagnosis.
+        none_of: &["RoamDataHandler.getForShared"],
         reply: DEAD10CC_REPLY,
     },
     // Last: broadest rule, naming no app frame. Only the thermal figure
@@ -542,6 +571,98 @@ Metadata:
 Thread 16 (attributed):
   Roam +0x54788 specialized DatabaseFileLock.withExclusiveLock<A> at /x/DatabaseFileLock.swift:37
 "#;
+
+    // Trimmed from the 1.57 startup report. Its payload omitted the kill
+    // policy; tests add an explicit termination reason only where required.
+    const LAUNCH_DATABASE_REPORT: &str = r#"
+Metadata:
+  appVersion: 1.57
+  exceptionType: 10
+  signal: 9
+Thread 0 (attributed):
+  RoamGRDB DatabaseMigrator.migrate
+  Roam closure #1 in RoamDatabase.init
+  Roam specialized DatabaseFileLock.withExclusiveLock<A>
+  Roam RoamDatabase.init
+  Roam specialized static RoamDataHandler.getForShared
+  Roam RoamApp.init
+"#;
+
+    #[test]
+    fn launch_migration_requires_a_confirmed_suspension_kill() {
+        for reason in [
+            "",
+            "Termination reason: Namespace RUNNINGBOARD, Code 0x8badf00d\n",
+            "Termination reason: Namespace RUNNINGBOARD, Code 0xc51bad01\n",
+        ] {
+            let report = format!("{reason}{LAUNCH_DATABASE_REPORT}");
+            let facts = CrashFacts::from_report(&report);
+            assert!(match_rule(&report, &facts).is_none());
+        }
+    }
+
+    #[test]
+    fn confirmed_launch_migration_uses_the_158_fix_boundary() {
+        for (version, installed, expected) in [
+            ("1.57", "1.57", FixStatus::Fixed),
+            ("1.57", "1.58", FixStatus::AlreadyUpdated),
+            ("1.58", "1.58", FixStatus::Unfixed),
+            ("1.59", "1.59", FixStatus::Unfixed),
+        ] {
+            let stack = LAUNCH_DATABASE_REPORT
+                .replace("appVersion: 1.57", &format!("appVersion: {version}"));
+            // The fixed app opens from its launch delegate, so regressions
+            // must still match after the App.init frame disappears.
+            let stack = if expected == FixStatus::Unfixed {
+                stack.replace(
+                    "RoamApp.init",
+                    "RoamAppDelegate.application(_:willFinishLaunchingWithOptions:)",
+                )
+            } else {
+                stack
+            };
+            let report = format!(
+                "Install: release={installed}\nTermination reason: Namespace RUNNINGBOARD, Code 0xDEAD10CC\n{stack}"
+            );
+            let facts = CrashFacts::from_report(&report);
+            let matched = match_rule(&report, &facts).expect("confirmed launch migration");
+            assert_eq!(matched.rule.id, "launch-database-lock-suspension");
+            assert_eq!(matched.status, expected);
+            assert!(matched.reply(&facts).contains("1.58"));
+        }
+    }
+
+    #[test]
+    fn launch_rule_requires_the_startup_migration_frames() {
+        let report = format!(
+            "Termination reason: Namespace RUNNINGBOARD, Code 0xdead10cc\n{LAUNCH_DATABASE_REPORT}"
+        );
+        for frame in [
+            "RoamDataHandler.getForShared",
+            "RoamDatabase.init",
+            "DatabaseMigrator.migrate",
+            "DatabaseFileLock.withExclusiveLock",
+        ] {
+            let report = report.replace(frame, "otherFunction");
+            let facts = CrashFacts::from_report(&report);
+            assert_ne!(
+                match_rule(&report, &facts).map(|m| m.rule.id),
+                Some("launch-database-lock-suspension")
+            );
+        }
+        for report in [
+            DEAD10CC_REPORT,
+            GUARD_REPORT,
+            WATCHDOG_REPORT,
+            THERMAL_REPORT,
+        ] {
+            let facts = CrashFacts::from_report(report);
+            assert_ne!(
+                match_rule(report, &facts).map(|m| m.rule.id),
+                Some("launch-database-lock-suspension")
+            );
+        }
+    }
 
     const GUARD_REPORT: &str = r#"
 Crash 1 (version 1.0.0)

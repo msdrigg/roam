@@ -50,19 +50,12 @@ struct RoamApp: App {
             .datastoreLocation(.applicationDefault),
         ])
 
-        #if !os(macOS)
-            // The database *is* in the group container, so this one is real.
-            // `beginBackgroundTask` rather than `performExpiringActivity`: the
-            // grant has to be in hand before the first lock is taken, and
-            // `performExpiringActivity` resolves asynchronously, so it usually
-            // is not. Never gate the initialization itself on holding it --
-            // running on an uninitialized handler is worse than running
-            // unguarded.
-            let dontKillAssertion = QRunInBackgroundAssertion(name: "roam-launch-database-init")
-            defer { dontKillAssertion.release() }
+        // UIKit opens the shared database in willFinishLaunchingWithOptions,
+        // after UIApplication exists and can grant a background task.
+        #if os(macOS)
+            RoamDataHandler.initializeSharedBlocking()
+            migrateOffSwiftData()
         #endif
-        RoamDataHandler.initializeSharedBlocking()
-        migrateOffSwiftData()
     }
 
     var windowResizability: WindowResizability {
