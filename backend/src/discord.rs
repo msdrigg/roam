@@ -75,7 +75,7 @@ impl DiscordClient {
     /// exactly 4000, was told "Must be 2000 or fewer". 4000 is the raised
     /// ceiling and is not what a bot posting into a plain channel gets, so the
     /// only number safe to build on is the base one.
-    const DISCORD_CONTENT_MAX_LENGTH: usize = 2000;
+    pub(crate) const DISCORD_CONTENT_MAX_LENGTH: usize = 2000;
 
     fn get_flags(options: Option<&DiscordMessageOptions>) -> u32 {
         let notify = options.map(|o| o.notify).unwrap_or(true);
@@ -91,8 +91,9 @@ impl DiscordClient {
 
     /// Trims a message body to something Discord will accept.
     ///
-    /// This is a backstop for clients, not the way the summary is meant to be
-    /// sized. Current builds split a long diagnostics summary across several
+    /// This is a backstop, not the way a body is meant to be sized. Crash
+    /// auto-review replies are held under the limit by a test in
+    /// `crash_rules`, and the diagnostics summary is split by the client. Current builds split a long diagnostics summary across several
     /// `paired_messages` and nothing here fires. Builds already in the field
     /// send one unbounded string that grows with the user's device count, and
     /// Discord answers `50035 BASE_TYPE_MAX_LENGTH` for the whole request -
@@ -113,7 +114,7 @@ impl DiscordClient {
         tracing::warn!(
             thread_id,
             original_chars = content.chars().count(),
-            "Truncating an over-length message body for Discord; the client that sent it predates the split-summary fix"
+            "Truncating an over-length message body for Discord"
         );
         content.chars().take(keep).collect::<String>() + NOTICE
     }
@@ -478,7 +479,7 @@ impl DiscordClient {
         );
 
         let mut body = serde_json::json!({
-            "content": content,
+            "content": Self::clamp_content(content, thread_id),
             "flags": Self::get_flags(Some(&DiscordMessageOptions { nonce: None, notify })),
             "allowed_mentions": { "parse": [] },
         });

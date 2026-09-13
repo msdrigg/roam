@@ -344,13 +344,13 @@ That function closed its UDP socket in two places: the `onCancel` handler of `wi
 
 const SCENE_UPDATE_REENTRANCY_REPLY: &str = ":ninja: **Auto-review: stack overflow - the macOS scene update pass re-entered itself**
 
-`EXC_BAD_ACCESS (1)` / `SIGSEGV (11)` with the faulting address inside the **Stack Guard** region below the main thread's stack: the main thread ran off the end of its stack. Not a dangling pointer - unbounded recursion.
+`EXC_BAD_ACCESS (1)` / `SIGSEGV (11)` with the faulting address in the **Stack Guard** region below the main thread's stack: unbounded recursion, not a dangling pointer.
 
-MetricKit cannot unwind an overflowed stack, so the attributed thread often shows only whatever the Swift runtime was demangling when the last frame would not fit. The in-process backtrace holds the cycle: `AppGraph.graphDidChange` alternating with `AppDelegate.scenesDidChange` for dozens of pairs.
+MetricKit cannot unwind an overflowed stack, so the attributed thread often shows only a Swift runtime frame. The in-process backtrace holds the cycle: `AppGraph.graphDidChange` alternating with `AppDelegate.scenesDidChange` for dozens of pairs.
 
-The pass is seeded by a scene-phase change delivered inside a SwiftUI update, almost always AppKit's launch-time window restoration ordering the main window on screen (`NSPersistentUIRestorer` -> `AppKitWindowController.windowDidOrderOnScreen` -> `PlatformSceneCache.setPhase`). What keeps it going is inside SwiftUI on macOS 26.5 through 26.7, read from the 26.6.2 binary: `AppDelegate.scenesDidChange` copies the scene list's `Scene.keyboardShortcut` table into `AppGraph._sceneKeyboardShortcuts` with `AGGraphSetValue`, and AttributeGraph compares that dictionary by storage identity, not contents, so a non-empty table counts as changed on every pass. The attribute feeds the root scene environment, the change dirties every scene body, the scene list comes back with a new version, and `scenesDidChange` calls `graphDidChange` again from inside the pass that called it. An empty table is the shared empty storage and compares equal, so the pass settles.
+A scene-phase change delivered inside a SwiftUI update seeds it, usually launch-time window restoration ordering the main window on screen. What sustains it is inside SwiftUI on macOS 26.5 through 26.7: `AppDelegate.scenesDidChange` copies the scenes' `Scene.keyboardShortcut` table into an attribute that AttributeGraph compares by storage identity, so a non-empty table reads as changed on every pass. That dirties every scene body, and `scenesDidChange` calls `graphDidChange` again from inside the pass that called it. An empty table compares equal, so the pass settles.
 
-Roam put `.keyboardShortcut` on three `Window` scenes, which is the whole trigger. The seeding frame (`forceFront`, `MenuBarExtra`, `applicationDidChangeScreenParameters`, a `Settings` body) varies between reports and only shows where the stack happened to run out, which is why this rule keys on the cycle rather than on any one of them.
+Roam put `.keyboardShortcut` on three `Window` scenes, and that is the trigger. The seeding frame (`forceFront`, `MenuBarExtra`, `applicationDidChangeScreenParameters`, a `Settings` body) varies between reports and only shows where the stack ran out.
 
 **Known cause, fix:** the window shortcuts moved from `Scene.keyboardShortcut` to Window-menu commands, so the scene shortcut table stays empty and the update pass cannot re-enter itself.";
 
@@ -378,17 +378,13 @@ The `guard engine.isRunning` ahead of it did not help - the engine really was ru
 
 const LOCAL_NETWORK_CANCEL_RACE_REPLY: &str = ":ninja: **Auto-review: `SIGSEGV` - the Bonjour browser was cancelled before it was started**
 
-`EXC_BAD_ACCESS (1)` / `SIGSEGV (11)` on the near-null address `0x54` inside `nw_browser_cancel`, attributed to the local network permission check.
+`EXC_BAD_ACCESS (1)` / `SIGSEGV (11)` on the near-null address `0x54` inside `nw_browser_cancel`, attributed to the local network permission check. Not the `0x8BADF00D` stall that `local-network-cancel-watchdog` describes, which carries a termination reason.
 
-Not the `0x8BADF00D` watchdog kill that `local-network-cancel-watchdog` describes - that one is a *stall* on the main thread and carries a termination reason.
+`NWBrowser.start(queue:)` is what hands Network.framework its delivery queue. Cancel a browser that has a state update handler but no queue and `nw_browser_set_state_locked` calls `dispatch_async` with a NULL queue, faulting at a fixed small offset. Apple tracks this as a framework bug (r.139710124, https://developer.apple.com/forums/thread/768413); the only defence is to never make the call.
 
-The faulting address is the tell. `NWBrowser.start(queue:)` is what hands Network.framework the queue it delivers state changes on. Cancel a browser that has a state update handler but no queue and `nw_browser_set_state_locked` calls `dispatch_async` with a NULL queue, faulting at a fixed small offset. Apple has this as a framework bug (r.139710124, https://developer.apple.com/forums/thread/768413); the only defence is to never make the call.
+Roam had two paths that could: the `Task.isCancelled` guard that runs before the endpoints start, and `withTaskCancellationHandler`'s `onCancel`, which fires the instant the task is cancelled, including before setup reaches `start(queue:)`. SwiftUI cancels `.task` work on a scene-phase change, so backgrounding the app during the check was enough. The 1.52 and 1.54 fixes addressed concurrent cancels and could not stop this first, premature one.
 
-Roam had two paths that could: the `Task.isCancelled` guard that runs before the endpoints are started, and `withTaskCancellationHandler`'s `onCancel`, which fires the instant the task is cancelled - including before the setup closure has reached `start(queue:)`. SwiftUI cancels `.task` work on a scene-phase change, so backgrounding the app during the check was enough.
-
-1.52's fix and 1.54's fix both addressed a *different* rule - that `NWBrowser.cancel()` is not safe against itself - and neither stopped this, because the offending call was never a second concurrent cancel. It was the first one, made too early.
-
-**Known cause, fix:** start and cancel now go through an `EndpointLifecycle` wrapper that tracks whether the endpoints were ever started. A cancel arriving before the start is recorded and the teardown skipped entirely - there is nothing bound to tear down - and a cancel arriving *during* the start is deferred until the queue is set. Cancelling twice is still claimed once, and the teardown still runs on the endpoints' own queue, so both earlier fixes are preserved.";
+**Known cause, fix:** start and cancel go through an `EndpointLifecycle` wrapper that tracks whether the endpoints were started. A cancel before the start skips teardown entirely, and one arriving during the start is deferred until the queue is set. Cancelling twice is still claimed once and teardown still runs on the endpoints' own queue, so both earlier fixes hold.";
 
 const THERMAL_STARVATION_REPLY: &str = ":ninja: **Auto-review: `0x8BADF00D` watchdog - the device was overheating, not the app**
 
@@ -1620,6 +1616,34 @@ In-process backtrace of the faulting thread (1)
                         .reply(facts)
                         .starts_with(crate::discord::SUPPORT_ONLY_PREFIX),
                     "rule `{}` composed reply is not support-only",
+                    rule.id
+                );
+            }
+        }
+    }
+
+    /// Auto-review posts a reply as one Discord message. Over the limit,
+    /// Discord rejects the post and the crash is left unreviewed.
+    #[test]
+    fn every_composed_reply_fits_in_one_discord_message() {
+        let facts = CrashFacts {
+            app_version: Some("1.100.10".to_string()),
+            installed_version: Some("1.100.11".to_string()),
+            ..CrashFacts::default()
+        };
+        for rule in RULES {
+            for status in [
+                FixStatus::Fixed,
+                FixStatus::AlreadyUpdated,
+                FixStatus::Unfixed,
+                FixStatus::NotADefect,
+                FixStatus::Unknown,
+            ] {
+                let reply = RuleMatch { rule, status }.reply(&facts);
+                let length = crate::discord::support_only(&reply).chars().count();
+                assert!(
+                    length <= crate::discord::DiscordClient::DISCORD_CONTENT_MAX_LENGTH,
+                    "rule `{}` reply is {length} characters as {status:?}",
                     rule.id
                 );
             }
