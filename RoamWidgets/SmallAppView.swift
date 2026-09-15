@@ -44,12 +44,18 @@ struct SmallAppView: View {
                             Button(intent: LaunchAppIntent(app, device: device)) {
                                 VStack(spacing: 0) {
                                     if let icon = appIcons[app.id] {
-                                        icon
-                                            .resizable()
-                                            .widgetAccentedRenderingMode(.desaturated)
-                                            .aspectRatio(contentMode: .fit)
-                                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                                            .shadow(radius: 4)
+                                        Group {
+                                            if #available(visionOS 26.0, *) {
+                                                icon
+                                                    .resizable()
+                                                    .widgetAccentedRenderingMode(.desaturated)
+                                            } else {
+                                                icon.resizable()
+                                            }
+                                        }
+                                        .aspectRatio(contentMode: .fit)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        .shadow(radius: 4)
                                     } else {
                                         Image(systemName: "questionmark.app.fill")
                                             .resizable()
