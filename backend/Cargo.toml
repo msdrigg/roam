@@ -46,14 +46,14 @@ rand = "^0.10"
 # macOS 27, where App Attest does not exist. The receipt is a CMS SignedData
 # blob signed by Apple with RSA.
 cms = "^0.2"
-x509-cert = "^0.2"
+x509-cert = "^0.3"
 rsa = { version = "^0.9", features = ["sha2"] }
 # `rsa` 0.9 is built on digest 0.10 while the App Attest path uses sha2 0.11.
 # The two coexist under distinct names rather than dragging the whole graph back
 # to the older digest.
-sha1 = { version = "^0.10", features = ["oid"] }
+sha1 = { version = "^0.11", features = ["oid"] }
 sha2_digest10 = { package = "sha2", version = "^0.10", features = ["oid"] }
-der = "^0.7"
+der = "^0.8"
 
 clap = { version = "^4.5", features = ["derive", "env"] }
 clap_derive = { version = "^4.5" }
