@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import WidgetKit
 
 #if !os(watchOS)
 struct SmallAppView: View {
@@ -45,6 +46,7 @@ struct SmallAppView: View {
                                     if let icon = appIcons[app.id] {
                                         icon
                                             .resizable()
+                                            .widgetAccentedRenderingMode(.desaturated)
                                             .aspectRatio(contentMode: .fit)
                                             .clipShape(RoundedRectangle(cornerRadius: 8))
                                             .shadow(radius: 4)
@@ -99,8 +101,6 @@ struct SmallAppView: View {
     }
 }
 #else
-import WidgetKit
-
 struct SmallAppView: View {
     let device: Device?
     let apps: [ AppLink]
