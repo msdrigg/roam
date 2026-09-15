@@ -26,6 +26,7 @@ struct SmallDpadWidget: Widget {
             SmallRemoteView(device: entry.device, controls: dpad)
                 .containerBackground(Color.widgetBackground, for: .widget)
         }
+        .description("Navigate a Roku device and control its power and volume.")
         .supportedFamilies([.systemSmall])
     }
 }
@@ -52,6 +53,7 @@ struct SmallMediaWidget: Widget {
             SmallRemoteView(device: entry.device, controls: controls)
                 .containerBackground(Color.widgetBackground, for: .widget)
         }
+        .description("Control playback, power, and volume on a Roku device.")
         .supportedFamilies([.systemSmall])
     }
 }

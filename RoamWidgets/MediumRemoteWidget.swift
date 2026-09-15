@@ -13,6 +13,7 @@
             ) { entry in
                 MediumRemoteView(device: entry.device)
             }
+            .description("Control navigation, playback, power, and volume on a Roku device.")
             .supportedFamilies([.systemMedium])
         }
     }

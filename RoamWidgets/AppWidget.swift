@@ -14,6 +14,7 @@ import WidgetKit
                 SmallAppView(device: entry.device, apps: entry.apps, appIcons: entry.appIcons, rows: 2)
                     .containerBackground(Color.widgetBackground, for: .widget)
             }
+            .description("Open apps on a Roku device.")
             .supportedFamilies([.systemSmall])
         }
     }
