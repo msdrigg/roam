@@ -11,6 +11,8 @@ struct ButtonGrid: View {
     /// Worth a one-time hint, but never a reason to withhold the keypress.
     var volumeRoutedOverHDMI = false
     var headphonesModeUnsupported = false
+    /// Enables hold-and-slide on the mute button to mute for a set number of seconds.
+    var onTimedMute: ((Int) -> Void)?
 
     @ScaledMetric var buttonWidth = globalButtonWidth
     @ScaledMetric var buttonHeight = globalButtonHeight
@@ -23,6 +25,9 @@ struct ButtonGrid: View {
     @AppStorage(UserDefaultKeys.headphonesModeUsed) private var headphonesModeUsed: Bool = false
     @AppStorage(UserDefaultKeys.audioInteractionCount) private var audioInteractionCount: Int = 0
     @AppStorage(UserDefaultKeys.volumeOverHDMIHintShown) private var volumeOverHDMIHintShown: Bool = false
+#endif
+#if os(iOS) || os(visionOS)
+    @State private var muteHold = MuteHoldState()
 #endif
 
     private static let volumeButtons: Set<RemoteButton> = [.volumeUp, .volumeDown, .mute]
@@ -50,6 +55,12 @@ struct ButtonGrid: View {
         let isVolumeOverHDMI = routesOverHDMI(button.2)
         let isHeadphonesNoOp = headphonesModeUnsupported && button.2 == .headphonesMode
         let view = Button(action: {
+            #if os(iOS) || os(visionOS)
+            if button.2 == .mute && muteHold.swallowsTap {
+                muteHold.menu = .hidden
+                return
+            }
+            #endif
             #if !os(watchOS)
             if button.2 == .headphonesMode {
                 if isHeadphonesNoOp {
@@ -98,9 +109,24 @@ struct ButtonGrid: View {
                 HeadphonesModeTipContent()
             }
         } else if isVolumeOverHDMI {
-            view.popover(isPresented: volumeTipBinding(for: button.2)) {
+            withTimedMuteHold(view.popover(isPresented: volumeTipBinding(for: button.2)) {
                 VolumeOverHDMITipContent()
-            }
+            }, for: button.2)
+        } else {
+            withTimedMuteHold(view, for: button.2)
+        }
+#else
+        view
+#endif
+    }
+
+    @ViewBuilder
+    private func withTimedMuteHold(_ view: some View, for button: RemoteButton) -> some View {
+#if os(iOS) || os(visionOS)
+        if button == .mute, let onTimedMute {
+            view
+                .modifier(TimedMuteHoldModifier(state: $muteHold, onSelect: onTimedMute))
+                .zIndex(1)
         } else {
             view
         }

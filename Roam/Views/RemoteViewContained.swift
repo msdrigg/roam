@@ -46,6 +46,7 @@
             private let pastedUrlOfferTip = PastedUrlOfferTip()
         #endif
         @State private var headphonesModeEnabled: Bool = false
+        @State private var bottomBannerVisible: Bool = false
         @State private var headphonesError: Error?
         @State private var errorTrigger: Int = 0
         @AppStorage(UserDefaultKeys.localNetworkPermissionGranted) private
@@ -71,6 +72,10 @@
 
         private var ecpSession: ECPWebsocketClient? {
             appDelegate.ecpMonitor.ecpClient
+        }
+
+        private var timedMutePhase: TimedMutePhase {
+            appDelegate.timedMute.phase(forDevice: selectedDevice?.id)
         }
 
         private var showKeyboardEntry: Bool {
@@ -153,7 +158,7 @@
             // the pager's floating button bar instead of clipping below them -
             // the flexible Spacers above compress to absorb the difference.
             private var iOSBottomPadding: CGFloat {
-                if showKeyboardEntry || showPastedUrlOffer {
+                if showKeyboardEntry || showPastedUrlOffer || bottomBannerVisible {
                     return 10
                 }
                 if UIDevice.current.userInterfaceIdiom == .phone {
@@ -908,6 +913,13 @@
         @ViewBuilder
         private var banners: some View {
             if !hideUIForKeyboardEntry {
+                TimedMuteStatusPill(
+                    phase: timedMutePhase,
+                    onUnmute: appDelegate.timedMute.unmuteNow,
+                    onDismiss: appDelegate.timedMute.dismissMessage
+                )
+                .padding(.bottom, 8)
+                .animation(.spring(duration: 0.3), value: timedMutePhase)
                 #if os(iOS)
                     pastedUrlBanner
                 #endif
@@ -973,6 +985,11 @@
                 banners
                 if showKeyboardEntry {
                     Spacer()
+                }
+            }
+            .onPreferenceChange(BottomBannerVisibleKey.self) { visible in
+                withAnimation(.spring(duration: 0.3)) {
+                    bottomBannerVisible = visible
                 }
             }
         }
@@ -1058,10 +1075,12 @@
                                 enabled: headphonesModeEnabled ? Set([.headphonesMode]) : Set([]),
                                 disabled: Set([]),
                                 volumeRoutedOverHDMI: volumeRoutedOverHDMI,
-                                headphonesModeUnsupported: headphonesModeDisabled
+                                headphonesModeUnsupported: headphonesModeDisabled,
+                                onTimedMute: startTimedMute
                             )
                             .transition(.scale.combined(with: .opacity))
                             .matchedGeometryEffect(id: "buttonGrid", in: animation)
+                            .zIndex(1)
                         }
                     }
                     Spacer()
@@ -1155,10 +1174,12 @@
                             enabled: headphonesModeEnabled ? Set([.headphonesMode]) : Set([]),
                             disabled: Set([]),
                             volumeRoutedOverHDMI: volumeRoutedOverHDMI,
-                            headphonesModeUnsupported: headphonesModeDisabled
+                            headphonesModeUnsupported: headphonesModeDisabled,
+                            onTimedMute: startTimedMute
                         )
                         .transition(.scale.combined(with: .opacity))
                         .matchedGeometryEffect(id: "buttonGrid", in: animation)
+                        .zIndex(1)
                     }
 
                     if !hideAppsForKeyboardEntry && selectedDevice != nil && renderHeavyContent {
@@ -1281,6 +1302,14 @@
                 headphonesModeEnabled.toggle()
                 return
             }
+            if button == .mute {
+                // A manual toggle means the user has taken mute back over.
+                if timedMutePhase.isInFlight {
+                    appDelegate.timedMute.cancel()
+                } else {
+                    appDelegate.timedMute.dismissMessage()
+                }
+            }
 
             Task {
                 do {
@@ -1298,6 +1327,13 @@
                     fatalError("Debug crash simulation")
                 }
             #endif
+        }
+
+        func startTimedMute(_ seconds: Int) {
+            guard let selectedDevice else { return }
+            incrementButtonPressCount(.mute)
+            handleMajorUserAction()
+            appDelegate.timedMute.start(TimedMuteTarget(device: selectedDevice), duration: TimeInterval(seconds))
         }
 
         func pressKeyAsync(_ key: KeyEquivalent, modifiers: EventModifiers) async {

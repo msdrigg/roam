@@ -304,12 +304,15 @@ private enum ActivationPolicyCoalescer {
         @Published var ecpMonitor: ECPMonitor
         @Published var networkMonitor: NetworkMonitor
         let discoveryCoordinator: DiscoveryCoordinator
+        let timedMute: TimedMuteController
 
         override init() {
             self.navigationPath = NavigationManager()
-            self.ecpMonitor = ECPMonitor()
+            let ecpMonitor = ECPMonitor()
+            self.ecpMonitor = ecpMonitor
             self.networkMonitor = NetworkMonitor()
             self.discoveryCoordinator = DiscoveryCoordinator()
+            self.timedMute = TimedMuteController(driver: .live(ecpMonitor: ecpMonitor))
             super.init()
             UNUserNotificationCenter.current().delegate = self
         }
@@ -353,9 +356,18 @@ private enum ActivationPolicyCoalescer {
 
         nonisolated func userNotificationCenter(
             _: UNUserNotificationCenter,
-            didReceive _: UNNotificationResponse,
+            didReceive response: UNNotificationResponse,
             withCompletionHandler completionHandler: @escaping () -> Void
         ) {
+            if response.notification.request.content.categoryIdentifier == TimedMuteController.notificationCategory {
+                Log.notifications.notice("didReceive timed mute notification \(response.actionIdentifier, privacy: .public)")
+                nonisolated(unsafe) let completionHandler = completionHandler
+                Task { @MainActor in
+                    await self.timedMute.handleNotificationResponse()
+                    completionHandler()
+                }
+                return
+            }
             Log.notifications.notice("didReceive notification. Showing Messages...")
             DispatchQueue.main.async {
                 self.refreshMessages()
@@ -378,9 +390,14 @@ private enum ActivationPolicyCoalescer {
 
         nonisolated func userNotificationCenter(
             _: UNUserNotificationCenter,
-            willPresent _: UNNotification,
+            willPresent notification: UNNotification,
             withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
         ) {
+            // In the foreground the remote view already shows the timer.
+            if notification.request.content.categoryIdentifier == TimedMuteController.notificationCategory {
+                completionHandler([])
+                return
+            }
             Log.notifications.notice("willPresent notification. Refreshing...")
             DispatchQueue.main.async {
                 self.refreshMessages()
@@ -401,6 +418,7 @@ private enum ActivationPolicyCoalescer {
             FileLog.recordLaunchState(reasons.isEmpty ? launchState : "\(launchState) options=\(reasons)")
 
             self.networkMonitor.startMonitoring()
+            self.timedMute.resumeIfNeeded()
             let hasSentFirstMessage = UserDefaults.standard.bool(forKey: UserDefaultKeys.hasSentFirstMessage)
             if hasSentFirstMessage {
                 UserDefaults.standard.setValue(Date.now.timeIntervalSince1970, forKey: UserDefaultKeys.lastApnsRequestTime)

@@ -1,6 +1,15 @@
 import SwiftUI
 import Foundation
 
+/// True while something occupies the remote's bottom banner slot. On iPhone
+/// that slot otherwise sits under the pager's floating button bar.
+struct BottomBannerVisibleKey: PreferenceKey {
+    static let defaultValue = false
+    static func reduce(value: inout Bool, nextValue: () -> Bool) {
+        value = value || nextValue()
+    }
+}
+
 #if os(watchOS)
 struct NotificationBanner: View {
     let message: String
@@ -129,6 +138,7 @@ struct NotificationBanner: View {
         .cornerRadius(3.0)
         .cornerRadius(5)
         .help(message)
+        .preference(key: BottomBannerVisibleKey.self, value: true)
     }
 
     private var backgroundColor: Color {

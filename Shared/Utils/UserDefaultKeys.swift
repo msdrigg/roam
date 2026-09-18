@@ -23,6 +23,9 @@ enum UserDefaultKeys {
     static let audioInteractionCount = "audioInteractionCount"
     static let volumeOverHDMIHintShown = "volumeOverHDMIHintShown"
 
+    // Timed mute
+    static let pendingTimedMute = "pendingTimedMute"
+
     // Tip jar / cosmetic unlocks
     static let cosmeticsGrandfathered = "cosmeticsGrandfathered"
     static let didEvaluateCosmeticsGrandfathering = "didEvaluateCosmeticsGrandfathering"

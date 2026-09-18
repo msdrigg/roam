@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AF7CD4D985FD73DC1DE0F7C3 /* TimedMuteControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2F1AA3A09906B54A4FC33 /* TimedMuteControllerTests.swift */; };
+		AFFD67597178BBBCF8BE4DBC /* TimedMuteViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF239223C019B94ECB37D50D /* TimedMuteViews.swift */; };
+		AFED62A3B475236B09610563 /* TimedMuteController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA4ECF6875139375470B831 /* TimedMuteController.swift */; };
 		AF0042752AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0042742AE9BD8F0051BB1E /* UserDefaultKeys.swift */; };
 		AF0042762AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0042742AE9BD8F0051BB1E /* UserDefaultKeys.swift */; };
 		AF0042772AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0042742AE9BD8F0051BB1E /* UserDefaultKeys.swift */; };
@@ -450,6 +453,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AFF2F1AA3A09906B54A4FC33 /* TimedMuteControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedMuteControllerTests.swift; sourceTree = "<group>"; };
+		AF239223C019B94ECB37D50D /* TimedMuteViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedMuteViews.swift; sourceTree = "<group>"; };
+		AFA4ECF6875139375470B831 /* TimedMuteController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedMuteController.swift; sourceTree = "<group>"; };
 		AF0042742AE9BD8F0051BB1E /* UserDefaultKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultKeys.swift; sourceTree = "<group>"; };
 		AF0042842AEABA9D0051BB1E /* CollectionHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionHelpers.swift; sourceTree = "<group>"; };
 		AF05327D2D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalKeyboardShortcutsTip.swift; sourceTree = "<group>"; };
@@ -713,6 +719,7 @@
 				AF6D56122DCE50DD00B00780 /* LinkedListTests.swift */,
 				AF6D56A02DCE50DD00B00781 /* ProcessConcurrentlyTests.swift */,
 				AFD100402F00000100000001 /* RoamDatabaseTests.swift */,
+				AFF2F1AA3A09906B54A4FC33 /* TimedMuteControllerTests.swift */,
 				AF0532832D36DB2B00D68F8E /* RoamSwiftTests.swift */,
 			);
 			path = RoamSwiftTests;
@@ -738,6 +745,7 @@
 				AFFC720000000000000000D1 /* DeviceSplitRoot.swift */,
 				AFFC720000000000000000E1 /* PhoneHomeView.swift */,
 				AFFC720000000000000000F1 /* PhoneDeviceDetailPager.swift */,
+				AF239223C019B94ECB37D50D /* TimedMuteViews.swift */,
 				AF3AD5522AE28F7400E2D780 /* ButtonGrid.swift */,
 				AF3AD5542AE2910B00E2D780 /* CenterController.swift */,
 				AF3AD5562AE2928600E2D780 /* TopBar.swift */,
@@ -1013,6 +1021,7 @@
 				AFAA1D0012E0000800BAE156 /* TipJar.storekit */,
 				AFDB19A52C0D8E4A00C4DAB7 /* Info.plist */,
 				AF1065CE2DE7A8D50058E45A /* MetricManager.swift */,
+				AFA4ECF6875139375470B831 /* TimedMuteController.swift */,
 				AFC24EFE2AD0E5A1002AB66C /* RoamApp.swift */,
 				AF65A8892BB5ABF9005ECF7F /* RoamAppDelegate.swift */,
 				AF250517A05AA05CA05A0AB0 /* ScreenshotCapture.swift */,
@@ -1579,6 +1588,8 @@
 		AFC24EF72AD0E5A1002AB66C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+				AFFD67597178BBBCF8BE4DBC /* TimedMuteViews.swift in Sources */,
+				AFED62A3B475236B09610563 /* TimedMuteController.swift in Sources */,
 				AF0532802D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift in Sources */,
 				AFBDEA322D7D157500C15B18 /* StandardDislosureGroupStyle.swift in Sources */,
 				AF0532812D36DB2200D68F8E /* HeadphonesModeTip.swift in Sources */,
@@ -1713,6 +1724,7 @@
 		AFEDCDF02CD1331E0001D959 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+				AF7CD4D985FD73DC1DE0F7C3 /* TimedMuteControllerTests.swift in Sources */,
 				AF0D09F42CDE64750098122E /* Helpers.swift in Sources */,
 				AF68F2842D41EC2700F39530 /* DataHelpers.swift in Sources */,
 				AF6D56132DCE50DF00B00780 /* LinkedListTests.swift in Sources */,
