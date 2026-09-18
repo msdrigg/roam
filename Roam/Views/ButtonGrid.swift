@@ -26,6 +26,7 @@ struct ButtonGrid: View {
 #endif
 
     private static let volumeButtons: Set<RemoteButton> = [.volumeUp, .volumeDown, .mute]
+    private static let repeatingButtons: Set<RemoteButton> = [.volumeUp, .volumeDown]
 
     private func routesOverHDMI(_ button: RemoteButton) -> Bool {
         volumeRoutedOverHDMI && Self.volumeButtons.contains(button)
@@ -85,6 +86,7 @@ struct ButtonGrid: View {
                 .foregroundStyle(isHeadphonesNoOp ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
                 .opacity(isHeadphonesNoOp ? 0.55 : 1.0)
         })
+        .buttonRepeatBehavior(Self.repeatingButtons.contains(button.2) ? .enabled : .automatic)
 
 #if !os(watchOS)
         if button.2 == .headphonesMode && isHeadphonesNoOp {

@@ -69,8 +69,22 @@ actor ECPWebsocketClient {
     private let errorWhileWaitingLimit = 2
     private var errorWhileWaitingCount = 0
 
-    private let maxInFlightVolumeCommands = 2
-    private var inFlightVolumeCommands: Int = 0
+    // Held volume keys repeat faster than a Roku (or a TV behind it over CEC)
+    // applies them. Steps start at least `volumeStepInterval` apart with at
+    // most `maxVolumeInFlight` awaiting a response, and presses past
+    // `maxVolumeBacklog` are dropped, so releasing a held key leaves at most
+    // that many steps still to send. 45ms keeps a 100-press intent inside its
+    // 5 second timeout.
+    private let volumeStepInterval: Duration = .milliseconds(45)
+    private let maxVolumeInFlight = 2
+    private let maxVolumeBacklog = 3
+    private var volumeBacklog = 0
+    private var volumeInFlight = 0
+    private var volumeSlotWaiter: CheckedContinuation<Void, Never>?
+    private var volumeDirection: RemoteButton?
+    private var volumeEpoch = 0
+    private var lastVolumeStep: ContinuousClock.Instant?
+    private var volumeTail: Task<Bool, Never>?
 
     private var inError: Bool = false
 
@@ -154,17 +168,11 @@ actor ECPWebsocketClient {
         }
 
         if button == .volumeUp || button == .volumeDown {
-            guard await self.tryReserveVolumeSlot() else {
-                Log.connection.notice("Dropping \(button.description, privacy: .public) - in-flight volume cap reached")
+            guard let step = await self.enqueueVolumeStep(button, keypress: keypress) else {
+                Log.connection.notice("Dropping \(button.description, privacy: .public) - volume backlog full")
                 return
             }
-            do {
-                try await self.sendKey(keypress)
-            } catch {
-                await self.releaseVolumeSlot()
-                throw error
-            }
-            await self.releaseVolumeSlot()
+            try await step.value
             return
         }
 
@@ -394,17 +402,55 @@ actor ECPWebsocketClient {
         )
     }
 
-    private func tryReserveVolumeSlot() -> Bool {
-        guard inFlightVolumeCommands < maxInFlightVolumeCommands else {
-            return false
+    private func enqueueVolumeStep(_ button: RemoteButton, keypress: String) -> Task<Void, Error>? {
+        if button != volumeDirection {
+            // Reversing direction discards the steps still queued the other way.
+            volumeDirection = button
+            volumeEpoch += 1
+            volumeBacklog = 0
         }
-        inFlightVolumeCommands += 1
-        return true
-    }
+        guard volumeBacklog < maxVolumeBacklog else {
+            return nil
+        }
+        volumeBacklog += 1
 
-    private func releaseVolumeSlot() {
-        if inFlightVolumeCommands > 0 {
-            inFlightVolumeCommands -= 1
+        let epoch = volumeEpoch
+        let previous = volumeTail
+        // Resolves once this step holds an in-flight slot, or false if a
+        // reversal made it stale. Steps start in press order.
+        let dispatch = Task<Bool, Never> {
+            _ = await previous?.value
+            if epoch == self.volumeEpoch, let last = self.lastVolumeStep {
+                try? await Task.sleep(until: last + self.volumeStepInterval)
+            }
+            while epoch == self.volumeEpoch && self.volumeInFlight >= self.maxVolumeInFlight {
+                await withCheckedContinuation { self.volumeSlotWaiter = $0 }
+            }
+            guard epoch == self.volumeEpoch else {
+                return false
+            }
+            self.volumeInFlight += 1
+            self.lastVolumeStep = .now
+            return true
+        }
+        volumeTail = dispatch
+
+        return Task<Void, Error> {
+            let shouldSend = await dispatch.value
+            defer {
+                if epoch == self.volumeEpoch {
+                    self.volumeBacklog -= 1
+                }
+            }
+            guard shouldSend else {
+                return
+            }
+            defer {
+                self.volumeInFlight -= 1
+                self.volumeSlotWaiter?.resume()
+                self.volumeSlotWaiter = nil
+            }
+            try await self.sendKey(keypress)
         }
     }
 
