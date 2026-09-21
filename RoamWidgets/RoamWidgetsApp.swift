@@ -11,6 +11,7 @@ struct RoamWidgetsApp: WidgetBundle {
         MuteIntent()
         VolumeUpIntent()
         VolumeDownIntent()
+        TimedMuteLiveActivity()
         #endif
 
 #if !os(watchOS)

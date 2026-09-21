@@ -143,9 +143,16 @@
         private var appLinkRows: Int {
             if verticalSizeClass == .compact {
                 return 1
-            } else {
-                return 2
             }
+            #if os(iOS)
+                // iPhone Duo's outer display (644pt for the remote) and its
+                // inner display held sideways are too short for a second row
+                // once a banner shows. iPhone 16e gets 711pt.
+                if UIDevice.current.userInterfaceIdiom == .phone, remoteHeight > 0, remoteHeight < 660 {
+                    return 1
+                }
+            #endif
+            return 2
         }
 
         #if os(iOS)
@@ -181,6 +188,7 @@
         }
 
         @State var controlledIsHorizontal: Bool?
+        @State private var remoteHeight: CGFloat = 0
         @AppStorage(UserDefaultKeys.macosKeysWindowHorizontal) private var windowWasLastHorizontal:
             Bool = false
 
@@ -971,6 +979,9 @@
                     GeometryReader { proxy in
                         let isHorizontal = proxy.size.width > proxy.size.height
                         Color.clear.preference(key: IsHorizontalKey.self, value: isHorizontal)
+                            .onChange(of: proxy.size.height, initial: true) { _, height in
+                                remoteHeight = height
+                            }
                     }
                 )
                 .onPreferenceChange(IsHorizontalKey.self) { value in

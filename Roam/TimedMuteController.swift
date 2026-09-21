@@ -4,6 +4,9 @@ import UserNotifications
 #if canImport(UIKit)
 import UIKit
 #endif
+#if os(iOS)
+import ActivityKit
+#endif
 
 enum MuteReading: Sendable, Equatable {
     case muted
@@ -121,6 +124,9 @@ final class TimedMuteController {
     #if canImport(UIKit)
     @ObservationIgnored private var backgroundAssertion: QRunInBackgroundAssertion?
     #endif
+    #if os(iOS)
+    @ObservationIgnored private let liveActivity = TimedMuteLiveActivity()
+    #endif
 
     init(driver: Driver, defaults: UserDefaults = .standard, usesSystemServices: Bool = true) {
         self.driver = driver
@@ -194,10 +200,18 @@ final class TimedMuteController {
     /// Picks up a session persisted by an earlier launch, or one whose
     /// deadline passed while the app was suspended.
     func resumeIfNeeded() {
-        guard !phase.isInFlight, let session = loadSession() else { return }
+        guard !phase.isInFlight else { return }
+        guard let session = loadSession() else {
+            // A Live Activity can outlive the process that started it.
+            if phase == .idle {
+                syncLiveActivity()
+            }
+            return
+        }
         if Date.now.timeIntervalSince(session.endsAt) > Self.staleAfter {
             Log.userInteraction.notice("Dropping stale timed mute that ended at \(session.endsAt, privacy: .public)")
             clearSession()
+            syncLiveActivity()
             return
         }
         Log.userInteraction.notice("Resuming timed mute ending at \(session.endsAt, privacy: .public)")
@@ -366,6 +380,7 @@ final class TimedMuteController {
         messageDismissal?.cancel()
         messageDismissal = nil
         phase = newPhase
+        syncLiveActivity()
     }
 
     private func dismissLater(after delay: Duration) {
@@ -374,7 +389,15 @@ final class TimedMuteController {
             try? await Task.sleep(for: delay)
             guard !Task.isCancelled, let self, self.phase == shown else { return }
             self.phase = .idle
+            self.syncLiveActivity()
         }
+    }
+
+    private func syncLiveActivity() {
+        #if os(iOS)
+        guard usesSystemServices else { return }
+        liveActivity.sync(phase)
+        #endif
     }
 
     private func cancelWork() {
@@ -459,6 +482,96 @@ final class TimedMuteController {
         center.removeDeliveredNotifications(withIdentifiers: [Self.notificationIdentifier])
     }
 }
+
+#if os(iOS)
+/// Mirrors the timer onto the Lock Screen, the Dynamic Island, and iPhone
+/// Duo's outer display, where the countdown and Unmute button stay reachable
+/// after the app is suspended.
+@MainActor
+private final class TimedMuteLiveActivity {
+    private typealias State = TimedMuteActivityAttributes.ContentState
+
+    private var activity: Activity<TimedMuteActivityAttributes>?
+
+    func sync(_ phase: TimedMutePhase) {
+        switch phase {
+        case .active(let session):
+            show(session, status: .muted)
+        case .unmuting(let session):
+            show(session, status: .unmuting)
+        case .unmuteFailed(let session):
+            show(session, status: .unmuteFailed)
+        case .unmuted:
+            end(finalStatus: .unmuted, dismissal: .after(.now.addingTimeInterval(4)))
+        case .idle, .muting, .muteFailed:
+            end(finalStatus: nil, dismissal: .immediate)
+        }
+    }
+
+    private func show(_ session: TimedMuteSession, status: State.Status) {
+        // Past the deadline the system marks the activity stale, which is
+        // what the widget reads as "timer ended" when the app is suspended.
+        let content = ActivityContent(
+            state: State(status: status, endsAt: session.endsAt),
+            staleDate: status == .muted ? session.endsAt : nil
+        )
+        if activity == nil {
+            // After a relaunch, pick up the activity the last process started.
+            activity = Activity<TimedMuteActivityAttributes>.activities.first {
+                abs($0.attributes.startedAt.timeIntervalSince(session.startedAt)) < 1
+            }
+        }
+        if let id = activity?.id {
+            Task { await Self.update(id, to: content) }
+            return
+        }
+        end(finalStatus: nil, dismissal: .immediate)
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            Log.userInteraction.notice("Live Activities are off, skipping the timed mute activity")
+            return
+        }
+        do {
+            activity = try Activity.request(
+                attributes: TimedMuteActivityAttributes(
+                    deviceName: session.target.name,
+                    startedAt: session.startedAt
+                ),
+                content: content
+            )
+        } catch {
+            Log.userInteraction.error("Failed to start the timed mute Live Activity: \(error, privacy: .public)")
+        }
+    }
+
+    private func end(finalStatus: State.Status?, dismissal: ActivityUIDismissalPolicy) {
+        let running = activity.map { [$0] }
+            ?? Activity<TimedMuteActivityAttributes>.activities.filter {
+                $0.activityState == .active || $0.activityState == .stale
+            }
+        activity = nil
+        for activity in running {
+            let id = activity.id
+            let final = finalStatus.map {
+                ActivityContent(state: State(status: $0, endsAt: activity.content.state.endsAt), staleDate: nil)
+            }
+            Task { await Self.end(id, with: final, dismissal: dismissal) }
+        }
+    }
+
+    // `Activity` is not Sendable, so these look it up by id off the main actor
+    // rather than sending it there.
+    private nonisolated static func update(_ id: String, to content: ActivityContent<State>) async {
+        await Activity<TimedMuteActivityAttributes>.activities.first { $0.id == id }?.update(content)
+    }
+
+    private nonisolated static func end(
+        _ id: String, with content: ActivityContent<State>?, dismissal: ActivityUIDismissalPolicy
+    ) async {
+        await Activity<TimedMuteActivityAttributes>.activities.first { $0.id == id }?
+            .end(content, dismissalPolicy: dismissal)
+    }
+}
+#endif
 
 extension TimedMuteController.Driver {
     static func live(ecpMonitor: ECPMonitor) -> Self {

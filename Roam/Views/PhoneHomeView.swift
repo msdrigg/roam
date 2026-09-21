@@ -13,6 +13,7 @@ import SwiftUI
 struct PhoneHomeView: View {
     @EnvironmentObject private var appDelegate: RoamAppDelegate
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @State private var devicesLoader = DeviceListLoader(dataHandler: .shared)
     @State private var primaryDeviceLoader = PrimaryDeviceLoader(dataHandler: .shared)
@@ -37,8 +38,14 @@ struct PhoneHomeView: View {
                     comment: "Title of the iPhone home screen listing all devices"
                 ))
                 .navigationBarTitleDisplayMode(.large)
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    simulatedBottomBar
+                .applyBuilder {
+                    if #available(iOS 26.0, *) {
+                        $0
+                            .safeAreaInset(edge: .bottom, spacing: 0) { connectivityBanner }
+                            .toolbar { homeToolbar }
+                    } else {
+                        $0.safeAreaInset(edge: .bottom, spacing: 0) { simulatedBottomBar }
+                    }
                 }
                 .navigationDestination(for: String.self) { deviceId in
                     detailDestination(for: deviceId)
@@ -79,22 +86,100 @@ struct PhoneHomeView: View {
         }
     }
 
-    // MARK: - Simulated bottom bar
+    // MARK: - Bottom bar
     //
-    // A custom view in the bottom safe area replaces the native `.bottomBar`
-    // toolbar so the buttons can carry a real liquid-glass effect rather than
-    // the default toolbar chrome. Because the inset lives inside `content`,
-    // it naturally fades in alongside the `.navigationTransition(.zoom)`
-    // pop from `PhoneDeviceDetailPager` - we intentionally don't suppress
-    // that fade so the buttons settle in with the zoom.
+    // iOS 26 draws toolbar items in liquid glass, and only a real toolbar joins
+    // iPhone Duo's vertical bar along the trailing edge of the outer display.
+    // Earlier releases keep the simulated bar, whose buttons carry their own
+    // glass.
 
+    @available(iOS 26.0, *)
+    @ToolbarContentBuilder
+    private var homeToolbar: some ToolbarContent {
+        ToolbarItem(placement: .bottomBar) {
+            // A toolbar reduces a Label to its icon, which is all a vertical
+            // bar has room for. The horizontal bar keeps the title.
+            ToolbarAxisReader { isVertical in
+                addDeviceButton(showsTitle: !isVertical)
+            }
+        }
+        ToolbarSpacer(.flexible, placement: .bottomBar)
+        if deviceIds.count > 1 {
+            ToolbarItem(placement: .bottomBar) {
+                Menu {
+                    DeviceSortOrderPicker()
+                } label: {
+                    Label(sortDevicesTitle, systemImage: "arrow.up.arrow.down")
+                }
+                .accessibilityIdentifier("SortDevicesButton")
+                .tint(.primary)
+            }
+        }
+        ToolbarItem(placement: .bottomBar) {
+            Button {
+                appDelegate.navigationPath.append(.settingsDestination(.global))
+            } label: {
+                Label(settingsTitle, systemImage: "gear")
+            }
+            .accessibilityIdentifier("SettingsButton")
+            .tint(.primary)
+        }
+    }
+
+    private func addDeviceButton(showsTitle: Bool) -> some View {
+        Button {
+            appDelegate.navigationPath.showAddDevice = true
+        } label: {
+            if showsTitle {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus")
+                    Text(addDeviceTitle)
+                }
+                .font(.subheadline.weight(.medium))
+                .padding(.horizontal, 6)
+            } else {
+                Label(addDeviceTitle, systemImage: "plus")
+            }
+        }
+        .accessibilityIdentifier("AddDeviceButton")
+        // The pre-26 bar drew white icons, not the accent-tinted default.
+        .tint(.primary)
+    }
+
+    // Connectivity / permission warnings live above the bottom bar so they
+    // stay pinned in place while the device grid scrolls.
+    private var connectivityBanner: some View {
+        NetworkConnectivityBanner()
+            .padding(.horizontal, 16)
+            .padding(.bottom, 4)
+    }
+
+    private var addDeviceTitle: String {
+        String(
+            localized: "Add device manually",
+            comment: "Bottom-bar button on iPhone home to manually add a device"
+        )
+    }
+
+    private var sortDevicesTitle: String {
+        String(
+            localized: "Sort devices",
+            comment: "Accessibility label for the iPhone home button that changes the device order"
+        )
+    }
+
+    private var settingsTitle: String {
+        String(
+            localized: "Settings",
+            comment: "Bottom-bar button on iPhone home to open Settings"
+        )
+    }
+
+    // Because this inset lives inside `content`, it fades in alongside the
+    // `.navigationTransition(.zoom)` pop from `PhoneDeviceDetailPager`.
     private var simulatedBottomBar: some View {
         VStack(spacing: 0) {
-            // Connectivity / permission warnings live above the bottom bar so
-            // they stay pinned in place while the device grid scrolls.
-            NetworkConnectivityBanner()
-                .padding(.horizontal, 16)
-                .padding(.bottom, 4)
+            connectivityBanner
             bottomBarButtons
         }
     }
@@ -104,13 +189,7 @@ struct PhoneHomeView: View {
             Button {
                 appDelegate.navigationPath.showAddDevice = true
             } label: {
-                Label(
-                    String(
-                        localized: "Add device manually",
-                        comment: "Bottom-bar button on iPhone home to manually add a device"
-                    ),
-                    systemImage: "plus"
-                )
+                Label(addDeviceTitle, systemImage: "plus")
                 .labelStyle(.titleAndIcon)
                 .font(.subheadline.weight(.medium))
                 .padding(.horizontal, 16)
@@ -138,10 +217,7 @@ struct PhoneHomeView: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("SettingsButton")
-            .accessibilityLabel(String(
-                localized: "Settings",
-                comment: "Bottom-bar button on iPhone home to open Settings"
-            ))
+            .accessibilityLabel(settingsTitle)
         }
         .padding(.horizontal, 18)
         .padding(.top, 8)
@@ -162,10 +238,7 @@ struct PhoneHomeView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("SortDevicesButton")
-        .accessibilityLabel(String(
-            localized: "Sort devices",
-            comment: "Accessibility label for the iPhone home button that changes the device order"
-        ))
+        .accessibilityLabel(sortDevicesTitle)
     }
 
     // MARK: - Content
@@ -190,8 +263,17 @@ struct PhoneHomeView: View {
             // scrolled-out cards, so zooming back to one killed the process.
             // Device counts are small enough that building them all is cheap.
             VStack(spacing: 12) {
-                ForEach(deviceIds, id: \.self) { deviceId in
-                    deviceCardButton(for: deviceId)
+                ForEach(cardRows, id: \.self) { row in
+                    HStack(alignment: .top, spacing: 12) {
+                        ForEach(row, id: \.self) { deviceId in
+                            deviceCardButton(for: deviceId)
+                                .frame(maxWidth: .infinity)
+                        }
+                        if row.count < cardColumns {
+                            Color.clear
+                                .frame(maxWidth: .infinity, maxHeight: 0)
+                        }
+                    }
                 }
             }
             .animation(.snappy, value: deviceIds)
@@ -200,6 +282,18 @@ struct PhoneHomeView: View {
             .padding(.bottom, 24)
         }
         .refreshable { await runManualScan() }
+    }
+
+    /// Two columns once the width is regular, such as iPhone Duo's inner
+    /// display, so the cards don't stretch across it.
+    private var cardColumns: Int {
+        horizontalSizeClass == .regular ? 2 : 1
+    }
+
+    private var cardRows: [[String]] {
+        stride(from: 0, to: deviceIds.count, by: cardColumns).map {
+            Array(deviceIds[$0..<min($0 + cardColumns, deviceIds.count)])
+        }
     }
 
     @ViewBuilder
@@ -348,6 +442,30 @@ struct PhoneHomeView: View {
     private func runManualScan() async {
         guard let scanIPV4Actor, let scanSSDPActor else { return }
         await performManualDeviceScan(ipv4Actor: scanIPV4Actor, ssdpActor: scanSSDPActor)
+    }
+}
+
+/// Reports whether the enclosing toolbar is laid out vertically, as it is
+/// along the trailing edge of iPhone Duo's outer display.
+struct ToolbarAxisReader<Content: View>: View {
+    @ViewBuilder var content: (_ isVertical: Bool) -> Content
+
+    var body: some View {
+        if #available(iOS 27.1, *) {
+            VerticalEdgeReader(content: content)
+        } else {
+            content(false)
+        }
+    }
+
+    @available(iOS 27.1, *)
+    private struct VerticalEdgeReader: View {
+        @Environment(\.toolbarVerticalEdge) private var verticalEdge
+        let content: (Bool) -> Content
+
+        var body: some View {
+            content(verticalEdge != nil)
+        }
     }
 }
 #endif

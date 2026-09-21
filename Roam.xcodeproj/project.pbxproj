@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AFE32A68CA5DADD9CE40A9CD /* TimedMuteLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDEDD428554E24B2F27F7A7 /* TimedMuteLiveActivity.swift */; };
+		AF7A437A0F27385C0FFFB070 /* TimedMuteActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA078F958788A75EEB5B3F3 /* TimedMuteActivity.swift */; };
+		AF95A2D89AF5BB22EA5E7ABB /* TimedMuteActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA078F958788A75EEB5B3F3 /* TimedMuteActivity.swift */; };
 		AF7CD4D985FD73DC1DE0F7C3 /* TimedMuteControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2F1AA3A09906B54A4FC33 /* TimedMuteControllerTests.swift */; };
 		AFFD67597178BBBCF8BE4DBC /* TimedMuteViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF239223C019B94ECB37D50D /* TimedMuteViews.swift */; };
 		AFED62A3B475236B09610563 /* TimedMuteController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA4ECF6875139375470B831 /* TimedMuteController.swift */; };
@@ -453,6 +456,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AFDEDD428554E24B2F27F7A7 /* TimedMuteLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedMuteLiveActivity.swift; sourceTree = "<group>"; };
+		AFA078F958788A75EEB5B3F3 /* TimedMuteActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedMuteActivity.swift; sourceTree = "<group>"; };
 		AFF2F1AA3A09906B54A4FC33 /* TimedMuteControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedMuteControllerTests.swift; sourceTree = "<group>"; };
 		AF239223C019B94ECB37D50D /* TimedMuteViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedMuteViews.swift; sourceTree = "<group>"; };
 		AFA4ECF6875139375470B831 /* TimedMuteController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedMuteController.swift; sourceTree = "<group>"; };
@@ -807,6 +812,7 @@
 				AF1899FC2C1CE2E5001EDA78 /* AccessoryGroupRemoteView.swift */,
 				AF95B7192ADF340A005FC338 /* WidgetHelpers.swift */,
 				AF95B7132ADF304E005FC338 /* SmallRemoteWidget.swift */,
+				AFDEDD428554E24B2F27F7A7 /* TimedMuteLiveActivity.swift */,
 				AFD9C4DC2AE9800500C4079C /* SmallAppView.swift */,
 				AFC4A65B2AE8AABA005DAC6C /* AppWidget.swift */,
 				AF95B71D2ADF3BA7005FC338 /* MediumRemoteWidget.swift */,
@@ -1100,6 +1106,7 @@
 			isa = PBXGroup;
 			children = (
 				AFF607892AE0037900A7D657 /* WidgetIntents.swift */,
+				AFA078F958788A75EEB5B3F3 /* TimedMuteActivity.swift */,
 				AFC6E6B72ADE28C80036EC90 /* Shortcuts.swift */,
 				AFC6E6862ADDDE110036EC90 /* ButtonPressIntents.swift */,
 				AFC6E68F2ADDE4AA0036EC90 /* LaunchAppIntent.swift */,
@@ -1501,6 +1508,8 @@
 		AF2740072AE02C25007C6208 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+				AFE32A68CA5DADD9CE40A9CD /* TimedMuteLiveActivity.swift in Sources */,
+				AF7A437A0F27385C0FFFB070 /* TimedMuteActivity.swift in Sources */,
 				AFD9C4F22AE9828600C4079C /* SmallRemoteView.swift in Sources */,
 				AFD100162F00000100000001 /* DatabaseFileLock.swift in Sources */,
 				AFD100172F00000100000001 /* RoamDataSnapshot.swift in Sources */,
@@ -1588,6 +1597,7 @@
 		AFC24EF72AD0E5A1002AB66C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+				AF95A2D89AF5BB22EA5E7ABB /* TimedMuteActivity.swift in Sources */,
 				AFFD67597178BBBCF8BE4DBC /* TimedMuteViews.swift in Sources */,
 				AFED62A3B475236B09610563 /* TimedMuteController.swift in Sources */,
 				AF0532802D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift in Sources */,
@@ -2225,6 +2235,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright 2025 Scott Driggers";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Roam uses your local network to find Roku devices on your Wi-Fi and send them remote-control commands, for example discovering your living room Roku TV so you can change the channel, adjust the volume, or launch an app like Netflix from your iPhone.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2286,6 +2297,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright 2025 Scott Driggers";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Roam uses your local network to find Roku devices on your Wi-Fi and send them remote-control commands, for example discovering your living room Roku TV so you can change the channel, adjust the volume, or launch an app like Netflix from your iPhone.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -312,9 +312,13 @@ private enum ActivationPolicyCoalescer {
             self.ecpMonitor = ecpMonitor
             self.networkMonitor = NetworkMonitor()
             self.discoveryCoordinator = DiscoveryCoordinator()
-            self.timedMute = TimedMuteController(driver: .live(ecpMonitor: ecpMonitor))
+            let timedMute = TimedMuteController(driver: .live(ecpMonitor: ecpMonitor))
+            self.timedMute = timedMute
             super.init()
             UNUserNotificationCenter.current().delegate = self
+            #if os(iOS)
+            TimedMuteActivityBridge.unmute = { await timedMute.handleNotificationResponse() }
+            #endif
         }
 
         func application(

@@ -15,6 +15,9 @@ import UIKit
 /// along with the per-page nav bar).
 struct PhoneDeviceDetailPager: View {
     @EnvironmentObject private var appDelegate: RoamAppDelegate
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @AppStorage(UserDefaultKeys.phoneSidebarHidden) private var sidebarHidden = false
 
     let startingDeviceId: String
     let allDeviceIds: [String]
@@ -41,6 +44,9 @@ struct PhoneDeviceDetailPager: View {
     // PreferenceKey reports each intermediate width - wait for the
     // animation to settle, then snap once.
     @State private var resnapTask: Task<Void, Never>?
+    // Width the sidebar would take in the current geometry, or nil where it
+    // doesn't fit. Kept in state so the toolbar can offer the toggle.
+    @State private var sidebarRoom: CGFloat?
 
     init(
         startingDeviceId: String,
@@ -58,6 +64,71 @@ struct PhoneDeviceDetailPager: View {
     }
 
     var body: some View {
+        GeometryReader { proxy in
+            HStack(spacing: 0) {
+                if showsSidebar, let sidebarRoom {
+                    deviceSidebar
+                        .frame(width: sidebarRoom)
+                        .transition(.move(edge: .leading))
+                }
+                pager
+            }
+            .onChange(of: sidebarWidth(in: proxy), initial: true) { _, width in
+                sidebarRoom = width
+            }
+        }
+        // When the keyboard-entry overlay's text field becomes first
+        // responder, let the system keyboard push the pager content up so
+        // the entry floats above the keyboard. Otherwise the keyboard
+        // would cover the field. While the keyboard is hidden, ignore its
+        // safe area so layout stays stable.
+        .ignoresSafeArea(.keyboard, edges: showKeyboard ? [] : .all)
+        .toolbar(.hidden, for: .navigationBar)
+        .applyBuilder {
+            if #available(iOS 26.0, *) {
+                // Hidden while the on-screen keyboard is up so the bar doesn't
+                // sit between the user and the keys.
+                $0
+                    .toolbar { pagerToolbar }
+                    .toolbar(showKeyboard ? .hidden : .visible, for: .bottomBar)
+            } else {
+                $0
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        if !showKeyboard {
+                            floatingButtonBar
+                                .padding(.horizontal, 18)
+                                .padding(.top, 8)
+                                .padding(.bottom, -10)
+                                // Without this, SwiftUI applies its default slow fade to
+                                // the inset when the pager appears via the zoom
+                                // transition, stretching it long after the zoom ends.
+                                .transaction { $0.animation = nil }
+                        }
+                    }
+                    .toolbar(.hidden, for: .bottomBar)
+            }
+        }
+        // While the user is interactively swiping back to the home grid,
+        // disable hit-testing so taps that visually appear to land on the
+        // revealed home view don't actually press remote buttons.
+        .allowsHitTesting(!isInteractivelyPopping)
+        .background(InteractivePopObserver { isInteractivelyPopping = $0 })
+        .onChange(of: allDeviceIds) { _, newIds in
+            syncPages(with: newIds)
+        }
+        .onChange(of: selectedDeviceId) { _, newId in
+            Task {
+                do {
+                    try await RoamDataHandler.shared.makePrimaryDevice(id: newId)
+                } catch {
+                    Log.userInteraction.error(
+                        "Error setting selected device from pager \(error, privacy: .public)")
+                }
+            }
+        }
+    }
+
+    private var pager: some View {
         ScrollView(.horizontal) {
             LazyHStack(spacing: 0) {
                 ForEach(pagerDeviceIds, id: \.self) { deviceId in
@@ -98,49 +169,67 @@ struct PhoneDeviceDetailPager: View {
         .onPreferenceChange(PagerWidthKey.self) { newWidth in
             handleWidthChange(newWidth)
         }
-        // When the keyboard-entry overlay's text field becomes first
-        // responder, let the system keyboard push the pager content up so
-        // the entry floats above the keyboard. Otherwise the keyboard
-        // would cover the field. While the keyboard is hidden, ignore its
-        // safe area so layout stays stable.
-        .ignoresSafeArea(.keyboard, edges: showKeyboard ? [] : .all)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            // Suppress the bottom button bar while the on-screen keyboard
-            // is up so it doesn't sit between the user and the keys; the
-            // tap-to-dismiss area inside `keyboardEntryOverlay` is enough
-            // to close the keyboard.
-            if !showKeyboard {
-                floatingButtonBar
-                    .padding(.horizontal, 18)
-                    .padding(.top, 8)
-                    .padding(.bottom, -10)
-                    // Without this, SwiftUI applies its default slow fade to the
-                    // safeAreaInset content when the destination view appears
-                    // via .navigationTransition(.zoom), which extends the
-                    // perceived transition long after the zoom has finished.
-                    .transaction { $0.animation = nil }
-            }
+    }
+
+    // MARK: - Sidebar
+
+    /// A device list beside the remote when both size classes are regular,
+    /// which on iPhone is only iPhone Duo's inner display. It sits in the same
+    /// view tree as the pager so opening and closing the device never rebuilds
+    /// the remote.
+    private var sidebarAvailable: Bool {
+        horizontalSizeClass == .regular && verticalSizeClass == .regular && sidebarRoom != nil
+    }
+
+    private var showsSidebar: Bool {
+        sidebarAvailable && !sidebarHidden
+    }
+
+    /// Runs the sidebar up to the far side of a vertical fold when the device
+    /// is partly folded, keeping the remote clear of the crease. The list
+    /// scrolls, so the fold may cross it. Held flat and sideways there is no
+    /// sidebar: beside it the remote falls back to its narrow layout.
+    private func sidebarWidth(in proxy: GeometryProxy) -> CGFloat? {
+        if #available(iOS 27.1, *),
+            let fold = proxy.reservedRegions(kind: .division).first,
+            fold.frame.height > fold.frame.width
+        {
+            return fold.frame.maxX
         }
-        .toolbar(.hidden, for: .navigationBar)
-        .toolbar(.hidden, for: .bottomBar)
-        // While the user is interactively swiping back to the home grid,
-        // disable hit-testing so taps that visually appear to land on the
-        // revealed home view don't actually press remote buttons.
-        .allowsHitTesting(!isInteractivelyPopping)
-        .background(InteractivePopObserver { isInteractivelyPopping = $0 })
-        .onChange(of: allDeviceIds) { _, newIds in
-            syncPages(with: newIds)
-        }
-        .onChange(of: selectedDeviceId) { _, newId in
-            Task {
-                do {
-                    try await RoamDataHandler.shared.makePrimaryDevice(id: newId)
-                } catch {
-                    Log.userInteraction.error(
-                        "Error setting selected device from pager \(error, privacy: .public)")
+        guard proxy.size.height > proxy.size.width else { return nil }
+        return min(300, proxy.size.width * 0.4)
+    }
+
+    private var deviceSidebar: some View {
+        ScrollView {
+            VStack(spacing: 8) {
+                ForEach(pagerDeviceIds, id: \.self) { deviceId in
+                    Button {
+                        withAnimation(.snappy) { scrollPositionId = deviceId }
+                    } label: {
+                        DeviceSidebarCard(deviceId: deviceId)
+                            .background {
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .fill(deviceId == selectedDeviceId
+                                        ? AnyShapeStyle(Color.accentColor.opacity(0.25))
+                                        : AnyShapeStyle(.regularMaterial))
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("SidebarDevice_\(deviceId)")
+                    .accessibilityAddTraits(deviceId == selectedDeviceId ? .isSelected : [])
+                    .deviceActions(
+                        deviceId: deviceId,
+                        deviceName: nil,
+                        onEdit: { appDelegate.navigationPath.showEditDevice = deviceId }
+                    )
                 }
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 12)
         }
+        .scrollIndicators(.hidden)
+        .background(.background.secondary)
     }
 
     /// Reconciles the frozen page order with the live device list: devices
@@ -182,6 +271,97 @@ struct PhoneDeviceDetailPager: View {
         }
     }
 
+    @available(iOS 26.0, *)
+    @ToolbarContentBuilder
+    private var pagerToolbar: some ToolbarContent {
+        if sidebarAvailable {
+            ToolbarItem(placement: .bottomBar) {
+                Button {
+                    withAnimation(.snappy) { sidebarHidden.toggle() }
+                } label: {
+                    Label(
+                        String(
+                            localized: "Devices",
+                            comment: "Accessibility label for the toolbar button that shows or hides the device sidebar on iPhone Duo"
+                        ),
+                        systemImage: "sidebar.left"
+                    )
+                }
+                .accessibilityIdentifier("SidebarButton")
+                .tint(.primary)
+            }
+        }
+        ToolbarItem(placement: .bottomBar) {
+            Button {
+                withAnimation { showKeyboard.toggle() }
+            } label: {
+                Label(keyboardTitle, systemImage: "keyboard")
+            }
+            .accessibilityIdentifier("KeyboardButton")
+            .tint(.primary)
+        }
+        ToolbarSpacer(.flexible, placement: .bottomBar)
+        if pagerDeviceIds.count > 1 {
+            // A custom view stays out of a vertical bar unless it opts in.
+            if #available(iOS 27.1, *) {
+                pageDotsItem
+                    .axisBehavior(.verticalPreferred)
+            } else {
+                pageDotsItem
+            }
+            ToolbarSpacer(.flexible, placement: .bottomBar)
+        }
+        ToolbarItem(placement: .bottomBar) {
+            Button {
+                onBackToHome()
+            } label: {
+                Label(allDevicesTitle, systemImage: "square.grid.2x2")
+            }
+            .accessibilityIdentifier("AllDevicesButton")
+            .tint(.primary)
+        }
+    }
+
+    @available(iOS 26.0, *)
+    private var pageDotsItem: some ToolbarContent {
+        ToolbarItem(placement: .bottomBar) {
+            ToolbarAxisReader { isVertical in
+                pageDots(vertical: isVertical)
+                    .padding(isVertical ? .vertical : .horizontal, 6)
+            }
+        }
+    }
+
+    private var keyboardTitle: String {
+        String(
+            localized: "Keyboard",
+            comment: "Accessibility label for the floating keyboard toggle on iPhone detail"
+        )
+    }
+
+    private var allDevicesTitle: String {
+        String(
+            localized: "All devices",
+            comment: "Accessibility label for the floating button that returns to the device grid"
+        )
+    }
+
+    private func pageDots(vertical: Bool) -> some View {
+        let layout = vertical
+            ? AnyLayout(VStackLayout(spacing: 8))
+            : AnyLayout(HStackLayout(spacing: 8))
+        return layout {
+            ForEach(pagerDeviceIds, id: \.self) { deviceId in
+                Circle()
+                    .fill(deviceId == selectedDeviceId ? Color.primary : Color.secondary.opacity(0.45))
+                    .frame(width: 7, height: 7)
+                    .animation(.easeInOut(duration: 0.2), value: selectedDeviceId)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(pageIndicatorAccessibility)
+    }
+
     private var floatingButtonBar: some View {
         HStack {
             keyboardButton
@@ -195,20 +375,11 @@ struct PhoneDeviceDetailPager: View {
     }
 
     private var pageIndicator: some View {
-        HStack(spacing: 8) {
-            ForEach(pagerDeviceIds, id: \.self) { deviceId in
-                Circle()
-                    .fill(deviceId == selectedDeviceId ? Color.primary : Color.secondary.opacity(0.45))
-                    .frame(width: 7, height: 7)
-                    .animation(.easeInOut(duration: 0.2), value: selectedDeviceId)
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(.regularMaterial, in: Capsule())
-        .glassEffectIfSupported(in: Capsule())
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(pageIndicatorAccessibility)
+        pageDots(vertical: false)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(.regularMaterial, in: Capsule())
+            .glassEffectIfSupported(in: Capsule())
     }
 
     private var pageIndicatorAccessibility: String {
@@ -237,10 +408,7 @@ struct PhoneDeviceDetailPager: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("KeyboardButton")
-        .accessibilityLabel(String(
-            localized: "Keyboard",
-            comment: "Accessibility label for the floating keyboard toggle on iPhone detail"
-        ))
+        .accessibilityLabel(keyboardTitle)
     }
 
     private var allDevicesButton: some View {
@@ -255,10 +423,7 @@ struct PhoneDeviceDetailPager: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("AllDevicesButton")
-        .accessibilityLabel(String(
-            localized: "All devices",
-            comment: "Accessibility label for the floating button that returns to the device grid"
-        ))
+        .accessibilityLabel(allDevicesTitle)
     }
 }
 
