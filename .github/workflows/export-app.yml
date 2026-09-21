@@ -47,8 +47,9 @@ name: Export Roam
             xcode_version:
                 description: Xcode version to build with
                 type: choice
-                default: "26.6"
+                default: "27.1"
                 options:
+                    - "27.1"
                     - "26.6"
                     - "26.5"
                     - "26.4.1"
@@ -59,9 +60,7 @@ concurrency:
 
 jobs:
     export:
-        # macos-26 is the only image that ships the visionOS (xros) device SDK
-        # preinstalled, so no `xcodebuild -downloadPlatform visionOS` is needed.
-        runs-on: macos-26
+        runs-on: ${{ inputs.xcode_version == '27.1' && 'xcode-27' || 'macos-26' }}
         name: Export ${{ inputs.platforms }}
         timeout-minutes: 120
 
