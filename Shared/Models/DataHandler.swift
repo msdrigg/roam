@@ -2132,15 +2132,19 @@ extension RoamDataHandler {
         await task.value
     }
 
+    /// Opens the shared database synchronously, so its migrations run under
+    /// the caller's launch assertion, and starts the rest of initialization
+    /// without waiting for it. Every database write awaits a main-actor
+    /// background assertion, so blocking the main thread on that work
+    /// deadlocks the first time initialization writes (the test-data seed).
+    /// Callers that need initialization finished await `initialize()`, which
+    /// joins the task started here.
     @MainActor
-    static func initializeSharedBlocking() {
+    static func initializeSharedAtLaunch() {
         let handler = _shared
-        let semaphore = DispatchSemaphore(value: 0)
         Task.detached(priority: .userInitiated) {
             await handler.initialize()
-            semaphore.signal()
         }
-        semaphore.wait()
     }
 
     private func performInitialization() async {

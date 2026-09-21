@@ -10,6 +10,9 @@ import WatchConnectivity
 /// buttons.
 private let iPadMinContentWidth: CGFloat = 460
 private let iPadMinContentHeight: CGFloat = 560
+/// Taller panes get the remote as a block this high, centered, instead of
+/// its Spacers stretching the buttons across the whole pane.
+private let iPadMaxContentHeight: CGFloat = 820
 
 /// Top-level container for iOS / iPadOS / visionOS. Dispatches to:
 ///   • `PhoneHomeView` on compact iPhone (weather-card grid → paged remote)
@@ -155,22 +158,19 @@ struct RemoteRoot: View {
                         externalShowKeyboard: $visionOSKeyboardShown,
                         hidesKeyboardToolbarButton: true
                     )
-                    .frame(
-                        minWidth: iPadMinContentWidth,
-                        minHeight: visionOSKeyboardShown ? 0 : iPadMinContentHeight
-                    )
-                    // While the keyboard-entry overlay is up, pin the
-                    // content height to the ScrollView's viewport so the
-                    // Spacer at the bottom of `mainColumn` actually expands
-                    // and pushes the remote buttons up. Without this the
-                    // ScrollView gives unbounded vertical space to its
-                    // child, the Spacer no-ops, and the keyboardEntry text
-                    // field lands on top of the lowest remote buttons.
-                    .applyBuilder {
-                        if visionOSKeyboardShown {
-                            $0.containerRelativeFrame(.vertical) { length, _ in length }
-                        } else {
-                            $0
+                    .frame(maxHeight: visionOSKeyboardShown ? .infinity : iPadMaxContentHeight)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    // Same sizing as the iPad branch below: fill the
+                    // viewport so the remote centers, keep the minimum so a
+                    // small window scrolls, and match the viewport height
+                    // exactly while the keyboard-entry overlay is up so its
+                    // bottom-anchored text field clears the remote buttons.
+                    .containerRelativeFrame([.horizontal, .vertical]) { length, axis in
+                        switch axis {
+                        case .horizontal:
+                            max(length, iPadMinContentWidth)
+                        case .vertical:
+                            visionOSKeyboardShown ? length : max(length, iPadMinContentHeight)
                         }
                     }
                 }
@@ -199,25 +199,24 @@ struct RemoteRoot: View {
                         unreadMessages: unreadMessages,
                         externalShowKeyboard: $iPadKeyboardShown
                     )
-                    .frame(
-                        minWidth: iPadMinContentWidth,
-                        minHeight: iPadKeyboardShown ? 0 : iPadMinContentHeight
-                    )
-                    // While the keyboard is up, force the content to
-                    // exactly the ScrollView's visible-above-keyboard
-                    // height so the keyboardEntry overlay (which uses
-                    // `.frame(maxHeight: .infinity, alignment: .bottom)`)
-                    // anchors the text field to just above the system
-                    // keyboard. `.frame(maxHeight: .infinity)` alone is a
-                    // no-op inside a ScrollView (the content stays at
-                    // intrinsic height), but containerRelativeFrame is
-                    // honored - it pins the content's height to the
-                    // scroll container's height.
-                    .applyBuilder {
-                        if iPadKeyboardShown {
-                            $0.containerRelativeFrame(.vertical) { length, _ in length }
-                        } else {
-                            $0
+                    .frame(maxHeight: iPadKeyboardShown ? .infinity : iPadMaxContentHeight)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    // A two-axis ScrollView proposes an unbounded size and
+                    // pins its content top-leading, so `.frame(minWidth:)`
+                    // alone leaves the remote in the top corner of a large
+                    // pane. Sizing this container to the larger of the viewport
+                    // and the minimum centers the height-capped remote above,
+                    // while a smaller pane still scrolls. While the
+                    // keyboard is up the height is the viewport exactly, so
+                    // the keyboardEntry overlay (`.frame(maxHeight:
+                    // .infinity, alignment: .bottom)`) anchors the text
+                    // field just above the system keyboard.
+                    .containerRelativeFrame([.horizontal, .vertical]) { length, axis in
+                        switch axis {
+                        case .horizontal:
+                            max(length, iPadMinContentWidth)
+                        case .vertical:
+                            iPadKeyboardShown ? length : max(length, iPadMinContentHeight)
                         }
                     }
                 }

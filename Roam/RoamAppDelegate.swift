@@ -463,7 +463,7 @@ private enum ActivationPolicyCoalescer {
             Log.lifecycle.notice(
                 "Opening database, launch guard \(dontKillAssertion.isReleased() ? "not held" : "held", privacy: .public)"
             )
-            RoamDataHandler.initializeSharedBlocking()
+            RoamDataHandler.initializeSharedAtLaunch()
             migrateOffSwiftData()
             return true
         }

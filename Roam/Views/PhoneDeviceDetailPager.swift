@@ -23,6 +23,9 @@ struct PhoneDeviceDetailPager: View {
     let allDeviceIds: [String]
     let unreadMessages: Int
     let onBackToHome: () -> Void
+    // Reports the page the user swiped to, so the home grid can zoom the pop
+    // back into that card rather than the one that was tapped.
+    let onSelectionChange: (String) -> Void
 
     @State private var selectedDeviceId: String
     // The page order is frozen at push time. `allDeviceIds` reorders itself
@@ -47,17 +50,29 @@ struct PhoneDeviceDetailPager: View {
     // Width the sidebar would take in the current geometry, or nil where it
     // doesn't fit. Kept in state so the toolbar can offer the toggle.
     @State private var sidebarRoom: CGFloat?
+    // Whether the bottom bar stands along the trailing edge, as it does on
+    // the outer display held sideways. The axis is only readable from inside
+    // toolbar content, so the keyboard item reports it here.
+    @State private var toolbarIsVertical = false
+    // Global frame of the empty slot a vertical bar reserves for the page
+    // dots, so the capsule drawn over it lines up in every posture.
+    @State private var dotsSlotFrame: CGRect?
+    // First page shown by the page dots. Shared by every place the dots are
+    // drawn so the window does not jump when the bar changes axis.
+    @State private var dotsWindowStart = 0
 
     init(
         startingDeviceId: String,
         allDeviceIds: [String],
         unreadMessages: Int,
-        onBackToHome: @escaping () -> Void
+        onBackToHome: @escaping () -> Void,
+        onSelectionChange: @escaping (String) -> Void = { _ in }
     ) {
         self.startingDeviceId = startingDeviceId
         self.allDeviceIds = allDeviceIds
         self.unreadMessages = unreadMessages
         self.onBackToHome = onBackToHome
+        self.onSelectionChange = onSelectionChange
         _selectedDeviceId = State(initialValue: startingDeviceId)
         _scrollPositionId = State(initialValue: startingDeviceId)
         _pagerDeviceIds = State(initialValue: allDeviceIds)
@@ -73,6 +88,11 @@ struct PhoneDeviceDetailPager: View {
                 }
                 pager
             }
+            .overlay { verticalBarDots }
+            // An AppStorage write lands through UserDefaults observation,
+            // outside the toggle's withAnimation transaction, so the
+            // animation is keyed to the value instead.
+            .animation(.snappy, value: showsSidebar)
             .onChange(of: sidebarWidth(in: proxy), initial: true) { _, width in
                 sidebarRoom = width
             }
@@ -117,6 +137,7 @@ struct PhoneDeviceDetailPager: View {
             syncPages(with: newIds)
         }
         .onChange(of: selectedDeviceId) { _, newId in
+            onSelectionChange(newId)
             Task {
                 do {
                     try await RoamDataHandler.shared.makePrimaryDevice(id: newId)
@@ -277,7 +298,7 @@ struct PhoneDeviceDetailPager: View {
         if sidebarAvailable {
             ToolbarItem(placement: .bottomBar) {
                 Button {
-                    withAnimation(.snappy) { sidebarHidden.toggle() }
+                    sidebarHidden.toggle()
                 } label: {
                     Label(
                         String(
@@ -292,24 +313,26 @@ struct PhoneDeviceDetailPager: View {
             }
         }
         ToolbarItem(placement: .bottomBar) {
-            Button {
-                withAnimation { showKeyboard.toggle() }
-            } label: {
-                Label(keyboardTitle, systemImage: "keyboard")
+            ToolbarAxisReader { isVertical in
+                Button {
+                    withAnimation { showKeyboard.toggle() }
+                } label: {
+                    Label(keyboardTitle, systemImage: "keyboard")
+                }
+                .accessibilityIdentifier("KeyboardButton")
+                .tint(.primary)
+                .onChange(of: isVertical, initial: true) { _, isVertical in
+                    toolbarIsVertical = isVertical
+                }
             }
-            .accessibilityIdentifier("KeyboardButton")
-            .tint(.primary)
         }
         ToolbarSpacer(.flexible, placement: .bottomBar)
-        if pagerDeviceIds.count > 1 {
-            // A custom view stays out of a vertical bar unless it opts in.
-            if #available(iOS 27.1, *) {
-                pageDotsItem
-                    .axisBehavior(.verticalPreferred)
-            } else {
-                pageDotsItem
+        if pagerDeviceIds.count > 1, !toolbarIsVertical {
+            ToolbarItem(placement: .bottomBar) {
+                pageDots
+                    .padding(.horizontal, 6)
             }
-            ToolbarSpacer(.flexible, placement: .bottomBar)
+            ToolbarSpacer(.fixed, placement: .bottomBar)
         }
         ToolbarItem(placement: .bottomBar) {
             Button {
@@ -320,15 +343,39 @@ struct PhoneDeviceDetailPager: View {
             .accessibilityIdentifier("AllDevicesButton")
             .tint(.primary)
         }
+        if pagerDeviceIds.count > 1, toolbarIsVertical, #available(iOS 27.1, *) {
+            // The dots stay horizontal, which a vertical bar cannot hold, so
+            // the bar ends with an empty slot below the last button and
+            // `verticalBarDots` draws the capsule over it.
+            ToolbarItem(placement: .bottomBar) {
+                Color.clear
+                    .frame(width: 44, height: 44)
+                    .onGeometryChange(for: CGRect.self) { proxy in
+                        proxy.frame(in: .global)
+                    } action: { frame in
+                        dotsSlotFrame = frame
+                    }
+            }
+            .axisBehavior(.verticalPreferred)
+            .sharedBackgroundVisibility(.hidden)
+        }
     }
 
-    @available(iOS 26.0, *)
-    private var pageDotsItem: some ToolbarContent {
-        ToolbarItem(placement: .bottomBar) {
-            ToolbarAxisReader { isVertical in
-                pageDots(vertical: isVertical)
-                    .padding(isVertical ? .vertical : .horizontal, 6)
+    /// The page dots for a vertical bar: a capsule as tall as the bar's
+    /// buttons, ending at the reserved slot's trailing edge and extending
+    /// left over the page.
+    @ViewBuilder
+    private var verticalBarDots: some View {
+        if toolbarIsVertical, pagerDeviceIds.count > 1, let slot = dotsSlotFrame {
+            GeometryReader { proxy in
+                let bounds = proxy.frame(in: .global)
+                pageDotsOverlay
+                    .frame(height: slot.height)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                    .padding(.trailing, bounds.maxX - slot.maxX)
+                    .padding(.bottom, bounds.maxY - slot.maxY)
             }
+            .ignoresSafeArea()
         }
     }
 
@@ -346,38 +393,39 @@ struct PhoneDeviceDetailPager: View {
         )
     }
 
-    private func pageDots(vertical: Bool) -> some View {
-        let layout = vertical
-            ? AnyLayout(VStackLayout(spacing: 8))
-            : AnyLayout(HStackLayout(spacing: 8))
-        return layout {
-            ForEach(pagerDeviceIds, id: \.self) { deviceId in
-                Circle()
-                    .fill(deviceId == selectedDeviceId ? Color.primary : Color.secondary.opacity(0.45))
-                    .frame(width: 7, height: 7)
-                    .animation(.easeInOut(duration: 0.2), value: selectedDeviceId)
-            }
-        }
+    private var pageDots: some View {
+        PageDots(
+            count: pagerDeviceIds.count,
+            selectedIndex: pagerDeviceIds.firstIndex(of: selectedDeviceId) ?? 0,
+            windowStart: $dotsWindowStart
+        )
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(pageIndicatorAccessibility)
     }
 
     private var floatingButtonBar: some View {
-        HStack {
+        HStack(spacing: 12) {
             keyboardButton
             Spacer()
             if pagerDeviceIds.count > 1 {
                 pageIndicator
-                Spacer()
             }
             allDevicesButton
         }
     }
 
     private var pageIndicator: some View {
-        pageDots(vertical: false)
+        pageDots
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
+            .background(.regularMaterial, in: Capsule())
+            .glassEffectIfSupported(in: Capsule())
+    }
+
+    private var pageDotsOverlay: some View {
+        pageDots
+            .padding(.horizontal, 18)
+            .frame(maxHeight: .infinity)
             .background(.regularMaterial, in: Capsule())
             .glassEffectIfSupported(in: Capsule())
     }
@@ -451,6 +499,62 @@ private struct PhoneDetailPage: View {
             hidesKeyboardToolbarButton: true,
             isActive: isActive
         )
+    }
+}
+
+/// Up to five dots for a horizontally paged view. Past five pages a window
+/// slides to keep the selection inside it, and an edge dot shrinks when
+/// pages continue beyond it.
+private struct PageDots: View {
+    static let windowSize = 5
+    static let dotSize: CGFloat = 7
+    static let edgeDotSize: CGFloat = 4
+
+    let count: Int
+    let selectedIndex: Int
+    @Binding var windowStart: Int
+
+    var body: some View {
+        // Clamp locally: `count` can shrink before `onChange` has moved the
+        // window, and a range with start past end would trap.
+        let start = min(max(windowStart, 0), max(count - Self.windowSize, 0))
+        let end = min(start + Self.windowSize, count)
+        HStack(spacing: 8) {
+            ForEach(start..<end, id: \.self) { index in
+                let continuesBefore = index == start && start > 0
+                let continuesAfter = index == end - 1 && end < count
+                let size = continuesBefore || continuesAfter ? Self.edgeDotSize : Self.dotSize
+                Circle()
+                    .fill(index == selectedIndex ? Color.primary : Color.secondary.opacity(0.45))
+                    .frame(width: size, height: size)
+                    .frame(width: Self.dotSize, height: Self.dotSize)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: selectedIndex)
+        .animation(.easeInOut(duration: 0.2), value: start)
+        .onChange(of: selectedIndex, initial: true) { _, index in
+            windowStart = Self.windowStart(containing: index, from: windowStart, count: count)
+        }
+        .onChange(of: count) { _, count in
+            windowStart = Self.windowStart(containing: selectedIndex, from: windowStart, count: count)
+        }
+    }
+
+    /// Moves the window only when the selection lands on an edge dot that
+    /// has pages beyond it, so paging within the window leaves it still.
+    static func windowStart(containing selected: Int, from start: Int, count: Int) -> Int {
+        let maxStart = count - windowSize
+        guard maxStart > 0 else { return 0 }
+        let start = min(max(start, 0), maxStart)
+        let firstFull = start + (start > 0 ? 1 : 0)
+        let lastFull = start + windowSize - 1 - (start < maxStart ? 1 : 0)
+        if selected < firstFull {
+            return max(selected - 1, 0)
+        }
+        if selected > lastFull {
+            return min(selected - (windowSize - 2), maxStart)
+        }
+        return start
     }
 }
 

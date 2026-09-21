@@ -25,7 +25,7 @@ struct RoamWatch: App {
         // runs either way; it is never skipped for want of an assertion.
         let dontKillAssertion = QRunInBackgroundAssertion(name: "roam-launch-database-init")
         defer { dontKillAssertion.release() }
-        RoamDataHandler.initializeSharedBlocking()
+        RoamDataHandler.initializeSharedAtLaunch()
         migrateOffSwiftData()
     }
 

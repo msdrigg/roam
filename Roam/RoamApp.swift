@@ -53,7 +53,7 @@ struct RoamApp: App {
         // UIKit opens the shared database in willFinishLaunchingWithOptions,
         // after UIApplication exists and can grant a background task.
         #if os(macOS)
-            RoamDataHandler.initializeSharedBlocking()
+            RoamDataHandler.initializeSharedAtLaunch()
             migrateOffSwiftData()
         #endif
     }

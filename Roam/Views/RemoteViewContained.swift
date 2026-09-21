@@ -114,9 +114,14 @@
             #if os(iOS)
                 if UIDevice.current.userInterfaceIdiom == .pad {
                     return false
-                } else {
-                    return showKeyboardEntry
                 }
+                // Regular in both axes on a phone is iPhone Duo's inner
+                // display, which has iPad's room for the buttons under the
+                // keyboard.
+                if horizontalSizeClass == .regular && verticalSizeClass == .regular {
+                    return false
+                }
+                return showKeyboardEntry
             #else
                 // visionOS only hides the apps row (via `hideAppsForKeyboardEntry`).
                 // The button grid + d-pad stay rendered so the user can keep
@@ -136,6 +141,7 @@
         @AppStorage(UserDefaultKeys.shouldControlVolumeWithHWButtons) private
             var controlVolumeWithHWButtons: Bool = true
 
+        @Environment(\.horizontalSizeClass) var horizontalSizeClass
         @Environment(\.verticalSizeClass) var verticalSizeClass
 
         @FocusState var focusKeyboardMonitor: KeyboardFocus?
@@ -207,13 +213,6 @@
         @State var lastVolumeChangeFromTv: Bool = false
 
         @ScaledMetric var buttonRadius = globalButtonRadius
-
-        private struct IsHorizontalKey: PreferenceKey {
-            static let defaultValue: Bool = false
-            static func reduce(value: inout Bool, nextValue: () -> Bool) {
-                value = nextValue()
-            }
-        }
 
         @Namespace var animation
 
@@ -812,9 +811,11 @@
         private var keyboardEntryOverlay: some View {
             if showKeyboardEntry {
                 // Pin KeyboardEntry to the BOTTOM of the overlay area using
-                // VStack alignment. The empty Button above it absorbs taps in
-                // the empty area so iPhone (where the remote buttons are
-                // hidden during entry) can tap-anywhere to dismiss.
+                // VStack alignment. Where the remote buttons are hidden during
+                // entry, and on iPad, the empty Button above it absorbs taps
+                // in the empty area so the user can tap anywhere to dismiss.
+                // On iPhone Duo's inner display the buttons stay visible and
+                // a Spacer lets those taps reach them.
                 //
                 // The previous GeometryReader + inner ScrollView approach
                 // measured the overlay parent's intrinsic content height
@@ -825,13 +826,17 @@
                 // keyboard. A plain VStack with alignment: .bottom anchors
                 // the field to the bottom of the actual overlay frame.
                 VStack(spacing: 0) {
-                    Button(
-                        action: dismissKeyboardEntry,
-                        label: {
-                            Color.clear.contentShape(Rectangle())
-                        }
-                    )
-                    .buttonStyle(.plain)
+                    if hideUIForKeyboardEntry || UIDevice.current.userInterfaceIdiom == .pad {
+                        Button(
+                            action: dismissKeyboardEntry,
+                            label: {
+                                Color.clear.contentShape(Rectangle())
+                            }
+                        )
+                        .buttonStyle(.plain)
+                    } else {
+                        Spacer()
+                    }
 
                     KeyboardEntry(
                         showing: keyboardEntryShowingBinding,
@@ -856,14 +861,15 @@
             keyboardEntryOverlay
         }
 
-        private func handleIsHorizontalChange(_ value: Bool) {
-            DispatchQueue.main.async {
-                withAnimation {
-                    Log.userInteraction.notice(
-                        "IsHorizontalKey changed to \(value, privacy: .public)")
-                    controlledIsHorizontal = value
-                    windowWasLastHorizontal = value
-                }
+        private func handleRemoteSizeChange(_ size: CGSize) {
+            remoteHeight = size.height
+            let horizontal = size.width > size.height
+            guard horizontal != controlledIsHorizontal else { return }
+            withAnimation {
+                Log.userInteraction.notice(
+                    "Remote layout horizontal changed to \(horizontal, privacy: .public)")
+                controlledIsHorizontal = horizontal
+                windowWasLastHorizontal = horizontal
             }
         }
 
@@ -973,22 +979,6 @@
             .labelStyle(.iconOnly)
         }
 
-        private var isHorizontalDetector: some View {
-            Color.clear
-                .overlay(
-                    GeometryReader { proxy in
-                        let isHorizontal = proxy.size.width > proxy.size.height
-                        Color.clear.preference(key: IsHorizontalKey.self, value: isHorizontal)
-                            .onChange(of: proxy.size.height, initial: true) { _, height in
-                                remoteHeight = height
-                            }
-                    }
-                )
-                .onPreferenceChange(IsHorizontalKey.self) { value in
-                    handleIsHorizontalChange(value)
-                }
-        }
-
         private var mainColumn: some View {
             VStack(alignment: .center, spacing: 0) {
                 topHeader
@@ -1006,9 +996,23 @@
         }
 
         var remotePage: some View {
-            ZStack {
-                isHorizontalDetector
+            // The orientation is read from the space the page is offered, not
+            // from the ZStack below: a ZStack grows to its tallest child, so on
+            // a screen too short for the vertical layout it would report that
+            // overflow as a portrait size and keep the vertical layout.
+            GeometryReader { proxy in
+                remoteStack
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .onChange(of: proxy.size, initial: true) { _, size in
+                        handleRemoteSizeChange(size)
+                    }
+            }
+            .customAccentColorTint()
+            .defaultFocus($focusKeyboardMonitor, .monitor, priority: .userInitiated)
+        }
 
+        private var remoteStack: some View {
+            ZStack {
                 HStack(alignment: .top) {
                     Spacer()
                     mainColumn
@@ -1050,8 +1054,6 @@
                 #endif
                 .alertingError(message: "Headphones mode error", error: $headphonesError)
             }
-            .customAccentColorTint()
-            .defaultFocus($focusKeyboardMonitor, .monitor, priority: .userInitiated)
         }
 
         func horizontalBody() -> some View {

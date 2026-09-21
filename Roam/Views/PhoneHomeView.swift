@@ -25,6 +25,9 @@ struct PhoneHomeView: View {
     @State private var dropTargetId: String?
 
     @Namespace private var cardNamespace
+    // The card the zoom pop lands on. Set on every push and updated as the
+    // pager is swiped, since the pushed path element never changes.
+    @State private var zoomSourceId: String?
 
     private var deviceIds: [String] { devicesLoader.devices ?? [] }
     private var isEmpty: Bool { devicesLoader.devices != nil && deviceIds.isEmpty }
@@ -80,6 +83,7 @@ struct PhoneHomeView: View {
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(150))
                 if path.isEmpty {
+                    zoomSourceId = newId
                     path = [newId]
                 }
             }
@@ -309,6 +313,7 @@ struct PhoneHomeView: View {
 
         Button {
             if path.last != deviceId {
+                zoomSourceId = deviceId
                 path.append(deviceId)
                 // Opening a remote is what makes it the one to come back to.
                 // The pager only records a device once it is *swiped* to, so
@@ -427,11 +432,12 @@ struct PhoneHomeView: View {
             startingDeviceId: deviceId,
             allDeviceIds: deviceIds,
             unreadMessages: unreadMessages,
-            onBackToHome: { path.removeAll() }
+            onBackToHome: { path.removeAll() },
+            onSelectionChange: { zoomSourceId = $0 }
         )
 
         if #available(iOS 18.0, *) {
-            pager.navigationTransition(.zoom(sourceID: deviceId, in: cardNamespace))
+            pager.navigationTransition(.zoom(sourceID: zoomSourceId ?? deviceId, in: cardNamespace))
         } else {
             pager
         }
