@@ -74,6 +74,66 @@ struct DeviceSidebarCard: View {
     }
 }
 
+struct DeviceSidebarFooter: View {
+    @EnvironmentObject private var appDelegate: RoamAppDelegate
+
+    let deviceCount: Int
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(spacing: 0) {
+                Button {
+                    appDelegate.navigationPath.showAddDevice = true
+                } label: {
+                    Label(
+                        String(
+                            localized: "Add device",
+                            comment: "Footer button under the sidebar device list to add a new device"
+                        ),
+                        systemImage: "plus.circle"
+                    )
+                    .labelStyle(.titleAndIcon)
+                    .font(.callout)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                }
+                .accessibilityIdentifier("AddDeviceButton")
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .contentShape(Rectangle())
+
+                if deviceCount > 1 {
+                    sortMenu
+                }
+            }
+        }
+    }
+
+    private var sortMenu: some View {
+        Menu {
+            DeviceSortOrderPicker()
+        } label: {
+            Image(systemName: "arrow.up.arrow.down")
+                .font(.callout)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .accessibilityIdentifier("SortDevicesButton")
+        .accessibilityLabel(String(
+            localized: "Sort devices",
+            comment: "Accessibility label for the sidebar button that changes the device order"
+        ))
+    }
+}
+
 /// Picks the order every device list is shown in. Lives next to the lists it
 /// reorders rather than in Settings. Writing through the data handler
 /// republishes the device list, so open lists re-render immediately.

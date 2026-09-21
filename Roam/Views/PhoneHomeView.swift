@@ -1,8 +1,8 @@
 #if os(iOS)
 import SwiftUI
 
-/// iPhone-only root: a vertical card grid of devices, with a `...` menu,
-/// pull-to-refresh rescan, and an unprominent "Add device manually" footer.
+/// Adaptive phone root: a sidebar and remote on the inner display,
+/// or a device grid and pushed pager in compact layouts.
 ///
 /// Tapping a card pushes `PhoneDeviceDetailPager` on a local `NavigationStack`.
 /// On iOS 18+ the push uses a `.zoom` matched-transition for the Weather-style
@@ -14,26 +14,101 @@ struct PhoneHomeView: View {
     @EnvironmentObject private var appDelegate: RoamAppDelegate
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     @State private var devicesLoader = DeviceListLoader(dataHandler: .shared)
     @State private var primaryDeviceLoader = PrimaryDeviceLoader(dataHandler: .shared)
     @State private var messageLoader = MessageListLoader(dataHandler: .shared)
     @State private var path: [String] = []
+    @State private var usesZoomTransition = true
     @State private var didAutoOpenPrimary = false
     @State private var scanIPV4Actor: DeviceDiscoveryActor?
     @State private var scanSSDPActor: DeviceDiscoveryActor?
     @State private var dropTargetId: String?
 
     @Namespace private var cardNamespace
-    // The card the zoom pop lands on. Set on every push and updated as the
-    // pager is swiped, since the pushed path element never changes.
-    @State private var zoomSourceId: String?
+    // Shared by both navigation modes and the compact grid zoom transition.
+    @State private var selectedDeviceId: String?
 
     private var deviceIds: [String] { devicesLoader.devices ?? [] }
     private var isEmpty: Bool { devicesLoader.devices != nil && deviceIds.isEmpty }
     private var unreadMessages: Int { messageLoader.unreadCount }
 
     var body: some View {
+        Group {
+            if usesSidebar {
+                NavigationStack {
+                    PhoneDeviceDetailPager(
+                        selectedDeviceId: $selectedDeviceId,
+                        allDeviceIds: deviceIds,
+                        unreadMessages: unreadMessages,
+                        usesSidebar: true,
+                        onScan: runManualScan
+                    )
+                }
+            } else {
+                phoneNavigation
+            }
+        }
+        .onChange(of: usesSidebar) { _, usesSidebar in
+            didAutoOpenPrimary = true
+            // Folding creates a new grid whose zoom sources have not been laid out.
+            usesZoomTransition = false
+            path = usesSidebar ? [] : selectedDeviceId.map { [$0] } ?? []
+        }
+        .onAppear {
+            if scanIPV4Actor == nil { scanIPV4Actor = DeviceDiscoveryActor() }
+            if scanSSDPActor == nil { scanSSDPActor = DeviceDiscoveryActor() }
+        }
+        // Only the connected device refreshes its own online status.
+        .probingDeviceLiveness(deviceIds, isActive: scenePhase == .active)
+        // If the remembered device has gone away, fall back to the next most
+        // recently viewed one rather than leaving nothing selected.
+        .task(id: deviceIds) {
+            do {
+                try await RoamDataHandler.shared.ensureValidPrimaryDevice()
+            } catch {
+                Log.userInteraction.error(
+                    "Error selecting an initial device \(error, privacy: .public)")
+            }
+        }
+        .onChange(of: primaryDeviceLoader.device?.id, initial: true) { _, newId in
+            guard selectedDeviceId.map({ deviceIds.contains($0) }) != true else { return }
+            selectedDeviceId = newId
+        }
+        .onChange(of: deviceIds) { _, ids in
+            if ids.isEmpty {
+                selectedDeviceId = nil
+                path = []
+            }
+        }
+        .task(id: autoOpenDeviceId) {
+            guard !didAutoOpenPrimary, let deviceId = autoOpenDeviceId else { return }
+            // The zoom source must be laid out before the initial push.
+            do {
+                try await Task.sleep(for: .milliseconds(150))
+                try Task.checkCancellation()
+            } catch {
+                return
+            }
+            guard !didAutoOpenPrimary else { return }
+            didAutoOpenPrimary = true
+            if path.isEmpty {
+                path = [deviceId]
+            }
+        }
+    }
+
+    private var usesSidebar: Bool {
+        horizontalSizeClass == .regular && verticalSizeClass == .regular
+    }
+
+    private var autoOpenDeviceId: String? {
+        guard !usesSidebar, let selectedDeviceId, deviceIds.contains(selectedDeviceId) else { return nil }
+        return selectedDeviceId
+    }
+
+    private var phoneNavigation: some View {
         NavigationStack(path: $path) {
             content
                 .navigationTitle(String(
@@ -54,39 +129,6 @@ struct PhoneHomeView: View {
                     detailDestination(for: deviceId)
                 }
                 .customAccentColorTint()
-        }
-        .onAppear {
-            if scanIPV4Actor == nil { scanIPV4Actor = DeviceDiscoveryActor() }
-            if scanSSDPActor == nil { scanSSDPActor = DeviceDiscoveryActor() }
-        }
-        // Keeps the status dots on the cards live. The grid is the one place
-        // that shows every device at once, and only the device the app is
-        // connected to refreshes its own record.
-        .probingDeviceLiveness(deviceIds, isActive: scenePhase == .active)
-        // If the remembered device has gone away, fall back to the next most
-        // recently viewed one rather than leaving nothing selected.
-        .task(id: deviceIds) {
-            do {
-                try await RoamDataHandler.shared.ensureValidPrimaryDevice()
-            } catch {
-                Log.userInteraction.error(
-                    "Error selecting an initial device \(error, privacy: .public)")
-            }
-        }
-        .onChange(of: primaryDeviceLoader.device?.id, initial: true) { _, newId in
-            guard !didAutoOpenPrimary, let newId, !newId.isEmpty else { return }
-            didAutoOpenPrimary = true
-            // Defer the push so the card stack has had a layout pass to
-            // register the primary card's matchedTransitionSource; otherwise the
-            // very first interactive swipe-back has no source and falls back to
-            // a default pop.
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(150))
-                if path.isEmpty {
-                    zoomSourceId = newId
-                    path = [newId]
-                }
-            }
         }
     }
 
@@ -313,20 +355,9 @@ struct PhoneHomeView: View {
 
         Button {
             if path.last != deviceId {
-                zoomSourceId = deviceId
+                usesZoomTransition = true
+                selectedDeviceId = deviceId
                 path.append(deviceId)
-                // Opening a remote is what makes it the one to come back to.
-                // The pager only records a device once it is *swiped* to, so
-                // without this a tapped-straight-into device was never recorded
-                // and the next launch reopened whatever came before it.
-                Task {
-                    do {
-                        try await RoamDataHandler.shared.makePrimaryDevice(id: deviceId)
-                    } catch {
-                        Log.userInteraction.error(
-                            "Error selecting tapped device \(error, privacy: .public)")
-                    }
-                }
             }
         } label: {
             if #available(iOS 18.0, *) {
@@ -429,15 +460,16 @@ struct PhoneHomeView: View {
     @ViewBuilder
     private func detailDestination(for deviceId: String) -> some View {
         let pager = PhoneDeviceDetailPager(
-            startingDeviceId: deviceId,
+            selectedDeviceId: $selectedDeviceId,
             allDeviceIds: deviceIds,
             unreadMessages: unreadMessages,
-            onBackToHome: { path.removeAll() },
-            onSelectionChange: { zoomSourceId = $0 }
+            usesSidebar: false,
+            onScan: runManualScan,
+            onBackToHome: { path.removeAll() }
         )
 
-        if #available(iOS 18.0, *) {
-            pager.navigationTransition(.zoom(sourceID: zoomSourceId ?? deviceId, in: cardNamespace))
+        if #available(iOS 18.0, *), usesZoomTransition {
+            pager.navigationTransition(.zoom(sourceID: selectedDeviceId ?? deviceId, in: cardNamespace))
         } else {
             pager
         }

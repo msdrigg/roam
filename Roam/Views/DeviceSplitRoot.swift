@@ -138,7 +138,7 @@ struct DeviceSplitRoot<Detail: View>: View {
         }
         #endif
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            addDeviceFooter
+            DeviceSidebarFooter(deviceCount: deviceIds.count)
         }
     }
 
@@ -177,65 +177,6 @@ struct DeviceSplitRoot<Detail: View>: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
-    }
-
-    private var addDeviceFooter: some View {
-        VStack(spacing: 0) {
-            Divider()
-            HStack(spacing: 0) {
-                Button {
-                    appDelegate.navigationPath.showAddDevice = true
-                } label: {
-                    Label(
-                        String(
-                            localized: "Add device",
-                            comment: "Footer button under the sidebar device list to add a new device"
-                        ),
-                        systemImage: "plus.circle"
-                    )
-                    .labelStyle(.titleAndIcon)
-                    .font(.callout)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .contentShape(Rectangle())
-
-                if deviceIds.count > 1 {
-                    sortMenu
-                }
-            }
-        }
-    }
-
-    /// Sorting sits under the list it reorders. Rows themselves are draggable,
-    /// which covers a custom arrangement; this is for the computed orders.
-    private var sortMenu: some View {
-        Menu {
-            DeviceSortOrderPicker()
-        } label: {
-            Image(systemName: "arrow.up.arrow.down")
-                .font(.callout)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .contentShape(Rectangle())
-        }
-        // `.borderlessButton` draws the label in the control's own colour,
-        // which came out full-white next to the muted "Add device" beside it.
-        // The plain button style leaves the label alone, so it takes the
-        // secondary style like its neighbour.
-        .menuStyle(.button)
-        .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .accessibilityIdentifier("SortDevicesButton")
-        .accessibilityLabel(String(
-            localized: "Sort devices",
-            comment: "Accessibility label for the sidebar button that changes the device order"
-        ))
     }
 
     // MARK: - Toolbar

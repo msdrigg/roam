@@ -2,32 +2,20 @@
 import SwiftUI
 import UIKit
 
-/// iPhone detail screen pushed from `PhoneHomeView`.
-///
-/// Renders all configured devices as horizontally-swipeable pages, each
-/// hosting `RemoteViewContained`. Selection drives the primary device so
-/// the home grid reflects the same "last-viewed" state.
-///
-/// The navigation bar is hidden - the user navigates back to the grid via
-/// the leftmost-edge swipe-back gesture or the floating "all devices" button
-/// in the bottom-right. The keyboard is toggled by a floating bottom-left
-/// button so it stays put while pages are being swiped (instead of riding
-/// along with the per-page nav bar).
+/// A sidebar with one remote on the inner display, or a swipe pager pushed
+/// from the compact device grid. Selection survives changes between modes.
 struct PhoneDeviceDetailPager: View {
     @EnvironmentObject private var appDelegate: RoamAppDelegate
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @AppStorage(UserDefaultKeys.phoneSidebarHidden) private var sidebarHidden = false
 
-    let startingDeviceId: String
     let allDeviceIds: [String]
     let unreadMessages: Int
-    let onBackToHome: () -> Void
-    // Reports the page the user swiped to, so the home grid can zoom the pop
-    // back into that card rather than the one that was tapped.
-    let onSelectionChange: (String) -> Void
+    let usesSidebar: Bool
+    let onScan: () async -> Void
+    let onBackToHome: (() -> Void)?
 
-    @State private var selectedDeviceId: String
+    @Binding private var selectedDeviceId: String?
+    @State private var sidebarDropTargetId: String?
     // The page order is frozen at push time. `allDeviceIds` reorders itself
     // underneath us - discovery inserts new devices at the front, and the
     // "recently used" sort moves whatever page the user lands on to the top -
@@ -47,8 +35,7 @@ struct PhoneDeviceDetailPager: View {
     // PreferenceKey reports each intermediate width - wait for the
     // animation to settle, then snap once.
     @State private var resnapTask: Task<Void, Never>?
-    // Width the sidebar would take in the current geometry, or nil where it
-    // doesn't fit. Kept in state so the toolbar can offer the toggle.
+    // Kept in state so the toolbar waits until the sidebar geometry is ready.
     @State private var sidebarRoom: CGFloat?
     // Whether the bottom bar stands along the trailing edge, as it does on
     // the outer display held sideways. The axis is only readable from inside
@@ -62,19 +49,20 @@ struct PhoneDeviceDetailPager: View {
     @State private var dotsWindowStart = 0
 
     init(
-        startingDeviceId: String,
+        selectedDeviceId: Binding<String?>,
         allDeviceIds: [String],
         unreadMessages: Int,
-        onBackToHome: @escaping () -> Void,
-        onSelectionChange: @escaping (String) -> Void = { _ in }
+        usesSidebar: Bool,
+        onScan: @escaping () async -> Void,
+        onBackToHome: (() -> Void)? = nil
     ) {
-        self.startingDeviceId = startingDeviceId
+        self.usesSidebar = usesSidebar
+        self.onScan = onScan
         self.allDeviceIds = allDeviceIds
         self.unreadMessages = unreadMessages
         self.onBackToHome = onBackToHome
-        self.onSelectionChange = onSelectionChange
-        _selectedDeviceId = State(initialValue: startingDeviceId)
-        _scrollPositionId = State(initialValue: startingDeviceId)
+        _selectedDeviceId = selectedDeviceId
+        _scrollPositionId = State(initialValue: selectedDeviceId.wrappedValue)
         _pagerDeviceIds = State(initialValue: allDeviceIds)
     }
 
@@ -84,9 +72,27 @@ struct PhoneDeviceDetailPager: View {
                 if showsSidebar, let sidebarRoom {
                     deviceSidebar
                         .frame(width: sidebarRoom)
+                        .ignoresSafeArea(.container, edges: proxy.size.width > proxy.size.height ? [] : .top)
                         .transition(.move(edge: .leading))
                 }
-                pager
+                if usesSidebar {
+                    if let selectedDeviceId {
+                        PhoneDetailPage(
+                            deviceId: selectedDeviceId,
+                            unreadMessages: unreadMessages,
+                            isActive: true,
+                            externalShowKeyboard: $showKeyboard
+                        )
+                        .id(selectedDeviceId)
+                    } else {
+                        ContentUnavailableView(
+                            String(localized: "Scanning for devices"),
+                            systemImage: "rays"
+                        )
+                    }
+                } else {
+                    pager
+                }
             }
             .overlay { verticalBarDots }
             // An AppStorage write lands through UserDefaults observation,
@@ -136,8 +142,9 @@ struct PhoneDeviceDetailPager: View {
         .onChange(of: allDeviceIds) { _, newIds in
             syncPages(with: newIds)
         }
-        .onChange(of: selectedDeviceId) { _, newId in
-            onSelectionChange(newId)
+        .onChange(of: selectedDeviceId, initial: true) { _, newId in
+            scrollPositionId = newId
+            guard let newId else { return }
             Task {
                 do {
                     try await RoamDataHandler.shared.makePrimaryDevice(id: newId)
@@ -194,39 +201,32 @@ struct PhoneDeviceDetailPager: View {
 
     // MARK: - Sidebar
 
-    /// A device list beside the remote when both size classes are regular,
-    /// which on iPhone is only iPhone Duo's inner display. It sits in the same
-    /// view tree as the pager so opening and closing the device never rebuilds
-    /// the remote.
     private var sidebarAvailable: Bool {
-        horizontalSizeClass == .regular && verticalSizeClass == .regular && sidebarRoom != nil
+        usesSidebar && sidebarRoom != nil
     }
 
     private var showsSidebar: Bool {
         sidebarAvailable && !sidebarHidden
     }
 
-    /// Runs the sidebar up to the far side of a vertical fold when the device
-    /// is partly folded, keeping the remote clear of the crease. The list
-    /// scrolls, so the fold may cross it. Held flat and sideways there is no
-    /// sidebar: beside it the remote falls back to its narrow layout.
-    private func sidebarWidth(in proxy: GeometryProxy) -> CGFloat? {
+    /// A vertical fold reserves the first panel so remote controls stay
+    /// clear of the crease. Flat layouts use a compact sidebar in either orientation.
+    private func sidebarWidth(in proxy: GeometryProxy) -> CGFloat {
         if #available(iOS 27.1, *),
             let fold = proxy.reservedRegions(kind: .division).first,
             fold.frame.height > fold.frame.width
         {
             return fold.frame.maxX
         }
-        guard proxy.size.height > proxy.size.width else { return nil }
-        return min(300, proxy.size.width * 0.4)
+        return min(240, proxy.size.width * 0.3)
     }
 
     private var deviceSidebar: some View {
         ScrollView {
             VStack(spacing: 8) {
-                ForEach(pagerDeviceIds, id: \.self) { deviceId in
+                ForEach(allDeviceIds, id: \.self) { deviceId in
                     Button {
-                        withAnimation(.snappy) { scrollPositionId = deviceId }
+                        withAnimation(.snappy) { selectedDeviceId = deviceId }
                     } label: {
                         DeviceSidebarCard(deviceId: deviceId)
                             .background {
@@ -244,13 +244,60 @@ struct PhoneDeviceDetailPager: View {
                         deviceName: nil,
                         onEdit: { appDelegate.navigationPath.showEditDevice = deviceId }
                     )
+                    .overlay {
+                        if sidebarDropTargetId == deviceId {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .strokeBorder(Color.accentColor, lineWidth: 2)
+                        }
+                    }
+                    .draggable(deviceId)
+                    .dropDestination(for: String.self) { items, _ in
+                        sidebarDropTargetId = nil
+                        guard let draggedId = items.first else { return false }
+                        return moveSidebarDevice(draggedId, toPositionOf: deviceId)
+                    } isTargeted: { isTargeted in
+                        withAnimation(.snappy) {
+                            if isTargeted {
+                                sidebarDropTargetId = deviceId
+                            } else if sidebarDropTargetId == deviceId {
+                                sidebarDropTargetId = nil
+                            }
+                        }
+                    }
                 }
             }
+            .animation(.snappy, value: allDeviceIds)
             .padding(.horizontal, 12)
-            .padding(.vertical, 12)
+            .padding(.top, 24)
+            .padding(.bottom, 12)
         }
         .scrollIndicators(.hidden)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            DeviceSidebarFooter(deviceCount: allDeviceIds.count)
+        }
+        .refreshable { await onScan() }
         .background(.background.secondary)
+    }
+
+    private func moveSidebarDevice(_ draggedId: String, toPositionOf targetId: String) -> Bool {
+        guard draggedId != targetId,
+            let from = allDeviceIds.firstIndex(of: draggedId),
+            let to = allDeviceIds.firstIndex(of: targetId)
+        else {
+            return false
+        }
+
+        // The insertion offset uses indices from before the source is removed.
+        let destination = to > from ? to + 1 : to
+        Task {
+            do {
+                try await RoamDataHandler.shared.reorderDevices(
+                    fromOffsets: IndexSet(integer: from), toOffset: destination)
+            } catch {
+                Log.userInteraction.error("Error reordering sidebar devices \(error, privacy: .public)")
+            }
+        }
+        return true
     }
 
     /// Reconciles the frozen page order with the live device list: devices
@@ -327,7 +374,7 @@ struct PhoneDeviceDetailPager: View {
             }
         }
         ToolbarSpacer(.flexible, placement: .bottomBar)
-        if pagerDeviceIds.count > 1, !toolbarIsVertical {
+        if !usesSidebar, pagerDeviceIds.count > 1, !toolbarIsVertical {
             ToolbarItem(placement: .bottomBar) {
                 pageDots
                     .padding(.horizontal, 6)
@@ -335,15 +382,19 @@ struct PhoneDeviceDetailPager: View {
             ToolbarSpacer(.fixed, placement: .bottomBar)
         }
         ToolbarItem(placement: .bottomBar) {
-            Button {
-                onBackToHome()
-            } label: {
-                Label(allDevicesTitle, systemImage: "square.grid.2x2")
+            if usesSidebar {
+                settingsButton
+            } else {
+                Button {
+                    onBackToHome?()
+                } label: {
+                    Label(allDevicesTitle, systemImage: "square.grid.2x2")
+                }
+                .accessibilityIdentifier("AllDevicesButton")
+                .tint(.primary)
             }
-            .accessibilityIdentifier("AllDevicesButton")
-            .tint(.primary)
         }
-        if pagerDeviceIds.count > 1, toolbarIsVertical, #available(iOS 27.1, *) {
+        if !usesSidebar, pagerDeviceIds.count > 1, toolbarIsVertical, #available(iOS 27.1, *) {
             // The dots stay horizontal, which a vertical bar cannot hold, so
             // the bar ends with an empty slot below the last button and
             // `verticalBarDots` draws the capsule over it.
@@ -366,7 +417,7 @@ struct PhoneDeviceDetailPager: View {
     /// left over the page.
     @ViewBuilder
     private var verticalBarDots: some View {
-        if toolbarIsVertical, pagerDeviceIds.count > 1, let slot = dotsSlotFrame {
+        if !usesSidebar, toolbarIsVertical, pagerDeviceIds.count > 1, let slot = dotsSlotFrame {
             GeometryReader { proxy in
                 let bounds = proxy.frame(in: .global)
                 pageDotsOverlay
@@ -386,6 +437,16 @@ struct PhoneDeviceDetailPager: View {
         )
     }
 
+    private var settingsButton: some View {
+        Button {
+            appDelegate.navigationPath.append(.settingsDestination(.global))
+        } label: {
+            Label(String(localized: "Settings"), systemImage: "gear")
+        }
+        .accessibilityIdentifier("SettingsButton")
+        .tint(.primary)
+    }
+
     private var allDevicesTitle: String {
         String(
             localized: "All devices",
@@ -396,7 +457,7 @@ struct PhoneDeviceDetailPager: View {
     private var pageDots: some View {
         PageDots(
             count: pagerDeviceIds.count,
-            selectedIndex: pagerDeviceIds.firstIndex(of: selectedDeviceId) ?? 0,
+            selectedIndex: pagerDeviceIds.firstIndex(where: { $0 == selectedDeviceId }) ?? 0,
             windowStart: $dotsWindowStart
         )
         .accessibilityElement(children: .ignore)
@@ -407,10 +468,14 @@ struct PhoneDeviceDetailPager: View {
         HStack(spacing: 12) {
             keyboardButton
             Spacer()
-            if pagerDeviceIds.count > 1 {
+            if !usesSidebar, pagerDeviceIds.count > 1 {
                 pageIndicator
             }
-            allDevicesButton
+            if usesSidebar {
+                settingsButton
+            } else {
+                allDevicesButton
+            }
         }
     }
 
@@ -431,7 +496,7 @@ struct PhoneDeviceDetailPager: View {
     }
 
     private var pageIndicatorAccessibility: String {
-        guard let idx = pagerDeviceIds.firstIndex(of: selectedDeviceId) else {
+        guard let idx = pagerDeviceIds.firstIndex(where: { $0 == selectedDeviceId }) else {
             return ""
         }
         return String(
@@ -461,7 +526,7 @@ struct PhoneDeviceDetailPager: View {
 
     private var allDevicesButton: some View {
         Button {
-            onBackToHome()
+            onBackToHome?()
         } label: {
             Image(systemName: "square.grid.2x2")
                 .font(.title3)

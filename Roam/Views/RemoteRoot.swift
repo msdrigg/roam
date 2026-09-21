@@ -15,7 +15,7 @@ private let iPadMinContentHeight: CGFloat = 560
 private let iPadMaxContentHeight: CGFloat = 820
 
 /// Top-level container for iOS / iPadOS / visionOS. Dispatches to:
-///   • `PhoneHomeView` on compact iPhone (weather-card grid → paged remote)
+///   • `PhoneHomeView` on iPhone (adaptive sidebar or grid and paged remote)
 ///   • `DeviceSplitRoot` on iPad and visionOS (sidebar + detail)
 ///
 /// Owns the sheet plumbing and the scanning and watch-sync tasks.
