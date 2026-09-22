@@ -526,11 +526,18 @@ actor AudioPlayer {
         }
     }
 
+    /// `playerTime(forNodeTime:)` raises "player did not see an IO cycle" when
+    /// the engine stops rendering under a playing node, as it does across a
+    /// macOS output-device change.
     public func lastRender() throws -> AVAudioTime? {
-        if let lrt = streamAudioNode.lastRenderTime {
-            return streamAudioNode.playerTime(forNodeTime: lrt)
+        guard engine.isRunning, streamAudioNode.isPlaying,
+            let lrt = streamAudioNode.lastRenderTime
+        else {
+            return nil
         }
-        return nil
+        var playerTime: AVAudioTime?
+        try catchingAVFAudioExceptions { playerTime = streamAudioNode.playerTime(forNodeTime: lrt) }
+        return playerTime
     }
 
     public func stop() {

@@ -376,6 +376,14 @@ The `guard engine.isRunning` ahead of it did not help - the engine really was ru
 
 **Known cause, fix:** the graph and converter are now re-derived from the current output format on every `start()`, and a device reporting no usable format is rejected with a thrown error rather than left for AVFAudio to raise on. The `play()` and `scheduleBuffer` calls additionally run under an Objective-C exception trap, so a raise that still slips through surfaces as a Swift error instead of killing the process.";
 
+const AUDIO_PLAYER_TIME_EXCEPTION_REPLY: &str = ":ninja: **Auto-review: `SIGABRT` - AVFAudio raised reading the player's render time**
+
+`EXC_CRASH (10)` / `SIGABRT (6)`, attributed to `objc_exception_throw` out of `-[AVAudioPlayerNode playerTimeForNodeTime:]`, called from the 10 ms scheduling loop in `RTPSession.streamAudio` through `AudioPlayer.lastRender()`. The exception reason is \"player did not see an IO cycle\".
+
+AVFAudio raises that when the engine has stopped rendering under a node that still reports itself playing, which happens across a macOS output-device change while private listening is streaming. `play()` and `scheduleBuffer` already ran under the Objective-C exception trap from the 1.54 fix; `playerTime(forNodeTime:)` did not, so the raise ended the process.
+
+**Fix:** `lastRender()` returns nil unless the engine is running and the node is playing, and the call runs under the same exception trap. A raise now skips that scheduling tick instead of aborting.";
+
 const LOCAL_NETWORK_CANCEL_RACE_REPLY: &str = ":ninja: **Auto-review: `SIGSEGV` - the Bonjour browser was cancelled before it was started**
 
 `EXC_BAD_ACCESS (1)` / `SIGSEGV (11)` on the near-null address `0x54` inside `nw_browser_cancel`, attributed to the local network permission check. Not the `0x8BADF00D` stall that `local-network-cancel-watchdog` describes, which carries a termination reason.
@@ -481,6 +489,20 @@ pub static RULES: &[CrashRule] = &[
         ],
         none_of: &[],
         reply: AUDIO_PLAYER_NODE_EXCEPTION_REPLY,
+    },
+    CrashRule {
+        id: "audio-player-time-exception",
+        title: "SIGABRT from AVAudioPlayerNode.playerTime(forNodeTime:) raising with no IO cycle",
+        fixed_in: Some("1.59"),
+        environmental: false,
+        exception_type: Some(10),
+        signal: Some(6),
+        termination_code: None,
+        min_thermal_level: None,
+        max_app_cpu_percent: None,
+        all_of: &["objc_exception_throw", "playerTimeForNodeTime:"],
+        none_of: &[],
+        reply: AUDIO_PLAYER_TIME_EXCEPTION_REPLY,
     },
     CrashRule {
         id: "ssdp-socket-double-close",
@@ -1055,6 +1077,59 @@ Thread 6 (attributed - this is the thread that crashed):
             assert_ne!(
                 match_rule(report, &facts).map(|m| m.rule.id),
                 Some("audio-player-node-play-exception")
+            );
+        }
+    }
+
+    /// Thread 1551876520581009449 (roam 1.58, Mac14,7).
+    const AUDIO_PLAYER_TIME_EXCEPTION_REPORT: &str = r#"
+Install: user_id=x build=20260915.2957742.2 release=1.58 platform=macOS
+Crash 1 (version 1.0.0)
+Termination reason: Namespace SIGNAL, Code 0x6
+Diagnosis: EXC_CRASH (10) / code 0 / SIGABRT (6)
+Metadata:
+  appVersion: 1.58
+  deviceType: Mac14,7
+  exceptionCode: 0
+  exceptionType: 10
+  osVersion: macOS 27.0 (26A428)
+  signal: 6
+Thread 9 (attributed - this is the thread that crashed):
+  2   libsystem_c.dylib +0x7b458 abort samples=1
+  5   libobjc.A.dylib   +0x22130 _objc_terminate() samples=1
+  9   libobjc.A.dylib   +0x18774 objc_exception_throw samples=1
+  10  CoreFoundation    +0xf17b0 +[NSException exceptionWithName:reason:userInfo:] samples=1
+  11  AVFAudio          +0xd728c -[AVAudioPlayerNode playerTimeForNodeTime:] samples=1
+  12  Roam              +0x228994 closure #3 in closure #1 in RTPSession.streamAudio at /x/AudioPlayer.swift:531 samples=1
+"#;
+
+    #[test]
+    fn matches_the_audio_player_time_exception() {
+        let facts = CrashFacts::from_report(AUDIO_PLAYER_TIME_EXCEPTION_REPORT);
+        let matched =
+            match_rule(AUDIO_PLAYER_TIME_EXCEPTION_REPORT, &facts).expect("a rule matches");
+        assert_eq!(matched.rule.id, "audio-player-time-exception");
+        assert_eq!(matched.status, FixStatus::Fixed);
+    }
+
+    #[test]
+    fn the_two_audio_exception_rules_do_not_steal_from_each_other() {
+        let facts = CrashFacts::from_report(AUDIO_PLAYER_EXCEPTION_REPORT);
+        assert_eq!(
+            match_rule(AUDIO_PLAYER_EXCEPTION_REPORT, &facts).map(|m| m.rule.id),
+            Some("audio-player-node-play-exception")
+        );
+        for report in [
+            DEAD10CC_REPORT,
+            GUARD_REPORT,
+            WATCHDOG_REPORT,
+            THERMAL_REPORT,
+            STACK_OVERFLOW_REPORT,
+        ] {
+            let facts = CrashFacts::from_report(report);
+            assert_ne!(
+                match_rule(report, &facts).map(|m| m.rule.id),
+                Some("audio-player-time-exception")
             );
         }
     }
