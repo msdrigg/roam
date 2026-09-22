@@ -102,10 +102,10 @@ symbolic-demangle = { version = "^13", features = ["swift", "cpp"] }
 tracing = { version = "^0.1", features = ["attributes"] }
 tracing-subscriber = { version = "^0.3", features = ["env-filter"] }
 tracing-opentelemetry = "^0.33"
-opentelemetry = { version = "^0.32" }
-opentelemetry_sdk = { version = "^0.32", features = ["rt-tokio"] }
-opentelemetry-otlp = { version = "^0.32", features = ["grpc-tonic"] }
-opentelemetry-semantic-conventions = "^0.32"
+opentelemetry = { version = "^0.33" }
+opentelemetry_sdk = { version = "^0.33", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "^0.33", features = ["grpc-tonic"] }
+opentelemetry-semantic-conventions = "^0.33"
 
 axum = { version = "^0.8", features = ["http2", "macros", "multipart", "ws"] }
 axum-macros = "^0.5"
