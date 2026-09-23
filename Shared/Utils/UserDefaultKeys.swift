@@ -33,6 +33,7 @@ enum UserDefaultKeys {
     static let dateOfLastEntitlementRefresh = "dateOfLastEntitlementRefresh"
     static let alternateAppIcon = "alternateAppIcon"
     static let phoneSidebarHidden = "phoneSidebarHidden"
+    static let phoneHasShownSidebar = "phoneHasShownSidebar"
 
     // Messaging
     static let lastTypingTime = "lastTypingTime"

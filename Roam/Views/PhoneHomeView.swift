@@ -6,10 +6,10 @@ import SwiftUI
 ///
 /// Tapping a card pushes `PhoneDeviceDetailPager` on a local `NavigationStack`.
 /// On iOS 18+ the push uses a `.zoom` matched-transition for the Weather-style
-/// effect; older OSes fall back to a default push.
+/// effect; older OSes and foldables fall back to a default push.
 ///
-/// On first appear, if there is already a primary device, the pager is pushed
-/// automatically so the app opens to the last-viewed remote.
+/// When the grid first appears, the selected device's pager is pushed without
+/// animation so the app opens to the last-viewed remote.
 struct PhoneHomeView: View {
     @EnvironmentObject private var appDelegate: RoamAppDelegate
     @Environment(\.scenePhase) private var scenePhase
@@ -20,8 +20,11 @@ struct PhoneHomeView: View {
     @State private var primaryDeviceLoader = PrimaryDeviceLoader(dataHandler: .shared)
     @State private var messageLoader = MessageListLoader(dataHandler: .shared)
     @State private var path: [String] = []
-    @State private var usesZoomTransition = true
     @State private var didAutoOpenPrimary = false
+    // Only an unfolded iPhone Duo reaches the sidebar layout. Folding pushes
+    // the pager over a grid that was never on screen, so there is no card to
+    // zoom back to, and foldables skip the zoom altogether.
+    @AppStorage(UserDefaultKeys.phoneHasShownSidebar) private var isFoldable = false
     @State private var scanIPV4Actor: DeviceDiscoveryActor?
     @State private var scanSSDPActor: DeviceDiscoveryActor?
     @State private var dropTargetId: String?
@@ -50,10 +53,10 @@ struct PhoneHomeView: View {
                 phoneNavigation
             }
         }
-        .onChange(of: usesSidebar) { _, usesSidebar in
+        .onChange(of: usesSidebar, initial: true) { oldValue, usesSidebar in
+            if usesSidebar { isFoldable = true }
+            guard oldValue != usesSidebar else { return }
             didAutoOpenPrimary = true
-            // Folding creates a new grid whose zoom sources have not been laid out.
-            usesZoomTransition = false
             path = usesSidebar ? [] : selectedDeviceId.map { [$0] } ?? []
         }
         .onAppear {
@@ -94,7 +97,10 @@ struct PhoneHomeView: View {
             guard !didAutoOpenPrimary else { return }
             didAutoOpenPrimary = true
             if path.isEmpty {
-                path = [deviceId]
+                // No zoom-in from a card the user never tapped; the pop still zooms.
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { path = [deviceId] }
             }
         }
     }
@@ -355,7 +361,6 @@ struct PhoneHomeView: View {
 
         Button {
             if path.last != deviceId {
-                usesZoomTransition = true
                 selectedDeviceId = deviceId
                 path.append(deviceId)
             }
@@ -468,7 +473,7 @@ struct PhoneHomeView: View {
             onBackToHome: { path.removeAll() }
         )
 
-        if #available(iOS 18.0, *), usesZoomTransition {
+        if #available(iOS 18.0, *), !isFoldable {
             pager.navigationTransition(.zoom(sourceID: selectedDeviceId ?? deviceId, in: cardNamespace))
         } else {
             pager
