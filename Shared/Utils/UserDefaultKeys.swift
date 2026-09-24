@@ -40,6 +40,7 @@ enum UserDefaultKeys {
     static let lastSupportTypingTime = "lastSupportTypingTime"
     static let lastApnsRequestTime = "lastApnsRequestTime"
     static let hasSentFirstMessage = "hasSentFirstMessage"
+    static let deviceSidebarHidden = "deviceSidebarHidden"
 
     // Records
     static let firstInstallVersion: String = "firstInstallVersion"

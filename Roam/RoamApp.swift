@@ -26,6 +26,9 @@ struct RoamApp: App {
         CustomKeyboardShortcut?
     @KeyboardShortcutStorage(.chatWithDeveloper) var messagesShortcut: CustomKeyboardShortcut?
     @State var hotkeyRef: Any?
+    #if os(macOS)
+        @State private var minimumWindowWidth: CGFloat?
+    #endif
 
     let metricManager = RoamMetricManager.shared
     init() {
@@ -103,8 +106,11 @@ struct RoamApp: App {
                     ) { _ in
                         Log.lifecycle.notice("Shutting down main body from willTerminate")
                     }
+                    .onPreferenceChange(MinimumWindowWidthKey.self) { width in
+                        minimumWindowWidth = width
+                    }
                     .frame(
-                        minWidth: macOSMinWidth,
+                        minWidth: minimumWindowWidth ?? macOSMinWidth,
                         idealWidth: macOSWidth,
                         maxWidth: macOSMaxWidth,
                         minHeight: macOSMinHeight,
@@ -622,7 +628,7 @@ struct RoamApp: App {
     }
 
     var macOSMinWidth: CGFloat {
-        return 600
+        return 360
     }
 
     var macOSMaxWidth: CGFloat {

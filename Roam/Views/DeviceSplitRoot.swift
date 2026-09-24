@@ -21,12 +21,40 @@ struct DeviceSplitRoot<Detail: View>: View {
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @State private var scanIPV4Actor: DeviceDiscoveryActor?
     @State private var scanSSDPActor: DeviceDiscoveryActor?
+    #if os(macOS)
+    @State private var window: NSWindow?
+    #endif
 
     private let detail: (Device?) -> Detail
+    private let minimumDetailWidth: CGFloat?
 
-    init(@ViewBuilder detail: @escaping (Device?) -> Detail) {
+    init(
+        minimumDetailWidth: CGFloat? = nil,
+        @ViewBuilder detail: @escaping (Device?) -> Detail
+    ) {
+        self.minimumDetailWidth = minimumDetailWidth
         self.detail = detail
+        #if os(macOS)
+        if UserDefaults.standard.bool(forKey: UserDefaultKeys.deviceSidebarHidden) {
+            _columnVisibility = State(initialValue: .detailOnly)
+        }
+        #endif
     }
+
+    /// The window has to be narrowable to the detail column alone once the
+    /// sidebar is hidden. Only the scene root's frame sets the window's
+    /// minimum, so this travels up as `MinimumWindowWidthKey`. Raising a
+    /// minimum never grows the window, so a window left narrow is widened by
+    /// hand when the sidebar returns.
+    private var minimumSplitWidth: CGFloat? {
+        guard let minimumDetailWidth else { return nil }
+        if columnVisibility == .detailOnly {
+            return minimumDetailWidth
+        }
+        return minimumDetailWidth + sidebarMinimumWidth
+    }
+
+    private let sidebarMinimumWidth: CGFloat = 240
 
     private var deviceIds: [String] { devicesLoader.devices ?? [] }
     private var selectedDevice: Device? { primaryDeviceLoader.device }
@@ -42,7 +70,7 @@ struct DeviceSplitRoot<Detail: View>: View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             sidebar
                 .environment(\.layoutDirection, systemLayoutDirection)
-                .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 340)
+                .navigationSplitViewColumnWidth(min: sidebarMinimumWidth, ideal: 280, max: 340)
                 .navigationTitle(String(
                     localized: "Devices",
                     comment: "Title of the device sidebar in the split-view layout"
@@ -73,7 +101,13 @@ struct DeviceSplitRoot<Detail: View>: View {
             // bits inside the detail pane are SwiftUI `Text` views, which
             // mirror per-character via bidi regardless of the surrounding
             // layoutDirection.
+            #if os(macOS)
             detail(selectedDevice)
+                .navigationSplitViewColumnWidth(
+                    min: minimumDetailWidth ?? 0, ideal: minimumDetailWidth ?? 0)
+            #else
+            detail(selectedDevice)
+            #endif
         }
         #if !os(macOS)
         .environment(\.layoutDirection, .leftToRight)
@@ -84,6 +118,16 @@ struct DeviceSplitRoot<Detail: View>: View {
         // .balanced style keeps both columns inline at fixed widths so the
         // detail pane actually renders within the window.
         .navigationSplitViewStyle(.balanced)
+        #endif
+        #if os(macOS)
+        .preference(key: MinimumWindowWidthKey.self, value: minimumSplitWidth)
+        .background(WindowFinder(window: $window))
+        .onChange(of: minimumSplitWidth, initial: true) { widenWindowToFit() }
+        .onChange(of: window) { widenWindowToFit() }
+        .onChange(of: columnVisibility) { _, visibility in
+            UserDefaults.standard.set(
+                visibility == .detailOnly, forKey: UserDefaultKeys.deviceSidebarHidden)
+        }
         #endif
         .onAppear {
             if scanIPV4Actor == nil { scanIPV4Actor = DeviceDiscoveryActor() }
@@ -103,6 +147,24 @@ struct DeviceSplitRoot<Detail: View>: View {
             }
         }
     }
+
+    #if os(macOS)
+    private func widenWindowToFit() {
+        guard let window, let minimumSplitWidth else { return }
+        let contentWidth = window.contentRect(forFrameRect: window.frame).width
+        guard contentWidth < minimumSplitWidth else { return }
+
+        // Grow toward the sidebar's side, staying on screen.
+        var frame = window.frame
+        let growth = minimumSplitWidth - contentWidth
+        frame.origin.x -= growth
+        frame.size.width += growth
+        if let visible = window.screen?.visibleFrame, frame.minX < visible.minX {
+            frame.origin.x = visible.minX
+        }
+        window.setFrame(frame, display: true, animate: true)
+    }
+    #endif
 
     // MARK: - Sidebar
 
@@ -226,4 +288,13 @@ struct DeviceSplitRoot<Detail: View>: View {
         await performManualDeviceScan(ipv4Actor: scanIPV4Actor, ssdpActor: scanSSDPActor)
     }
 }
+#if os(macOS)
+struct MinimumWindowWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat? = nil
+
+    static func reduce(value: inout CGFloat?, nextValue: () -> CGFloat?) {
+        value = nextValue() ?? value
+    }
+}
+#endif
 #endif

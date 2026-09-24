@@ -121,9 +121,7 @@
             messageLoader.unreadCount
         }
 
-        private var minimumContentWidth: CGFloat? {
-            isInMenuBar ? nil : 560
-        }
+        private var minimumDetailWidth: CGFloat { 360 }
 
         private var minimumContentHeight: CGFloat? {
             isInMenuBar ? nil : 620
@@ -395,7 +393,7 @@
                         deviceIdToEdit: appDelegate.navigationPath.showingEditDevice(for: .remote)
                     )
                 }
-                .frame(minWidth: minimumContentWidth, minHeight: minimumContentHeight)
+                .frame(minHeight: minimumContentHeight)
         }
 
         private var loadingDevicesView: some View {
@@ -470,7 +468,7 @@
         }
 
         private var mainRemoteView: some View {
-            DeviceSplitRoot { _ in
+            DeviceSplitRoot(minimumDetailWidth: minimumDetailWidth) { _ in
                 remoteDetail
             }
             .toolbar {
