@@ -164,9 +164,10 @@ pub struct CrashRule {
     /// App version that shipped this rule's fix, e.g. `"1.51"`. Crashes from
     /// this version onwards are tagged [`FixStatus::Unfixed`].
     pub fixed_in: Option<&'static str>,
-    /// The kill comes from the device or OS rather than the app. Matching
-    /// reports are tagged [`FixStatus::NotADefect`]. Set only where the report
-    /// itself carries the evidence.
+    /// The crash is not a defect in a shipped build: the device or OS ended
+    /// the process, or the build never shipped. Matching reports are tagged
+    /// [`FixStatus::NotADefect`]. Set only where the report itself carries the
+    /// evidence.
     pub environmental: bool,
     /// Mach exception type, e.g. 10 for `EXC_CRASH`, 12 for `EXC_GUARD`.
     pub exception_type: Option<i64>,
@@ -269,7 +270,7 @@ impl RuleMatch {
             FixStatus::Unfixed => format!(
                 ":rotating_light: **UNFIXED.** The fix above shipped in {fixed_in}, and this report is {version} - the crash survived it. Left unreviewed for a human."
             ),
-            FixStatus::NotADefect => ":thermometer: **Nothing to fix in the app.** The report itself carries the evidence that the system, not Roam, ended the process - see above. Reviewed automatically; reopen the thread if you disagree.".to_string(),
+            FixStatus::NotADefect => ":information_source: **Nothing to fix in the app.** The report itself carries the evidence that this is not a defect in a shipped build - see above. Reviewed automatically; reopen the thread if you disagree.".to_string(),
             FixStatus::Unknown => match self.rule.fixed_in {
                 Some(version) => format!(
                     ":grey_question: **Fix status unknown.** The fix shipped in {version}, but this report carries neither an `appVersion` nor an installed release, so whether it predates the fix is unclear."
@@ -394,6 +395,12 @@ Roam had two paths that could: the `Task.isCancelled` guard that runs before the
 
 **Known cause, fix:** start and cancel go through an `EndpointLifecycle` wrapper that tracks whether the endpoints were started. A cancel before the start skips teardown entirely, and one arriving during the start is deferred until the queue is set. Cancelling twice is still claimed once and teardown still runs on the endpoints' own queue, so both earlier fixes hold.";
 
+const SIMULATOR_BUILD_REPLY: &str = ":ninja: **Auto-review: Xcode simulator debug build, not a shipped app**
+
+The attributed stack runs through `dyld_sim`, which only exists in the iOS Simulator runtime, so this came from a development build on a Mac and not from anything on the App Store or TestFlight.
+
+The usual cause is several simulator builds sharing one derived-data folder. Debug simulator apps load `RoamGRDB.framework` from `Build/Products/.../PackageFrameworks` through their rpath, so each rebuild swaps the framework out from under the installs already running, and they die at launch with `EXC_BAD_ACCESS` in the GRDB migrator. Give every concurrent build its own `-derivedDataPath`.";
+
 const THERMAL_STARVATION_REPLY: &str = ":ninja: **Auto-review: `0x8BADF00D` watchdog - the device was overheating, not the app**
 
 `EXC_CRASH (10)` / `SIGKILL (9)` with a watchdog termination reason, but the numbers in that reason rule the app out as the cause:
@@ -407,6 +414,21 @@ A scene-update deadline is wall-clock, not CPU-time, so a process that never get
 
 /// Ordered: the first match wins, so put narrower rules first.
 pub static RULES: &[CrashRule] = &[
+    // First: a simulator build is never a user crash, whatever its stack says.
+    CrashRule {
+        id: "simulator-debug-build",
+        title: "Xcode simulator debug build, not a shipped app",
+        fixed_in: None,
+        environmental: true,
+        exception_type: None,
+        signal: None,
+        termination_code: None,
+        min_thermal_level: None,
+        max_app_cpu_percent: None,
+        all_of: &["dyld_sim"],
+        none_of: &[],
+        reply: SIMULATOR_BUILD_REPLY,
+    },
     CrashRule {
         id: "scene-update-reentrancy-stack-overflow",
         title: "Stack overflow from the macOS scene update pass re-entering itself",
@@ -1526,6 +1548,64 @@ Thread 0 (attributed):
         assert_eq!(facts.thermal_level, None);
         assert_eq!(facts.app_cpu_percent, None);
         assert!(match_rule(&report, &facts).is_none());
+    }
+
+    /// Trimmed from thread 1547029350170365983: 253 launches of a debug sim
+    /// build, all dying in the GRDB migrator after a shared derived-data swap.
+    const SIMULATOR_REPORT: &str = r#"
+Install: user_id=usr-fac-dir build=20260915.2957742.2 release=1.58 platform=macOS os=Version 27.0 (Build 26A428) locale=en
+Crash 1 (version 1.0.0)
+Diagnosis: EXC_BAD_ACCESS (1) / KERN_INVALID_ADDRESS (1) / SIGSEGV (11)
+Metadata:
+  appVersion: 1.58
+  deviceType: Mac14,10
+  exceptionType: 1
+  signal: 11
+Thread 0 (attributed - this is the thread that crashed):
+  0   libswiftCore.dylib           +0x1750ec    (unresolved 4BAC37FD-036C-3819-88C4-D0183173216A) samples=1
+  2   RoamGRDB                     +0x2a9700    (unresolved A3C13274-C106-36D0-9C42-DA77A50D0A52) samples=1
+  8   Roam.debug.dylib             +0x153a04    (unresolved C93B8B33-1F79-3E68-9640-BD6BA61F0CA8) samples=1
+  36  dyld_sim                     +0x10350     (unresolved 6FAE6738-0877-3F55-80B9-6AE42FCB8606) samples=1
+  37  dyld                         +0x31e80     start samples=1
+"#;
+
+    #[test]
+    fn simulator_builds_are_reviewed_as_not_a_defect() {
+        let facts = CrashFacts::from_report(SIMULATOR_REPORT);
+        let matched = match_rule(SIMULATOR_REPORT, &facts).expect("simulator rule matches");
+        assert_eq!(matched.rule.id, "simulator-debug-build");
+        // The build is tagged 1.58; a versioned status would call it UNFIXED
+        // or prompt an update, neither of which applies to a dev build.
+        assert_eq!(matched.status, FixStatus::NotADefect);
+        assert!(matched.review_note(&facts).contains("not an app defect"));
+    }
+
+    #[test]
+    fn simulator_rule_outranks_a_recognised_stack() {
+        let report =
+            format!("{SIMULATOR_REPORT}  Network +0x1158200 nw_browser_cancel samples=1\n");
+        let facts = CrashFacts::from_report(&report);
+        assert_eq!(
+            match_rule(&report, &facts).map(|m| m.rule.id),
+            Some("simulator-debug-build")
+        );
+    }
+
+    #[test]
+    fn device_reports_do_not_match_the_simulator_rule() {
+        for report in [DEAD10CC_REPORT, THERMAL_REPORT, UPDATED_DEVICE_REPORT] {
+            let facts = CrashFacts::from_report(report);
+            assert_ne!(
+                match_rule(report, &facts).map(|m| m.rule.id),
+                Some("simulator-debug-build")
+            );
+        }
+        // The same GRDB fault from a device build stays in the manual queue.
+        let device = SIMULATOR_REPORT
+            .replace("dyld_sim", "dyld")
+            .replace("Roam.debug.dylib", "Roam");
+        let facts = CrashFacts::from_report(&device);
+        assert!(match_rule(&device, &facts).is_none());
     }
 
     #[test]
