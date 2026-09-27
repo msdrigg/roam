@@ -1,7 +1,7 @@
 @preconcurrency import AVFoundation
 import Foundation
 import Network
-import os.log
+import os
 
 enum HeadphonesModeError: Error, LocalizedError {
     case badURL
@@ -114,6 +114,11 @@ actor RTPSession {
     let rtpStreamContinuation: AsyncThrowingStream<RtpPacket, Error>.Continuation
     let rtpListener: NWListener
     let rtcpListener: NWListener
+    // NWListener.cancel() leaves the connections it accepted running, and each one
+    // delivers into this session's inbox, stealing the next session's XDLY replies.
+    let acceptedRtcpConnections = OSAllocatedUnfairLock<[NWConnection]>(initialState: [])
+    let rtpPacketsReceived = OSAllocatedUnfairLock(initialState: 0)
+    let outboundUnknownPackets = OSAllocatedUnfairLock(initialState: 0)
 
     let remoteRtcpConnection: NWConnection
 
@@ -189,6 +194,7 @@ actor RTPSession {
         // paths feed the same inbox.
         let inbox = rtcpInbox
         let outboundConnection = remoteRtcpConnection
+        let outboundUnknownPackets = outboundUnknownPackets
         @Sendable func receiveOutboundRtcp(
             _ data: Data?,
             _: NWConnection.ContentContext?,
@@ -205,6 +211,21 @@ actor RTPSession {
                 return
             }
             if let packet = RtcpPacket(data: data) {
+                // RTP arriving from the Roku's RTCP port matches this socket's 4-tuple and
+                // parses as an unknown RTCP type (97, or 225 with the marker bit), never
+                // reaching rtpListener.
+                if case let .unknown(unknown) = packet {
+                    let count = outboundUnknownPackets.withLock {
+                        $0 += 1
+                        return $0
+                    }
+                    if count == 1 || count % 500 == 0 {
+                        Log.headphones
+                            .warning(
+                                "Unknown packet type \(unknown.packetType, privacy: .public) (\(data.count, privacy: .public) bytes) on outbound rtcp connection from \(String(describing: outboundConnection.currentPath?.remoteEndpoint), privacy: .public), \(count, privacy: .public) so far"
+                            )
+                    }
+                }
                 Task { await inbox.deliver(packet) }
             } else {
                 Log.headphones.error("Error parsing rtcp packet on outbound connection")
@@ -233,6 +254,9 @@ actor RTPSession {
         self.rtpListener.cancel()
         self.rtcpListener.cancel()
         self.remoteRtcpConnection.cancel()
+        for connection in acceptedRtcpConnections.withLock({ $0 }) {
+            connection.cancel()
+        }
     }
 
     /// Guards `remoteRtcpConnection.start()` so it runs exactly once, even
@@ -259,10 +283,13 @@ actor RTPSession {
         }
 
         rtcpListener.newConnectionHandler = { [weak self] rtcpConnection in
-            guard let inbox = self?.rtcpInbox else {
-                Log.headphones.warning("No rtcp inbox when getting new connection")
+            guard let self else {
+                Log.headphones.warning("No rtcp session when getting new connection")
+                rtcpConnection.cancel()
                 return
             }
+            let inbox = self.rtcpInbox
+            self.acceptedRtcpConnections.withLock { $0.append(rtcpConnection) }
             Log.headphones.notice("Got new rtcp connection \(String(describing: rtcpConnection), privacy: .public)")
             @Sendable func closure(_ data: Data?, _: NWConnection.ContentContext?, _: Bool, _ error: NWError?) {
                 Log.headphones.notice("Got new rtcp packet \(String(describing: data), privacy: .public), error: \(String(describing: error), privacy: .public)")
@@ -538,6 +565,15 @@ actor RTPSession {
 
                 for try await rtpPacket in self.rtpStream {
                     let seqNo = rtpPacket.sequenceNumber
+                    if self.rtpPacketsReceived.withLock({
+                        $0 += 1
+                        return $0
+                    }) == 1 {
+                        Log.headphones
+                            .notice(
+                                "First rtp packet seqNo \(seqNo, privacy: .public), payload type \(rtpPacket.payloadType.rawValue, privacy: .public), ssrc \(rtpPacket.ssrc, privacy: .public)"
+                            )
+                    }
                     if seqNo % 1000 == 0 {
                         Log.headphones.debug("Received packet in stream (every 1000 packets): \(seqNo, privacy: .public)")
                     }
@@ -554,6 +590,22 @@ actor RTPSession {
                     lsqNo = Int64(seqNo)
 
                     await decoder.addPacket(packet: rtpPacket)
+                }
+            }
+
+            taskGroup.addTask {
+                var elapsed = 0
+                for seconds in [5, 30] {
+                    try? await Task.sleep(for: .seconds(seconds - elapsed))
+                    elapsed = seconds
+                    guard !Task.isCancelled else { return }
+                    let received = self.rtpPacketsReceived.withLock { $0 }
+                    guard received == 0 else { return }
+                    let unknown = self.outboundUnknownPackets.withLock { $0 }
+                    Log.headphones
+                        .warning(
+                            "No rtp packets after \(seconds, privacy: .public)s; outbound rtcp connection has seen \(unknown, privacy: .public) unknown packets"
+                        )
                 }
             }
 
