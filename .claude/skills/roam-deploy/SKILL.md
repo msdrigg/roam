@@ -103,12 +103,15 @@ do not fire it speculatively.
 ```sh
 gh workflow run export-app.yml --ref main \
   -f platforms="iOS macOS visionOS" \
-  -f publish=true -f upload_dsyms=true -f bump_versions=true \
-  -f xcode_version=26.6
+  -f publish=true -f upload_dsyms=true -f bump_versions=true
 
 gh run list --workflow=export-app.yml --limit 3
 gh run watch <run-id>
 ```
+
+Leave `xcode_version` unset so the run uses the workflow's default (27.1 as of
+September 2026). Pass it only to build with an older Xcode, picked from the
+`options` list in `export-app.yml`.
 
 Signing is fully automatic - every target uses `CODE_SIGN_STYLE = Automatic`
 with no pinned profiles, and `scripts/export.py` passes
