@@ -8,6 +8,8 @@ struct RoamWatch: App {
     @WKApplicationDelegateAdaptor var appDelegate: RoamWatchAppDelegate
 
     init() {
+        // Prunes old run files; nothing else does in the watch's container.
+        FileLog.start()
         Log.lifecycle.notice(
             "Getting WatchConnectivity \(String(describing: WatchConnectivity.shared), privacy: .public)"
         )

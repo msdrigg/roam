@@ -33,6 +33,8 @@ private enum AppGroupContainer {
 public enum FileLog {
     private static let directoryName = "process-logs"
     private static let maxBytesPerRun = 1_500_000
+    /// Trim well below the cap, or every flush past it rewrites the whole file.
+    private static let trimTargetBytes = maxBytesPerRun / 2
     private static let maxRunFiles = 8
     private static let flushThresholdBytes = 16 * 1024
     private static let flushInterval: TimeInterval = 1
@@ -69,6 +71,7 @@ public enum FileLog {
         queue.async {
             guard !started else { return }
             started = true
+            removeLegacyDirectory()
             pruneOldRuns()
         }
         // `collect` picks a file by recency and cannot prove it found the run
@@ -98,6 +101,7 @@ public enum FileLog {
             "NSApplicationDidResignActiveNotification",
             "UIApplicationWillTerminateNotification",
             "UIApplicationDidEnterBackgroundNotification",
+            "WKApplicationDidEnterBackgroundNotification",
         ]
         for name in names {
             NotificationCenter.default.addObserver(
@@ -141,7 +145,7 @@ public enum FileLog {
     ) {
         let line = encodedLine(
             timestamp: timestamp, level: level, category: category, message: message)
-        buffer.append(contentsOf: Array(line.utf8))
+        buffer.append(contentsOf: line.utf8)
         if buffer.count >= flushThresholdBytes
             || timestamp - launchedAt.timeIntervalSince1970 < eagerFlushWindow
         {
@@ -250,13 +254,15 @@ public enum FileLog {
             let url = runFileURL(),
             let data = try? Data(contentsOf: url)
         else { return }
-        var lines = data.split(separator: 0x0A, omittingEmptySubsequences: true)
+        let lines = data.split(separator: 0x0A, omittingEmptySubsequences: true)
         var kept = data.count
-        while kept > maxBytesPerRun, !lines.isEmpty {
-            kept -= lines.removeFirst().count + 1
+        var dropped = 0
+        while kept > trimTargetBytes, dropped < lines.count {
+            kept -= lines[dropped].count + 1
+            dropped += 1
         }
-        var out = Data(capacity: kept)
-        for line in lines {
+        var out = Data(capacity: max(kept, 0))
+        for line in lines.dropFirst(dropped) {
             out.append(contentsOf: line)
             out.append(0x0A)
         }
@@ -358,15 +364,25 @@ public enum FileLog {
 
     // MARK: Paths
 
+    /// Under Caches so the OS may purge it and a user may delete it at any time.
     static func directoryURL() -> URL? {
-        let container = roamAppGroupContainerURL()
+        let caches = roamAppGroupContainerURL()?
+            .appendingPathComponent("Library/Caches", isDirectory: true)
             ?? FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
-        return container?.appendingPathComponent(directoryName, isDirectory: true)
+        return caches?.appendingPathComponent(directoryName, isDirectory: true)
+    }
+
+    /// Builds up to 1.59 wrote to the container root.
+    private static func removeLegacyDirectory() {
+        guard let container = roamAppGroupContainerURL() else { return }
+        try? FileManager.default.removeItem(
+            at: container.appendingPathComponent(directoryName, isDirectory: true))
     }
 
     /// Sortable by age, and unique even when the OS recycles a pid.
     static func runFileName(extension pathExtension: String) -> String {
-        let stamp = Int(launchedAt.timeIntervalSince1970 * 1000)
+        // Int64: Int is 32 bits on arm64_32 watches and epoch milliseconds overflow it.
+        let stamp = Int64(launchedAt.timeIntervalSince1970 * 1000)
         return "\(stamp)-\(pid)-\(processName).\(pathExtension)"
     }
 
