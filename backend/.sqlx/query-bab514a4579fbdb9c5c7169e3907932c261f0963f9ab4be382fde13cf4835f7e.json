@@ -1,0 +1,35 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            SELECT COALESCE(crash_day, date(received_at_ms / 1000, 'unixepoch')) AS \"day!: String\",\n                COUNT(*) AS \"crashes!: i64\",\n                COUNT(DISTINCT thread_id) AS \"devices!: i64\"\n            FROM crash_records\n            WHERE (?1 OR dev_build = 0)\n              AND (?2 IS NULL OR app_version = ?2)\n              AND (?3 IS NULL OR thread_id = ?3)\n              AND (?4 IS NULL OR COALESCE(crash_day, date(received_at_ms / 1000, 'unixepoch')) >= ?4)\n            GROUP BY 1\n            ORDER BY 1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "day!: String",
+        "ordinal": 0,
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "name": "crashes!: i64",
+        "ordinal": 1,
+        "type_info": "Integer",
+        "origin": "Expression"
+      },
+      {
+        "name": "devices!: i64",
+        "ordinal": 2,
+        "type_info": "Integer",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": [
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "bab514a4579fbdb9c5c7169e3907932c261f0963f9ab4be382fde13cf4835f7e"
+}

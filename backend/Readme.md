@@ -397,6 +397,9 @@ Both are filterable on `/v2/crashes`, and they answer different questions:
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/v2/crashes` | List tracked crashes. `unreviewed=true`, `app_version=`, `installed_version=`, `before_ms=`, `limit=` (1–200). The two version filters AND together. Response carries `next_before_ms` as the page cursor. |
+| GET | `/v2/crashes/records` | Individual crashes, newest first. `since=YYYY-MM-DD`, `app_version=`, `thread_id=`, `include_dev=true`, `before_id=`, `limit=` (1–1000). Response carries `next_before_id`. |
+| GET | `/v2/crashes/daily` | Crash and device counts per day. Same filters as `/records`. |
+| POST | `/v2/crashes/{thread_id}/backfill` | Re-read every `symbolicated.txt` already in a thread into `crash_records`. Idempotent. |
 | GET | `/v2/crashes/{thread_id}` | One thread's review state. |
 | POST | `/v2/crashes/{thread_id}/review` | Mark reviewed. Optional `reviewed_by`, `reviewed_message_id`, `matched_rule_id`, `note`. |
 | DELETE | `/v2/crashes/{thread_id}/review` | Reopen for review. |
@@ -409,6 +412,19 @@ Both are filterable on `/v2/crashes`, and they answer different questions:
 
 Snowflake ids are strings in every request and response, since they exceed
 JavaScript's safe integer range.
+
+#### Individual crash records
+
+`crash_reviews` keeps one row per thread, and one report can hold hundreds of
+`Crash N` sections, so neither answers "how many crashes". `crash_records`
+stores one row per section, keyed by `(message_id, crash_index)`, written when
+a report is posted and by the backfill endpoint for reports that predate the
+table (`python3 scripts/roam_crashes.py backfill`).
+
+`crash_day` is the device-local date of MetricKit's payload window, which has
+no offset. Simulator and debug builds (`dyld_sim`, `Roam.debug.dylib`) are
+flagged `dev_build` and left out of `/records` and `/daily` unless
+`include_dev=true`.
 
 ### Adding an auto-review rule
 

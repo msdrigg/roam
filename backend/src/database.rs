@@ -670,6 +670,149 @@ impl DatabaseClient {
         .context("Error getting crash review")
     }
 
+    /// Records every crash in one symbolicated report. Idempotent on
+    /// `(message_id, crash_index)`; returns how many rows were new.
+    pub async fn insert_crash_records(
+        &self,
+        thread_id: i64,
+        message_id: i64,
+        received_at_ms: i64,
+        crashes: &[crate::crash_records::ParsedCrash],
+    ) -> Result<u64, anyhow::Error> {
+        let mut tx = self.writer_pool.begin().await?;
+        let mut inserted = 0;
+        for crash in crashes {
+            let facts = &crash.facts;
+            let app_version = facts.app_version.as_deref();
+            let installed_version = facts.installed_version.as_deref();
+            let device_type = facts.device_type.as_deref();
+            let os_version = facts.os_version.as_deref();
+            let termination_code = facts.termination_code.as_deref();
+            let window_begin = crash.window_begin.as_deref();
+            let window_end = crash.window_end.as_deref();
+            let crash_day = crash.crash_day.as_deref();
+            let user_id = crash.user_id.as_deref();
+            let app_build_version = crash.app_build_version.as_deref();
+            inserted += sqlx::query!(
+                r#"
+                INSERT OR IGNORE INTO crash_records (
+                    thread_id, message_id, crash_index, received_at_ms,
+                    window_begin, window_end, crash_day, user_id,
+                    app_version, app_build_version, installed_version,
+                    device_type, os_version, exception_type, signal,
+                    termination_code, matched_rule_id, dev_build
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                "#,
+                thread_id,
+                message_id,
+                crash.crash_index,
+                received_at_ms,
+                window_begin,
+                window_end,
+                crash_day,
+                user_id,
+                app_version,
+                app_build_version,
+                installed_version,
+                device_type,
+                os_version,
+                facts.exception_type,
+                facts.signal,
+                termination_code,
+                crash.matched_rule_id,
+                crash.dev_build,
+            )
+            .execute(&mut *tx)
+            .await
+            .context("Error inserting crash record")?
+            .rows_affected();
+        }
+        tx.commit().await?;
+        Ok(inserted)
+    }
+
+    /// Crash records newest first. `before_id` pages on the previous page's
+    /// last `id`.
+    pub async fn list_crash_records(
+        &self,
+        filter: &CrashRecordFilter,
+        before_id: Option<i64>,
+        limit: i64,
+    ) -> Result<Vec<CrashRecord>, anyhow::Error> {
+        sqlx::query_as!(
+            CrashRecord,
+            r#"
+            SELECT id,
+                thread_id,
+                message_id,
+                crash_index,
+                received_at_ms,
+                window_begin,
+                window_end,
+                COALESCE(crash_day, date(received_at_ms / 1000, 'unixepoch')) AS "crash_day!: String",
+                user_id,
+                app_version,
+                app_build_version,
+                installed_version,
+                device_type,
+                os_version,
+                exception_type,
+                signal,
+                termination_code,
+                matched_rule_id,
+                dev_build AS "dev_build: bool"
+            FROM crash_records
+            WHERE (?1 OR dev_build = 0)
+              AND (?2 IS NULL OR app_version = ?2)
+              AND (?3 IS NULL OR thread_id = ?3)
+              AND (?4 IS NULL OR COALESCE(crash_day, date(received_at_ms / 1000, 'unixepoch')) >= ?4)
+              AND (?5 IS NULL OR id < ?5)
+            ORDER BY id DESC
+            LIMIT ?6
+            "#,
+            filter.include_dev,
+            filter.app_version,
+            filter.thread_id,
+            filter.since_day,
+            before_id,
+            limit,
+        )
+        .fetch_all(&self.reader_pool)
+        .await
+        .context("Error listing crash records")
+    }
+
+    /// Crashes per device-local day, oldest first. A report with no payload
+    /// window falls back to the UTC day it was posted.
+    pub async fn crash_counts_by_day(
+        &self,
+        filter: &CrashRecordFilter,
+    ) -> Result<Vec<DailyCrashCount>, anyhow::Error> {
+        sqlx::query_as!(
+            DailyCrashCount,
+            r#"
+            SELECT COALESCE(crash_day, date(received_at_ms / 1000, 'unixepoch')) AS "day!: String",
+                COUNT(*) AS "crashes!: i64",
+                COUNT(DISTINCT thread_id) AS "devices!: i64"
+            FROM crash_records
+            WHERE (?1 OR dev_build = 0)
+              AND (?2 IS NULL OR app_version = ?2)
+              AND (?3 IS NULL OR thread_id = ?3)
+              AND (?4 IS NULL OR COALESCE(crash_day, date(received_at_ms / 1000, 'unixepoch')) >= ?4)
+            GROUP BY 1
+            ORDER BY 1
+            "#,
+            filter.include_dev,
+            filter.app_version,
+            filter.thread_id,
+            filter.since_day,
+        )
+        .fetch_all(&self.reader_pool)
+        .await
+        .context("Error counting crashes by day")
+    }
+
     /// Records a worker-reported failure on the given lease. Clears `leased_at_ms`
     /// so the row is re-leasable, but keeps the incremented `attempts` from the
     /// lease call, which is what caps retries via the `attempts < 3` filter.
@@ -1219,6 +1362,52 @@ impl CrashReview {
     }
 }
 
+/// One crash out of a symbolicated report. See
+/// `migrations/20260928120000_crash_records.up.sql`.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct CrashRecord {
+    pub id: i64,
+    #[serde(serialize_with = "i64_to_string")]
+    pub thread_id: i64,
+    #[serde(serialize_with = "i64_to_string")]
+    pub message_id: i64,
+    pub crash_index: i64,
+    pub received_at_ms: i64,
+    /// Device-local wall-clock time, no offset.
+    pub window_begin: Option<String>,
+    pub window_end: Option<String>,
+    pub crash_day: String,
+    pub user_id: Option<String>,
+    pub app_version: Option<String>,
+    pub app_build_version: Option<String>,
+    pub installed_version: Option<String>,
+    pub device_type: Option<String>,
+    pub os_version: Option<String>,
+    pub exception_type: Option<i64>,
+    pub signal: Option<i64>,
+    pub termination_code: Option<String>,
+    pub matched_rule_id: Option<String>,
+    pub dev_build: bool,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct CrashRecordFilter {
+    /// Keep simulator and debug builds, which are excluded by default.
+    pub include_dev: bool,
+    pub app_version: Option<String>,
+    pub thread_id: Option<i64>,
+    /// Inclusive `YYYY-MM-DD`.
+    pub since_day: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct DailyCrashCount {
+    pub day: String,
+    pub crashes: i64,
+    /// Distinct reporting threads, one per user.
+    pub devices: i64,
+}
+
 #[derive(Debug, Clone)]
 pub struct PendingSymbolication {
     pub id: String,
@@ -1299,6 +1488,86 @@ mod tests {
             // Only the columns above are persisted; the rest exist for matching.
             ..Default::default()
         }
+    }
+
+    fn parsed(index: i64, day: Option<&str>, dev_build: bool) -> crate::crash_records::ParsedCrash {
+        crate::crash_records::ParsedCrash {
+            crash_index: index,
+            window_begin: day.map(|d| format!("{d} 10:00:00")),
+            window_end: day.map(|d| format!("{d} 10:00:00")),
+            crash_day: day.map(str::to_string),
+            user_id: Some("abc-def-ghi".to_string()),
+            app_build_version: None,
+            facts: facts("1.58"),
+            matched_rule_id: None,
+            dev_build,
+        }
+    }
+
+    #[tokio::test]
+    async fn crash_records_are_idempotent_and_counted_by_day() {
+        let (db, _dir) = test_client().await;
+        // 2026-09-24T14:16:10.544Z.
+        let received = 1_790_259_370_544;
+        let report_a = [
+            parsed(1, Some("2026-09-20"), false),
+            parsed(2, Some("2026-09-20"), false),
+            parsed(3, Some("2026-09-21"), true),
+        ];
+        assert_eq!(
+            db.insert_crash_records(1, 10, received, &report_a)
+                .await
+                .unwrap(),
+            3
+        );
+        assert_eq!(
+            db.insert_crash_records(1, 10, received, &report_a)
+                .await
+                .unwrap(),
+            0
+        );
+        // The same payload re-posted after a requeue.
+        assert_eq!(
+            db.insert_crash_records(1, 11, received, &report_a[..1])
+                .await
+                .unwrap(),
+            0
+        );
+        db.insert_crash_records(2, 20, received, &[parsed(1, None, false)])
+            .await
+            .unwrap();
+
+        let days = db
+            .crash_counts_by_day(&CrashRecordFilter::default())
+            .await
+            .unwrap();
+        let days: Vec<(&str, i64, i64)> = days
+            .iter()
+            .map(|d| (d.day.as_str(), d.crashes, d.devices))
+            .collect();
+        assert_eq!(days, [("2026-09-20", 2, 1), ("2026-09-24", 1, 1)]);
+
+        let with_dev = CrashRecordFilter {
+            include_dev: true,
+            since_day: Some("2026-09-21".to_string()),
+            ..Default::default()
+        };
+        let days = db.crash_counts_by_day(&with_dev).await.unwrap();
+        assert_eq!(days.len(), 2);
+        assert_eq!(days[0].day, "2026-09-21");
+
+        let page = db
+            .list_crash_records(&CrashRecordFilter::default(), None, 2)
+            .await
+            .unwrap();
+        assert_eq!(page.len(), 2);
+        assert_eq!(page[0].thread_id, 2);
+        let rest = db
+            .list_crash_records(&CrashRecordFilter::default(), Some(page[1].id), 2)
+            .await
+            .unwrap();
+        assert_eq!(rest.len(), 1);
+        assert_eq!(rest[0].crash_index, 1);
     }
 
     #[tokio::test]

@@ -34,7 +34,7 @@ pub struct CrashFacts {
 }
 
 /// Reads `  key: value` out of a rendered report's metadata block.
-fn metadata_value(report: &str, key: &str) -> Option<String> {
+pub(crate) fn metadata_value(report: &str, key: &str) -> Option<String> {
     let pattern = format!(r"(?m)^\s*{}: (.+)$", regex::escape(key));
     let regex = Regex::new(&pattern).ok()?;
     regex

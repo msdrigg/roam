@@ -15,6 +15,9 @@ token.
     roam_crashes.py reply <thread_id> --reply-to <message_id> --file body.md
     roam_crashes.py review <thread_id> --by scott --note "known issue"
     roam_crashes.py rules
+    roam_crashes.py daily --since 2026-06-01
+    roam_crashes.py records --app-version 1.58 --limit 20
+    roam_crashes.py backfill
 """
 
 import argparse
@@ -204,6 +207,65 @@ def cmd_rules(args):
         print(f"    when: {'; '.join(conditions) or 'always'}\n")
 
 
+def _record_query(args):
+    return {
+        "since": args.since,
+        "app_version": args.app_version,
+        "thread_id": args.thread_id,
+        "include_dev": "true" if args.include_dev else None,
+    }
+
+
+def cmd_daily(args):
+    days = _json("/v2/crashes/daily", query=_record_query(args))
+    if args.json:
+        print(json.dumps(days, indent=2))
+        return
+    if not days:
+        print("No crash records.")
+        return
+    peak = max(d["crashes"] for d in days)
+    for d in days:
+        bar = "#" * max(1, round(40 * d["crashes"] / peak))
+        print(f"  {d['day']}  {d['crashes']:5d} crashes  {d['devices']:3d} devices  {bar}")
+    total = sum(d["crashes"] for d in days)
+    print(f"\n  {total} crashes over {len(days)} day(s) with any crash")
+
+
+def cmd_records(args):
+    query = _record_query(args) | {"limit": args.limit, "before_id": args.before_id}
+    page = _json("/v2/crashes/records", query=query)
+    if args.json:
+        print(json.dumps(page, indent=2))
+        return
+    for r in page["records"]:
+        print(
+            f"  {r['crash_day']}  v{r.get('app_version') or '?'}  {r.get('device_type') or '?'}"
+            f"  exc={r.get('exception_type')} sig={r.get('signal')}"
+            f"  rule={r.get('matched_rule_id') or '-'}  thread {r['thread_id']}"
+        )
+    if page.get("next_before_id") is not None:
+        print(f"\n  more: --before-id {page['next_before_id']}")
+
+
+def cmd_backfill(args):
+    if args.thread_id:
+        thread_ids = args.thread_id
+    else:
+        threads = _json("/v2/discord/threads", query={"archived_pages": args.archived_pages})
+        thread_ids = [t["id"] for t in threads]
+    total = 0
+    for i, thread_id in enumerate(thread_ids, 1):
+        result = _json(f"/v2/crashes/{thread_id}/backfill", method="POST")
+        total += result["crashes_inserted"]
+        if result["reports"]:
+            print(
+                f"  [{i}/{len(thread_ids)}] thread {thread_id}: {result['reports']} report(s),"
+                f" {result['crashes_inserted']} new crash(es)"
+            )
+    print(f"\n  {total} new crash record(s) across {len(thread_ids)} thread(s)")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -255,6 +317,28 @@ def main():
     p = sub.add_parser("rules", help="list auto-review rules")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_rules)
+
+    def record_filters(p):
+        p.add_argument("--since", help="inclusive YYYY-MM-DD, device-local crash day")
+        p.add_argument("--app-version")
+        p.add_argument("--thread-id")
+        p.add_argument("--include-dev", action="store_true", help="keep simulator/debug builds")
+        p.add_argument("--json", action="store_true")
+
+    p = sub.add_parser("daily", help="crashes per day from individual crash records")
+    record_filters(p)
+    p.set_defaults(func=cmd_daily)
+
+    p = sub.add_parser("records", help="list individual crash records, newest first")
+    record_filters(p)
+    p.add_argument("--limit", type=int, default=50)
+    p.add_argument("--before-id", type=int)
+    p.set_defaults(func=cmd_records)
+
+    p = sub.add_parser("backfill", help="load crash records from reports already in Discord")
+    p.add_argument("thread_id", nargs="*", help="default: every support-forum thread")
+    p.add_argument("--archived-pages", type=int, default=4)
+    p.set_defaults(func=cmd_backfill)
 
     args = parser.parse_args()
     args.func(args)

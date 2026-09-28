@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n                INSERT OR IGNORE INTO crash_records (\n                    thread_id, message_id, crash_index, received_at_ms,\n                    window_begin, window_end, crash_day, user_id,\n                    app_version, app_build_version, installed_version,\n                    device_type, os_version, exception_type, signal,\n                    termination_code, matched_rule_id, dev_build\n                )\n                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 18
+    },
+    "nullable": []
+  },
+  "hash": "6fcc486cb238163fc19ea4ac67ede2f98248dcce482f372a0113be1a10cb1566"
+}

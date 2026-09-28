@@ -18,6 +18,7 @@ pub mod apns;
 pub mod attest;
 pub mod auth;
 pub mod cli;
+pub mod crash_records;
 pub mod crash_rules;
 pub mod database;
 pub mod discord;

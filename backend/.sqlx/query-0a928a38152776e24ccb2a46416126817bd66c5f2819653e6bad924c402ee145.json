@@ -1,0 +1,237 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            SELECT id,\n                thread_id,\n                message_id,\n                crash_index,\n                received_at_ms,\n                window_begin,\n                window_end,\n                COALESCE(crash_day, date(received_at_ms / 1000, 'unixepoch')) AS \"crash_day!: String\",\n                user_id,\n                app_version,\n                app_build_version,\n                installed_version,\n                device_type,\n                os_version,\n                exception_type,\n                signal,\n                termination_code,\n                matched_rule_id,\n                dev_build AS \"dev_build: bool\"\n            FROM crash_records\n            WHERE (?1 OR dev_build = 0)\n              AND (?2 IS NULL OR app_version = ?2)\n              AND (?3 IS NULL OR thread_id = ?3)\n              AND (?4 IS NULL OR COALESCE(crash_day, date(received_at_ms / 1000, 'unixepoch')) >= ?4)\n              AND (?5 IS NULL OR id < ?5)\n            ORDER BY id DESC\n            LIMIT ?6\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "name": "thread_id",
+        "ordinal": 1,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "thread_id"
+          }
+        }
+      },
+      {
+        "name": "message_id",
+        "ordinal": 2,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "message_id"
+          }
+        }
+      },
+      {
+        "name": "crash_index",
+        "ordinal": 3,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "crash_index"
+          }
+        }
+      },
+      {
+        "name": "received_at_ms",
+        "ordinal": 4,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "received_at_ms"
+          }
+        }
+      },
+      {
+        "name": "window_begin",
+        "ordinal": 5,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "window_begin"
+          }
+        }
+      },
+      {
+        "name": "window_end",
+        "ordinal": 6,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "window_end"
+          }
+        }
+      },
+      {
+        "name": "crash_day!: String",
+        "ordinal": 7,
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "name": "user_id",
+        "ordinal": 8,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "user_id"
+          }
+        }
+      },
+      {
+        "name": "app_version",
+        "ordinal": 9,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "app_version"
+          }
+        }
+      },
+      {
+        "name": "app_build_version",
+        "ordinal": 10,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "app_build_version"
+          }
+        }
+      },
+      {
+        "name": "installed_version",
+        "ordinal": 11,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "installed_version"
+          }
+        }
+      },
+      {
+        "name": "device_type",
+        "ordinal": 12,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "device_type"
+          }
+        }
+      },
+      {
+        "name": "os_version",
+        "ordinal": 13,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "os_version"
+          }
+        }
+      },
+      {
+        "name": "exception_type",
+        "ordinal": 14,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "exception_type"
+          }
+        }
+      },
+      {
+        "name": "signal",
+        "ordinal": 15,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "signal"
+          }
+        }
+      },
+      {
+        "name": "termination_code",
+        "ordinal": 16,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "termination_code"
+          }
+        }
+      },
+      {
+        "name": "matched_rule_id",
+        "ordinal": 17,
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "matched_rule_id"
+          }
+        }
+      },
+      {
+        "name": "dev_build: bool",
+        "ordinal": 18,
+        "type_info": "Integer",
+        "origin": {
+          "Table": {
+            "table": "crash_records",
+            "name": "dev_build"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "0a928a38152776e24ccb2a46416126817bd66c5f2819653e6bad924c402ee145"
+}

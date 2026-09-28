@@ -157,6 +157,12 @@ fn router(app_context: AppContext) -> Router {
         // Crash review tracking.
         .route("/v2/crashes", get(list_crashes))
         .route("/v2/crashes/rules", get(list_crash_rules))
+        .route("/v2/crashes/records", get(list_crash_records))
+        .route("/v2/crashes/daily", get(daily_crash_counts))
+        .route(
+            "/v2/crashes/{thread_id}/backfill",
+            post(backfill_crash_records),
+        )
         .route("/v2/crashes/{thread_id}", get(get_crash))
         .route(
             "/v2/crashes/{thread_id}/review",
@@ -1539,6 +1545,154 @@ async fn auto_review_crash(
     Ok(())
 }
 
+/// Splits a symbolicated report into per-crash rows. Returns how many were new.
+async fn record_crashes(
+    app_context: &AppContext,
+    thread_id: i64,
+    message_id: i64,
+    report: &str,
+) -> anyhow::Result<u64> {
+    let crashes = crate::crash_records::parse_report(report);
+    app_context
+        .db_client()
+        .insert_crash_records(
+            thread_id,
+            message_id,
+            crate::crash_records::snowflake_ms(message_id),
+            &crashes,
+        )
+        .await
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CrashRecordsQuery {
+    #[serde(default)]
+    include_dev: bool,
+    #[serde(default)]
+    app_version: Option<String>,
+    #[serde(default)]
+    thread_id: Option<String>,
+    /// Inclusive `YYYY-MM-DD`.
+    #[serde(default)]
+    since: Option<String>,
+    #[serde(default)]
+    before_id: Option<i64>,
+    #[serde(default = "default_crash_limit")]
+    limit: i64,
+}
+
+impl CrashRecordsQuery {
+    fn filter(&self) -> Result<crate::database::CrashRecordFilter, ApiError> {
+        if let Some(since) = &self.since
+            && chrono::NaiveDate::parse_from_str(since, "%Y-%m-%d").is_err()
+        {
+            return Err(ApiError::BadRequest(format!(
+                "since must be YYYY-MM-DD, got {since}"
+            )));
+        }
+        Ok(crate::database::CrashRecordFilter {
+            include_dev: self.include_dev,
+            app_version: self.app_version.clone(),
+            thread_id: parse_snowflake(self.thread_id.as_ref(), "thread_id")?,
+            since_day: self.since.clone(),
+        })
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct CrashRecordsResponse {
+    records: Vec<crate::database::CrashRecord>,
+    next_before_id: Option<i64>,
+}
+
+async fn list_crash_records(
+    State(app_context): State<AppContext>,
+    Query(query): Query<CrashRecordsQuery>,
+) -> Result<Json<CrashRecordsResponse>, ApiError> {
+    let limit = query.limit.clamp(1, 1000);
+    let records = app_context
+        .db_client()
+        .list_crash_records(&query.filter()?, query.before_id, limit)
+        .await
+        .map_err(ApiError::DatabaseError)?;
+    let next_before_id = (records.len() as i64 == limit)
+        .then(|| records.last().map(|r| r.id))
+        .flatten();
+    Ok(Json(CrashRecordsResponse {
+        records,
+        next_before_id,
+    }))
+}
+
+async fn daily_crash_counts(
+    State(app_context): State<AppContext>,
+    Query(query): Query<CrashRecordsQuery>,
+) -> Result<Json<Vec<crate::database::DailyCrashCount>>, ApiError> {
+    let counts = app_context
+        .db_client()
+        .crash_counts_by_day(&query.filter()?)
+        .await
+        .map_err(ApiError::DatabaseError)?;
+    Ok(Json(counts))
+}
+
+#[derive(Debug, Serialize)]
+pub struct BackfillResponse {
+    reports: u64,
+    crashes_inserted: u64,
+}
+
+/// Re-reads every `symbolicated.txt` already posted in a thread into
+/// `crash_records`. Safe to repeat: rows are keyed by message and section.
+async fn backfill_crash_records(
+    State(app_context): State<AppContext>,
+    Path(thread_id): Path<i64>,
+) -> Result<Json<BackfillResponse>, ApiError> {
+    let discord = app_context.discord_client();
+    let mut before = None;
+    let mut reports = 0;
+    let mut crashes_inserted = 0;
+    loop {
+        let page = discord
+            .get_messages_paginated(thread_id, None, before, Some(100))
+            .await?;
+        let Some(last) = page.last() else { break };
+        before = Some(last.id);
+
+        for message in &page {
+            if !(message.content.contains("MK Diagnostics")
+                && message.content.contains("Symbolicated"))
+            {
+                continue;
+            }
+            let Some(attachment) = message
+                .attachments
+                .iter()
+                .find(|a| a.filename == "symbolicated.txt")
+            else {
+                continue;
+            };
+            let text = discord
+                .stream_attachment(&attachment.url)
+                .await?
+                .text()
+                .await
+                .map_err(|e| ApiError::SymbolicationError(anyhow::Error::from(e)))?;
+            reports += 1;
+            crashes_inserted += record_crashes(&app_context, thread_id, message.id, &text)
+                .await
+                .map_err(ApiError::DatabaseError)?;
+        }
+        if page.len() < 100 {
+            break;
+        }
+    }
+    Ok(Json(BackfillResponse {
+        reports,
+        crashes_inserted,
+    }))
+}
+
 fn default_crash_limit() -> i64 {
     50
 }
@@ -1870,6 +2024,13 @@ async fn submit_symbolication_result(
                     ?err,
                     thread_id = row.thread_id,
                     "Failed to record or auto-review crash"
+                );
+            }
+            if let Err(err) = record_crashes(&app_context, row.thread_id, posted.id, &text).await {
+                tracing::error!(
+                    ?err,
+                    thread_id = row.thread_id,
+                    "Failed to record individual crashes"
                 );
             }
 
