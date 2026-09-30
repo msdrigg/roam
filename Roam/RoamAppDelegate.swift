@@ -305,6 +305,7 @@ private enum ActivationPolicyCoalescer {
         @Published var networkMonitor: NetworkMonitor
         let discoveryCoordinator: DiscoveryCoordinator
         let timedMute: TimedMuteController
+        let headphonesMode = HeadphonesModeController()
 
         override init() {
             self.navigationPath = NavigationManager()

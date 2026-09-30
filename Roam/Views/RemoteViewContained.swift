@@ -45,9 +45,7 @@
                 var disablePastedUrlSuggestions: Bool = false
             private let pastedUrlOfferTip = PastedUrlOfferTip()
         #endif
-        @State private var headphonesModeEnabled: Bool = false
         @State private var bottomBannerVisible: Bool = false
-        @State private var headphonesError: Error?
         @State private var errorTrigger: Int = 0
         @AppStorage(UserDefaultKeys.localNetworkPermissionGranted) private
             var networkPermissionGranted: Bool = false
@@ -72,6 +70,23 @@
 
         private var ecpSession: ECPWebsocketClient? {
             appDelegate.ecpMonitor.ecpClient
+        }
+
+        private var headphonesMode: HeadphonesModeController {
+            appDelegate.headphonesMode
+        }
+
+        private var headphonesModeEnabled: Bool {
+            headphonesMode.isEnabled(for: selectedDevice?.id)
+        }
+
+        // Only the active page presents the error, so neighbor pages in the
+        // pager don't stack duplicate alerts.
+        private var headphonesError: Binding<Error?> {
+            Binding(
+                get: { isActive ? headphonesMode.error : nil },
+                set: { headphonesMode.error = $0 }
+            )
         }
 
         private var timedMutePhase: TimedMutePhase {
@@ -277,12 +292,14 @@
             }
         }
 
-        private func logAppear() {
+        private func handleAppear() {
             Log.lifecycle.notice("Showing \(#fileID, privacy: .public) view")
+            headphonesMode.remoteAppeared()
         }
 
-        private func logDisappear() {
+        private func handleDisappear() {
             Log.lifecycle.notice("Closing \(#fileID, privacy: .public) view")
+            headphonesMode.remoteDisappeared()
         }
 
         private func refreshDeviceBackoffTask() async {
@@ -332,6 +349,7 @@
                 "Creating ecp session with location \(String(describing: selectedDevice?.location), privacy: .public)"
             )
             if let device = selectedDevice {
+                headphonesMode.deviceSelected(device.id)
                 self.ecpSessionState.setDevice(device)
             } else {
                 self.ecpSessionState.setDevice(nil)
@@ -348,48 +366,6 @@
                 try? await Task.sleep(for: .milliseconds(250))
                 if !Task.isCancelled {
                     renderHeavyContent = false
-                }
-            }
-        }
-
-        private func headphonesTask() async {
-            if !headphonesModeEnabled {
-                #if os(iOS)
-                    do {
-                        try await AudioSessionConfigurator.shared.deactivate(category: .ambient)
-                    } catch {
-                        Log.headphones.notice(
-                            "Unable to set AVAudioSession category to background: \(#fileID, privacy: .public)"
-                        )
-                    }
-                #endif
-                return
-            }
-            defer {
-                headphonesModeEnabled = false
-            }
-
-            if let device = selectedDevice, let ecpSession {
-                let location = device.location
-                let rtcpPort = device.rtcpPort
-                do {
-                    try await listenContinually(
-                        ecpSession: ecpSession,
-                        location: location,
-                        rtcpPort: rtcpPort
-                    )
-                    Log.headphones.notice(
-                        "Listencontinually returned \(#fileID, privacy: .public)"
-                    )
-                } catch {
-                    Log.headphones.warning(
-                        "Catching error in pl handler \(error, privacy: .public)")
-                    if !(error is CancellationError) {
-                        Log.headphones.notice(
-                            "Non-cancellation error in PL \(#fileID, privacy: .public)")
-                        errorTrigger += 1
-                        headphonesError = error
-                    }
                 }
             }
         }
@@ -429,10 +405,6 @@
             }
         }
 
-        private var headphonesTaskId: String {
-            "\(headphonesModeEnabled),\(selectedDevice?.location ?? "--")"
-        }
-
         var body: some View {
             if runningInPreview {
                 remotePage
@@ -456,8 +428,8 @@
                     guard scenePhase != .background else { return }
                     await networkPermissionTask()
                 }
-                .onAppear(perform: logAppear)
-                .onDisappear(perform: logDisappear)
+                .onAppear(perform: handleAppear)
+                .onDisappear(perform: handleDisappear)
                 // Both ids include `isActive` so a page (re)claims the shared
                 // session and resumes refreshing the moment it becomes the
                 // active pager page - not just when it appears.
@@ -467,7 +439,6 @@
                 .task(id: "\(isActive),\(selectedDevice?.location ?? "--")", priority: .medium) {
                     await ecpSessionLocationTask()
                 }
-                .task(id: headphonesTaskId) { await headphonesTask() }
                 .task(id: isActive) { await activeStateTask() }
                 #if os(iOS)
                     // Re-check whenever the page becomes the active pager page,
@@ -1051,8 +1022,9 @@
                 #endif
                 #if !os(visionOS)
                     .sensoryFeedback(.error, trigger: errorTrigger)
+                    .sensoryFeedback(.error, trigger: headphonesMode.errorCount) { _, _ in isActive }
                 #endif
-                .alertingError(message: "Headphones mode error", error: $headphonesError)
+                .alertingError(message: "Headphones mode error", error: headphonesError)
             }
         }
 
@@ -1312,7 +1284,7 @@
             }
             donateButtonIntent(button)
             if button == .headphonesMode {
-                headphonesModeEnabled.toggle()
+                headphonesMode.toggle(device: selectedDevice, ecpSession: ecpSession)
                 return
             }
             if button == .mute {

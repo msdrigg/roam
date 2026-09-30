@@ -35,6 +35,11 @@ struct PhoneDeviceDetailPager: View {
     // PreferenceKey reports each intermediate width - wait for the
     // animation to settle, then snap once.
     @State private var resnapTask: Task<Void, Never>?
+    // Set once a scroll leaves idle. The page under the scroll position is
+    // only committed as the selection when that scroll comes to rest, since
+    // the position flips to a neighbor as soon as a swipe starts and drifts
+    // while a rotation re-lays out the pages.
+    @State private var scrollMoved = false
     // Kept in state so the toolbar waits until the sidebar geometry is ready.
     @State private var sidebarRoom: CGFloat?
     // Whether the bottom bar stands along the trailing edge, as it does on
@@ -179,10 +184,8 @@ struct PhoneDeviceDetailPager: View {
         .onPreferenceChange(AppsScrollingPreferenceKey.self) { newValue in
             isAppsScrolling = newValue
         }
-        .onChange(of: scrollPositionId) { _, newValue in
-            if let newValue, newValue != selectedDeviceId {
-                selectedDeviceId = newValue
-            }
+        .onScrollPhaseChange { _, newPhase in
+            handleScrollPhase(newPhase)
         }
         // When the layout width changes (typically on rotation), the paged
         // ScrollView keeps its pixel offset, which leaves the current page
@@ -310,6 +313,19 @@ struct PhoneDeviceDetailPager: View {
         pagerDeviceIds = next
     }
 
+    private func handleScrollPhase(_ phase: ScrollPhase) {
+        guard phase == .idle else {
+            scrollMoved = true
+            return
+        }
+        guard scrollMoved else { return }
+        scrollMoved = false
+        guard resnapTask == nil, let settledId = scrollPositionId, settledId != selectedDeviceId else {
+            return
+        }
+        selectedDeviceId = settledId
+    }
+
     /// On a real width change (rotation, split-view resize) the paged
     /// scroll view keeps its old pixel offset, which leaves the current
     /// page half-scrolled. Wait for the rotation animation to settle,
@@ -336,6 +352,7 @@ struct PhoneDeviceDetailPager: View {
             try? await Task.sleep(for: .milliseconds(16))
             guard !Task.isCancelled else { return }
             scrollPositionId = target
+            resnapTask = nil
         }
     }
 

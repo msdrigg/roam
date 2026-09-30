@@ -13,6 +13,7 @@
 		AF7CD4D985FD73DC1DE0F7C3 /* TimedMuteControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2F1AA3A09906B54A4FC33 /* TimedMuteControllerTests.swift */; };
 		AFFD67597178BBBCF8BE4DBC /* TimedMuteViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF239223C019B94ECB37D50D /* TimedMuteViews.swift */; };
 		AFED62A3B475236B09610563 /* TimedMuteController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA4ECF6875139375470B831 /* TimedMuteController.swift */; };
+		AFC0FFEE1A2B3C4D5E6F7082 /* HeadphonesModeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC0FFEE1A2B3C4D5E6F7081 /* HeadphonesModeController.swift */; };
 		AF0042752AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0042742AE9BD8F0051BB1E /* UserDefaultKeys.swift */; };
 		AF0042762AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0042742AE9BD8F0051BB1E /* UserDefaultKeys.swift */; };
 		AF0042772AE9BD8F0051BB1E /* UserDefaultKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0042742AE9BD8F0051BB1E /* UserDefaultKeys.swift */; };
@@ -460,6 +461,7 @@
 		AFA078F958788A75EEB5B3F3 /* TimedMuteActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedMuteActivity.swift; sourceTree = "<group>"; };
 		AFF2F1AA3A09906B54A4FC33 /* TimedMuteControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedMuteControllerTests.swift; sourceTree = "<group>"; };
 		AF239223C019B94ECB37D50D /* TimedMuteViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedMuteViews.swift; sourceTree = "<group>"; };
+		AFC0FFEE1A2B3C4D5E6F7081 /* HeadphonesModeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeadphonesModeController.swift; sourceTree = "<group>"; };
 		AFA4ECF6875139375470B831 /* TimedMuteController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedMuteController.swift; sourceTree = "<group>"; };
 		AF0042742AE9BD8F0051BB1E /* UserDefaultKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultKeys.swift; sourceTree = "<group>"; };
 		AF0042842AEABA9D0051BB1E /* CollectionHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionHelpers.swift; sourceTree = "<group>"; };
@@ -1027,6 +1029,7 @@
 				AFAA1D0012E0000800BAE156 /* TipJar.storekit */,
 				AFDB19A52C0D8E4A00C4DAB7 /* Info.plist */,
 				AF1065CE2DE7A8D50058E45A /* MetricManager.swift */,
+				AFC0FFEE1A2B3C4D5E6F7081 /* HeadphonesModeController.swift */,
 				AFA4ECF6875139375470B831 /* TimedMuteController.swift */,
 				AFC24EFE2AD0E5A1002AB66C /* RoamApp.swift */,
 				AF65A8892BB5ABF9005ECF7F /* RoamAppDelegate.swift */,
@@ -1599,6 +1602,7 @@
 			files = (
 				AF95A2D89AF5BB22EA5E7ABB /* TimedMuteActivity.swift in Sources */,
 				AFFD67597178BBBCF8BE4DBC /* TimedMuteViews.swift in Sources */,
+				AFC0FFEE1A2B3C4D5E6F7082 /* HeadphonesModeController.swift in Sources */,
 				AFED62A3B475236B09610563 /* TimedMuteController.swift in Sources */,
 				AF0532802D36DB2200D68F8E /* GlobalKeyboardShortcutsTip.swift in Sources */,
 				AFBDEA322D7D157500C15B18 /* StandardDislosureGroupStyle.swift in Sources */,
