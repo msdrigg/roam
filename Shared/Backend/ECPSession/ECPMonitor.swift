@@ -43,6 +43,8 @@ final class ECPMonitor {
     // were created under and no-op once it moves on.
     private var generation = 0
     private var reconnectTask: Task<Void, Never>?
+    private var lastPathKick: Date?
+    private static let minPathKickInterval: TimeInterval = 2
 
     func setDevice(_ device: Device?) {
         // Re-selecting the current device must not tear down the session; the
@@ -125,6 +127,21 @@ final class ECPMonitor {
         case .texteditClosed:
             textEditStatus = .off
         }
+    }
+
+    /// Restarts a running reconnect loop from its shortest delay. A Wi-Fi roam
+    /// or link-quality change keeps the same interface, so the backoff would
+    /// otherwise sleep up to a minute past the moment the TV became reachable.
+    func networkPathChanged() {
+        guard reconnectTask != nil, case .disconnected = status else { return }
+        if let lastPathKick, Date.now.timeIntervalSince(lastPathKick) < Self.minPathKickInterval {
+            return
+        }
+        lastPathKick = .now
+        Log.connection.notice("Network path changed while disconnected, reconnecting now")
+        reconnectTask?.cancel()
+        reconnectTask = nil
+        scheduleReconnect(generation: generation)
     }
 
     /// Retries `start()` on an exponential backoff whenever the client reports

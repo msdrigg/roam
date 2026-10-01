@@ -48,6 +48,9 @@ final class NetworkMonitor {
                         try? await self?.appDelegate?.ecpMonitor.ecpClient?.getDeviceInfo()
                     }
                 }
+                if path.status == .satisfied {
+                    self?.appDelegate?.ecpMonitor.networkPathChanged()
+                }
 #endif
             }
         }
