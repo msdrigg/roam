@@ -236,6 +236,10 @@ private func discoveryNWInterfaceNames(_ interfaces: [NWInterface]) -> [String] 
 /// automatic scanning on the way to the background removes the main source of
 /// writes that can still be in flight at suspension time.
 ///
+/// Anything short of `.active` counts: a prewarmed or snapshot launch runs with
+/// the scene `.inactive` while the app itself is in the background, and a
+/// background-task assertion taken then has no time behind it.
+///
 /// Only applies to automatic/continual scanning - a user-initiated pull-to-refresh
 /// only ever runs in the foreground. macOS has no equivalent suspension policy, so
 /// scanning keeps running there.
@@ -243,7 +247,7 @@ func discoveryPaused(for scenePhase: ScenePhase) -> Bool {
     #if os(macOS)
         return false
     #else
-        return scenePhase == .background
+        return scenePhase != .active
     #endif
 }
 

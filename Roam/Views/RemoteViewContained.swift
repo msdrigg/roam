@@ -306,7 +306,9 @@
             // Only the active page may refresh: inactive pager pages share the
             // same ECP session, which points at the *active* device - refreshing
             // through it would write another device's info into this record.
-            guard isActive else { return }
+            // The refresh writes to the shared database, so it waits for the
+            // foreground (see `discoveryPaused`).
+            guard isActive, !discoveryPaused(for: scenePhase) else { return }
             for await _ in exponentialBackoff(min: 30, max: 3600) {
                 if Task.isCancelled {
                     return
@@ -433,7 +435,10 @@
                 // Both ids include `isActive` so a page (re)claims the shared
                 // session and resumes refreshing the moment it becomes the
                 // active pager page - not just when it appears.
-                .task(id: "\(isActive),\(selectedDevice?.id ?? "--")", priority: .medium) {
+                .task(
+                    id: "\(isActive),\(discoveryPaused(for: scenePhase)),\(selectedDevice?.id ?? "--")",
+                    priority: .medium
+                ) {
                     await refreshDeviceBackoffTask()
                 }
                 .task(id: "\(isActive),\(selectedDevice?.location ?? "--")", priority: .medium) {
