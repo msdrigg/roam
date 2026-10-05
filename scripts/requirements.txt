@@ -18,10 +18,10 @@
 #   openai      -- localize-auto.py
 
 httpx==0.28.1
-PyJWT[crypto]==2.15.0
-openai==3.19.2
+PyJWT[crypto]==2.15.1
+openai==3.24.0
 
 # Pulled in by PyJWT[crypto], but pinned explicitly so Dependabot keeps
 # tracking it -- the lower bound PyJWT declares (>=3.4.0) is open, so bumping
 # this line can't conflict the way the old transitive pins did.
-cryptography==50.0.1
+cryptography==50.0.2
