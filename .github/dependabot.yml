@@ -15,6 +15,15 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    # The App Store receipt path pairs these with cms 0.2 and rsa 0.9, whose
+    # newer lines are still pre-release. Bumping them alone breaks the build.
+    ignore:
+      - dependency-name: x509-cert
+        update-types: ["version-update:semver-minor"]
+      - dependency-name: der
+        update-types: ["version-update:semver-minor"]
+      - dependency-name: sha1
+        update-types: ["version-update:semver-minor"]
     groups:
       backend-cargo:
         patterns:
