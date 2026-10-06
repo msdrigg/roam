@@ -528,6 +528,9 @@ DISPLAY_TYPE_DIMENSIONS: dict[str, list[tuple[int, int]]] = {
     # 12.9"/13" iPad Pro slot - Apple accepts both the legacy 12.9" dims and
     # the 13" M4's native render.
     "APP_IPAD_PRO_3GEN_129": [(2048, 2732), (2732, 2048), (2064, 2752), (2752, 2064)],
+    # One iPhone Duo slot takes both the outer (1398x2034) and the inner
+    # (2007x2853) display sizes.
+    "APP_IPHONE_DUO": [(1398, 2034), (2034, 1398), (2007, 2853), (2853, 2007)],
     # Apple Watch Series 10 / 11 (46mm) - same display
     "APP_WATCH_SERIES_10": [(416, 496), (496, 416)],
     "APP_WATCH_ULTRA": [(410, 502), (502, 410)],
@@ -1327,10 +1330,14 @@ class MetadataManager:
     screenshot_update_platforms: list[Platform]
 
     def __init__(
-        self, workspace_path: str, screenshot_update_platforms: list[Platform]
+        self,
+        workspace_path: str,
+        screenshot_update_platforms: list[Platform],
+        only_devices: set[str] | None = None,
     ):
         self.workspace_path = workspace_path
         self.screenshot_update_platforms = screenshot_update_platforms
+        self.only_devices = only_devices
 
     def _get_primary_doc(self, platform: Platform, doc: str) -> str | None:
         # Read workspace/docs/src/pages/changes/<platform>.md
@@ -1413,6 +1420,7 @@ class MetadataManager:
                 ScreenshotSource(device="iPhone 17 Pro Max", size="6.9"),
                 ScreenshotSource(device="iPhone 11", size="6.5"),
                 ScreenshotSource(device="iPad Pro 13-inch (M4)", size="13"),
+                ScreenshotSource(device="iPhone Duo", size="Duo"),
                 ScreenshotSource(device="Apple Watch Series 11 (46mm)", size="Watch46"),
             ],
             # macOS tests run on the host Mac itself (no simulator), so a single
@@ -1432,6 +1440,8 @@ class MetadataManager:
         for platform in self.screenshot_update_platforms:
             platform_exports = []
             for device in devices[platform]:
+                if self.only_devices and device.size not in self.only_devices:
+                    continue
                 screenshot_path = self._get_device_screenshots(device.device, locale_id)
                 if screenshot_path:
                     platform_exports.append(
@@ -1918,6 +1928,21 @@ class MetadataManager:
         if device_name == "Mac" or "MacBook" in device_name:
             return self._get_mac_screenshots_via_tart(device_name, locale_id)
 
+        # simctl cannot fold the Duo, so its two displays are captured in
+        # separate passes by scripts/duo_screenshots.py ahead of this run.
+        if device_name == "iPhone Duo":
+            export = os.path.join(
+                tempfile.gettempdir(), "auto-screenshots", device_name, f"{locale_id}.export"
+            )
+            if _collect_locale_screenshots(export, locale_id, max_count=1):
+                return export
+            print(
+                f"No Duo captures for {locale_id}. Run scripts/duo_screenshots.py "
+                f"--display outer --locales {locale_id} with the simulator folded, "
+                "then --display inner with it open."
+            )
+            return None
+
         tmp = tempfile.gettempdir()
         screenshots_dir = os.path.join(
             tmp, "auto-screenshots", device_name, f"{locale_id}.xcresult"
@@ -2311,6 +2336,15 @@ async def main():
         default=None,
     )
     parser.add_argument(
+        "--only-devices",
+        help=(
+            "Comma-separated device size keys to capture and upload (e.g. "
+            "'Duo' or '6.9,13'). Screenshot sets for other display types are "
+            "left untouched in App Store Connect."
+        ),
+        default=None,
+    )
+    parser.add_argument(
         "--clean",
         help=(
             "Delete previously-captured screenshots (the local "
@@ -2339,6 +2373,10 @@ async def main():
     only_locales: set[str] | None = None
     if args.only_locales:
         only_locales = {x.strip() for x in args.only_locales.split(",") if x.strip()}
+
+    only_devices: set[str] | None = None
+    if args.only_devices:
+        only_devices = {x.strip() for x in args.only_devices.split(",") if x.strip()}
 
     platforms = [Platform[platform] for platform in args.platform]
     sync_screenshots = args.sync_screenshots
@@ -2397,7 +2435,9 @@ async def main():
     app_versions = await asc.get_upcoming_app_store_versions("6469834197")
 
     metadata_manager = MetadataManager(
-        workspace_path=".", screenshot_update_platforms=platforms
+        workspace_path=".",
+        screenshot_update_platforms=platforms,
+        only_devices=only_devices,
     )
 
     # Update metadata (whats new and description)
@@ -2432,6 +2472,7 @@ async def main():
             "6.9": "APP_IPHONE_67",  # 6.9" Pro Max uploads to ASC's 6.7" slot
             "6.5": "APP_IPHONE_65",  # legacy 6.5" slot (XS Max / 11 Pro Max)
             "13": "APP_IPAD_PRO_3GEN_129",  # iPad Pro 12.9" slot (accepts 13")
+            "Duo": "APP_IPHONE_DUO",
             # watchOS
             "Watch46": "APP_WATCH_SERIES_10",  # Series 10/11 (46mm)
             "Ultra": "APP_WATCH_ULTRA",
