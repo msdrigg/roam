@@ -714,6 +714,15 @@ actor RoamDataHandler {
         try await deleteDeviceOnDisk(id)
         cachedDeviceData[id] = nil  // Remove from cache since it's deleted
 
+        // Deleting the primary device with nothing left to promote clears the
+        // stored primary, which no other path republishes.
+        if cachedPrimaryDevice?.id == id {
+            cachedPrimaryDevice = database.primaryDevice()
+            cachedPrimaryApps = database.primaryApps()
+            notifyPrimaryDeviceUpdated(device: cachedPrimaryDevice)
+            notifyPrimaryAppsUpdated(apps: cachedPrimaryApps)
+        }
+
         try await updateDeviceListsAfterDelete(udn: id)
 
         self.notifyDeviceUpdated(deviceId: id, device: nil)
@@ -1322,7 +1331,13 @@ actor RoamDataHandler {
 
     private func handleExternalDatabaseChange() {
         Log.data.notice("Reloading in-memory data after external database change")
+        reloadCachesFromDatabase()
+    }
 
+    /// Replaces every cache with the database's current state and republishes
+    /// all of it, so listeners end up on what is stored whatever they read
+    /// while a write was suspended.
+    private func reloadCachesFromDatabase() {
         let oldDeviceIDs = Set(cachedDeviceData.keys)
         let oldAppDeviceIDs = Set(cachedDeviceApps.keys)
 
@@ -2180,21 +2195,17 @@ extension RoamDataHandler {
 
             for device in testDevices {
                 try await saveDeviceToDisk(device)
-                cachedDeviceData[device.id] = device
                 deviceIds.append(device.id)
 
                 // Load apps for this device
                 let testApps = getTestingAppLinks(deviceId: device.udn)
                 try await saveDeviceAppsToDisk(deviceId: device.id, apps: testApps)
-                cachedDeviceApps[device.id] = testApps
             }
 
             // Save device lists
             try await saveDeviceListToDisk(deviceIds)
-            cachedDeviceList = deviceIds
 
             // Initialize empty hidden device list
-            cachedHiddenDeviceList = []
             try await saveHiddenDeviceListToDisk([])
 
             // Set first device as primary if available
@@ -2208,6 +2219,8 @@ extension RoamDataHandler {
                 try await database.saveMessage(message)
             }
 
+            reloadCachesFromDatabase()
+
             let totalApps = testDevices.reduce(0) { $0 + (cachedDeviceApps[$1.id]?.count ?? 0) }
             let deviceCount = testDevices.count
             let messageCount = testMessages.count
@@ -2218,15 +2231,10 @@ extension RoamDataHandler {
     }
 
     private func clearData() async throws {
-        // Clear all caches
-        cachedDeviceData.removeAll()
-        cachedDeviceApps.removeAll()
-        cachedDeviceList = nil
-        cachedHiddenDeviceList = nil
-        cachedPrimaryDevice = nil
-        cachedPrimaryApps = nil
-
+        // Requests served while `clearAll` is suspended read and cache the old
+        // rows, so the caches are rebuilt only once the write has landed.
         try await database.clearAll()
+        reloadCachesFromDatabase()
 
         Log.data.info("Cleared all data and caches")
     }
