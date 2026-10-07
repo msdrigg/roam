@@ -59,7 +59,7 @@ public let runningInPreview = ProcessInfo.processInfo.environment["XCODE_RUNNING
             "Netflix", "Hulu", "Max",
             "YouTube", "Apple TV",
             "The Roku Channel", "Peacock TV",
-            "Disney Plus", "YouTube TV",
+            "YouTube TV",
             "Prime Video", "SHOWTIME",
             "Tubi - Free Movies & TV",
             "Paramount Plus", "Backdrops",
