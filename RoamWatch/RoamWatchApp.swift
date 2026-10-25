@@ -215,7 +215,7 @@ struct PrivateListeningButton: View {
             label: {
                 RemoteButton.headphonesMode.label
                     .labelStyle(.iconOnly)
-                    .foregroundStyle(enabled ? Color.accentColor : Color.primary)
+                    .symbolEffect(.pulse, isActive: enabled)
             }
         )
         .disabled(device == nil || device?.supportsDatagram == false)
