@@ -7,6 +7,20 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AFD500662F00000100000001 /* WatchPrivateListening.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD500652F00000100000001 /* WatchPrivateListening.swift */; };
+		AFD500012F00000100000001 /* AsyncTimerSequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6D560C2DCE47E900B00780 /* AsyncTimerSequence.swift */; };
+		AFD500022F00000100000001 /* ManagedCriticalState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA302AE6947600A42DFF /* ManagedCriticalState.swift */; };
+		AFD500032F00000100000001 /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5B16E32AD5D5BB00053BDC /* AudioPlayer.swift */; };
+		AFD500042F00000100000001 /* BinaryHeap.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFED2502AD75EAF00357FA4 /* BinaryHeap.swift */; };
+		AFD500052F00000100000001 /* OpusDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3D62D62AE6F703006AB8E9 /* OpusDecoder.swift */; };
+		AFD500062F00000100000001 /* RTCP.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA1D2AE4517600A42DFF /* RTCP.swift */; };
+		AFD500072F00000100000001 /* RTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF19CA1A2AE4510900A42DFF /* RTP.swift */; };
+		AFD500082F00000100000001 /* RokuSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF76B8152AD8A14600DF6FF7 /* RokuSession.swift */; };
+		AFD500092F00000100000001 /* LatencyListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC4A6592AE88411005DAC6C /* LatencyListener.swift */; };
+		AFD5000A2F00000100000001 /* ECPMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF30DD292D39B1FC00FD8B9A /* ECPMessages.swift */; };
+		AFD5000B2F00000100000001 /* ECPProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A52D37183600A167B2 /* ECPProtocol.swift */; };
+		AFD5000C2F00000100000001 /* ECPWebsocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2C85A22D370DA700A167B2 /* ECPWebsocket.swift */; };
+		AFD5000D2F00000100000001 /* Opus in Frameworks */ = {isa = PBXBuildFile; productRef = AFECDE1C2AE18511003F6676 /* Opus */; };
 		AFE32A68CA5DADD9CE40A9CD /* TimedMuteLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDEDD428554E24B2F27F7A7 /* TimedMuteLiveActivity.swift */; };
 		AF7A437A0F27385C0FFFB070 /* TimedMuteActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA078F958788A75EEB5B3F3 /* TimedMuteActivity.swift */; };
 		AF95A2D89AF5BB22EA5E7ABB /* TimedMuteActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA078F958788A75EEB5B3F3 /* TimedMuteActivity.swift */; };
@@ -458,6 +472,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AFD500652F00000100000001 /* WatchPrivateListening.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPrivateListening.swift; sourceTree = "<group>"; };
 		AFDEDD428554E24B2F27F7A7 /* TimedMuteLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedMuteLiveActivity.swift; sourceTree = "<group>"; };
 		AFA078F958788A75EEB5B3F3 /* TimedMuteActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedMuteActivity.swift; sourceTree = "<group>"; };
 		AFF2F1AA3A09906B54A4FC33 /* TimedMuteControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimedMuteControllerTests.swift; sourceTree = "<group>"; };
@@ -664,6 +679,7 @@
 			isa = PBXFrameworksBuildPhase;
 			files = (
 				AFD100332F00000100000001 /* GRDB in Frameworks */,
+				AFD5000D2F00000100000001 /* Opus in Frameworks */,
 				AF0042832AEAA3ED0051BB1E /* libwebp in Frameworks */,
 			);
 		};
@@ -776,6 +792,7 @@
 				AF5ED8E02AE98EE7007DB2B8 /* DevicePicker.swift */,
 				AF5ED8D62AE985E1007DB2B8 /* AppListView.swift */,
 				AF5ED8D92AE98607007DB2B8 /* ButtonGridView.swift */,
+				AFD500652F00000100000001 /* WatchPrivateListening.swift */,
 				AFD590D12AEC692700189620 /* IPhoneConnector.swift */,
 			);
 			path = RoamWatch;
@@ -1143,6 +1160,7 @@
 			packageProductDependencies = (
 				AF0042822AEAA3ED0051BB1E /* libwebp */,
 				AFD100312F00000100000001 /* GRDB */,
+				AFECDE1C2AE18511003F6676 /* Opus */,
 			);
 			productName = "RoamWatch Watch App";
 			productReference = AF15C2462AE8672700B79FD9 /* Roam.app */;
@@ -1424,6 +1442,19 @@
 		AF15C2422AE8672700B79FD9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+				AFD500662F00000100000001 /* WatchPrivateListening.swift in Sources */,
+				AFD500012F00000100000001 /* AsyncTimerSequence.swift in Sources */,
+				AFD500022F00000100000001 /* ManagedCriticalState.swift in Sources */,
+				AFD500032F00000100000001 /* AudioPlayer.swift in Sources */,
+				AFD500042F00000100000001 /* BinaryHeap.swift in Sources */,
+				AFD500052F00000100000001 /* OpusDecoder.swift in Sources */,
+				AFD500062F00000100000001 /* RTCP.swift in Sources */,
+				AFD500072F00000100000001 /* RTP.swift in Sources */,
+				AFD500082F00000100000001 /* RokuSession.swift in Sources */,
+				AFD500092F00000100000001 /* LatencyListener.swift in Sources */,
+				AFD5000A2F00000100000001 /* ECPMessages.swift in Sources */,
+				AFD5000B2F00000100000001 /* ECPProtocol.swift in Sources */,
+				AFD5000C2F00000100000001 /* ECPWebsocket.swift in Sources */,
 				AF70BB0B2BA7CBD3009A06EC /* PaddedHoverButtonStyle.swift in Sources */,
 				AFE6249E2BDCAA5000F4992E /* DataHandler.swift in Sources */,
 				AFD100132F00000100000001 /* DatabaseFileLock.swift in Sources */,

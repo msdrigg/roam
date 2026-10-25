@@ -208,7 +208,7 @@ struct ConfigureAudioRequest: Encodable {
         Self(devname: devname, audioOutput: audioOutput, requestId: id)
     }
 
-    #if !os(watchOS)
+    #if !os(watchOS) || !WIDGET
         static func headphonesMode(hostIp: String, requestId: String) -> Self {
             Self(
                 devname: "\(hostIp):\(globalHostRTPPort):\(globalRTPPayloadType):\(globalClockRate / 50)",
