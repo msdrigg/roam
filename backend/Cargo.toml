@@ -30,7 +30,7 @@ thiserror = "^2"
 serde_json = { version = "^1", features = ["unbounded_depth"] }
 regex = "^1.12"
 object = { version = "0.40.0", default-features = false, features = ["read"] }
-zip = { version = "=9.0.4", default-features = false, features = ["deflate-flate2"] }
+zip = { version = "=9.0.5", default-features = false, features = ["deflate-flate2"] }
 
 # App Attest verification. Apple's attestation object is CBOR wrapping an X.509
 # chain (root and intermediate on P-384, the attested credCert on P-256), so the
