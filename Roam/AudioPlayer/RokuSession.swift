@@ -7,6 +7,7 @@ enum HeadphonesModeError: Error, LocalizedError {
     case badURL
     case audioStreamingTimeout
     case rtpListenerFailed(underlying: Error)
+    case headphonesDisconnected
 
     var errorDescription: String? {
         switch self {
@@ -14,6 +15,8 @@ enum HeadphonesModeError: Error, LocalizedError {
             return "Invalid device address for headphones mode."
         case .audioStreamingTimeout:
             return "Audio streaming timed out."
+        case .headphonesDisconnected:
+            return "Headphones disconnected."
         case let .rtpListenerFailed(underlying):
             return "Couldn't start headphones mode: UDP port \(globalHostRTPPort) is unavailable (\(underlying.localizedDescription)). Another app on this Mac may be holding it; try quitting other audio/casting apps and try again."
         }
@@ -547,14 +550,32 @@ actor RTPSession {
         let rtpAudioPlayer = AudioPlayer()
         #if !os(macOS)
             await rtpAudioPlayer.configureAudioSession()
-            defer {
-                Task {
-                    await rtpAudioPlayer.makeInactive()
-                }
-            }
         #endif
 
+        let result: Result<Void, Error>
+        do {
+            try await playStream(rtpAudioPlayer)
+            result = .success(())
+        } catch {
+            result = .failure(error)
+        }
+
+        // Deactivating a session with running I/O fails, and a restarted stream waits for this
+        // return before activating its own session.
+        await rtpAudioPlayer.stop()
+        #if !os(macOS)
+            await rtpAudioPlayer.makeInactive()
+        #endif
+        try result.get()
+    }
+
+    private func playStream(_ rtpAudioPlayer: AudioPlayer) async throws {
         try await withThrowingDiscardingTaskGroup { taskGroup in
+            #if !os(macOS)
+                taskGroup.addTask {
+                    try await Self.waitForHeadphonesRemoved()
+                }
+            #endif
 
             Log.headphones.notice("Starting receiving rtp packets")
             let decoder: OpusDecoderWithJitterBuffer =
@@ -611,11 +632,6 @@ actor RTPSession {
 
             taskGroup.addTask {
                 try await rtpAudioPlayer.start()
-                defer {
-                    Task {
-                        await rtpAudioPlayer.stop()
-                    }
-                }
 
                 for await _ in AsyncTimerSequence.repeating(every: .milliseconds(10), tolerance: .microseconds(10)) {
                     Task {
@@ -670,6 +686,19 @@ actor RTPSession {
     }
 
     #if !os(macOS)
+        /// AudioPlayer only stops the engine when the headphones go away, which would leave the
+        /// network running and the toggle on with nothing playing.
+        private static func waitForHeadphonesRemoved() async throws {
+            let notifications = NotificationCenter.default.notifications(named: AVAudioSession.routeChangeNotification)
+            for await notification in notifications {
+                let reason = (notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt)
+                    .flatMap(AVAudioSession.RouteChangeReason.init(rawValue:))
+                if reason == .oldDeviceUnavailable {
+                    throw HeadphonesModeError.headphonesDisconnected
+                }
+            }
+        }
+
         // Not @MainActor: setCategory/setActive block on IPC to mediaserverd and
         // would hang the UI. Actor isolation keeps them off the main thread.
         func setupSessionForAudioPlayback() {

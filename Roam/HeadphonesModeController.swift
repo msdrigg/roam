@@ -58,37 +58,37 @@ final class HeadphonesModeController {
         }
     }
 
+    /// The stream's task deactivates the audio session itself once it has wound down.
     func stop() {
-        guard deviceId != nil || task != nil else { return }
+        guard deviceId != nil else { return }
         Log.headphones.notice("Stopping headphones mode")
-        cancelStream()
-        deactivateAudioSession()
-    }
-
-    private func cancelStream() {
         generation += 1
         task?.cancel()
-        task = nil
         deviceId = nil
     }
 
     private func start(device: Device?, ecpSession: ECPWebsocketClient?) {
         guard let device, let ecpSession else { return }
-        // Deactivating here could land after the new stream activates the session.
-        cancelStream()
+        // The previous stream must release the audio session and port 6970 before this one claims them.
+        let previous = task
+        previous?.cancel()
         generation += 1
         let generation = generation
         let location = device.location
         let rtcpPort = device.rtcpPort
         deviceId = device.id
         task = Task {
+            await previous?.value
             do {
+                try Task.checkCancellation()
                 try await listenContinually(
                     ecpSession: ecpSession,
                     location: location,
                     rtcpPort: rtcpPort
                 )
                 Log.headphones.notice("Listencontinually returned \(#fileID, privacy: .public)")
+            } catch HeadphonesModeError.headphonesDisconnected {
+                Log.headphones.notice("Headphones disconnected, stopping headphones mode")
             } catch {
                 Log.headphones.warning("Catching error in pl handler \(error, privacy: .public)")
                 if !(error is CancellationError), generation == self.generation {
@@ -97,22 +97,22 @@ final class HeadphonesModeController {
                 }
             }
             if generation == self.generation {
-                task = nil
                 deviceId = nil
-                deactivateAudioSession()
+            }
+            await deactivateAudioSession()
+            if generation == self.generation {
+                task = nil
             }
         }
     }
 
-    private func deactivateAudioSession() {
+    private func deactivateAudioSession() async {
         #if os(iOS)
-            Task {
-                do {
-                    try await AudioSessionConfigurator.shared.deactivate(category: .ambient)
-                } catch {
-                    Log.headphones.notice(
-                        "Unable to set AVAudioSession category to background: \(error, privacy: .public)")
-                }
+            do {
+                try await AudioSessionConfigurator.shared.deactivate(category: .ambient)
+            } catch {
+                Log.headphones.notice(
+                    "Unable to set AVAudioSession category to background: \(error, privacy: .public)")
             }
         #endif
     }
