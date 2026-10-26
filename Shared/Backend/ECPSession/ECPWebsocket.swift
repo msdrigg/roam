@@ -336,6 +336,9 @@ actor ECPWebsocketClient {
     }
 
     public func requestHeadphonesMode() async throws {
+        // The local address comes from the connection's path, which a connection that is still
+        // coming up (just after launch or a device switch) doesn't have yet.
+        try await waitUntilConnected(timeout: .seconds(10))
         guard let connectingInterfaces = connection.currentPath?.availableInterfaces else {
             Log.connection.notice("Error requesting headphones mode: no path")
             throw ECPError.noValidInterface([])
@@ -359,6 +362,16 @@ actor ECPWebsocketClient {
             hostIp: localAddress,
             requestId: ""
         )))
+    }
+
+    private func waitUntilConnected(timeout: Duration) async throws {
+        let deadline = ContinuousClock.now + timeout
+        while state != .connected {
+            guard ContinuousClock.now < deadline else {
+                throw ECPError.connectionFailed
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
     }
 
     private func sendMessage(_ inputMessage: ECPRequestMessage, requestId reqId: String, timeout: TimeInterval? = nil, completion: @escaping ECPResponseCompletion) {
