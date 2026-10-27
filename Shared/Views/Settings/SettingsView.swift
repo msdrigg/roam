@@ -211,7 +211,7 @@ struct SettingsView: View {
                     Text("No devices", comment: "Placeholder for a device selector when there aren't any devices")
                         .foregroundStyle(Color.secondary)
                 } else {
-                    ForEach(Array(devices.enumerated()), id: \.element.displayHash) { idx, device in
+                    ForEach(Array(devices.enumerated()), id: \.element.id) { idx, device in
                         DeviceListItem(device: device, idx: idx)
                     }
 #if !os(watchOS)
@@ -486,7 +486,7 @@ struct SettingsView: View {
                 if !hiddenDevices.isEmpty {
                     DisclosureGroup {
                         List {
-                            ForEach(hiddenDevices, id: \.displayHash) { device in
+                            ForEach(hiddenDevices, id: \.id) { device in
                                 HiddenDeviceListItem(device: device)
                             }
                             .onDelete { indexSet in

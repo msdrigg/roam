@@ -181,10 +181,6 @@ public struct Device: AppEntity, Equatable, Identifiable, Hashable, Codable {
         return [self.ethernetMAC, self.wifiMAC].compactMap({$0})
     }
 
-    var displayHash: String {
-        "\(name)-\(udn)-\(isOnline())-\(location)-\(String(describing: supportsDatagram))-\(id)"
-    }
-
     func isOnline() -> Bool {
         guard let lastOnlineAt else {
             return false

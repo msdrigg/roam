@@ -385,6 +385,14 @@ AVFAudio raises that when the engine has stopped rendering under a node that sti
 
 **Fix:** `lastRender()` returns nil unless the engine is running and the node is playing, and the call runs under the same exception trap. A raise now skips that scheduling tick instead of aborting.";
 
+const SETTINGS_DEVICE_LIST_DIFF_REPLY: &str = ":ninja: **Auto-review: `SIGABRT` - the Settings device list fed UIKit an inconsistent update**
+
+`EXC_CRASH (10)` / `SIGABRT (6)` from an uncaught `NSInternalInconsistencyException` (\"attempt to delete item N from section 0 which only contains N items before the update\"), raised by UIKit's collection view while SwiftUI applied a list diff. Settings was open and SSDP discovery was reloading the device list every second.
+
+The device rows were keyed on a display hash that included `isOnline()`, which reads the clock on every call. A row's identity could change between two reads inside one SwiftUI update, so the diff SwiftUI handed UIKit disagreed with the item count it had already reported.
+
+**Fix:** both Settings device lists are keyed on the device id. The online dot reads `DeviceLivenessMonitor` and refreshes on its own.";
+
 const LOCAL_NETWORK_CANCEL_RACE_REPLY: &str = ":ninja: **Auto-review: `SIGSEGV` - the Bonjour browser was cancelled before it was started**
 
 `EXC_BAD_ACCESS (1)` / `SIGSEGV (11)` on the near-null address `0x54` inside `nw_browser_cancel`, attributed to the local network permission check. Not the `0x8BADF00D` stall that `local-network-cancel-watchdog` describes, which carries a termination reason.
@@ -525,6 +533,26 @@ pub static RULES: &[CrashRule] = &[
         all_of: &["objc_exception_throw", "playerTimeForNodeTime:"],
         none_of: &[],
         reply: AUDIO_PLAYER_TIME_EXCEPTION_REPLY,
+    },
+    CrashRule {
+        id: "settings-device-list-diff",
+        title: "SIGABRT from an inconsistent collection view update in the Settings device list",
+        fixed_in: Some("1.62"),
+        environmental: false,
+        exception_type: Some(10),
+        signal: Some(6),
+        termination_code: None,
+        min_thermal_level: None,
+        max_app_cpu_percent: None,
+        // The exception text alone names no view, so the Settings screen
+        // having been shown in the replayed log stands in for it.
+        all_of: &[
+            "NSInternalInconsistencyException",
+            "which only contains",
+            "Showing Roam/SettingsView.swift view",
+        ],
+        none_of: &[],
+        reply: SETTINGS_DEVICE_LIST_DIFF_REPLY,
     },
     CrashRule {
         id: "ssdp-socket-double-close",
@@ -1152,6 +1180,62 @@ Thread 9 (attributed - this is the thread that crashed):
             assert_ne!(
                 match_rule(report, &facts).map(|m| m.rule.id),
                 Some("audio-player-time-exception")
+            );
+        }
+    }
+
+    /// Thread 1564402107199660202 (roam 1.61, iPad13,8): Settings open while
+    /// SSDP discovery reloaded the device list.
+    const SETTINGS_DEVICE_LIST_DIFF_REPORT: &str = r#"
+Crash 1 (version 1.0.0)
+Termination reason: Namespace SIGNAL, Code 0x6
+Diagnosis: EXC_CRASH (10) / code 0 / SIGABRT (6)
+Metadata:
+  appVersion: 1.61
+  deviceType: iPad13,8
+  exceptionCode: 0
+  exceptionType: 10
+  osVersion: iPhone OS 27.2 (24B115)
+  signal: 6
+Thread 0 (attributed - this is the thread that crashed):
+  37  Roam                         +0x309870    main at /x/RoamApp.swift samples=1
+In-process backtrace of the faulting thread (1)
+  Uncaught exception NSInternalInconsistencyException: attempt to delete item 2 from section 0 which only contains 2 items before the update
+  1   libobjc.A.dylib                     0x000000019a860390 objc_exception_throw + 88
+Logs (5000 entries)
+  22:16:15.000  Notice   Lifecycle       Showing Roam/SettingsView.swift view
+  22:16:20.000  Fault    Crash           Uncaught exception NSInternalInconsistencyException: attempt to delete item 2 from section 0 which only contains 2 items before the update
+"#;
+
+    #[test]
+    fn matches_the_settings_device_list_diff() {
+        let facts = CrashFacts::from_report(SETTINGS_DEVICE_LIST_DIFF_REPORT);
+        let matched = match_rule(SETTINGS_DEVICE_LIST_DIFF_REPORT, &facts).expect("a rule matches");
+        assert_eq!(matched.rule.id, "settings-device-list-diff");
+        assert_eq!(matched.status, FixStatus::Fixed);
+    }
+
+    #[test]
+    fn the_settings_list_rule_needs_the_settings_screen() {
+        let elsewhere = SETTINGS_DEVICE_LIST_DIFF_REPORT.replace(
+            "Showing Roam/SettingsView.swift view",
+            "Showing Roam/RemoteView.swift view",
+        );
+        let facts = CrashFacts::from_report(&elsewhere);
+        assert_eq!(match_rule(&elsewhere, &facts).map(|m| m.rule.id), None);
+        for report in [
+            AUDIO_PLAYER_EXCEPTION_REPORT,
+            AUDIO_PLAYER_TIME_EXCEPTION_REPORT,
+            DEAD10CC_REPORT,
+            GUARD_REPORT,
+            WATCHDOG_REPORT,
+            THERMAL_REPORT,
+            STACK_OVERFLOW_REPORT,
+        ] {
+            let facts = CrashFacts::from_report(report);
+            assert_ne!(
+                match_rule(report, &facts).map(|m| m.rule.id),
+                Some("settings-device-list-diff")
             );
         }
     }
