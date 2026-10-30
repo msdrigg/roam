@@ -799,11 +799,7 @@
                         content: keyboardEntryField
                             .padding(.horizontal, 16)
                             .padding(.bottom, 10)
-                            .environmentObject(appDelegate)
-                            .environment(\.scenePhase, scenePhase)
-                            .customAccentColorTint()
                     )
-                    .ignoresSafeArea()
                     .transition(.opacity)
                 }
             }
@@ -980,7 +976,7 @@
             }
             #if os(iOS)
                 // The keyboard never resizes the remote. Only the entry
-                // follows it, through UIKit's keyboard layout guide.
+                // follows it, from the keyboard's frame notifications.
                 .ignoresSafeArea(.keyboard)
                 .overlay {
                     keyboardScrim

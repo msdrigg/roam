@@ -1,5 +1,6 @@
 #if !os(macOS)
     import Foundation
+    import Observation
     import os.log
     import SwiftUI
 
@@ -183,9 +184,14 @@
 
         override func didMoveToWindow() {
             super.didMoveToWindow()
-            if window != nil, focusesOnWindow {
-                focusesOnWindow = false
-                becomeFirstResponder()
+            guard window != nil, focusesOnWindow else { return }
+            focusesOnWindow = false
+            // Not from inside the commit that inserts the field: raising the
+            // keyboard there starts UIKit layout in the middle of SwiftUI's
+            // update.
+            DispatchQueue.main.async { [weak self] in
+                guard let self, self.window != nil else { return }
+                self.becomeFirstResponder()
             }
         }
 
@@ -333,43 +339,112 @@
     }
 
     #if os(iOS)
-        /// Pins its content to the top of the system keyboard with UIKit's
-        /// keyboard layout guide, which moves with the keyboard's own
-        /// animation. SwiftUI's keyboard safe area trails it inside the pager.
-        struct KeyboardFollowingContainer<Content: View>: UIViewRepresentable {
+        /// Keeps its content above the docked keyboard. The remote ignores the
+        /// keyboard safe area so it never reflows, which leaves this to read
+        /// the keyboard's frame itself.
+        struct KeyboardFollowingContainer<Content: View>: View {
             let content: Content
 
-            func makeCoordinator() -> UIHostingController<Content> {
-                let host = UIHostingController(rootView: content)
-                host.view.backgroundColor = .clear
-                host.safeAreaRegions = []
-                host.sizingOptions = .intrinsicContentSize
-                return host
-            }
-
-            func makeUIView(context: Context) -> PassthroughView {
-                let view = PassthroughView()
-                let hosted: UIView = context.coordinator.view
-                hosted.translatesAutoresizingMaskIntoConstraints = false
-                view.addSubview(hosted)
-                view.keyboardLayoutGuide.followsUndockedKeyboard = true
-                NSLayoutConstraint.activate([
-                    hosted.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-                    hosted.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-                    hosted.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
-                ])
-                return view
-            }
-
-            func updateUIView(_: PassthroughView, context: Context) {
-                context.coordinator.rootView = content
-            }
-
-            final class PassthroughView: UIView {
-                override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-                    let hit = super.hitTest(point, with: event)
-                    return hit === self ? nil : hit
+            var body: some View {
+                GeometryReader { proxy in
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        content
+                    }
+                    .padding(.bottom, KeyboardFrameTracker.shared.inset(below: proxy.frame(in: .global).maxY))
                 }
+                .ignoresSafeArea(.all, edges: .bottom)
+                .onAppear { KeyboardFrameTracker.shared.refresh() }
+            }
+        }
+
+        /// The docked keyboard's top edge in key-window coordinates, which are
+        /// SwiftUI's `.global` space. Observing starts on first use, which is
+        /// before the entry's field exists, so the notification for the
+        /// keyboard that field raises cannot be missed.
+        @MainActor @Observable
+        final class KeyboardFrameTracker {
+            static let shared = KeyboardFrameTracker()
+
+            private(set) var keyboardTop: CGFloat?
+            private(set) var safeBottom: CGFloat?
+            @ObservationIgnored private var observers: [any NSObjectProtocol] = []
+
+            private struct Change: Sendable {
+                let endFrame: CGRect
+                let duration: Double
+                let curve: Int
+                let hiding: Bool
+            }
+
+            private init() {
+                // Read here, on the main actor, so the observer closure below
+                // captures only Sendable values.
+                let hideName = UIResponder.keyboardWillHideNotification
+                let frameKey = UIResponder.keyboardFrameEndUserInfoKey
+                let durationKey = UIResponder.keyboardAnimationDurationUserInfoKey
+                let curveKey = UIResponder.keyboardAnimationCurveUserInfoKey
+                let names = [UIResponder.keyboardWillChangeFrameNotification, hideName]
+                observers = names.map { name in
+                    NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { note in
+                        let info = note.userInfo
+                        let change = Change(
+                            endFrame: (info?[frameKey] as? NSValue)?.cgRectValue ?? .zero,
+                            duration: info?[durationKey] as? Double ?? 0,
+                            curve: info?[curveKey] as? Int ?? 0,
+                            hiding: note.name == hideName
+                        )
+                        MainActor.assumeIsolated {
+                            KeyboardFrameTracker.shared.apply(change)
+                        }
+                    }
+                }
+                refresh()
+            }
+
+            /// How far content ending at `maxY` must rise to clear the docked
+            /// keyboard, or the home indicator while none is docked.
+            func inset(below maxY: CGFloat) -> CGFloat {
+                let edge = min(keyboardTop ?? .greatestFiniteMagnitude, safeBottom ?? maxY)
+                return max(0, maxY - edge)
+            }
+
+            func refresh() {
+                guard let window = Self.keyWindow() else { return }
+                safeBottom = window.bounds.maxY - window.safeAreaInsets.bottom
+            }
+
+            private func apply(_ change: Change) {
+                guard let window = Self.keyWindow(), let screen = window.windowScene?.screen else { return }
+                let frame = window.convert(change.endFrame, from: screen.coordinateSpace)
+                let bottom = window.bounds.maxY
+                // Floating and split keyboards stop short of the bottom edge,
+                // so the entry stays at the bottom rather than chasing them.
+                let docked = !change.hiding && !frame.isEmpty && frame.maxY >= bottom - 1 && frame.minY < bottom
+                let top = docked ? frame.minY : nil
+                let safe = bottom - window.safeAreaInsets.bottom
+                guard top != keyboardTop || safe != safeBottom else { return }
+                withAnimation(Self.animation(for: change)) {
+                    keyboardTop = top
+                    safeBottom = safe
+                }
+            }
+
+            /// UIKit animates the keyboard with private curve 7. The bezier is
+            /// an approximation of it, run over the duration UIKit reports.
+            private static func animation(for change: Change) -> Animation? {
+                guard change.duration > 0 else { return nil }
+                if change.curve == 7 {
+                    return .timingCurve(0.38, 0.7, 0.125, 1, duration: change.duration)
+                }
+                return .easeInOut(duration: change.duration)
+            }
+
+            private static func keyWindow() -> UIWindow? {
+                UIApplication.shared.connectedScenes
+                    .compactMap { $0 as? UIWindowScene }
+                    .flatMap(\.windows)
+                    .first(where: \.isKeyWindow)
             }
         }
     #endif
