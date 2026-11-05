@@ -365,6 +365,17 @@ The attributed thread is the **main thread**, parked in `nw_browser_cancel`, rea
 
 **Known cause, fix:** listener/browser teardown is dispatched onto the queue those objects already run on, so the cancelling thread is never blocked.";
 
+const KEYBOARD_ENTRY_GRAPH_DEADLOCK_REPLY: &str = ":ninja: **Auto-review: `0x8BADF00D` watchdog - the keyboard entry deadlocked SwiftUI against CoreAnimation**
+
+A scene-update watchdog kill reading `is stuck (deadlock)`, with the app at about 0% CPU, so nothing was running. Two threads were each waiting on a lock the other one held:
+
+- **Main thread:** inside a CoreAnimation commit, laying out views. It walks up from a hosted view to its parent SwiftUI gesture container (`GestureRecognizerContainerBase.parentContainer`), and that walk needs the outer view graph, so it blocks in `UpdateGroup.begin` / `_MovableLockLock`.
+- **SwiftUI's async render thread** (`ViewGraphRootValueUpdater.renderAsync`) holds that graph lock while it draws an animation off the main thread, and it is waiting on the CoreAnimation lock that main holds through its commit.
+
+In 1.61 the keyboard text entry floated above the keyboard in a second `UIHostingController` nested inside the remote. Opening the keyboard mounted it while the remote's scrim was fading in, and the scrim fade is the kind of animation SwiftUI renders off the main thread.
+
+**Known cause, fix:** the entry is now an ordinary overlay in the remote's own SwiftUI graph, lifted by the keyboard's frame, and the text field takes first responder on the next main-queue turn instead of inside the commit that inserts it.";
+
 const AUDIO_PLAYER_NODE_EXCEPTION_REPLY: &str = ":ninja: **Auto-review: `SIGABRT` - AVFAudio raised on `play()` against a stale output format**
 
 `EXC_CRASH (10)` / `SIGABRT (6)`, and the attributed thread shows why: `objc_exception_throw` out of `-[AVAudioPlayerNode play]`, through `objc_terminate`, into `abort`. An Objective-C exception, not a signal in Roam's own code.
@@ -477,6 +488,27 @@ pub static RULES: &[CrashRule] = &[
         all_of: &["nw_browser_cancel"],
         none_of: &[],
         reply: WATCHDOG_REPLY,
+    },
+    // Framework frames only, so all three are needed: the gesture-container
+    // walk on main, the graph lock it blocks on, and the async renderer
+    // holding it. Any one alone appears in unrelated hangs.
+    CrashRule {
+        id: "keyboard-entry-graph-deadlock",
+        title: "0x8BADF00D deadlock between SwiftUI async rendering and a CA commit from the nested keyboard entry host",
+        fixed_in: Some("1.62"),
+        environmental: false,
+        exception_type: Some(10),
+        signal: Some(9),
+        termination_code: Some("0x8badf00d"),
+        min_thermal_level: None,
+        max_app_cpu_percent: None,
+        all_of: &[
+            "GestureRecognizerContainerBase.parentContainer",
+            "_MovableLockLock",
+            "ViewGraphRootValueUpdater.renderAsync",
+        ],
+        none_of: &[],
+        reply: KEYBOARD_ENTRY_GRAPH_DEADLOCK_REPLY,
     },
     // Kept next to the watchdog rule they share `nw_browser_cancel` with. The
     // termination code and SIGSEGV keep the two from colliding.
@@ -1632,6 +1664,72 @@ Thread 0 (attributed):
         assert_eq!(facts.thermal_level, None);
         assert_eq!(facts.app_cpu_percent, None);
         assert!(match_rule(&report, &facts).is_none());
+    }
+
+    /// Trimmed from thread 1565558982272221334: 1.61 on iOS 27.0.1, main and
+    /// the async renderer each waiting on the other's lock.
+    const KEYBOARD_ENTRY_DEADLOCK_REPORT: &str = r#"
+Install: user_id=nhm-ova-ksf build=20261023.8608773.0 release=1.61 platform=iOS os=Version 27.0.1 locale=en
+Crash 1 (version 1.0.0)
+Termination reason: <RBSTerminateContext| domain:10 code:0x8BADF00D explanation:scene-update watchdog transgression: app<com.msdrigg.roam>:10099 is stuck (deadlock)
+WatchdogCPUStatistics: (
+"Elapsed total CPU time (seconds): 4.450 (user 2.890, system 1.560), 14% CPU",
+"Elapsed application CPU time (seconds): 0.019, 0% CPU"
+)
+ThermalInfo: (
+"Thermal Level:   0",
+"Thermal State:   nominal"
+) reportType:CrashLog maxTerminationResistance:Interactive>
+Metadata:
+  appVersion: 1.61
+  deviceType: iPhone14,7
+  exceptionType: 10
+  signal: 9
+Thread 0 (attributed - this is the thread that crashed):
+  0   libsystem_kernel.dylib       +0x70dc      __psynch_mutexwait samples=1
+  3   SwiftUICore                  +0x9df0      _MovableLockLock samples=1
+  4   SwiftUICore                  +0xa984      UpdateGroup.begin samples=1
+  7   SwiftUICore                  +0x3d58d4    ViewResponder._parentGestureContainer.getter samples=1
+  8   SwiftUICore                  +0x4572d4    GestureRecognizerContainerBase.parentContainer.getter samples=1
+Thread 6:
+  13  SwiftUICore                  +0x1ffa48    ViewGraphRootValueUpdater.renderAsync samples=1
+"#;
+
+    #[test]
+    fn keyboard_entry_deadlock_reads_as_fixed_in_1_62() {
+        let facts = CrashFacts::from_report(KEYBOARD_ENTRY_DEADLOCK_REPORT);
+        let matched = match_rule(KEYBOARD_ENTRY_DEADLOCK_REPORT, &facts).expect("rule matches");
+        assert_eq!(matched.rule.id, "keyboard-entry-graph-deadlock");
+        assert_eq!(matched.status, FixStatus::Fixed);
+
+        let later = KEYBOARD_ENTRY_DEADLOCK_REPORT.replace("appVersion: 1.61", "appVersion: 1.62");
+        let facts = CrashFacts::from_report(&later);
+        assert_eq!(
+            match_rule(&later, &facts).map(|m| m.status),
+            Some(FixStatus::Unfixed)
+        );
+    }
+
+    #[test]
+    fn keyboard_entry_deadlock_needs_the_async_renderer() {
+        // A main thread stuck on the graph lock with no renderer holding it is
+        // a different hang and stays in the manual queue.
+        let report =
+            KEYBOARD_ENTRY_DEADLOCK_REPORT.replace("ViewGraphRootValueUpdater.renderAsync", "");
+        let facts = CrashFacts::from_report(&report);
+        assert!(match_rule(&report, &facts).is_none());
+    }
+
+    #[test]
+    fn keyboard_entry_deadlock_wins_over_thermal_starvation() {
+        let report = KEYBOARD_ENTRY_DEADLOCK_REPORT
+            .replace(r#""Thermal Level:   0""#, r#""Thermal Level:   9""#);
+        let facts = CrashFacts::from_report(&report);
+        assert_eq!(facts.thermal_level, Some(9));
+        assert_eq!(
+            match_rule(&report, &facts).map(|m| m.rule.id),
+            Some("keyboard-entry-graph-deadlock")
+        );
     }
 
     /// Trimmed from thread 1547029350170365983: 253 launches of a debug sim
