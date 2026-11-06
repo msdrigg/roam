@@ -333,6 +333,14 @@ Persistent writes hold an exclusive `flock` on a lock file in the shared app-gro
 - the file lock covers the transaction only - it used to be held across a full snapshot reload that scans every table
 - automatic device discovery stops when the app is backgrounded, removing the main source of writes still in flight at suspension time";
 
+const WATCH_DEVICE_SYNC_DEAD10CC_REPLY: &str = ":ninja: **Auto-review: `0xdead10cc` - watch suspended mid device sync**
+
+`EXC_CRASH (10)` / `SIGKILL (9)` with a database write under `WatchConnectivity.handleAddDevices`. The phone pushed its device list, and the watch app wrote each device to the shared app-group database from a task that outlived the WatchConnectivity delivery callback. watchOS suspended the app while that write held the database file lock, and RunningBoard killed it.
+
+Writes on watchOS skip the per-write background assertion, because the expiring-activity flavour parks a Dispatch worker per assertion.
+
+**Fix in 1.62:** the device sync holds one expiring-activity assertion across the whole batch, so the writes commit and unlock before the watch can suspend.";
+
 const EXC_GUARD_REPLY: &str = ":ninja: **Auto-review: `EXC_GUARD` - the SSDP socket was closed twice**
 
 `EXC_GUARD (12)`, attributed to `close()` inside the `defer` in `scanDevicesContinually`.
@@ -618,6 +626,23 @@ pub static RULES: &[CrashRule] = &[
         ],
         none_of: &[],
         reply: LAUNCH_DATABASE_LOCK_REPLY,
+    },
+    CrashRule {
+        id: "watch-device-sync-lock-suspension",
+        title: "0xdead10cc on the watch while syncing devices from the phone",
+        fixed_in: Some("1.62"),
+        environmental: false,
+        exception_type: Some(10),
+        signal: Some(9),
+        termination_code: None,
+        min_thermal_level: None,
+        max_app_cpu_percent: None,
+        all_of: &[
+            "WatchConnectivity.handleAddDevices",
+            "DatabaseFileLock.withExclusiveLock",
+        ],
+        none_of: &[],
+        reply: WATCH_DEVICE_SYNC_DEAD10CC_REPLY,
     },
     CrashRule {
         id: "database-lock-suspension",
@@ -1694,6 +1719,58 @@ Thread 0 (attributed - this is the thread that crashed):
 Thread 6:
   13  SwiftUICore                  +0x1ffa48    ViewGraphRootValueUpdater.renderAsync samples=1
 "#;
+
+    const WATCH_DEVICE_SYNC_REPORT: &str = r#"
+Crash 1 (version 1.0.0)
+Metadata:
+  appVersion: 1.61
+  deviceType: Watch7,15
+  exceptionType: 10
+  osVersion: Watch OS 27.0.1 (24R365)
+  signal: 9
+Thread 6:
+  Roam +0x1 specialized DatabaseFileLock.withExclusiveLock<A> at /x/DatabaseFileLock.swift:63
+  Roam +0x2 RoamDatabase.saveDevice(_:) at /x/RoamDatabase.swift:143
+  Roam +0x3 closure #1 in WatchConnectivity.handleAddDevices(_:) at /x/IPhoneConnector.swift:70
+"#;
+
+    #[test]
+    fn watch_device_sync_suspension_reads_as_fixed_in_1_62() {
+        let facts = CrashFacts::from_report(WATCH_DEVICE_SYNC_REPORT);
+        let matched = match_rule(WATCH_DEVICE_SYNC_REPORT, &facts).expect("rule matches");
+        assert_eq!(matched.rule.id, "watch-device-sync-lock-suspension");
+        assert_eq!(matched.status, FixStatus::Fixed);
+
+        let later = WATCH_DEVICE_SYNC_REPORT.replace("appVersion: 1.61", "appVersion: 1.62");
+        let facts = CrashFacts::from_report(&later);
+        assert_eq!(
+            match_rule(&later, &facts).map(|m| m.status),
+            Some(FixStatus::Unfixed)
+        );
+    }
+
+    #[test]
+    fn watch_device_sync_rule_leaves_other_lock_suspensions_alone() {
+        for report in [
+            DEAD10CC_REPORT,
+            LAUNCH_DATABASE_REPORT,
+            GUARD_REPORT,
+            WATCHDOG_REPORT,
+        ] {
+            let facts = CrashFacts::from_report(report);
+            assert_ne!(
+                match_rule(report, &facts).map(|m| m.rule.id),
+                Some("watch-device-sync-lock-suspension")
+            );
+        }
+        let report =
+            WATCH_DEVICE_SYNC_REPORT.replace("WatchConnectivity.handleAddDevices", "other");
+        let facts = CrashFacts::from_report(&report);
+        assert_eq!(
+            match_rule(&report, &facts).map(|m| m.rule.id),
+            Some("database-lock-suspension")
+        );
+    }
 
     #[test]
     fn keyboard_entry_deadlock_reads_as_fixed_in_1_62() {

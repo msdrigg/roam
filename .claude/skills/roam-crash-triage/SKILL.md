@@ -314,4 +314,5 @@ Known Organizer-only history:
 | `demandSharedModelContainer` SwiftData fatal, macOS widget | 1.35 | Old SwiftData build still installed somewhere; code is gone |
 | `demandSharedModelContainer`, sqlite SIGKILLs, iOS app | 1.48 | Pre-GRDB, pre-upload |
 | dyld `Library not loaded: RoamGRDB.framework`, iOS 27 | 1.50 | Fixed in `432d7c6` |
+| `0xdead10cc`, `DatabaseFileLock` write under `WatchConnectivity.handleAddDevices`, watch app | 1.61 | Fixed in 1.62 (assertion across the device sync); rule `watch-device-sync-lock-suspension` |
 

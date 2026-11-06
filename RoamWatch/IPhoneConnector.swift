@@ -51,8 +51,14 @@ final class WatchConnectivity: NSObject, WCSessionDelegate, Sendable {
     func handleAddDevices(_ devices: [String: Any]) {
         if let deviceMap = devices as? [String: [String: String]] {
             Log.watch.notice("Trying to add devices \(deviceMap, privacy: .public)")
-            Task {
-                let dataHandler = await RoamDataHandler.shared
+            // Delivery returns before these writes finish, and a suspension
+            // while one holds the app-group flock is a 0xdead10cc kill. One
+            // expiring-activity assertion covers the whole batch, since each
+            // parks a Dispatch worker.
+            Task { @MainActor in
+                let dontKillAssertion = QRunInBackgroundAssertion(name: "roam-watch-device-sync")
+                defer { dontKillAssertion.release() }
+                let dataHandler = RoamDataHandler.shared
                 for device in deviceMap {
                     if var existingDevice = await dataHandler.requestDevice(id: device.key) {
                         Log.watch
