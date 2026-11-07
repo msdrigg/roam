@@ -798,7 +798,8 @@
                     KeyboardFollowingContainer(
                         content: keyboardEntryField
                             .padding(.horizontal, 16)
-                            .padding(.bottom, 10)
+                            .padding(.bottom, 10),
+                        visible: showKeyboardEntry
                     )
                     .transition(.opacity)
                 }

@@ -47,9 +47,18 @@
 
         private func handleDone() {
             withAnimation {
-                keyboardFocused = false
+                dropFocus()
                 showing = false
             }
+        }
+
+        /// On iOS the remote resigns first responder once `showing` is false.
+        /// Resigning inside this update posts the keyboard's notifications
+        /// mid-transaction, and the scrim and entry lose their animations.
+        private func dropFocus() {
+            #if !os(iOS)
+                keyboardFocused = false
+            #endif
         }
 
         private func scenePhaseTask() async {
@@ -115,7 +124,7 @@
         private func handleLeavingChange(_ leaving: Bool) {
             if leaving {
                 withAnimation {
-                    keyboardFocused = false
+                    dropFocus()
                     showing = false
                 }
             } else {
@@ -344,12 +353,18 @@
         /// the keyboard's frame itself.
         struct KeyboardFollowingContainer<Content: View>: View {
             let content: Content
+            /// False once the entry is dismissed. The entry fades out where it
+            /// is, since the keyboard's notifications arrive frames after its
+            /// slide begins and a follower would trail it to the bottom edge.
+            let visible: Bool
 
             var body: some View {
                 GeometryReader { proxy in
                     VStack(spacing: 0) {
                         Spacer(minLength: 0)
                         content
+                            .opacity(visible ? 1 : 0)
+                            .animation(.easeOut(duration: 0.15), value: visible)
                     }
                     .padding(.bottom, KeyboardFrameTracker.shared.inset(below: proxy.frame(in: .global).maxY))
                 }
@@ -399,7 +414,9 @@
                         }
                     }
                 }
-                refresh()
+                // No `refresh()` here: reading `safeAreaInsets` asks SwiftUI
+                // for status-bar preferences, which re-enters the body that
+                // is creating `shared`. The container refreshes on appear.
             }
 
             /// How far content ending at `maxY` must rise to clear the docked
