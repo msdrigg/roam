@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import os
 
@@ -28,10 +29,12 @@ enum MainThreadStallMonitor {
 
     private struct State: Sendable {
         var lastAnswer = ProcessInfo.processInfo.systemUptime
+        var lastAnswerCPU: TimeInterval?
         var pingOutstanding = false
         var reportedStall: TimeInterval = 0
         var launch = "unknown"
         var context = Context()
+        var checkpoints: [(time: TimeInterval, label: String)] = []
     }
 
     private static let state = OSAllocatedUnfairLock(initialState: State())
@@ -39,6 +42,7 @@ enum MainThreadStallMonitor {
     nonisolated(unsafe) private static var terminationSource: DispatchSourceSignal?
 
     /// Idempotent: `RoamApp.init` runs on every rebuild of the `App` value.
+    @MainActor
     static func start() {
         let first = started.withLock { started in
             defer { started = true }
@@ -46,15 +50,36 @@ enum MainThreadStallMonitor {
         }
         guard first else { return }
 
-        let thread = Thread { run() }
+        let mainThread = pthread_mach_thread_np(pthread_self())
+        let cpu = sampleThread(mainThread)?.cpu
+        state.withLock {
+            $0.lastAnswer = ProcessInfo.processInfo.systemUptime
+            $0.lastAnswerCPU = cpu
+        }
+        checkpoint("App initialization started")
+        let thread = Thread { run(mainThread: mainThread) }
         thread.name = "com.msdrigg.roam.main-stall-monitor"
         thread.qualityOfService = .userInitiated
         thread.start()
         observeTermination()
     }
 
+    @MainActor
     static func noteLaunch(_ launch: String) {
-        state.withLock { $0.launch = launch }
+        let context = sampleContext()
+        state.withLock {
+            $0.launch = launch
+            $0.context = context
+        }
+        checkpoint("Application did finish launching")
+    }
+
+    static func checkpoint(_ label: String) {
+        let now = ProcessInfo.processInfo.systemUptime
+        state.withLock {
+            if $0.checkpoints.count == 8 { $0.checkpoints.removeFirst() }
+            $0.checkpoints.append((now, label))
+        }
     }
 
     /// Context as of the main thread's last answer, which during a stall is
@@ -66,17 +91,19 @@ enum MainThreadStallMonitor {
         return "main last answered \(seconds(stall))s ago, \(describe(snapshot))"
     }
 
-    private static func run() {
+    private static func run(mainThread: thread_t) {
         var lastTick = ProcessInfo.processInfo.systemUptime
         while true {
             Thread.sleep(forTimeInterval: pingInterval)
             let now = ProcessInfo.processInfo.systemUptime
             let resumed = now - lastTick > suspensionGap
             lastTick = now
+            let threadSample = sampleThread(mainThread)
 
             let (ping, report) = state.withLock { state -> (Bool, (TimeInterval, State)?) in
                 if resumed {
                     state.lastAnswer = now
+                    state.lastAnswerCPU = threadSample?.cpu
                     state.reportedStall = 0
                 }
                 let stall = now - state.lastAnswer
@@ -95,6 +122,16 @@ enum MainThreadStallMonitor {
                 Log.lifecycle.error(
                     "Main thread unresponsive for \(seconds(stall), privacy: .public)s; at stall start \(describe(snapshot), privacy: .public)"
                 )
+                if let threadSample, let baseline = snapshot.lastAnswerCPU {
+                    let cpu = max(0, threadSample.cpu - baseline)
+                    Log.lifecycle.error(
+                        "Stall main-thread CPU=\(seconds(cpu), privacy: .public)s over \(seconds(stall), privacy: .public)s wall; threadState=\(threadSample.runState, privacy: .public)"
+                    )
+                }
+                let history = snapshot.checkpoints.map {
+                    "\(seconds(now - $0.time))s ago: \($0.label)"
+                }.joined(separator: " | ")
+                Log.lifecycle.error("Stall checkpoints: \(history, privacy: .public)")
                 FileLog.flushNow()
             }
             if ping {
@@ -106,9 +143,11 @@ enum MainThreadStallMonitor {
     private static func answer() {
         let context = MainActor.assumeIsolated { sampleContext() }
         let now = ProcessInfo.processInfo.systemUptime
+        let cpu = sampleThread(pthread_mach_thread_np(pthread_self()))?.cpu
         let recovered = state.withLock { state -> TimeInterval? in
             let stall = state.reportedStall > 0 ? now - state.lastAnswer : nil
             state.lastAnswer = now
+            state.lastAnswerCPU = cpu
             state.pingOutstanding = false
             state.reportedStall = 0
             state.context = context
@@ -118,6 +157,23 @@ enum MainThreadStallMonitor {
             Log.lifecycle.notice(
                 "Main thread answered again after a \(seconds(recovered), privacy: .public)s stall")
         }
+    }
+
+    // Reading thread accounting does not suspend main or unwind a stack that
+    // may hold allocator locks. CPU time is cumulative and needs a ping baseline.
+    private static func sampleThread(_ thread: thread_t) -> (cpu: TimeInterval, runState: Int32)? {
+        var info = thread_basic_info_data_t()
+        var count = mach_msg_type_number_t(
+            MemoryLayout<thread_basic_info_data_t>.size / MemoryLayout<integer_t>.size)
+        let result = withUnsafeMutablePointer(to: &info) { pointer in
+            pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                thread_info(thread, thread_flavor_t(THREAD_BASIC_INFO), $0, &count)
+            }
+        }
+        guard result == KERN_SUCCESS else { return nil }
+        let cpu = Double(info.user_time.seconds) + Double(info.system_time.seconds)
+            + (Double(info.user_time.microseconds) + Double(info.system_time.microseconds)) / 1_000_000
+        return (cpu, info.run_state)
     }
 
     /// A dispatch source leaves `SIGTERM`'s disposition alone, so whatever

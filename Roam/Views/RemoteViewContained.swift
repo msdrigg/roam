@@ -276,6 +276,8 @@
         }
 
         private func handleAppear() {
+            MainThreadStallMonitor.checkpoint(
+                "Remote appeared active=\(isActive) preloads=\(preloads) iconsLoaded=\(iconsLoaded) hasDevice=\(device != nil)")
             Log.lifecycle.notice("Showing \(#fileID, privacy: .public) view")
             headphonesMode.remoteAppeared()
         }
@@ -346,10 +348,12 @@
         private func loadIconsTask() async {
             guard !iconsLoaded else { return }
             if isActive {
+                MainThreadStallMonitor.checkpoint("Remote enabled active-page icons")
                 iconsLoaded = true
             } else if preloads {
                 try? await Task.sleep(for: .milliseconds(800))
                 if !Task.isCancelled {
+                    MainThreadStallMonitor.checkpoint("Remote enabled neighboring-page icons")
                     iconsLoaded = true
                 }
             }
@@ -829,6 +833,8 @@
         }
 
         private func handleRemoteSizeChange(_ size: CGSize) {
+            MainThreadStallMonitor.checkpoint(
+                "Remote layout size=\(size.width)x\(size.height) active=\(isActive) horizontal=\(size.width > size.height)")
             remoteHeight = size.height
             let horizontal = size.width > size.height
             guard horizontal != controlledIsHorizontal else { return }

@@ -178,6 +178,15 @@ handle that, and `Launch state=... prewarm` marks a launch iOS started ahead of
 the user. `Launch state=background` alone means little, because a scene-based
 app reports `background` in `didFinishLaunching` even when the user opened it.
 
+From 1.63, `Stall main-thread CPU` records CPU seconds since the last main-thread
+answer alongside wall time. A value near wall time suggests CPU-bound work;
+near zero suggests a wait. `threadState=1` means running and `3` means waiting
+at the sample. `Stall checkpoints` retains the last eight launch, database,
+remote appearance, layout-size, and icon-preload events with their ages. These
+are progress markers, not stack samples. The 1.61 iPad7,11 scene-create hang
+(thread `1567670696039944292`) remains unresolved; 1.63 adds this evidence
+without claiming a fix.
+
 **When the attributed thread has no frames**, the process blew its stack:
 MetricKit cannot unwind an overflowed stack and reports the thread empty. Go to
 the in-process backtrace instead - a frame repeating down that list is the

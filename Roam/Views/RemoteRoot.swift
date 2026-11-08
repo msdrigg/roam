@@ -57,7 +57,9 @@ struct RemoteRoot: View {
             .rootSheets(isActive: !appDelegate.navigationPath.phonePagerIsPresented)
             .task {
                 guard !runningInPreview else { return }
+                MainThreadStallMonitor.checkpoint("RemoteRoot database initialization started")
                 await RoamDataHandler.shared.initialize()
+                MainThreadStallMonitor.checkpoint("RemoteRoot database initialization finished")
             }
             .task(id: "ssdp-\(scanAutomatically)-\(discoveryPausedForBackground)", priority: .background) {
                 guard !runningInPreview, scanAutomatically else { return }
