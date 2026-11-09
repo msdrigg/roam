@@ -148,10 +148,16 @@ struct WatchAppView: View {
                     )
                     .font(.body)
                 }
+                ToolbarItem(id: "private-listening", placement: .topBarTrailing) {
+                    PrivateListeningButton(device: selectedDevice)
+                }
             }
             .tabViewStyle(.verticalPage)
             .onAppear {
                 scanningActor = DeviceDiscoveryActor()
+            }
+            .onChange(of: selectedDevice?.id) {
+                appDelegate.privateListening.stop()
             }
             .customAccentColorTint()
         }
@@ -183,6 +189,39 @@ struct WatchAppView: View {
                     }
                 }
         }
+    }
+}
+
+struct PrivateListeningButton: View {
+    let device: Device?
+
+    @EnvironmentObject private var appDelegate: RoamWatchAppDelegate
+
+    private var privateListening: WatchPrivateListening {
+        appDelegate.privateListening
+    }
+
+    private var error: Binding<Error?> {
+        Binding(
+            get: { privateListening.error },
+            set: { privateListening.error = $0 }
+        )
+    }
+
+    var body: some View {
+        let enabled = privateListening.isEnabled(for: device?.id)
+        Button(
+            action: { privateListening.toggle(device: device) },
+            label: {
+                RemoteButton.headphonesMode.label
+                    .labelStyle(.iconOnly)
+                    .symbolEffect(.pulse, isActive: enabled)
+            }
+        )
+        .disabled(device == nil || device?.supportsDatagram == false)
+        .accessibilityIdentifier("PrivateListeningButton")
+        .accessibilityAddTraits(enabled ? .isSelected : [])
+        .alertingError(message: "Headphones Mode Failed", error: error)
     }
 }
 

@@ -1,7 +1,7 @@
 import Foundation
 import os.log
 
-#if os(iOS) || os(visionOS)
+#if os(iOS) || os(visionOS) || os(watchOS)
     import AVFoundation
 
     @MainActor

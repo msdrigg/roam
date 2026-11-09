@@ -334,18 +334,24 @@ actor AudioPlayer {
     }
 
     #if !os(macOS)
+        // On watchOS the session is owned by WatchPrivateListening, which must activate it with the
+        // long-form policy before any socket opens. Resetting the category here would drop that policy.
         func makeInactive() {
-            do {
-                try AVAudioSession.sharedInstance().setActive(false)
-            } catch {
-                Log.headphones.error(
-                    "Failed to disable audio session active: \(error, privacy: .public)")
-            }
+            #if !os(watchOS)
+                do {
+                    try AVAudioSession.sharedInstance().setActive(false)
+                } catch {
+                    Log.headphones.error(
+                        "Failed to disable audio session active: \(error, privacy: .public)")
+                }
+            #endif
         }
         func configureAudioSession() {
-            let session = AVAudioSession.sharedInstance()
-            try? session.setCategory(.playback, mode: .default, options: [])
-            try? session.setActive(true)
+            #if !os(watchOS)
+                let session = AVAudioSession.sharedInstance()
+                try? session.setCategory(.playback, mode: .default, options: [])
+                try? session.setActive(true)
+            #endif
             self.setupNotifications()
         }
 
