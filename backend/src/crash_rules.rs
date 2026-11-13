@@ -377,12 +377,12 @@ const KEYBOARD_ENTRY_GRAPH_DEADLOCK_REPLY: &str = ":ninja: **Auto-review: `0x8BA
 
 A scene-update watchdog kill reading `is stuck (deadlock)`, with the app at about 0% CPU, so nothing was running. Two threads were each waiting on a lock the other one held:
 
-- **Main thread:** inside a CoreAnimation commit, laying out views. It walks up from a hosted view to its parent SwiftUI gesture container (`GestureRecognizerContainerBase.parentContainer`), and that walk needs the outer view graph, so it blocks in `UpdateGroup.begin` / `_MovableLockLock`.
+- **Main thread:** inside a CoreAnimation commit, laying out views. It walks up from a hosted view to the SwiftUI view graph (`GestureRecognizerContainerBase.parentContainer` or `ViewGraphRootValueUpdater.responderNode`, depending on the OS build's symbols), and that needs the graph lock, so it blocks in `_MovableLockLock`.
 - **SwiftUI's async render thread** (`ViewGraphRootValueUpdater.renderAsync`) holds that graph lock while it draws an animation off the main thread, and it is waiting on the CoreAnimation lock that main holds through its commit.
 
-In 1.61 the keyboard text entry floated above the keyboard in a second `UIHostingController` nested inside the remote. Opening the keyboard mounted it while the remote's scrim was fading in, and the scrim fade is the kind of animation SwiftUI renders off the main thread.
+It happens as the keyboard text entry mounts, while the remote's scrim and the entry are fading in. Those fades are the kind of animation SwiftUI renders off the main thread.
 
-**Known cause, fix:** the entry is now an ordinary overlay in the remote's own SwiftUI graph, lifted by the keyboard's frame, and the text field takes first responder on the next main-queue turn instead of inside the commit that inserts it.";
+**Not fixed yet.** 1.61 hosted the entry in a nested `UIHostingController`. 1.63 moved it into the remote's own graph and deferred the field's first responder to the next main-queue turn, but a 1.63 report deadlocks the same way, right after the field's setup.";
 
 const AUDIO_PLAYER_NODE_EXCEPTION_REPLY: &str = ":ninja: **Auto-review: `SIGABRT` - AVFAudio raised on `play()` against a stale output format**
 
@@ -499,11 +499,12 @@ pub static RULES: &[CrashRule] = &[
     },
     // Framework frames only, so all three are needed: the gesture-container
     // walk on main, the graph lock it blocks on, and the async renderer
-    // holding it. Any one alone appears in unrelated hangs.
+    // holding it. Any one alone appears in unrelated hangs. No `fixed_in`:
+    // the 1.63 change did not stop it.
     CrashRule {
         id: "keyboard-entry-graph-deadlock",
-        title: "0x8BADF00D deadlock between SwiftUI async rendering and a CA commit from the nested keyboard entry host",
-        fixed_in: Some("1.62"),
+        title: "0x8BADF00D deadlock between SwiftUI async rendering and a CA commit as the keyboard entry mounts",
+        fixed_in: None,
         environmental: false,
         exception_type: Some(10),
         signal: Some(9),
@@ -512,6 +513,26 @@ pub static RULES: &[CrashRule] = &[
         max_app_cpu_percent: None,
         all_of: &[
             "GestureRecognizerContainerBase.parentContainer",
+            "_MovableLockLock",
+            "ViewGraphRootValueUpdater.renderAsync",
+        ],
+        none_of: &[],
+        reply: KEYBOARD_ENTRY_GRAPH_DEADLOCK_REPLY,
+    },
+    // The same deadlock where the OS build's symbols name the responder-node
+    // lookup instead of the gesture-container walk (iOS 26.3).
+    CrashRule {
+        id: "keyboard-entry-graph-deadlock-responder",
+        title: "0x8BADF00D deadlock between SwiftUI async rendering and a CA commit as the keyboard entry mounts",
+        fixed_in: None,
+        environmental: false,
+        exception_type: Some(10),
+        signal: Some(9),
+        termination_code: Some("0x8badf00d"),
+        min_thermal_level: None,
+        max_app_cpu_percent: None,
+        all_of: &[
+            "ViewGraphRootValueUpdater.responderNode",
             "_MovableLockLock",
             "ViewGraphRootValueUpdater.renderAsync",
         ],
@@ -1720,6 +1741,36 @@ Thread 6:
   13  SwiftUICore                  +0x1ffa48    ViewGraphRootValueUpdater.renderAsync samples=1
 "#;
 
+    /// Trimmed from thread 1570865291548950688: 1.63 on iOS 26.3, killed while
+    /// failing to terminate, with no gesture-container frame symbolicated.
+    const KEYBOARD_ENTRY_RESPONDER_DEADLOCK_REPORT: &str = r#"
+Install: user_id=ujh-qrc-laa build=20261108.2715236.0 release=1.63 platform=iOS os=Version 26.3 (Build 23D127) locale=en
+Crash 1 (version 1.0.0)
+Termination reason: <RBSTerminateContext| domain:10 code:0x8BADF00D explanation:[app<com.msdrigg.roam>:26749] Failed to terminate gracefully after 5.0s
+WatchdogCPUStatistics: (
+"Elapsed total CPU time (seconds): 3.860 (user 3.860, system 0.000), 11% CPU",
+"Elapsed application CPU time (seconds): 0.019, 0% CPU"
+)
+ThermalInfo: (
+"Thermal Level:   0",
+"Thermal State:   nominal"
+) reportType:CrashLog maxTerminationResistance:Interactive>
+Metadata:
+  appVersion: 1.63
+  deviceType: iPhone12,1
+  exceptionType: 10
+  signal: 9
+Thread 0 (attributed - this is the thread that crashed):
+  0   libsystem_kernel.dylib       +0x70b4      __psynch_mutexwait samples=1
+  3   SwiftUICore                  +0x4218      _MovableLockLock samples=1
+  5   SwiftUICore                  +0x1bf28     ViewGraphRootValueUpdater._updateViewGraph<A> samples=1
+  6   SwiftUICore                  +0x31474c    ViewGraphRootValueUpdater.responderNode.getter samples=1
+Thread 9:
+  0   libsystem_kernel.dylib       +0xae8       __ulock_wait2 samples=1
+  5   SwiftUICore                  +0x8bc68     ViewGraph.renderDisplayList samples=1
+  7   SwiftUICore                  +0x23cdd0    ViewGraphRootValueUpdater.renderAsync samples=1
+"#;
+
     const WATCH_DEVICE_SYNC_REPORT: &str = r#"
 Crash 1 (version 1.0.0)
 Metadata:
@@ -1773,18 +1824,31 @@ Thread 6:
     }
 
     #[test]
-    fn keyboard_entry_deadlock_reads_as_fixed_in_1_62() {
-        let facts = CrashFacts::from_report(KEYBOARD_ENTRY_DEADLOCK_REPORT);
-        let matched = match_rule(KEYBOARD_ENTRY_DEADLOCK_REPORT, &facts).expect("rule matches");
-        assert_eq!(matched.rule.id, "keyboard-entry-graph-deadlock");
-        assert_eq!(matched.status, FixStatus::Fixed);
+    fn keyboard_entry_deadlock_claims_no_fix() {
+        for version in ["1.61", "1.62", "1.63"] {
+            let report = KEYBOARD_ENTRY_DEADLOCK_REPORT
+                .replace("appVersion: 1.61", &format!("appVersion: {version}"));
+            let facts = CrashFacts::from_report(&report);
+            let matched = match_rule(&report, &facts).expect("rule matches");
+            assert_eq!(matched.rule.id, "keyboard-entry-graph-deadlock");
+            assert_eq!(matched.status, FixStatus::Unknown);
+            assert!(matched.reply(&facts).contains("Not fixed yet"));
+        }
+    }
 
-        let later = KEYBOARD_ENTRY_DEADLOCK_REPORT.replace("appVersion: 1.61", "appVersion: 1.62");
-        let facts = CrashFacts::from_report(&later);
+    #[test]
+    fn keyboard_entry_deadlock_matches_the_responder_node_shape() {
+        let facts = CrashFacts::from_report(KEYBOARD_ENTRY_RESPONDER_DEADLOCK_REPORT);
+        assert_eq!(facts.app_version.as_deref(), Some("1.63"));
         assert_eq!(
-            match_rule(&later, &facts).map(|m| m.status),
-            Some(FixStatus::Unfixed)
+            match_rule(KEYBOARD_ENTRY_RESPONDER_DEADLOCK_REPORT, &facts).map(|m| m.rule.id),
+            Some("keyboard-entry-graph-deadlock-responder")
         );
+
+        let report = KEYBOARD_ENTRY_RESPONDER_DEADLOCK_REPORT
+            .replace("ViewGraphRootValueUpdater.renderAsync", "");
+        let facts = CrashFacts::from_report(&report);
+        assert!(match_rule(&report, &facts).is_none());
     }
 
     #[test]
