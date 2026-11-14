@@ -36,9 +36,10 @@
             @AppStorageColor(UserDefaultKeys.customAccentColor) private var customAccentColor:
                 Color = Color("AccentColor")
             @State private var showPastedUrlOffer: Bool = false
-            // Outlives `showKeyboardEntry` while the keyboard slides away, so
-            // the field rides down with it instead of leaving first.
+            // The entry's field exists only while no show or hide animation
+            // runs. See `setKeyboardEntryShown`.
             @State private var entryMounted: Bool = false
+            @State private var entryGeneration: Int = 0
             // Once an offer is accepted or dismissed, don't re-offer until the
             // pasteboard contents actually change. `changeCount` is metadata,
             // so reading it never triggers the system paste notice.
@@ -243,13 +244,9 @@
 
         private func handleTextEditStatusChange(old: TextEditStatus, new: TextEditStatus) {
             if old.isActive && !new.isActive {
-                withAnimation {
-                    showKeyboardEntryManual = false
-                }
+                setKeyboardEntryShown(false)
             } else if !old.isActive && new.isActive {
-                withAnimation {
-                    showKeyboardEntryManual = true
-                }
+                setKeyboardEntryShown(true)
             }
         }
 
@@ -360,10 +357,8 @@
         }
 
         private func syncExternalKeyboardOnAppear() {
-            if let externalShowKeyboard,
-                externalShowKeyboard.wrappedValue != showKeyboardEntryManual
-            {
-                showKeyboardEntryManual = externalShowKeyboard.wrappedValue
+            if let externalShowKeyboard {
+                setKeyboardEntryShown(externalShowKeyboard.wrappedValue, animated: false)
             }
         }
 
@@ -389,9 +384,7 @@
                 // via `keyboardLeaving = showKeyboardEntry`.
                 keyboardLeaving = false
             }
-            withAnimation {
-                showKeyboardEntryManual = new
-            }
+            setKeyboardEntryShown(new)
         }
 
         var body: some View {
@@ -436,7 +429,6 @@
                     // Re-check whenever the page becomes the active pager page,
                     // the app foregrounds, or the device changes.
                     .task(id: pasteboardCheckTaskId) { await checkForPastedUrl() }
-                    .task(id: showKeyboardEntry) { await handleEntryVisibilityChange(showKeyboardEntry) }
                 #endif
                 .onChange(of: focusKeyboardMonitor) { restoreFocusIfNeeded() }
                 .onChange(of: showKeyboardEntry) { handleShowKeyboardChange() }
@@ -451,9 +443,34 @@
 
         private func toggleKeyboardEntry() {
             keyboardLeaving = showKeyboardEntry
-            withAnimation {
-                showKeyboardEntryManual = !showKeyboardEntry
-            }
+            setKeyboardEntryShown(!showKeyboardEntry)
+        }
+
+        private func setKeyboardEntryShown(_ shown: Bool, animated: Bool = true) {
+            guard shown != showKeyboardEntryManual else { return }
+            #if os(iOS)
+                entryGeneration += 1
+                let generation = entryGeneration
+                guard animated else {
+                    showKeyboardEntryManual = shown
+                    DispatchQueue.main.async { settleKeyboardEntry(generation) }
+                    return
+                }
+                // The field takes and gives up first responder only once this
+                // animation is gone. While SwiftUI renders an animation on its
+                // own thread it holds the view-graph lock and waits for
+                // CoreAnimation, and UIKit's keyboard handling on the main
+                // thread takes the two in the other order.
+                withAnimation(.easeOut(duration: 0.15), completionCriteria: .removed) {
+                    showKeyboardEntryManual = shown
+                } completion: {
+                    DispatchQueue.main.async { settleKeyboardEntry(generation) }
+                }
+            #else
+                withAnimation(animated ? .default : nil) {
+                    showKeyboardEntryManual = shown
+                }
+            #endif
         }
 
         #if os(visionOS)
@@ -744,15 +761,13 @@
 
         private func dismissKeyboardEntry() {
             keyboardLeaving = true
-            withAnimation {
-                showKeyboardEntryManual = false
-            }
+            setKeyboardEntryShown(false)
         }
 
         private var keyboardEntryShowingBinding: Binding<Bool> {
             Binding<Bool>(
                 get: { showKeyboardEntry },
-                set: { newVal in showKeyboardEntryManual = newVal }
+                set: { newVal in setKeyboardEntryShown(newVal) }
             )
         }
 
@@ -782,18 +797,13 @@
                 }
             }
 
-            private func handleEntryVisibilityChange(_ showing: Bool) async {
-                if showing {
-                    entryMounted = true
-                    return
+            private func settleKeyboardEntry(_ generation: Int) {
+                guard generation == entryGeneration, entryMounted != showKeyboardEntry else { return }
+                if entryMounted {
+                    UIApplication.shared.sendAction(
+                        #selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 }
-                guard entryMounted else { return }
-                UIApplication.shared.sendAction(
-                    #selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                try? await Task.sleep(for: .milliseconds(450))
-                if !Task.isCancelled {
-                    entryMounted = false
-                }
+                entryMounted = showKeyboardEntry
             }
 
             @ViewBuilder
@@ -805,7 +815,6 @@
                             .padding(.bottom, 10),
                         visible: showKeyboardEntry
                     )
-                    .transition(.opacity)
                 }
             }
         #else

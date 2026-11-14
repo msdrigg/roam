@@ -2,6 +2,7 @@
     import Foundation
     import Observation
     import os.log
+    import QuartzCore
     import SwiftUI
 
     let globalMaxLengthChars = 64
@@ -52,9 +53,10 @@
             }
         }
 
-        /// On iOS the remote resigns first responder once `showing` is false.
-        /// Resigning inside this update posts the keyboard's notifications
-        /// mid-transaction, and the scrim and entry lose their animations.
+        /// On iOS the remote resigns first responder once the hide animation
+        /// has finished. Resigning inside this update posts the keyboard's
+        /// notifications mid-transaction, and the keyboard would start moving
+        /// while SwiftUI still animates the scrim.
         private func dropFocus() {
             #if !os(iOS)
                 keyboardFocused = false
@@ -354,8 +356,7 @@
         struct KeyboardFollowingContainer<Content: View>: View {
             let content: Content
             /// False once the entry is dismissed. The entry fades out where it
-            /// is, since the keyboard's notifications arrive frames after its
-            /// slide begins and a follower would trail it to the bottom edge.
+            /// is, with the scrim, before the keyboard is told to leave.
             let visible: Bool
 
             var body: some View {
@@ -364,7 +365,6 @@
                         Spacer(minLength: 0)
                         content
                             .opacity(visible ? 1 : 0)
-                            .animation(.easeOut(duration: 0.15), value: visible)
                     }
                     .padding(.bottom, KeyboardFrameTracker.shared.inset(below: proxy.frame(in: .global).maxY))
                 }
@@ -384,6 +384,18 @@
             private(set) var keyboardTop: CGFloat?
             private(set) var safeBottom: CGFloat?
             @ObservationIgnored private var observers: [any NSObjectProtocol] = []
+            @ObservationIgnored private var dockedTop: CGFloat?
+            @ObservationIgnored private var glide: Glide?
+            @ObservationIgnored private var displayLink: CADisplayLink?
+
+            private struct Glide {
+                let from: CGFloat
+                let to: CGFloat
+                let settled: CGFloat?
+                let start: CFTimeInterval
+                let duration: Double
+                let curve: UnitCurve
+            }
 
             private struct Change: Sendable {
                 let endFrame: CGRect
@@ -440,21 +452,67 @@
                 let docked = !change.hiding && !frame.isEmpty && frame.maxY >= bottom - 1 && frame.minY < bottom
                 let top = docked ? frame.minY : nil
                 let safe = bottom - window.safeAreaInsets.bottom
-                guard top != keyboardTop || safe != safeBottom else { return }
-                withAnimation(Self.animation(for: change)) {
-                    keyboardTop = top
+                if safe != safeBottom {
                     safeBottom = safe
                 }
+                guard top != dockedTop else { return }
+                dockedTop = top
+                let from = keyboardTop ?? bottom
+                let to = top ?? bottom
+                guard change.duration > 0, from != to else {
+                    stopGlide()
+                    keyboardTop = top
+                    return
+                }
+                glide = Glide(
+                    from: from, to: to, settled: top, start: CACurrentMediaTime(),
+                    duration: change.duration, curve: Self.curve(for: change))
+                startGlide()
+            }
+
+            // The entry follows the keyboard one main-thread frame at a time,
+            // never through `withAnimation`. SwiftUI renders an animation on
+            // its own thread, holding the view-graph lock while it waits for
+            // CoreAnimation. UIKit's keyboard handling on the main thread asks
+            // that graph for gesture containers while it holds CoreAnimation,
+            // and the two deadlock until the watchdog kills the app.
+            private func startGlide() {
+                guard displayLink == nil else { return }
+                let link = CADisplayLink(target: self, selector: #selector(step(_:)))
+                link.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120)
+                link.add(to: .main, forMode: .common)
+                displayLink = link
+            }
+
+            private func stopGlide() {
+                displayLink?.invalidate()
+                displayLink = nil
+                glide = nil
+            }
+
+            @objc private func step(_ link: CADisplayLink) {
+                guard let glide else {
+                    stopGlide()
+                    return
+                }
+                let progress = (link.targetTimestamp - glide.start) / glide.duration
+                guard progress < 1 else {
+                    stopGlide()
+                    keyboardTop = glide.settled
+                    return
+                }
+                keyboardTop = glide.from + (glide.to - glide.from) * glide.curve.value(at: max(0, progress))
             }
 
             /// UIKit animates the keyboard with private curve 7. The bezier is
             /// an approximation of it, run over the duration UIKit reports.
-            private static func animation(for change: Change) -> Animation? {
-                guard change.duration > 0 else { return nil }
+            private static func curve(for change: Change) -> UnitCurve {
                 if change.curve == 7 {
-                    return .timingCurve(0.38, 0.7, 0.125, 1, duration: change.duration)
+                    return .bezier(
+                        startControlPoint: UnitPoint(x: 0.38, y: 0.7),
+                        endControlPoint: UnitPoint(x: 0.125, y: 1))
                 }
-                return .easeInOut(duration: change.duration)
+                return .easeInOut
             }
 
             private static func keyWindow() -> UIWindow? {
