@@ -690,7 +690,7 @@ func sendBackendError(_ message: String, logEntries: [LogEntry]? = nil, file: St
         #if !CLI && !TEST && !WIDGET
         do {
             Log.backend.notice("Getting diagnostics to export")
-            let entries = try logEntries ?? getLogEntries()
+            let entries = logEntries ?? currentRunLogEntries().entries
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

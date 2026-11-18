@@ -351,15 +351,11 @@ public enum FileLog {
         let cutoff = window.map { $0.end.addingTimeInterval(120) }
 
         var collected: [FileLogEntry] = []
-        let decoder = JSONDecoder()
         for file in candidates {
             guard let data = try? Data(contentsOf: file) else { continue }
-            var fromFile: [FileLogEntry] = []
-            for line in data.split(separator: 0x0A, omittingEmptySubsequences: true) {
-                guard let entry = try? decoder.decode(FileLogEntry.self, from: Data(line))
-                else { continue }
-                if let cutoff, entry.date > cutoff { continue }
-                fromFile.append(entry)
+            let fromFile = decodeEntries(data).filter { entry in
+                guard let cutoff else { return true }
+                return entry.date <= cutoff
             }
             collected.insert(contentsOf: fromFile, at: 0)
             if collected.count >= limit { break }
@@ -369,6 +365,21 @@ public enum FileLog {
             collected.removeFirst(collected.count - limit)
         }
         return collected
+    }
+
+    /// Entries from **this** run, oldest first, for when `OSLogStore` has
+    /// nothing to offer. Flushes first so the lines just written are included.
+    public static func collectCurrentRun(limit: Int = 5000) -> [FileLogEntry] {
+        flushNow()
+        guard let url = runFileURL(), let data = try? Data(contentsOf: url) else { return [] }
+        return Array(decodeEntries(data).suffix(limit))
+    }
+
+    private static func decodeEntries(_ data: Data) -> [FileLogEntry] {
+        let decoder = JSONDecoder()
+        return data.split(separator: 0x0A, omittingEmptySubsequences: true).compactMap { line in
+            try? decoder.decode(FileLogEntry.self, from: Data(line))
+        }
     }
 
     public static func deleteAll() {

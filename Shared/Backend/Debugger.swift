@@ -18,9 +18,10 @@ struct LogEntry: Codable {
     let subsystem: String?
     /// Which launch wrote the line. `nil` for entries read live out of
     /// `OSLogStore`, which by definition come from the running process;
-    /// `"previous-run"` for lines replayed from `FileLog` after a crash. The
-    /// distinction travels with the entry rather than being inferred from
-    /// timestamps at the far end.
+    /// `"previous-run"` for lines replayed from `FileLog` after a crash;
+    /// `"file-log"` for this run's own lines read from `FileLog` because
+    /// `OSLogStore` had none. The distinction travels with the entry rather
+    /// than being inferred from timestamps at the far end.
     let source: String?
 
     init(entry: OSLogEntry) {
@@ -58,14 +59,14 @@ struct LogEntry: Codable {
         }
     }
 
-    /// A line replayed from a previous run's file log.
-    init(fileEntry: FileLogEntry) {
+    /// A line read back from a file log.
+    init(fileEntry: FileLogEntry, source: String = "previous-run") {
         message = fileEntry.message
         timestamp = fileEntry.date
         level = fileEntry.level
         category = fileEntry.category
         subsystem = Log.getLogSubsystem()
-        source = "previous-run"
+        self.source = source
     }
 }
 
@@ -230,7 +231,7 @@ func getDebugInfo(userInitiated: Bool = false, crashWindow: DateInterval? = nil)
     var faultingThreadBacktraces: [String] = []
 
     if crashWindow != nil {
-        entries = FileLog.collect(around: crashWindow).map(LogEntry.init(fileEntry:))
+        entries = FileLog.collect(around: crashWindow).map { LogEntry(fileEntry: $0) }
         if entries.isEmpty {
             // No file log yet - a build from before this existed, or a first
             // launch that crashed. Say so rather than silently shipping the
@@ -246,11 +247,9 @@ func getDebugInfo(userInitiated: Bool = false, crashWindow: DateInterval? = nil)
         }
         faultingThreadBacktraces = CrashStackTrap.collectPrevious()
     } else {
-        do {
-            entries = try getLogEntries()
-        } catch {
-            debugErrors.append("Error Getting Log Entries: \n\(error)")
-        }
+        let current = currentRunLogEntries()
+        entries = current.entries
+        debugErrors.append(contentsOf: current.notes)
     }
     Log.backend.info("Got \(entries.count) log entries")
 
@@ -339,9 +338,11 @@ func getAvailableSpaceOnDevice() -> Int64? {
 
     do {
         #if os(watchOS)
-        let values = try documentsPath.resourceValues(forKeys: [
-            .volumeAvailableCapacityKey,
-        ])
+        // `volumeAvailableCapacity` is an `Int`, which is 32 bits on arm64_32
+        // watches and wraps above 2 GB. The file system attribute is an
+        // `NSNumber` and keeps all 64.
+        let attributes = try FileManager.default.attributesOfFileSystem(
+            forPath: documentsPath.path(percentEncoded: false))
         #else
         let values = try documentsPath.resourceValues(forKeys: [
             .volumeAvailableCapacityForImportantUsageKey,
@@ -350,9 +351,9 @@ func getAvailableSpaceOnDevice() -> Int64? {
 
         // Try the preferred key first (iOS 11+, more accurate)
         #if os(watchOS)
-        if let capacity = values.volumeAvailableCapacity {
+        if let capacity = (attributes[.systemFreeSize] as? NSNumber)?.int64Value {
             Log.backend.notice("Available disk capacity: \(capacity, privacy: .public)")
-            return Int64(capacity)
+            return capacity
         }
         #else
         if let capacity = values.volumeAvailableCapacityForImportantUsage {
@@ -376,16 +377,38 @@ func getLogEntries(limit: Int = 500000) throws -> [LogEntry] {
 
     var logEntries: [LogEntry] = []
 
-    do {
-        let sequence = try logStore.getEntries(with: .reverse, at: position, matching: NSPredicate(format: "subsystem != 'com.apple.network'"))
-        for entry in sequence.prefix(limit) {
-            if let logEntry = entry as? OSLogEntryLog, logEntries.count < limit {
-                logEntries.append(LogEntry(entry: logEntry))
-            }
+    let sequence = try logStore.getEntries(with: .reverse, at: position, matching: NSPredicate(format: "subsystem != 'com.apple.network'"))
+    for entry in sequence.prefix(limit) {
+        if let logEntry = entry as? OSLogEntryLog, logEntries.count < limit {
+            logEntries.append(LogEntry(entry: logEntry))
         }
-    } catch {
-        os_log(.error, "Error fetching log entries: \(error)")
     }
 
     return logEntries
+}
+
+/// This process's log, oldest first, with notes on where it came from.
+///
+/// `OSLogStore` yields nothing on some watches (seen on arm64_32 hardware from
+/// 1.59 to 1.63, with no error surfaced), so an empty or failed read falls
+/// back to this run's `FileLog`, which holds the app's own lines only.
+func currentRunLogEntries() -> (entries: [LogEntry], notes: [String]) {
+    var notes: [String] = []
+    do {
+        let entries = try getLogEntries()
+        if !entries.isEmpty {
+            return (entries, notes)
+        }
+        notes.append("OSLogStore returned no entries for this process; logs are from the file log.")
+    } catch {
+        notes.append("Error Getting Log Entries, logs are from the file log: \n\(error)")
+    }
+
+    let entries = FileLog.collectCurrentRun().map {
+        LogEntry(fileEntry: $0, source: "file-log")
+    }
+    if entries.isEmpty {
+        notes.append("The file log for this run is empty as well.")
+    }
+    return (entries, notes)
 }
