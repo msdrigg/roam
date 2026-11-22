@@ -1,11 +1,11 @@
 cbor2==5.9.0
-certifi==2025.4.26
+certifi==2026.11.20
 cffi==2.1.0
 charset-normalizer==3.4.2
-cryptography==50.0.0
+cryptography==50.0.2
 hpack==4.2.0
-idna==3.10
+idna==3.20
 pycparser==3.0
-requests==2.32.3
+requests==2.34.2
 scapy==2.6.1
 urllib3==2.8.0

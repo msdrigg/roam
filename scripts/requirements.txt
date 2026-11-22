@@ -19,9 +19,13 @@
 
 httpx==0.28.1
 PyJWT[crypto]==2.15.1
-openai==3.32.0
+openai==3.51.0
 
 # Pulled in by PyJWT[crypto], but pinned explicitly so Dependabot keeps
 # tracking it -- the lower bound PyJWT declares (>=3.4.0) is open, so bumping
 # this line can't conflict the way the old transitive pins did.
 cryptography==50.0.2
+
+# Pulled in by httpx; pinned so the CA bundle carries the 2026-10 revocations
+# (GHSA-6q48-6c7w-9gw2) rather than whatever an old lock resolved.
+certifi==2026.11.20
