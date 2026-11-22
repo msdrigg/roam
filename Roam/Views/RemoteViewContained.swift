@@ -836,6 +836,11 @@
         private var mobileOverlays: some View {
             #if os(iOS)
                 volumeOverlay
+                #if DEBUG
+                    if CommandLine.arguments.contains("-StressAsyncGlass") {
+                        AsyncGlassStressShape()
+                    }
+                #endif
             #else
                 keyboardEntryOverlay
             #endif
