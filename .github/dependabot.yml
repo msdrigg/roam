@@ -29,17 +29,6 @@ updates:
         patterns:
           - "*"
 
-  # Rust - gateway
-  - package-ecosystem: cargo
-    directory: /backend-gateway
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 10
-    groups:
-      gateway-cargo:
-        patterns:
-          - "*"
-
   # JavaScript - Docusaurus docs site
   - package-ecosystem: npm
     directory: /docs
@@ -61,6 +50,19 @@ updates:
       scripts-pip:
         patterns:
           - "*"
+
+  # Docker - backend image bases (cargo-chef, debian slim)
+  - package-ecosystem: docker
+    directory: /backend
+    schedule:
+      interval: weekly
+
+  # Swift - the GRDB wrapper package. The app's own pins live in the Xcode
+  # project's Package.resolved, which Dependabot cannot read.
+  - package-ecosystem: swift
+    directory: /LocalPackages/RoamGRDB
+    schedule:
+      interval: weekly
 
   # GitHub Actions workflows
   - package-ecosystem: github-actions
