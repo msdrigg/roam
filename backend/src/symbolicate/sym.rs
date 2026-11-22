@@ -1,6 +1,7 @@
 use crate::database::DeviceInfo;
 use crate::symbolicate::RoamDebugInfo;
 use crate::symbolicate::diagnostics::LogEntry;
+use crate::symbolicate::dyld_local_symbols::{DyldLocalSymbols, local_name_applies};
 use anyhow::{Context, Result};
 use futures::FutureExt as _;
 use object::read::macho::{FatArch, MachOFatFile32, MachOFatFile64};
@@ -891,6 +892,30 @@ impl SymbolicationClient {
                 Err(message) => {
                     lookup_errors.insert(breakpad_id, message);
                 }
+            }
+        }
+
+        if let Some(requirement) = payload.system_symbol_requirement() {
+            let dyld_dir = self
+                .symbolication_root
+                .join("system")
+                .join(&requirement.device_type)
+                .join(&requirement.build_id)
+                .join("dyld");
+            let arch = requirement.arch.clone();
+            let taken = std::mem::take(&mut symbolicated_addresses);
+            let (restored, named) = tokio::task::spawn_blocking(move || {
+                let mut results = taken;
+                let named = apply_local_symbols(&dyld_dir, arch.as_deref(), &mut results);
+                (results, named)
+            })
+            .await
+            .context("local symbol lookup task panicked")?;
+            symbolicated_addresses = restored;
+            match named {
+                Ok(0) => {}
+                Ok(count) => tracing::info!(count, "Named frames from dyld local symbols"),
+                Err(error) => tracing::warn!(?error, "Could not read dyld local symbols"),
             }
         }
 
@@ -3139,6 +3164,57 @@ fn frame_symbol(
     format!("(unresolved {binary_uuid})")
 }
 
+/// Replaces `<redacted>`, `fun_<start>` and missing names for system images
+/// with the private names in the cache's `.symbols` subcache. Returns how many
+/// addresses it named.
+fn apply_local_symbols(
+    dyld_dir: &Path,
+    arch: Option<&str>,
+    results: &mut BTreeMap<String, LookedUpAddresses>,
+) -> Result<usize> {
+    let Some(local) = DyldLocalSymbols::open(dyld_dir, arch)? else {
+        return Ok(0);
+    };
+    let mut named = 0;
+    for (breakpad_id, result) in results.iter_mut() {
+        let Some(uuid) = breakpad_id
+            .get(..32)
+            .and_then(|hex| Uuid::parse_str(hex).ok())
+        else {
+            continue;
+        };
+        if !local.has_image(&uuid) {
+            continue;
+        }
+        let wanted: Vec<u32> = result
+            .address_results
+            .iter()
+            .filter(|(_, found)| match found {
+                None => true,
+                Some(found) => {
+                    found.inline_frames.is_none()
+                        && (found.symbol_name == "<redacted>"
+                            || found.symbol_name.starts_with("fun_"))
+                }
+            })
+            .map(|(&address, _)| address)
+            .collect();
+        if wanted.is_empty() {
+            continue;
+        }
+        for (address, symbol) in local.lookup(&uuid, &wanted)? {
+            let current = result.address_results[&address]
+                .as_ref()
+                .map(|found| found.symbol_name.as_str());
+            if local_name_applies(current, &symbol) {
+                result.add_address_symbol(address, symbol.name);
+                named += 1;
+            }
+        }
+    }
+    Ok(named)
+}
+
 fn demangle_symbol(symbol: &str) -> String {
     Name::from(symbol)
         .try_demangle(DemangleOptions::name_only())
@@ -4858,6 +4934,39 @@ mapping  RW   35MB 0x1E5908000 -> 0x1E7C2C000
                 "{family} resolves an OS family but no OTA platform"
             );
         }
+    }
+
+    /// End to end against a real cache: `ROAM_SYMBOLICATION_ROOT` holds
+    /// `system/iPhone14,3/24B156/dyld` from the symbolicator and
+    /// `ROAM_PAYLOAD` is the raw diagnostics.json from thread
+    /// 1573889376075653131, the 1.63 keyboard entry deadlock.
+    #[tokio::test]
+    #[ignore]
+    async fn names_private_frames_of_a_real_keyboard_deadlock_report() {
+        let root = PathBuf::from(std::env::var("ROAM_SYMBOLICATION_ROOT").unwrap());
+        let payloads: Vec<String> =
+            serde_json::from_slice(&std::fs::read(std::env::var("ROAM_PAYLOAD").unwrap()).unwrap())
+                .unwrap();
+        let scratch = tempfile::tempdir().unwrap();
+        let payload_path = scratch.path().join("metric.json");
+        std::fs::write(&payload_path, &payloads[0]).unwrap();
+
+        let client = SymbolicationClient::new(root);
+        let report_path = client
+            .symbolicate_diagnostics(&empty_diagnostics(), &empty_device_info(), &payload_path)
+            .await
+            .unwrap();
+        let report = std::fs::read_to_string(report_path).unwrap();
+        for name in [
+            "-[UIResponder(UIResponderInputViewAdditions) inputDashboardViewController]",
+            "-[UISystemInputAssistantViewController _customCenterViewController:]",
+            "updateSDFShapeViewAsync",
+            "SDFLayer.beginUpdatingStyle",
+        ] {
+            assert!(report.contains(name), "missing {name}:\n{report}");
+        }
+        // Inside a function the cache names only by its start.
+        assert!(report.contains("fun_840438"), "{report}");
     }
 
     #[tokio::test]

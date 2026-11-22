@@ -1,4 +1,5 @@
 mod diagnostics;
+mod dyld_local_symbols;
 mod sym;
 pub mod worker;
 
