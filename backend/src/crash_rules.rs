@@ -382,9 +382,7 @@ A scene-update watchdog kill reading `is stuck (deadlock)`, with the app at abou
 
 It happens as the keyboard text entry mounts, while the remote's scrim and the entry are fading in. Those fades are the kind of animation SwiftUI renders off the main thread.
 
-Moving the entry into the remote's own graph in 1.63 did not stop it, because the main-thread side is UIKit's own keyboard handling.
-
-**Fix in 1.64:** opening and closing the entry fade the scrim first, and the field takes or gives up focus only once that animation is gone. The entry follows the keyboard from a main-thread display link instead of a SwiftUI animation, so nothing is rendered off the main thread while the keyboard moves.";
+**Not fixed yet.** 1.63 moved the entry into the remote's own graph, and 1.64 held the field's focus change until the scrim fade was gone and moved the entry with a main-thread display link. A 1.64 report still deadlocks the same way, right after the field's setup, so some other animation is being rendered off the main thread when it mounts.";
 
 const AUDIO_PLAYER_NODE_EXCEPTION_REPLY: &str = ":ninja: **Auto-review: `SIGABRT` - AVFAudio raised on `play()` against a stale output format**
 
@@ -501,11 +499,12 @@ pub static RULES: &[CrashRule] = &[
     },
     // Framework frames only, so all three are needed: the gesture-container
     // walk on main, the graph lock it blocks on, and the async renderer
-    // holding it. Any one alone appears in unrelated hangs.
+    // holding it. Any one alone appears in unrelated hangs. No `fixed_in`:
+    // the 1.63 and 1.64 changes did not stop it.
     CrashRule {
         id: "keyboard-entry-graph-deadlock",
         title: "0x8BADF00D deadlock between SwiftUI async rendering and a CA commit as the keyboard entry mounts",
-        fixed_in: Some("1.64"),
+        fixed_in: None,
         environmental: false,
         exception_type: Some(10),
         signal: Some(9),
@@ -525,7 +524,7 @@ pub static RULES: &[CrashRule] = &[
     CrashRule {
         id: "keyboard-entry-graph-deadlock-responder",
         title: "0x8BADF00D deadlock between SwiftUI async rendering and a CA commit as the keyboard entry mounts",
-        fixed_in: Some("1.64"),
+        fixed_in: None,
         environmental: false,
         exception_type: Some(10),
         signal: Some(9),
@@ -1825,22 +1824,19 @@ Thread 6:
     }
 
     #[test]
-    fn keyboard_entry_deadlock_reads_as_fixed_in_1_64() {
-        for version in ["1.61", "1.62", "1.63"] {
+    fn keyboard_entry_deadlock_claims_no_fix() {
+        // 1.64 included: thread 1573874374166052964 deadlocks the same way.
+        for version in ["1.61", "1.62", "1.63", "1.64"] {
             let report = KEYBOARD_ENTRY_DEADLOCK_REPORT
                 .replace("appVersion: 1.61", &format!("appVersion: {version}"));
             let facts = CrashFacts::from_report(&report);
             let matched = match_rule(&report, &facts).expect("rule matches");
             assert_eq!(matched.rule.id, "keyboard-entry-graph-deadlock");
-            assert_eq!(matched.status, FixStatus::Fixed);
+            assert_eq!(matched.status, FixStatus::Unknown);
+            let reply = matched.reply(&facts);
+            assert!(reply.contains("Not fixed yet"));
+            assert!(!reply.contains("Fix in 1.64"));
         }
-
-        let later = KEYBOARD_ENTRY_DEADLOCK_REPORT.replace("appVersion: 1.61", "appVersion: 1.64");
-        let facts = CrashFacts::from_report(&later);
-        assert_eq!(
-            match_rule(&later, &facts).map(|m| m.status),
-            Some(FixStatus::Unfixed)
-        );
     }
 
     #[test]
