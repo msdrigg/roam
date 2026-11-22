@@ -86,23 +86,29 @@ final class RoamUITests: XCTestCase {
         let environment = ProcessInfo.processInfo.environment
         let iterations = Int(environment["KEYBOARD_STRESS_ITERATIONS"] ?? "") ?? 40
         let app = navigationTestApp()
+        // The test-data flags clear the database first, which on a personal
+        // device wipes its real devices and chat.
+        if environment["KEYBOARD_STRESS_REAL_DATA"] == "1" {
+            app.launchArguments = []
+        }
         if environment["KEYBOARD_STRESS_GLASS"] == "1" {
             app.launchArguments.append("-StressAsyncGlass")
         }
         app.launch()
         defer { app.terminate() }
 
-        // The pager keeps neighbouring pages alive, each with its own entry.
+        let realData = environment["KEYBOARD_STRESS_REAL_DATA"] == "1"
         let keyboardButton = app.buttons["KeyboardButton"].firstMatch
         XCTAssertTrue(keyboardButton.waitForExistence(timeout: 15))
-        let closeButton = app.buttons["CloseKeyboardButton"].firstMatch
 
         for iteration in 0..<iterations {
             keyboardButton.tap()
+            let closeButton = onscreenElement(app.buttons.matching(identifier: "CloseKeyboardButton"), in: app)
             XCTAssertTrue(
                 closeButton.waitForExistence(timeout: 10),
                 "Keyboard entry never appeared on iteration \(iteration)")
-            if iteration == 0 {
+            // Real data means a real TV, which would receive the keystrokes.
+            if iteration == 0 && !realData {
                 let field = app.textFields.matching(NSPredicate(format: "hasKeyboardFocus == 1")).firstMatch
                 XCTAssertTrue(field.waitForExistence(timeout: 5))
                 app.typeText("ok")
@@ -113,6 +119,19 @@ final class RoamUITests: XCTestCase {
                 keyboardButton.waitForExistence(timeout: 10),
                 "Remote never came back on iteration \(iteration)")
         }
+    }
+
+    /// The pager keeps neighbouring pages alive, each with its own controls,
+    /// so pick the match that is actually on screen.
+    @MainActor
+    private func onscreenElement(_ query: XCUIElementQuery, in app: XCUIApplication) -> XCUIElement {
+        _ = query.firstMatch.waitForExistence(timeout: 10)
+        let window = app.windows.firstMatch.frame
+        for element in query.allElementsBoundByIndex
+        where window.contains(CGPoint(x: element.frame.midX, y: element.frame.midY)) {
+            return element
+        }
+        return query.firstMatch
     }
 
     @MainActor

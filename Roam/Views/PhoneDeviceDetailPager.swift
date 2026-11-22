@@ -114,6 +114,21 @@ struct PhoneDeviceDetailPager: View {
         // keyboard on its own. The bar stays too, since hiding it would
         // change the bottom safe area and resize every page.
         .ignoresSafeArea(.keyboard)
+        #if DEBUG
+            // `-StressKeyboardToggle` opens and closes the entry on its own, the
+            // way the keyboard button does, faster than XCUITest can, which
+            // waits for the app to go idle before each tap.
+            .task {
+                guard CommandLine.arguments.contains("-StressKeyboardToggle") else { return }
+                var toggles = 0
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .milliseconds(700))
+                    toggles += 1
+                    Log.userInteraction.notice("Stress keyboard toggle \(toggles, privacy: .public)")
+                    withAnimation { showKeyboard.toggle() }
+                }
+            }
+        #endif
         .toolbar(.hidden, for: .navigationBar)
         .applyBuilder {
             if #available(iOS 26.0, *) {
