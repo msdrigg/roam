@@ -206,6 +206,16 @@
             }
         }
 
+        // Skips every SwiftUI view and hosting controller above the field.
+        // While the keyboard moves, UIKit walks the first responder's chain
+        // inside a CoreAnimation commit (`inputDashboardViewController`), and
+        // each SwiftUI responder it passes takes the view-graph lock. SwiftUI's
+        // async renderer holds that lock while waiting on CoreAnimation, so an
+        // off-main glass animation deadlocked the two (0x8BADF00D, 1.61-1.64).
+        override var next: UIResponder? {
+            window ?? super.next
+        }
+
         override func closestPosition(to point: CGPoint) -> UITextPosition? {
             if self.fullFeatures == true {
                 return super.closestPosition(to: point)
@@ -522,6 +532,34 @@
                     .first(where: \.isKeyWindow)
             }
         }
+
+        #if DEBUG
+            /// `-StressAsyncGlass` keeps a glass shape resizing forever, so
+            /// SwiftUI's async renderer is always mid-update when the keyboard
+            /// entry takes focus. Reproduces the 0x8BADF00D keyboard deadlock
+            /// on demand.
+            struct AsyncGlassStressShape: View {
+                @State private var wide = false
+
+                var body: some View {
+                    VStack {
+                        Capsule()
+                            .fill(.clear)
+                            .frame(width: 90, height: 24)
+                            .glassEffectIfSupported(in: Capsule())
+                            .scaleEffect(wide ? 1.4 : 0.8)
+                            .opacity(wide ? 1 : 0.4)
+                            .allowsHitTesting(false)
+                        Spacer()
+                    }
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: 0.4).repeatForever(autoreverses: true)) {
+                            wide = true
+                        }
+                    }
+                }
+            }
+        #endif
     #endif
 
     @MainActor

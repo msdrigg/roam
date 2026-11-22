@@ -76,6 +76,45 @@ final class RoamUITests: XCTestCase {
         XCTAssertTrue(devices.element(boundBy: 1).waitForExistence(timeout: 10))
     }
 
+    /// Opens and closes the keyboard entry until the app stops answering.
+    /// 0x8BADF00D reports from 1.61 to 1.64 deadlock right as the entry's field
+    /// takes first responder; a simulator has no watchdog, so a deadlock shows
+    /// up here as the close button never appearing.
+    @MainActor
+    func testKeyboardEntryOpenCloseStress() throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "Requires a phone")
+        let environment = ProcessInfo.processInfo.environment
+        let iterations = Int(environment["KEYBOARD_STRESS_ITERATIONS"] ?? "") ?? 40
+        let app = navigationTestApp()
+        if environment["KEYBOARD_STRESS_GLASS"] == "1" {
+            app.launchArguments.append("-StressAsyncGlass")
+        }
+        app.launch()
+        defer { app.terminate() }
+
+        // The pager keeps neighbouring pages alive, each with its own entry.
+        let keyboardButton = app.buttons["KeyboardButton"].firstMatch
+        XCTAssertTrue(keyboardButton.waitForExistence(timeout: 15))
+        let closeButton = app.buttons["CloseKeyboardButton"].firstMatch
+
+        for iteration in 0..<iterations {
+            keyboardButton.tap()
+            XCTAssertTrue(
+                closeButton.waitForExistence(timeout: 10),
+                "Keyboard entry never appeared on iteration \(iteration)")
+            if iteration == 0 {
+                let field = app.textFields.matching(NSPredicate(format: "hasKeyboardFocus == 1")).firstMatch
+                XCTAssertTrue(field.waitForExistence(timeout: 5))
+                app.typeText("ok")
+                XCTAssertEqual(field.value as? String, "ok")
+            }
+            closeButton.tap()
+            XCTAssertTrue(
+                keyboardButton.waitForExistence(timeout: 10),
+                "Remote never came back on iteration \(iteration)")
+        }
+    }
+
     @MainActor
     private func navigationTestApp() -> XCUIApplication {
         let app = XCUIApplication()
