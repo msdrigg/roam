@@ -6,6 +6,7 @@ import Combine
 final class RoamWatchAppDelegate: NSObject, ObservableObject {
     @Published var navigationPath: NavigationManager
     @Published var networkMonitor: NetworkMonitor
+    let privateListening = WatchPrivateListening()
 
     override init() {
         self.navigationPath = NavigationManager()

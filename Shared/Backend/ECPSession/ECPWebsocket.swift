@@ -1,4 +1,4 @@
-#if !os(watchOS)
+#if !os(watchOS) || !WIDGET
 import Network
 import Dispatch
 import OSLog
