@@ -11,6 +11,11 @@ public struct  AppLink: Identifiable, Equatable, Hashable, Codable, Sendable {
     public var iconHash: String?
     public var lastSyncAt: Date?
 
+    /// True only while a refresh has an icon query in flight for an app with no
+    /// icon on disk. Never persisted or encoded, so a record loaded from disk
+    /// cannot claim a fetch that died with the process that started it.
+    public var iconIsPending: Bool = false
+
     init(name: String, deviceId: String, id: String, type: String, iconHash: String? = nil) {
         self.name = name
         self.id = id
@@ -55,14 +60,6 @@ public struct  AppLink: Identifiable, Equatable, Hashable, Codable, Sendable {
         case type
         case iconHash
         case lastSyncAt
-    }
-
-    /// True while an icon is still expected: nothing cached on disk, and no
-    /// completed fetch attempt to say the device has none to give. Lets the UI
-    /// show a loading indicator for icons that are still in flight while
-    /// keeping the "no icon" fallback for apps we've already queried.
-    public var iconIsPending: Bool {
-        iconHash == nil && lastSyncAt == nil
     }
 
     public var iconURL: URL? {

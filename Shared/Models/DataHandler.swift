@@ -90,6 +90,10 @@ actor RoamDataHandler {
     // Cache storage
     private var cachedDeviceData: [String: Device] = [:]
     private var cachedDeviceApps: [String: [AppLink]] = [:]
+    // A refresh works on copies of the device and its apps across many awaits
+    // and writes them back whole, so two overlapping refreshes of one device
+    // overwrite each other's results.
+    private var refreshingDeviceIds: Set<String> = []
     private var cachedDeviceList: [String]?
     private var cachedHiddenDeviceList: [String]?
     private var cachedPrimaryDevice: Device?
@@ -730,6 +734,10 @@ actor RoamDataHandler {
 
     func setDeviceApps(deviceId: String, apps: [AppLink]) async throws {
         try await saveDeviceAppsToDisk(deviceId: deviceId, apps: apps)
+        publishDeviceApps(deviceId: deviceId, apps: apps)
+    }
+
+    private func publishDeviceApps(deviceId: String, apps: [AppLink]) {
         cachedDeviceApps[deviceId] = apps
 
         // Update primary apps cache if this is primary device
@@ -1752,6 +1760,19 @@ protocol RefreshClient: Sendable {
             }
         }
 
+        // A failed write still reaches the cache and the listeners, so a
+        // cleared `iconIsPending` flag always makes it to the UI.
+        private func saveRefreshedApps(deviceId: String, apps: [AppLink]) async {
+            do {
+                try await self.setDeviceApps(deviceId: deviceId, apps: apps)
+            } catch {
+                Log.data.error(
+                    "Failed to save apps for \(deviceId, privacy: .public): \(error, privacy: .public)"
+                )
+                self.publishDeviceApps(deviceId: deviceId, apps: apps)
+            }
+        }
+
         func refreshDevice(client: any RefreshClient) async {
             let deviceId: String
             do {
@@ -1762,6 +1783,14 @@ protocol RefreshClient: Sendable {
                     "Failed to refresh device because couldn't get id: \(error, privacy: .public)")
                 return
             }
+
+            guard refreshingDeviceIds.insert(deviceId).inserted else {
+                Log.data.notice(
+                    "Device refresh skipped for id \(deviceId, privacy: .public) b/c one is already running"
+                )
+                return
+            }
+            defer { refreshingDeviceIds.remove(deviceId) }
 
             // Check if device was recently refreshed
             let existingDevice = self.requestDevice(id: deviceId)
@@ -1847,11 +1876,11 @@ protocol RefreshClient: Sendable {
             }
 
             // Check if we need to do full scan
-            let existingApps = self.requestDeviceApps(deviceId: deviceId)
+            let appsBeforeScan = self.requestDeviceApps(deviceId: deviceId)
             let shouldSkipFullScan =
                 (device.lastScannedAt?.timeIntervalSinceNow ?? -10000.0) > -RoamDataHandler
-                .minRescanInterval && existingApps.allSatisfy({ $0.iconHash != nil })
-                && existingApps.count > 0
+                .minRescanInterval && appsBeforeScan.allSatisfy({ $0.iconHash != nil })
+                && appsBeforeScan.count > 0
 
             do {
                 try await self.setDeviceDetails(device: device)
@@ -1877,6 +1906,10 @@ protocol RefreshClient: Sendable {
             let capabilities = await fetchedCapabilities
             let fetchedApps = await fetchedAppList
 
+            // Read after the queries return: icon hashes stored while they were
+            // in flight must carry over into the list saved below.
+            let existingApps = self.requestDeviceApps(deviceId: deviceId)
+
             // Update device with capabilities
             if let capabilities = capabilities {
                 device.rtcpPort = capabilities.rtcpPort
@@ -1885,7 +1918,7 @@ protocol RefreshClient: Sendable {
 
             // Process apps if we got them
             var appsNeedingIcons: [String] = []
-            var earlyUpdatedApps: [AppLink]?
+            var appListChanged = false
             var afterUpdateApps = existingApps
 
             if let fetchedApps = fetchedApps {
@@ -1906,12 +1939,12 @@ protocol RefreshClient: Sendable {
                 }
 
                 if shouldUpdate {
-                    earlyUpdatedApps = fetchedApps.map { fa in
+                    appListChanged = true
+                    afterUpdateApps = fetchedApps.map { fa in
                         var fa = fa
                         fa.iconHash = existingApps.first(where: { $0.id == fa.id })?.iconHash
                         return fa
                     }
-                    afterUpdateApps = earlyUpdatedApps ?? []
                 }
 
                 // Find apps that need icons
@@ -1924,14 +1957,28 @@ protocol RefreshClient: Sendable {
                 }
             }
 
+            // The cached list can carry flags from an overlapping refresh, so
+            // recompute them: every flag set here is cleared by a result below.
+            var pendingFlagsChanged = false
+            for index in afterUpdateApps.indices {
+                let app = afterUpdateApps[index]
+                let isPending = app.iconHash == nil && appsNeedingIcons.contains(app.id)
+                if app.iconIsPending != isPending {
+                    afterUpdateApps[index].iconIsPending = isPending
+                    pendingFlagsChanged = true
+                }
+            }
+
             // Save updated device and apps
             do {
                 try await self.setDeviceDetails(device: device)
-                if let earlyUpdatedApps {
-                    try await self.setDeviceApps(deviceId: deviceId, apps: earlyUpdatedApps)
-                }
             } catch {
-                Log.data.error("Failed to save device and apps: \(error, privacy: .public)")
+                Log.data.error("Failed to save device: \(error, privacy: .public)")
+            }
+            if appListChanged {
+                await self.saveRefreshedApps(deviceId: deviceId, apps: afterUpdateApps)
+            } else if pendingFlagsChanged {
+                self.publishDeviceApps(deviceId: deviceId, apps: afterUpdateApps)
             }
 
             // The device icon is an independent request (and costs two HTTP
@@ -1950,10 +1997,6 @@ protocol RefreshClient: Sendable {
             if !appsNeedingIcons.isEmpty {
                 Log.data.notice(
                     "Getting \(appsNeedingIcons.count, privacy: .public) device app icons")
-
-                // Set when an app's record changed without a save following it,
-                // so a run that only produced failures still records the attempts.
-                var hasUnsavedAttempts = false
 
                 await withTaskGroup(of: (String, Data?).self) { group in
                     var nextIndex = 0
@@ -1988,49 +2031,34 @@ protocol RefreshClient: Sendable {
                         guard let appIndex = afterUpdateApps.firstIndex(where: { $0.id == appId })
                         else { continue }
 
-                        // Stamp the attempt whether or not it produced an icon:
-                        // `lastSyncAt` is what tells the UI this app has already
-                        // been queried, so one with no icon settles on the
-                        // fallback instead of loading forever. A nil `iconHash`
-                        // still forces a retry on the next refresh.
+                        // Publish every result, failures included, so an app
+                        // with no icon settles on the fallback as soon as its own
+                        // query ends. A nil `iconHash` still forces a retry on the
+                        // next refresh.
                         afterUpdateApps[appIndex].lastSyncAt = .now
-                        hasUnsavedAttempts = true
+                        afterUpdateApps[appIndex].iconIsPending = false
 
-                        guard let iconData else { continue }
-
-                        let iconHash = fastHashData(data: iconData)
-                        do {
-                            try storeIconToDisk(iconData: iconData, hash: iconHash)
-                        } catch {
-                            Log.data.error(
-                                "Error storing app icon for \(appId, privacy: .public): \(error, privacy: .public)"
-                            )
-                            continue
-                        }
-                        afterUpdateApps[appIndex].iconHash = iconHash
-
-                        do {
-                            try await self.setDeviceApps(deviceId: deviceId, apps: afterUpdateApps)
-                            hasUnsavedAttempts = false
-                        } catch {
-                            Log.data.error(
-                                "Failed to save app icon for \(appId, privacy: .public): \(error, privacy: .public)"
-                            )
+                        var storedHash: String?
+                        if let iconData {
+                            let iconHash = fastHashData(data: iconData)
+                            do {
+                                try storeIconToDisk(iconData: iconData, hash: iconHash)
+                                afterUpdateApps[appIndex].iconHash = iconHash
+                                storedHash = iconHash
+                            } catch {
+                                Log.data.error(
+                                    "Error storing app icon for \(appId, privacy: .public): \(error, privacy: .public)"
+                                )
+                            }
                         }
 
-                        notifyAppIconUpdated(
-                            deviceId: deviceId, appId: appId, iconDataHash: iconHash)
+                        await self.saveRefreshedApps(deviceId: deviceId, apps: afterUpdateApps)
 
-                        Log.data.notice("Stored app icon for \(appId, privacy: .public)")
-                    }
-                }
-
-                if hasUnsavedAttempts {
-                    do {
-                        try await self.setDeviceApps(deviceId: deviceId, apps: afterUpdateApps)
-                    } catch {
-                        Log.data.error(
-                            "Failed to save app icon attempts: \(error, privacy: .public)")
+                        if let storedHash {
+                            notifyAppIconUpdated(
+                                deviceId: deviceId, appId: appId, iconDataHash: storedHash)
+                            Log.data.notice("Stored app icon for \(appId, privacy: .public)")
+                        }
                     }
                 }
             }
