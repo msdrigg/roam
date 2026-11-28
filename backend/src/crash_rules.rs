@@ -414,6 +414,14 @@ The device rows were keyed on a display hash that included `isOnline()`, which r
 
 **Fix:** both Settings device lists are keyed on the device id. The online dot reads `DeviceLivenessMonitor` and refreshes on its own.";
 
+const DEVICE_MENU_DELETE_CONFIRMATION_REPLY: &str = ":ninja: **Auto-review: `SIGABRT` - a context menu swapped back under a highlighted delete confirmation**
+
+`EXC_CRASH (10)` / `SIGABRT (6)` from an uncaught `NSInternalInconsistencyException` (\"Attempted to scroll the collection view to an out-of-bounds section (1) when there are only 1 sections\"), raised by `-[_UIContextMenuListView scrollToFirstSignificantAction]` while SwiftUI replaced the visible menu.
+
+On iOS 27 the device card's delete `confirmationDialog` is drawn in place of its Edit/Delete context menu: a header section, then the Delete button in section 1. When SwiftUI swapped the one-section menu back in, UIKit reused the old menu's highlighted index path and scrolled to a section that no longer existed.
+
+**Fix:** the delete confirmation is an alert, so the card's context menu never changes shape while it is open.";
+
 const LOCAL_NETWORK_CANCEL_RACE_REPLY: &str = ":ninja: **Auto-review: `SIGSEGV` - the Bonjour browser was cancelled before it was started**
 
 `EXC_BAD_ACCESS (1)` / `SIGSEGV (11)` on the near-null address `0x54` inside `nw_browser_cancel`, attributed to the local network permission check. Not the `0x8BADF00D` stall that `local-network-cancel-watchdog` describes, which carries a termination reason.
@@ -616,6 +624,20 @@ pub static RULES: &[CrashRule] = &[
         ],
         none_of: &[],
         reply: SETTINGS_DEVICE_LIST_DIFF_REPLY,
+    },
+    CrashRule {
+        id: "device-menu-delete-confirmation",
+        title: "SIGABRT from a context menu replaced under a highlighted delete confirmation",
+        fixed_in: Some("1.66"),
+        environmental: false,
+        exception_type: Some(10),
+        signal: Some(6),
+        termination_code: None,
+        min_thermal_level: None,
+        max_app_cpu_percent: None,
+        all_of: &["scrollToFirstSignificantAction", "out-of-bounds section"],
+        none_of: &[],
+        reply: DEVICE_MENU_DELETE_CONFIRMATION_REPLY,
     },
     CrashRule {
         id: "ssdp-socket-double-close",
@@ -1286,6 +1308,57 @@ Logs (5000 entries)
   22:16:15.000  Notice   Lifecycle       Showing Roam/SettingsView.swift view
   22:16:20.000  Fault    Crash           Uncaught exception NSInternalInconsistencyException: attempt to delete item 2 from section 0 which only contains 2 items before the update
 "#;
+
+    // Trimmed from the 1.65 iPhone16,2 report.
+    const DEVICE_MENU_DELETE_CONFIRMATION_REPORT: &str = r#"
+Crash 1 (version 1.0.0)
+Termination reason: Namespace SIGNAL, Code 0x6
+Diagnosis: EXC_CRASH (10) / code 0 / SIGABRT (6)
+Metadata:
+  appVersion: 1.65
+  deviceType: iPhone16,2
+  exceptionCode: 0
+  exceptionType: 10
+  osVersion: iPhone OS 27.0 (24A437)
+  signal: 6
+Thread 0 (attributed - this is the thread that crashed):
+  11  UIKitCore                    +0x558a80    -[UICollectionView _validateScrollingTargetIndexPath:raisingExceptionIfNecessary:] samples=1
+  14  UIKitCore                    +0x11d3da0   -[_UIContextMenuListView scrollToFirstSignificantAction] samples=1
+  42  SwiftUI                      +0x9249bc    closure #2 in UpdateContextMenuInteraction.updateValue samples=1
+In-process backtrace of the faulting thread (1)
+  Uncaught exception NSInternalInconsistencyException: Attempted to scroll the collection view to an out-of-bounds section (1) when there are only 1 sections.
+"#;
+
+    #[test]
+    fn matches_the_device_menu_delete_confirmation() {
+        let facts = CrashFacts::from_report(DEVICE_MENU_DELETE_CONFIRMATION_REPORT);
+        let matched =
+            match_rule(DEVICE_MENU_DELETE_CONFIRMATION_REPORT, &facts).expect("a rule matches");
+        assert_eq!(matched.rule.id, "device-menu-delete-confirmation");
+        assert_eq!(matched.status, FixStatus::Fixed);
+
+        // Neither this report nor the Settings list diff steals the other's match.
+        let facts = CrashFacts::from_report(SETTINGS_DEVICE_LIST_DIFF_REPORT);
+        assert_eq!(
+            match_rule(SETTINGS_DEVICE_LIST_DIFF_REPORT, &facts).map(|m| m.rule.id),
+            Some("settings-device-list-diff")
+        );
+        for report in [
+            AUDIO_PLAYER_EXCEPTION_REPORT,
+            AUDIO_PLAYER_TIME_EXCEPTION_REPORT,
+            DEAD10CC_REPORT,
+            GUARD_REPORT,
+            WATCHDOG_REPORT,
+            THERMAL_REPORT,
+            STACK_OVERFLOW_REPORT,
+        ] {
+            let facts = CrashFacts::from_report(report);
+            assert_ne!(
+                match_rule(report, &facts).map(|m| m.rule.id),
+                Some("device-menu-delete-confirmation")
+            );
+        }
+    }
 
     #[test]
     fn matches_the_settings_device_list_diff() {

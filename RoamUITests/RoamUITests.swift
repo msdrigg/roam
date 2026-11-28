@@ -76,6 +76,38 @@ final class RoamUITests: XCTestCase {
         XCTAssertTrue(devices.element(boundBy: 1).waitForExistence(timeout: 10))
     }
 
+    /// The delete confirmation must be an alert. A confirmationDialog replaces
+    /// the open context menu in place, which crashed 1.65 on iOS 27.
+    @MainActor
+    func testDeviceCardDeleteConfirmsWithAlert() throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .phone, "Requires a phone")
+        try XCTSkipIf(UIDevice.current.name.contains("iPhone Duo"), "Runs on a compact phone")
+        let app = navigationTestApp()
+        app.launch()
+        defer { app.terminate() }
+
+        let allDevices = app.buttons["AllDevicesButton"]
+        XCTAssertTrue(allDevices.waitForExistence(timeout: 15))
+        allDevices.tap()
+
+        let devices = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'DeviceCard_'"))
+        XCTAssertTrue(devices.element(boundBy: 1).waitForExistence(timeout: 10))
+        let countBefore = devices.count
+        devices.element(boundBy: 1).press(forDuration: 1.2)
+
+        let menuDelete = app.buttons["Delete"].firstMatch
+        XCTAssertTrue(menuDelete.waitForExistence(timeout: 5))
+        menuDelete.tap()
+
+        let alert = app.alerts.firstMatch
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        alert.buttons["Delete"].tap()
+
+        let removed = NSPredicate { _, _ in devices.count == countBefore - 1 }
+        wait(for: [XCTNSPredicateExpectation(predicate: removed, object: nil)], timeout: 10)
+        XCTAssertEqual(app.state, .runningForeground)
+    }
+
     /// Opens and closes the keyboard entry until the app stops answering.
     /// 0x8BADF00D reports from 1.61 to 1.64 deadlock right as the entry's field
     /// takes first responder; a simulator has no watchdog, so a deadlock shows

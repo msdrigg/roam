@@ -6,7 +6,7 @@ import SwiftUI
 /// On touch platforms the actions are exposed via `.swipeActions` so the user
 /// can swipe-from-trailing on a sidebar card to reveal them. On every platform
 /// (incl. macOS) the same actions are available via right-click / long-press
-/// `.contextMenu`. Delete shows a confirmation dialog before calling
+/// `.contextMenu`. Delete shows a confirmation alert before calling
 /// `RoamDataHandler.deleteDevice(id:)`.
 struct DeviceActionsModifier: ViewModifier {
     let deviceId: String
@@ -58,10 +58,13 @@ struct DeviceActionsModifier: ViewModifier {
                     )
                 }
             }
-            .confirmationDialog(
+            // An alert, not a confirmationDialog: on iOS 27 the dialog is drawn in
+            // place of the open context menu, and SwiftUI swapping the menu back
+            // while the dialog's button is highlighted raises an out-of-bounds
+            // NSInternalInconsistencyException in UIKit (1.65 crash reports).
+            .alert(
                 deleteConfirmationTitle,
-                isPresented: $showDeleteConfirmation,
-                titleVisibility: .visible
+                isPresented: $showDeleteConfirmation
             ) {
                 Button(
                     String(localized: "Delete", comment: "Confirm button for deleting a device"),
